@@ -1150,7 +1150,7 @@ void OP_ObjectplaceMovement(player_t *player)
 	if (player->pflags & PF_ATTACKDOWN)
 	{
 		// Are ANY objectplace buttons pressed?  If no, remove flag.
-		if (!(cmd->buttons & (BT_ATTACK|BT_TOSSFLAG)))
+		if (!(cmd->buttons & (BT_ATTACK|BT_TOSSFLAG|BT_WEAPONNEXT|BT_WEAPONPREV)))
 			player->pflags &= ~PF_ATTACKDOWN;
 
 		// Do nothing.
@@ -1162,7 +1162,8 @@ void OP_ObjectplaceMovement(player_t *player)
 		OP_CycleThings(-1);
 		player->pflags |= PF_ATTACKDOWN;
 	}
-	else if (cmd->buttons & BT_WEAPONNEXT)
+
+	if (cmd->buttons & BT_WEAPONNEXT)
 	{
 		OP_CycleThings(1);
 		player->pflags |= PF_ATTACKDOWN;
