@@ -300,6 +300,12 @@ static void D_Display(void)
 	// do buffered drawing
 	switch (gamestate)
 	{
+		case GS_TITLESCREEN:
+			if (!gamemap) {
+				F_TitleScreenDrawer();
+				break;
+			}
+			// Intentional fall-through
 		case GS_LEVEL:
 			if (!gametic)
 				break;
@@ -347,10 +353,6 @@ static void D_Display(void)
 			HU_Drawer();
 			break;
 
-		case GS_TITLESCREEN:
-			F_TitleScreenDrawer();
-			break;
-
 		case GS_WAITINGPLAYERS:
 			// The clientconnect drawer is independent...
 		case GS_DEDICATEDSERVER:
@@ -358,7 +360,9 @@ static void D_Display(void)
 			break;
 	}
 
-	if (gamestate == GS_LEVEL)
+	// clean up border stuff
+	// see if the border needs to be initially drawn
+	if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && gamemap))
 	{
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
@@ -428,8 +432,14 @@ static void D_Display(void)
 		}
 
 		PS_START_TIMING(ps_uitime);
-		ST_Drawer();
-		HU_Drawer();
+		if (gamestate == GS_LEVEL)
+		{
+			ST_Drawer();
+			HU_Drawer();
+		}
+		else
+			F_TitleScreenDrawer();
+		
 	}
 	else
 	{
