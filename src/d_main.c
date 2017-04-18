@@ -301,7 +301,7 @@ static void D_Display(void)
 	switch (gamestate)
 	{
 		case GS_TITLESCREEN:
-			if (!gamemap) {
+			if (!titlemapinaction) {
 				F_TitleScreenDrawer();
 				break;
 			}
@@ -362,7 +362,7 @@ static void D_Display(void)
 
 	// clean up border stuff
 	// see if the border needs to be initially drawn
-	if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && gamemap))
+	if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction))
 	{
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)

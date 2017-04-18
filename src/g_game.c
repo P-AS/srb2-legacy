@@ -124,7 +124,7 @@ INT16 spstage_start;
 INT16 sstage_start;
 INT16 sstage_end;
 
-INT16 titlemap;
+INT16 titlemap = 0;
 boolean hidetitlepics = false;
 
 boolean looptitle = false;
@@ -2072,7 +2072,7 @@ void G_Ticker(boolean run)
 			break;
 
 		case GS_TITLESCREEN:
-			if (gamemap) P_Ticker(run); // then intentionally fall through
+			if (titlemapinaction) P_Ticker(run); // then intentionally fall through
 		case GS_WAITINGPLAYERS:
 			F_TitleScreenTicker(run);
 			break;
