@@ -124,6 +124,9 @@ INT16 spstage_start;
 INT16 sstage_start;
 INT16 sstage_end;
 
+INT16 titlemap;
+boolean hidetitlepics = false;
+
 boolean looptitle = false;
 boolean useNightsSS = false;
 
