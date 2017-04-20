@@ -32,6 +32,7 @@
 #include "lua_hook.h"
 #include "b_bot.h"
 #include "p_slopes.h"
+#include "f_finale.h"
 
 // protos.
 static CV_PossibleValue_t viewheight_cons_t[] = {{16, "MIN"}, {56, "MAX"}, {0, NULL}};
@@ -7682,6 +7683,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		return NULL;
 	else switch (mobj->type)
 	{
+		case MT_ALTVIEWMAN:
+			if (titlemapinaction) mobj->flags &= ~MF_NOTHINK;
+			break;
 		case MT_CYBRAKDEMON_NAPALM_BOMB_LARGE:
 			mobj->fuse = mobj->info->mass;
 			break;
