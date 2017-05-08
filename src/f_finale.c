@@ -40,6 +40,7 @@
 static INT32 finalecount;
 INT32 titlescrollspeed = 80;
 boolean titlemapinaction = false;
+boolean titlemaptransition = false;
 
 static INT32 timetonext; // Delay between screen changes
 static INT32 continuetime; // Short delay when continuing
@@ -282,6 +283,8 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 void F_StartIntro(void)
 {
+	S_StopMusic();
+
 	if (introtoplay)
 	{
 		if (!cutscenes[introtoplay - 1])
@@ -1455,7 +1458,7 @@ void F_StartTitleScreen(void)
 	if (titlemap)
 	{
 		gamestate_t prevwipegamestate = wipegamestate;
-		titlemapinaction = true;
+		titlemapinaction = titlemaptransition = true;
 		gamemap = titlemap;
 
 		if (!mapheaderinfo[gamemap-1])
@@ -1464,9 +1467,8 @@ void F_StartTitleScreen(void)
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
 
-		G_DoLoadLevel(true);
+		G_DoLoadLevel(true); // handles music change
 		players[displayplayer].playerstate = PST_DEAD; // Don't spawn the player in dummy (I'm still a filthy cheater)
-		//camera.subsector = NULL; // toast is filthy too
 
 		// Set Default Position
 		mapthing_t *startpos;
@@ -1505,6 +1507,7 @@ void F_StartTitleScreen(void)
 	{
 		titlemapinaction = false;
 		gamemap = 1; // g_game.c
+		S_ChangeMusicInternal("titles", looptitle);
 		CON_ClearHUD();
 	}
 
@@ -1512,7 +1515,6 @@ void F_StartTitleScreen(void)
 
 	// IWAD dependent stuff.
 
-	S_ChangeMusicInternal("titles", looptitle);
 	animtimer = 0;
 
 	demoDelayLeft = demoDelayTime;
