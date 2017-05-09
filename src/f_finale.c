@@ -39,8 +39,7 @@
 // 0 = text, 1 = art screen
 static INT32 finalecount;
 INT32 titlescrollspeed = 80;
-boolean titlemapinaction = false;
-boolean titlemaptransition = false;
+UINT8 titlemapinaction = TITLEMAP_OFF;
 
 static INT32 timetonext; // Delay between screen changes
 static INT32 continuetime; // Short delay when continuing
@@ -1450,6 +1449,8 @@ void F_GameEndTicker(void)
 // ==============
 void F_StartTitleScreen(void)
 {
+	S_ChangeMusicInternal("_title", looptitle);
+
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 		finalecount = 0;
 	else
@@ -1458,7 +1459,7 @@ void F_StartTitleScreen(void)
 	if (titlemap)
 	{
 		gamestate_t prevwipegamestate = wipegamestate;
-		titlemapinaction = titlemaptransition = true;
+		titlemapinaction = TITLEMAP_LOADING;
 		gamemap = titlemap;
 
 		if (!mapheaderinfo[gamemap-1])
@@ -1467,7 +1468,10 @@ void F_StartTitleScreen(void)
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
 
-		G_DoLoadLevel(true); // handles music change
+		G_DoLoadLevel(true);
+		if (!titlemap)
+			return;
+
 		players[displayplayer].playerstate = PST_DEAD; // Don't spawn the player in dummy (I'm still a filthy cheater)
 
 		// Set Default Position
@@ -1493,19 +1497,15 @@ void F_StartTitleScreen(void)
 			camera.x = camera.y = camera.z = camera.angle = camera.aiming = 0;
 			camera.subsector = NULL; // toast is filthy too
 		}
+
 		camera.chase = true;
 		camera.height = 0;
-
-		//camera.x = camera.y = camera.height = camera.aiming = 0;
-		//camera.z = 128*FRACUNIT;
-
-		//CON_ClearHUD();
 
 		wipegamestate = prevwipegamestate;
 	}
 	else
 	{
-		titlemapinaction = false;
+		titlemapinaction = TITLEMAP_OFF;
 		gamemap = 1; // g_game.c
 		S_ChangeMusicInternal("titles", looptitle);
 		CON_ClearHUD();

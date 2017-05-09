@@ -2776,8 +2776,6 @@ boolean P_SetupLevel(boolean skipprecip)
 	/// ... as long as this isn't a titlemap transition, that is
 	if (!titlemapinaction)
 		S_Start();
-	else
-		S_ChangeMusicInternal("titles", looptitle);
 
 	// Let's fade to black here
 	// But only if we didn't do the special stage wipe
