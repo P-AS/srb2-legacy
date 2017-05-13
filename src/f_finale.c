@@ -35,6 +35,10 @@
 #include "p_local.h"
 #include "p_setup.h"
 
+#ifdef HAVE_BLUA
+#include "lua_hud.h"
+#endif
+
 // Stage of animation:
 // 0 = text, 1 = art screen
 static INT32 finalecount;
@@ -1553,7 +1557,11 @@ void F_TitleScreenDrawer(void)
 
 	// rei|miru: use title pics?
 	if (hidetitlepics)
+#ifdef HAVE_BLUA
+		goto luahook;
+#else
 		return;
+#endif
 
 	V_DrawScaledPatch(30, 14, 0, ttwing);
 
@@ -1591,6 +1599,11 @@ void F_TitleScreenDrawer(void)
 	}
 
 	V_DrawScaledPatch(48, 142, 0,ttbanner);
+
+#ifdef HAVE_BLUA
+luahook:
+	LUAh_TitleHUD();
+#endif
 }
 
 // (no longer) De-Demo'd Title Screen
