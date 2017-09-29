@@ -316,11 +316,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 
 	#define ATTRUNUSED __attribute__((unused))
 
-	// Xbox-only macros
-	#ifdef _XBOX
-		#define FILESTAMP I_OutputMsg("%s:%d\n",__FILE__,__LINE__);
-		#define XBOXSTATIC static
-	#endif
+
 #elif defined (_MSC_VER)
 	#define ATTRNORETURN __declspec(noreturn)
 	#define ATTRINLINE __forceinline
@@ -374,12 +370,6 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 #ifndef ATTRNOINLINE
 #define ATTRNOINLINE
 #endif
-#ifndef XBOXSTATIC
-#define XBOXSTATIC
-#endif
-#ifndef FILESTAMP
-#define FILESTAMP
-#endif
 #ifndef PUREFUNC
 #define PUREFUNC
 #endif
@@ -389,7 +379,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 typedef struct
 {
 	UINT8 red;
-	UINT8 green;
+	UINT8 green; 
 	UINT8 blue;
 	UINT8 alpha;
 } byteColor_t;
@@ -423,7 +413,7 @@ typedef UINT32 tic_t;
 #else
 #define UINT2RGBA(a) (UINT32)((a&0xff)<<24)|((a&0xff00)<<8)|((a&0xff0000)>>8)|(((UINT32)a&0xff000000)>>24)
 #endif
-
+ 
 typedef UINT64 precise_t;
 
 #endif //__DOOMTYPE__
