@@ -3903,9 +3903,8 @@ FILESTAMP
 			// Update the nettics
 			nettics[node] = realend;
 
-			// Don't do anything for packets of type NODEKEEPALIVE?
-			if (netconsole == -1 || netbuffer->packettype == PT_NODEKEEPALIVE
-				|| netbuffer->packettype == PT_NODEKEEPALIVEMIS)
+			// This should probably still timeout though, as the node should always have a player 1 number
+			if (netconsole == -1)
 				break;
 
 			// If a client sends a ticcmd it should mean they are done receiving the savegame
@@ -3914,6 +3913,12 @@ FILESTAMP
 			// As long as clients send valid ticcmds, the server can keep running, so reset the timeout
 			/// \todo Use a separate cvar for that kind of timeout?
 			freezetimeout[node] = I_GetTime() + connectiontimeout;
+
+			// Don't do anything for packets of type NODEKEEPALIVE?
+			// Sryder 2018/07/01: Update the freezetimeout still!
+			if (netbuffer->packettype == PT_NODEKEEPALIVE
+				|| netbuffer->packettype == PT_NODEKEEPALIVEMIS)
+				break;
 
 			// If we've alredy received a ticcmd for this tic, just submit it for the next one.
 			tic_t faketic = maketic;
