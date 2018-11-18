@@ -17,6 +17,7 @@
 #include "m_fixed.h"
 #include "d_player.h"
 #include "r_defs.h"
+#include "f_finale.h"
 #ifndef __P_SPEC__
 #define __P_SPEC__
 

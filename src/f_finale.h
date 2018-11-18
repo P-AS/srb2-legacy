@@ -70,6 +70,7 @@ typedef enum
 } titlemap_enum;
 
 extern UINT8 titlemapinaction;
+extern mobj_t *titlemapcameraref;
 
 //
 // WIPE
