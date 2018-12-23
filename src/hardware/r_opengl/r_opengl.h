@@ -36,11 +36,9 @@
 #else
 #include <GL/gl.h>
 
-#ifndef MINI_GL_COMPATIBILITY
 #ifdef STATIC_OPENGL // Because of the 1.3 functions, you'll need GLext to compile it if static
 #define GL_GLEXT_PROTOTYPES
 #include <GL/glext.h>
-#endif
 #endif
 #endif
 
