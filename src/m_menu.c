@@ -227,7 +227,6 @@ static menu_t SP_NightsAttackDef, SP_NightsReplayDef, SP_NightsGuestReplayDef, S
 #ifndef NONET
 static void M_StartServerMenu(INT32 choice);
 static void M_ConnectMenu(INT32 choice);
-static void M_ConnectIPMenu(INT32 choice);
 #endif
 static void M_StartSplitServerMenu(INT32 choice);
 static void M_StartServer(INT32 choice);
@@ -301,7 +300,7 @@ static void M_OGL_DrawColorMenu(void);
 #endif
 #ifndef NONET
 static void M_DrawConnectMenu(void);
-static void M_DrawConnectIPMenu(void);
+static void M_DrawMPMainMenu(void);
 static void M_DrawRoomMenu(void);
 #endif
 static void M_DrawJoystick(void);
@@ -332,6 +331,9 @@ static void M_HandleVideoMode(INT32 choice);
 static void Nextmap_OnChange(void);
 static void Newgametype_OnChange(void);
 static void Dummymares_OnChange(void);
+
+// IP Validity function
+static boolean M_CheckIfValidIP(const char *str);
 
 // ==========================================================================
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
@@ -806,12 +808,12 @@ static menuitem_t MP_MainMenu[] =
 #ifndef NONET
 	{IT_CALL | IT_STRING, NULL, "HOST GAME",              M_StartServerMenu,      10},
 	{IT_CALL | IT_STRING, NULL, "JOIN GAME (Search)",	  M_ConnectMenu,		  30},
-	{IT_CALL | IT_STRING, NULL, "JOIN GAME (Specify IP)", M_ConnectIPMenu,        40},
+	{IT_KEYHANDLER | IT_STRING, NULL, "JOIN GAME (Specify IP)", M_HandleConnectIP,        40},
 #endif
-	{IT_CALL | IT_STRING, NULL, "TWO PLAYER GAME",        M_StartSplitServerMenu, 60},
+	{IT_CALL | IT_STRING, NULL, "TWO PLAYER GAME",        M_StartSplitServerMenu, 80},
 
-	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 1",         M_SetupMultiPlayer,     80},
-	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 2",         M_SetupMultiPlayer2,    90},
+	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 1",         M_SetupMultiPlayer,     100},
+	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 2",         M_SetupMultiPlayer2,    110},
 };
 
 static menuitem_t MP_ServerMenu[] =
@@ -888,11 +890,6 @@ static menuitem_t MP_RoomMenu[] =
 	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 144},
 	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 153},
 	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 162},
-};
-
-static menuitem_t MP_ConnectIPMenu[] =
-{
-	{IT_KEYHANDLER | IT_STRING, NULL, "  IP Address:", M_HandleConnectIP, 0},
 };
 #endif
 
@@ -1604,7 +1601,17 @@ menu_t SP_PlayerDef =
 };
 
 // Multiplayer
-menu_t MP_MainDef = DEFAULTMENUSTYLE("M_MULTI", MP_MainMenu, &MainDef, 60, 40);
+menu_t MP_MainDef =
+{
+	"M_MULTI",
+	sizeof (MP_MainMenu)/sizeof (menuitem_t),
+	&MainDef,
+	MP_MainMenu,
+	M_DrawMPMainMenu,
+	60, 45,
+	0,
+	M_CancelConnect
+};
 menu_t MP_ServerDef = MAPICONMENUSTYLE("M_MULTI", MP_ServerMenu, &MP_MainDef);
 #ifndef NONET
 menu_t MP_ConnectDef =
@@ -1615,17 +1622,6 @@ menu_t MP_ConnectDef =
 	MP_ConnectMenu,
 	M_DrawConnectMenu,
 	27,24,
-	0,
-	M_CancelConnect
-};
-menu_t MP_ConnectIPDef =
-{
-	"M_MULTI",
-	sizeof (MP_ConnectIPMenu)/sizeof (menuitem_t),
-	&MP_MainDef,
-	MP_ConnectIPMenu,
-	M_DrawConnectIPMenu,
-	27,40,
 	0,
 	M_CancelConnect
 };
@@ -6889,30 +6885,21 @@ static void M_StartServerMenu(INT32 choice)
 
 static char setupm_ip[16];
 
-// Connect using IP address Tails 11-19-2002
-static void M_ConnectIPMenu(INT32 choice)
-{
-	(void)choice;
-	// modified game check: no longer handled
-	// we don't request a restart unless the filelist differs
-
-	M_SetupNextMenu(&MP_ConnectIPDef);
-}
-
 // Draw the funky Connect IP menu. Tails 11-19-2002
 // So much work for such a little thing!
-static void M_DrawConnectIPMenu(void)
+static void M_DrawMPMainMenu(void)
 {
-	// use generic drawer for cursor, items and title
-	M_DrawGenericMenu();
-
-	// draw name string
-	V_DrawString(128,40, V_MONOSPACE, setupm_ip);
-
-	// draw text cursor for name
-	if (itemOn == 0 &&
+ 	// use generic drawer for cursor, items and title
+ 	M_DrawGenericMenu();
+ 
+ 	// draw name string
+	M_DrawTextBox(58,90,22,1);
+	V_DrawString(68,98, V_MONOSPACE, setupm_ip);
+ 
+ 	// draw text cursor for name
+	if (itemOn == 2 &&
 	    skullAnimCounter < 4)   //blink cursor
-		V_DrawCharacter(128+V_StringWidth(setupm_ip, V_MONOSPACE),40,'_',false);
+		V_DrawCharacter(68+V_StringWidth(setupm_ip, V_MONOSPACE),98,'_',false);
 }
 
 // Tails 11-19-2002
@@ -6920,9 +6907,22 @@ static void M_ConnectIP(INT32 choice)
 {
 	(void)choice;
 
+	M_ClearMenus(true);
+
 	if (*setupm_ip == 0)
 	{
 		M_StartMessage("You must specify an IP address.\n", NULL, MM_NOTHING);
+		return;
+	}
+
+	if (!M_CheckIfValidIP(setupm_ip) && strstr(setupm_ip, ":") == NULL)
+	{
+		M_StartMessage("You must specify a valid IP address.\n", NULL, MM_NOTHING);
+		return;
+	}
+
+	if (setupm_ip[(strlen(setupm_ip)-1)] == 58) {
+		M_StartMessage("Please specify a valid port.\n", NULL, MM_NOTHING);
 		return;
 	}
 
@@ -6938,16 +6938,70 @@ static void M_ConnectIP(INT32 choice)
 }
 
 // Tails 11-19-2002
+
+static boolean M_CheckIfValidIP(const char *str)
+{
+    int segs = 0;   // Segment count.
+    int chcnt = 0;  // Character count within segment.
+    int accum = 0;  // Accumulator for segment.
+    // Catch NULL pointer.
+    if (str == NULL)
+        return false;
+    // Process every character in string.
+    while (*str != '\0') {
+        // Segment changeover.
+        if (*str == '.') {
+            // Must have some digits in segment.
+            if (chcnt == 0)
+                return false;
+            // Limit number of segments.
+            if (++segs == 4)
+                return false;
+            // Reset segment values and restart loop.
+            chcnt = accum = 0;
+            str++;
+            continue;
+        }
+        // Check numeric.
+        if ((*str < '0') || (*str > '9'))
+            return false;
+        // Accumulate and check segment.
+        if ((accum = accum * 10 + *str - '0') > 255)
+            return false;
+        // Advance other segment specific stuff and continue loop.
+        chcnt++;
+        str++;
+    }
+    // Check enough segments and enough characters in last segment.
+    if (segs != 3)
+        return false;
+    if (chcnt == 0)
+        return false;
+    // Address okay.
+    return true;
+}
+
 static void M_HandleConnectIP(INT32 choice)
 {
-	size_t   l;
-	boolean  exitmenu = false;  // exit to previous menu and send name change
+	size_t l;
+	int colons = 0; // For checking amount of colons in the string
+	boolean exitmenu = false;  // exit to previous menu and send name change
 
 	switch (choice)
 	{
+		case KEY_DOWNARROW:
+			M_NextOpt();
+			S_StartSound(NULL,sfx_menu1); // Tails
+			break;
+
+		case KEY_UPARROW:
+			M_PrevOpt();
+			S_StartSound(NULL,sfx_menu1); // Tails
+			break;
+
 		case KEY_ENTER:
 			S_StartSound(NULL,sfx_menu1); // Tails
-			M_ClearMenus(true);
+			currentMenu->lastOn = itemOn;
 			M_ConnectIP(1);
 			break;
 
@@ -6956,31 +7010,51 @@ static void M_HandleConnectIP(INT32 choice)
 			break;
 
 		case KEY_BACKSPACE:
-			if ((l = strlen(setupm_ip))!=0 && itemOn == 0)
+			skullAnimCounter = 4; // For a nice looking cursor
+			if ((l = strlen(setupm_ip)) != 0)
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
-				setupm_ip[l-1] =0;
+				setupm_ip[l-1] = 0;
+			}
+			break;
+
+		case KEY_DEL:
+			skullAnimCounter = 4; // For a nice looking cursor
+			if (setupm_ip[0])
+			{
+				S_StartSound(NULL,sfx_menu1); // Tails
+				setupm_ip[0] = 0;
 			}
 			break;
 
 		default:
+			skullAnimCounter = 4; // For a nice looking cursor
 			l = strlen(setupm_ip);
-			if (l < 16-1 && (choice == 46 || (choice >= 48 && choice <= 57))) // Rudimentary number and period enforcing
+			if (l >= 19-1)
+				break;
+
+			int i;
+			for (i = 0; i<l; i++)
+				if (setupm_ip[i] == 58)
+					colons++;
+
+			if (choice == 46 || (choice == 58 && colons == 0 && M_CheckIfValidIP(setupm_ip)) || (choice >= 48 && choice <= 57)) // Rudimentary number, period, and colon enforcing
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
-				setupm_ip[l] =(char)choice;
-				setupm_ip[l+1] =0;
+				setupm_ip[l] = (char)choice;
+				setupm_ip[l+1] = 0;
 			}
-			else if (l < 16-1 && choice >= 199 && choice <= 211 && choice != 202 && choice != 206) //numpad too!
+			else if (choice >= 199 && choice <= 211 && choice != 202 && choice != 206) //numpad too!
 			{
-				XBOXSTATIC char keypad_translation[] = {'7','8','9','-','4','5','6','+','1','2','3','0','.'};
+				char keypad_translation[] = {'7','8','9','-','4','5','6','+','1','2','3','0','.'};
 				choice = keypad_translation[choice - 199];
 				S_StartSound(NULL,sfx_menu1); // Tails
-				setupm_ip[l] =(char)choice;
-				setupm_ip[l+1] =0;
+				setupm_ip[l] = (char)choice;
+				setupm_ip[l+1] = 0;
 			}
-			break;
-	}
+
+ 			break;
+ 	}
 
 	if (exitmenu)
 	{
