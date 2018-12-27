@@ -70,7 +70,6 @@ extern FILE             *gllogstream;
 #endif
 
 #ifndef DRIVER_STRING
-//    #define USE_PALETTED_TEXTURE
 #define DRIVER_STRING "HWRAPI Init(): SRB2 OpenGL renderer" // Tails
 #endif
 
@@ -88,10 +87,6 @@ int SetupPixelFormat(INT32 WantColorBits, INT32 WantStencilBits, INT32 WantDepth
 void SetModelView(GLint w, GLint h);
 void SetStates(void);
 FUNCMATH float byteasfloat(UINT8 fbyte);
-#ifdef USE_PALETTED_TEXTURE
-extern PFNGLCOLORTABLEEXTPROC glColorTableEXT;
-extern GLubyte                palette_tex[256*3];
-#endif
 
 #ifndef GL_EXT_texture_filter_anisotropic
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT     0x84FE
