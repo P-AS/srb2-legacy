@@ -3302,6 +3302,11 @@ boolean P_AddWadFile(const char *wadfilename)
 	//
 	R_AddSkins(wadnum); // faB: wadfile index in wadfiles[]
 
+	// 
+	// edit music defs
+	//
+	S_LoadMusicDefs(wadnum);
+
 	//
 	// search for maps
 	//

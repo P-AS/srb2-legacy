@@ -145,6 +145,23 @@ boolean S_SetMusicPosition(UINT32 position);
 UINT32 S_GetMusicPosition(void);
 
 //
+// Music credits
+//
+
+typedef struct musicdef_s
+{
+	char name[7];
+	//char usage[256];
+	char source[256];
+	struct musicdef_s *next;
+} musicdef_t;
+
+extern musicdef_t *musicdefstart;
+
+void S_LoadMusicDefs(UINT16 wadnum);
+void S_InitMusicDefs(void);
+
+//
 // Music Playback
 //
 

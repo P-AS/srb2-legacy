@@ -1706,6 +1706,8 @@ int W_VerifyNMUSlumps(const char *filename)
 		{"YB_", 3}, // Intermission graphics, goes with the above
 		{"M_", 2}, // As does menu stuff
 
+		{"MUSICDEF", 8}, // Song definitions
+
 		{NULL, 0},
 	};
 	return W_VerifyFile(filename, NMUSlist, false);
