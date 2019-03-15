@@ -1256,7 +1256,6 @@ static UINT32    queue_fadeinms;
 /// ------------------------
 
 musicdef_t *musicdefstart = NULL; // First music definition
-struct cursongcredit cursongcredit; // Currently displayed song credit info
 
 //
 // search for music definition in wad
