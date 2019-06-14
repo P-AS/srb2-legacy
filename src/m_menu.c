@@ -6894,12 +6894,22 @@ static void M_DrawMPMainMenu(void)
  
  	// draw name string
 	M_DrawTextBox(58,90,22,1);
-	V_DrawString(68,98, V_MONOSPACE, setupm_ip);
- 
- 	// draw text cursor for name
-	if (itemOn == 2 &&
-	    skullAnimCounter < 4)   //blink cursor
-		V_DrawCharacter(68+V_StringWidth(setupm_ip, V_MONOSPACE),98,'_',false);
+	if ( strlen(setupm_ip) > 16 ) {
+		V_DrawThinString(68,98, V_ALLOWLOWERCASE, setupm_ip);
+	 
+	 	// draw text cursor for name
+		if (itemOn == 2 &&
+		    skullAnimCounter < 4)   //blink cursor
+			V_DrawCharacter(68+V_ThinStringWidth(setupm_ip, V_ALLOWLOWERCASE),98,'_',false);
+	} else {
+		V_DrawString(68,98, V_ALLOWLOWERCASE, setupm_ip);
+	 
+	 	// draw text cursor for name
+		if (itemOn == 2 &&
+		    skullAnimCounter < 4)   //blink cursor
+			V_DrawCharacter(68+V_StringWidth(setupm_ip, V_ALLOWLOWERCASE),98,'_',false);
+	}
+	
 }
 
 // Tails 11-19-2002
@@ -6917,8 +6927,17 @@ static void M_ConnectIP(INT32 choice)
 
 	if (!M_CheckIfValidIP(setupm_ip) && strstr(setupm_ip, ":") == NULL)
 	{
-		M_StartMessage("You must specify a valid IP address.\n", NULL, MM_NOTHING);
-		return;
+		int i = 0;
+		while (setupm_ip[i])
+		{
+			if (isalpha(setupm_ip[i])) {
+				break;
+			} else {
+				M_StartMessage("You must specify a valid IP address.\n", NULL, MM_NOTHING);
+				return;
+			}
+			i++;
+		}
 	}
 
 	if (setupm_ip[(strlen(setupm_ip)-1)] == 58) {
@@ -6984,7 +7003,6 @@ static boolean M_CheckIfValidIP(const char *str)
 static void M_HandleConnectIP(INT32 choice)
 {
 	size_t l;
-	int colons = 0; // For checking amount of colons in the string
 	boolean exitmenu = false;  // exit to previous menu and send name change
 
 	switch (choice)
@@ -7013,7 +7031,7 @@ static void M_HandleConnectIP(INT32 choice)
 			skullAnimCounter = 4; // For a nice looking cursor
 			if ((l = strlen(setupm_ip)) != 0)
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				//S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_ip[l-1] = 0;
 			}
 			break;
@@ -7022,7 +7040,7 @@ static void M_HandleConnectIP(INT32 choice)
 			skullAnimCounter = 4; // For a nice looking cursor
 			if (setupm_ip[0])
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				//S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_ip[0] = 0;
 			}
 			break;
@@ -7030,17 +7048,12 @@ static void M_HandleConnectIP(INT32 choice)
 		default:
 			skullAnimCounter = 4; // For a nice looking cursor
 			l = strlen(setupm_ip);
-			if (l >= 19-1)
+			if (l >= 32-1)
 				break;
 
-			int i;
-			for (i = 0; i<l; i++)
-				if (setupm_ip[i] == 58)
-					colons++;
-
-			if (choice == 46 || (choice == 58 && colons == 0 && M_CheckIfValidIP(setupm_ip)) || (choice >= 48 && choice <= 57)) // Rudimentary number, period, and colon enforcing
+			if (choice == 46 || (choice >= 65 && choice <= 90 ) || (choice >= 97 && choice <= 122 ) || (choice >= 48 && choice <= 58)) // Rudimentary number, period, and colon enforcing
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				//S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_ip[l] = (char)choice;
 				setupm_ip[l+1] = 0;
 			}
@@ -7048,7 +7061,7 @@ static void M_HandleConnectIP(INT32 choice)
 			{
 				char keypad_translation[] = {'7','8','9','-','4','5','6','+','1','2','3','0','.'};
 				choice = keypad_translation[choice - 199];
-				S_StartSound(NULL,sfx_menu1); // Tails
+				//S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_ip[l] = (char)choice;
 				setupm_ip[l+1] = 0;
 			}
