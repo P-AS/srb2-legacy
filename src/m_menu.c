@@ -333,7 +333,7 @@ static void Newgametype_OnChange(void);
 static void Dummymares_OnChange(void);
 
 // IP Validity function
-static boolean M_CheckIfValidIP(const char *str);
+static boolean M_CheckIfValidIPv4(const char *str);
 
 // ==========================================================================
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
@@ -6893,21 +6893,30 @@ static void M_DrawMPMainMenu(void)
  	M_DrawGenericMenu();
  
  	// draw name string
-	M_DrawTextBox(58,90,22,1);
-	if ( strlen(setupm_ip) > 16 ) {
-		V_DrawThinString(68,98, V_ALLOWLOWERCASE, setupm_ip);
+	M_DrawTextBox(55,90,22,1);
+	if ( strlen(setupm_ip) > 21 ) { // Is setupm_ip larger than the textbox can fit?
+		
+		char left_arrow[1+1] = "\x1C"; // Left arrow
+
+		char new_setupm_ip[21]; // Last 21 characters of setupm_ip
+		strcat(new_setupm_ip, setupm_ip+(strlen(setupm_ip)-21));
+
+		if (itemOn == 2)
+			V_DrawThinString(53 + (skullAnimCounter % 8) / 4,98, V_ALLOWLOWERCASE|V_MONOSPACE|V_YELLOWMAP, left_arrow); // Draw the left arrow
+
+		V_DrawString(65,98, V_ALLOWLOWERCASE|V_MONOSPACE, new_setupm_ip); // Draw the truncated setupm_ip.
 	 
 	 	// draw text cursor for name
 		if (itemOn == 2 &&
 		    skullAnimCounter < 4)   //blink cursor
-			V_DrawCharacter(68+V_ThinStringWidth(setupm_ip, V_ALLOWLOWERCASE),98,'_',false);
+			V_DrawCharacter(65+V_StringWidth(new_setupm_ip, V_ALLOWLOWERCASE|V_MONOSPACE),98,'_',false);
 	} else {
-		V_DrawString(68,98, V_ALLOWLOWERCASE, setupm_ip);
+		V_DrawString(65,98, V_ALLOWLOWERCASE|V_MONOSPACE, setupm_ip);
 	 
 	 	// draw text cursor for name
 		if (itemOn == 2 &&
 		    skullAnimCounter < 4)   //blink cursor
-			V_DrawCharacter(68+V_StringWidth(setupm_ip, V_ALLOWLOWERCASE),98,'_',false);
+			V_DrawCharacter(65+V_StringWidth(setupm_ip, V_ALLOWLOWERCASE|V_MONOSPACE),98,'_',false);
 	}
 	
 }
@@ -6919,32 +6928,35 @@ static void M_ConnectIP(INT32 choice)
 
 	M_ClearMenus(true);
 
-	if (*setupm_ip == 0)
+	if (*setupm_ip == 0) // Length 0
 	{
 		M_StartMessage("You must specify an IP address.\n", NULL, MM_NOTHING);
 		return;
 	}
 
-	if (!M_CheckIfValidIP(setupm_ip) && strstr(setupm_ip, ":") == NULL)
+	if (!M_CheckIfValidIPv4(setupm_ip) && strstr(setupm_ip, ":") == NULL) // Not IPv4 and no colons
 	{
 		int i = 0;
-		while (setupm_ip[i])
+		while (setupm_ip[i]) // For each char in setupm_ip
 		{
-			if (isalpha(setupm_ip[i])) {
-				break;
-			} else {
+			// Is it an alphabet letter or brackets?
+			if (isalpha(setupm_ip[i]) || setupm_ip[i] == 91 || setupm_ip[i] == 93) {
+				break; // It's probably valid
+			} else { // Otherwise
+				// It's invalid
 				M_StartMessage("You must specify a valid IP address.\n", NULL, MM_NOTHING);
-				return;
+				return; 
 			}
 			i++;
 		}
 	}
 
-	if (setupm_ip[(strlen(setupm_ip)-1)] == 58) {
+	if (setupm_ip[(strlen(setupm_ip)-1)] == 58) { // If there is a colon at the end of the char
 		M_StartMessage("Please specify a valid port.\n", NULL, MM_NOTHING);
 		return;
 	}
 
+	// Checks passed, attempt connection!
 	COM_BufAddText(va("connect \"%s\"\n", setupm_ip));
 
 	// A little "please wait" message.
@@ -6958,7 +6970,7 @@ static void M_ConnectIP(INT32 choice)
 
 // Tails 11-19-2002
 
-static boolean M_CheckIfValidIP(const char *str)
+static boolean M_CheckIfValidIPv4(const char *str)
 {
     int segs = 0;   // Segment count.
     int chcnt = 0;  // Character count within segment.
@@ -7048,10 +7060,34 @@ static void M_HandleConnectIP(INT32 choice)
 		default:
 			skullAnimCounter = 4; // For a nice looking cursor
 			l = strlen(setupm_ip);
-			if (l >= 32-1)
+			if (l >= 40)
 				break;
+			
+			const char *paste = I_ClipboardPaste(); // Paste clipboard into char
 
-			if (choice == 46 || (choice >= 65 && choice <= 90 ) || (choice >= 97 && choice <= 122 ) || (choice >= 48 && choice <= 58)) // Rudimentary number, period, and colon enforcing
+			if ( ctrldown ) {
+				switch (choice) {
+					case 118: // ctrl+v, pasting
+						if (paste != NULL)
+							strcat(setupm_ip, paste); // Concat the ip field with clipboard
+						if ( strlen(setupm_ip) > 40 )
+							setupm_ip[40] = 0; // Truncate to maximum length
+						break;
+					case 99: // ctrl+c, copying
+						I_ClipboardCopy(setupm_ip, l);
+						break;
+					case 120: // ctrl+x, cutting
+						I_ClipboardCopy(setupm_ip, l);
+						setupm_ip[0] = 0;
+						break;
+					default: // otherwise do nothing
+						break;
+				}
+				break; // break 
+			}
+			
+			// Rudimentary number, letter, period, and colon enforcing
+			if (choice == 46 || choice == 91 || choice == 93 || (choice >= 65 && choice <= 90 ) || (choice >= 97 && choice <= 122 ) || (choice >= 48 && choice <= 58))
 			{
 				//S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_ip[l] = (char)choice;
