@@ -1706,6 +1706,8 @@ void V_DrawSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *st
 	fixed_t cx = x, cy = y;
 	INT32 w, c, dupx, dupy, scrwidth, center = 0, left = 0;
 	const char *ch = string;
+	INT32 charflags = 0;
+	const UINT8 *colormap = NULL;
 	INT32 spacewidth = 2, charwidth = 0;
 
 	INT32 lowercase = (option & V_ALLOWLOWERCASE);
@@ -1725,6 +1727,8 @@ void V_DrawSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *st
 		scrwidth -= left;
 	}
 
+	charflags = (option & V_CHARCOLORMASK);
+
 	switch (option & V_SPACINGMASK)
 	{
 		case V_MONOSPACE:
@@ -1743,8 +1747,13 @@ void V_DrawSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *st
 	{
 		if (!*ch)
 			break;
-		if (*ch & 0x80) //color ignoring
+		if (*ch & 0x80) //color parsing -x 2.16.09
+		{
+			// manually set flags override color codes
+			if (!(option & V_CHARCOLORMASK))
+				charflags = ((*ch & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
 			continue;
+		}
 		if (*ch == '\n')
 		{
 			cx = x;
@@ -1785,7 +1794,9 @@ void V_DrawSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *st
 			continue;
 		}
 
-		V_DrawSciencePatch(cx + (center<<FRACBITS), cy, option, hu_font[c], FRACUNIT/2);
+		colormap = V_GetStringColormap(charflags);
+
+		V_DrawFixedPatch(cx + (center<<FRACBITS), cy, FRACUNIT/2, option, hu_font[c], colormap);
 
 		cx += w<<FRACBITS;
 	}
@@ -1797,6 +1808,8 @@ void V_DrawThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *str
 	fixed_t cx = x, cy = y;
 	INT32 w, c, dupx, dupy, scrwidth, center = 0, left = 0;
 	const char *ch = string;
+	INT32 charflags = 0;
+	const UINT8 *colormap = NULL;
 	INT32 spacewidth = 2, charwidth = 0;
 
 	INT32 lowercase = (option & V_ALLOWLOWERCASE);
@@ -1816,6 +1829,8 @@ void V_DrawThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *str
 		scrwidth -= left;
 	}
 
+	charflags = (option & V_CHARCOLORMASK);
+
 	switch (option & V_SPACINGMASK)
 	{
 		case V_MONOSPACE:
@@ -1834,8 +1849,13 @@ void V_DrawThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *str
 	{
 		if (!*ch)
 			break;
-		if (*ch & 0x80) //color ignoring
+		if (*ch & 0x80) //color parsing -x 2.16.09
+		{
+			// manually set flags override color codes
+			if (!(option & V_CHARCOLORMASK))
+				charflags = ((*ch & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
 			continue;
+		}
 		if (*ch == '\n')
 		{
 			cx = x;
@@ -1876,7 +1896,9 @@ void V_DrawThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *str
 			continue;
 		}
 
-		V_DrawSciencePatch(cx + (center<<FRACBITS), cy, option, tny_font[c], FRACUNIT);
+		colormap = V_GetStringColormap(charflags);
+
+		V_DrawFixedPatch(cx + (center<<FRACBITS), cy, FRACUNIT, option, tny_font[c], colormap);
 
 		cx += w<<FRACBITS;
 	}
