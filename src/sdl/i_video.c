@@ -142,6 +142,7 @@ static       SDL_bool    borderlesswindow = SDL_FALSE;
 // SDL2 vars
 SDL_Window   *window;
 SDL_Renderer *renderer;
+static int renderflags;
 static SDL_Texture  *texture;
 static SDL_bool      havefocus = SDL_TRUE;
 static const char *fallback_resolution_name = "Fallback";
@@ -1290,11 +1291,6 @@ void VID_PrepareModeList(void)
 #endif
 }
 
-//     SOMETIME IN
-//      THE FUTURE
-// WHEN I ACTUALLY RENDER
-//      THIS FRAME
-static int renderflags;
 static SDL_bool Impl_CreateContext(int flags)
 {
 	// Renderer-specific stuff
@@ -1338,13 +1334,6 @@ void VID_CheckRenderer(void)
 	{
 		rendermode = setrenderneeded;
 		Impl_CreateContext(renderflags);
-		if (rendermode == render_soft)
-		{
-#ifdef HWRENDER
-			HWR_FreeTextureCache();
-#endif
-			SCR_SetDrawFuncs();
-		}
 	}
 
 	SDLSetMode(vid.width, vid.height, USE_FULLSCREEN);
@@ -1357,6 +1346,10 @@ void VID_CheckRenderer(void)
 			bufSurface = NULL;
 		}
 		Impl_VideoSetupBuffer();
+#ifdef HWRENDER
+		HWR_FreeTextureCache();
+#endif
+		SCR_SetDrawFuncs();
 	}
 	else if (rendermode == render_opengl)
 	{
@@ -1433,10 +1426,10 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 	if (borderlesswindow)
 		flags |= SDL_WINDOW_BORDERLESS;
 
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
+//#ifdef HWRENDER
+	//if (rendermode == render_opengl)
 		flags |= SDL_WINDOW_OPENGL;
-#endif
+//#endif
 
 	// Create a window
 	window = SDL_CreateWindow("SRB2 "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
