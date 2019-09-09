@@ -142,7 +142,6 @@ static       SDL_bool    borderlesswindow = SDL_FALSE;
 // SDL2 vars
 SDL_Window   *window;
 SDL_Renderer *renderer;
-static int renderflags;
 static SDL_Texture  *texture;
 static SDL_bool      havefocus = SDL_TRUE;
 static const char *fallback_resolution_name = "Fallback";
@@ -1291,7 +1290,7 @@ void VID_PrepareModeList(void)
 #endif
 }
 
-static SDL_bool Impl_CreateContext(int flags)
+static SDL_bool Impl_CreateContext(void)
 {
 	// Renderer-specific stuff
 #ifdef HWRENDER
@@ -1310,7 +1309,7 @@ static SDL_bool Impl_CreateContext(int flags)
 #endif
 	if (rendermode == render_soft)
 	{
-		flags = 0; // Use this to set SDL_RENDERER_* flags now
+		int flags = 0; // Use this to set SDL_RENDERER_* flags now
 		if (usesdl2soft)
 			flags |= SDL_RENDERER_SOFTWARE;
 		else if (cv_vidwait.value)
@@ -1330,10 +1329,13 @@ static SDL_bool Impl_CreateContext(int flags)
 
 void VID_CheckRenderer(void)
 {
+	if (dedicated)
+		return;
+
 	if (setrenderneeded)
 	{
 		rendermode = setrenderneeded;
-		Impl_CreateContext(renderflags);
+		Impl_CreateContext();
 	}
 
 	SDLSetMode(vid.width, vid.height, USE_FULLSCREEN);
@@ -1365,29 +1367,15 @@ INT32 VID_SetMode(INT32 modeNum)
 	vid.recalc = 1;
 	vid.bpp = 1;
 
-	if (modeNum >= 0 && modeNum < MAXWINMODES)
-	{
-		vid.width = windowedModes[modeNum][0];
-		vid.height = windowedModes[modeNum][1];
-		vid.modenum = modeNum;
-	}
-	else
-	{
-		// just set the desktop resolution as a fallback
-		SDL_DisplayMode mode;
-		SDL_GetWindowDisplayMode(window, &mode);
-		if (mode.w >= 2048)
-		{
-			vid.width = 1920;
-			vid.height = 1200;
-		}
-		else
-		{
-			vid.width = mode.w;
-			vid.height = mode.h;
-		}
-		vid.modenum = -1;
-	}
+	if (modeNum < 0)
+		modeNum = 0;
+	if (modeNum >= MAXWINMODES)
+		modeNum = MAXWINMODES-1;
+
+	vid.width = windowedModes[modeNum][0];
+	vid.height = windowedModes[modeNum][1];
+	vid.modenum = modeNum;
+
 	//Impl_SetWindowName("SRB2 "VERSIONSTRING);
 /*<<<<<<< HEAD
 
@@ -1441,8 +1429,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 		return SDL_FALSE;
 	}
 
-	renderflags = flags;
-	return Impl_CreateContext(flags);
+	return Impl_CreateContext();
 }
 
 /*

@@ -98,8 +98,6 @@ const char *R_ColormapNameForNum(INT32 num);
 UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b);
 
 extern INT32 numtextures;
-extern boolean needpatchflush;
-extern boolean needpatchrecache;
 
 #endif
 
