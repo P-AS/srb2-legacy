@@ -23,6 +23,7 @@
 #include "g_input.h"
 #include "hu_stuff.h"
 #include "keys.h"
+#include "r_main.h"
 #include "r_defs.h"
 #include "sounds.h"
 #include "st_stuff.h"
@@ -1579,10 +1580,7 @@ void CON_Drawer(void)
 		return;
 
 	if (needpatchrecache)
-	{
-		Z_FlushCachedPatches();
-		HU_LoadGraphics();
-	}
+		R_ReloadHUDGraphics();
 
 	if (con_recalc)
 	{
