@@ -6883,7 +6883,7 @@ static void M_StartServerMenu(INT32 choice)
 // CONNECT VIA IP
 // ==============
 
-static char setupm_ip[16];
+static char setupm_ip[128];
 
 // Draw the funky Connect IP menu. Tails 11-19-2002
 // So much work for such a little thing!
@@ -6891,9 +6891,10 @@ static void M_DrawMPMainMenu(void)
 {
  	// use generic drawer for cursor, items and title
  	M_DrawGenericMenu();
- 
+
  	// draw name string
 	M_DrawTextBox(55,90,22,1);
+
 	if ( strlen(setupm_ip) > 21 ) { // Is setupm_ip larger than the textbox can fit?
 		
 		char left_arrow[1+1] = "\x1C"; // Left arrow
@@ -7059,8 +7060,9 @@ static void M_HandleConnectIP(INT32 choice)
 
 		default:
 			skullAnimCounter = 4; // For a nice looking cursor
+
 			l = strlen(setupm_ip);
-			if (l >= 40)
+			if (l >= 127)
 				break;
 			
 			const char *paste = I_ClipboardPaste(); // Paste clipboard into char
@@ -7070,8 +7072,7 @@ static void M_HandleConnectIP(INT32 choice)
 					case 118: // ctrl+v, pasting
 						if (paste != NULL)
 							strcat(setupm_ip, paste); // Concat the ip field with clipboard
-						if ( strlen(setupm_ip) > 40 )
-							setupm_ip[40] = 0; // Truncate to maximum length
+						setupm_ip[127] = 0; // Truncate to maximum length
 						break;
 					case 99: // ctrl+c, copying
 						I_ClipboardCopy(setupm_ip, l);
