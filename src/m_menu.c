@@ -6889,14 +6889,14 @@ static char setupm_ip[128];
 // So much work for such a little thing!
 static void M_DrawMPMainMenu(void)
 {
- 	// use generic drawer for cursor, items and title
- 	M_DrawGenericMenu();
+	// use generic drawer for cursor, items and title
+	M_DrawGenericMenu();
 
- 	// draw name string
+	// draw name string
 	M_DrawTextBox(55,90,22,1);
 
 	if ( strlen(setupm_ip) > 21 ) { // Is setupm_ip larger than the textbox can fit?
-		
+
 		char left_arrow[1+1] = "\x1C"; // Left arrow
 
 		char new_setupm_ip[21]; // Last 21 characters of setupm_ip
@@ -6913,13 +6913,12 @@ static void M_DrawMPMainMenu(void)
 			V_DrawCharacter(65+V_StringWidth(new_setupm_ip, V_ALLOWLOWERCASE|V_MONOSPACE),98,'_',false);
 	} else {
 		V_DrawString(65,98, V_ALLOWLOWERCASE|V_MONOSPACE, setupm_ip);
-	 
-	 	// draw text cursor for name
+
+		// draw text cursor for name
 		if (itemOn == 2 &&
 		    skullAnimCounter < 4)   //blink cursor
 			V_DrawCharacter(65+V_StringWidth(setupm_ip, V_ALLOWLOWERCASE|V_MONOSPACE),98,'_',false);
 	}
-	
 }
 
 // Tails 11-19-2002
@@ -6946,7 +6945,7 @@ static void M_ConnectIP(INT32 choice)
 			} else { // Otherwise
 				// It's invalid
 				M_StartMessage("You must specify a valid IP address.\n", NULL, MM_NOTHING);
-				return; 
+				return;
 			}
 			i++;
 		}
@@ -6968,8 +6967,6 @@ static void M_ConnectIP(INT32 choice)
 	if (rendermode == render_soft)
 		I_FinishUpdate(); // page flip or blit buffer
 }
-
-// Tails 11-19-2002
 
 static boolean M_CheckIfValidIPv4(const char *str)
 {
@@ -7012,6 +7009,8 @@ static boolean M_CheckIfValidIPv4(const char *str)
     // Address okay.
     return true;
 }
+
+// Tails 11-19-2002
 
 static void M_HandleConnectIP(INT32 choice)
 {
@@ -7064,7 +7063,7 @@ static void M_HandleConnectIP(INT32 choice)
 			l = strlen(setupm_ip);
 			if (l >= 127)
 				break;
-			
+
 			const char *paste = I_ClipboardPaste(); // Paste clipboard into char
 
 			if ( ctrldown ) {
@@ -7084,7 +7083,7 @@ static void M_HandleConnectIP(INT32 choice)
 					default: // otherwise do nothing
 						break;
 				}
-				break; // break 
+				break; // break
 			}
 			
 			// Rudimentary number, letter, period, and colon enforcing
@@ -7103,8 +7102,8 @@ static void M_HandleConnectIP(INT32 choice)
 				setupm_ip[l+1] = 0;
 			}
 
- 			break;
- 	}
+			break;
+	}
 
 	if (exitmenu)
 	{
