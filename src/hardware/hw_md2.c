@@ -362,8 +362,11 @@ static void md2_loadTexture(md2_t *model)
 		Z_Free(grpatch->mipmap->grInfo.data);
 	}
 	else
+	{
 		grpatch = Z_Calloc(sizeof *grpatch, PU_HWRPATCHINFO,
 		                   &(model->grpatch));
+		grpatch->mipmap = Z_Calloc(sizeof (GLMipmap_t), PU_HWRPATCHINFO, NULL);
+	}
 
 	if (!grpatch->mipmap->downloaded && !grpatch->mipmap->grInfo.data)
 	{
@@ -413,8 +416,11 @@ static void md2_loadBlendTexture(md2_t *model)
 		Z_Free(grpatch->mipmap->grInfo.data);
 	}
 	else
+	{
 		grpatch = Z_Calloc(sizeof *grpatch, PU_HWRPATCHINFO,
 		                   &(model->blendgrpatch));
+		grpatch->mipmap = Z_Calloc(sizeof (GLMipmap_t), PU_HWRPATCHINFO, NULL);
+	}
 
 	if (!grpatch->mipmap->downloaded && !grpatch->mipmap->grInfo.data)
 	{
