@@ -140,6 +140,10 @@
 #define LOGMESSAGES // write message in log.txt
 #endif
 
+#if (defined (__unix__) && !defined (_MSDOS)) || defined (UNIXCOMMON)
+#define NEWSIGNALHANDLER
+#endif
+
 #ifdef LOGMESSAGES
 extern FILE *logstream;
 #endif
