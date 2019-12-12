@@ -2212,7 +2212,6 @@ void I_Quit(void)
 	if (quiting) goto death;
 	SDLforceUngrabMouse();
 	quiting = SDL_FALSE;
-	I_ShutdownConsole();
 	M_SaveConfig(NULL); //save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
@@ -2331,8 +2330,6 @@ void I_Error(const char *error, ...)
 	I_OutputMsg("\nI_Error(): %s\n", buffer);
 	// ---
 
-	I_ShutdownConsole();
-
 	M_SaveConfig(NULL); // save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
@@ -2432,6 +2429,8 @@ void I_RemoveExitFunc(void (*func)())
 void I_ShutdownSystem(void)
 {
 	INT32 c;
+
+	I_ShutdownConsole();
 
 	for (c = MAX_QUIT_FUNCS-1; c >= 0; c--)
 		if (quit_funcs[c])
