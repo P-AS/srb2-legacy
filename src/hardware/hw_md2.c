@@ -371,6 +371,9 @@ static void md2_loadTexture(md2_t *model)
 	if (!grpatch->mipmap->downloaded && !grpatch->mipmap->grInfo.data)
 	{
 		int w = 0, h = 0;
+		UINT32 size;
+		RGBA_t *image;
+
 #ifdef HAVE_PNG
 		grpatch->mipmap->grInfo.format = PNG_Load(filename, &w, &h, grpatch);
 		if (grpatch->mipmap->grInfo.format == 0)
@@ -389,6 +392,15 @@ static void md2_loadTexture(md2_t *model)
 		grpatch->height = (INT16)h;
 		grpatch->mipmap->width = (UINT16)w;
 		grpatch->mipmap->height = (UINT16)h;
+
+		// Lactozilla: Apply colour cube
+		image = grpatch->mipmap->grInfo.data;
+		size = w*h;
+		while (size--)
+		{
+			V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
+			image++;
+		}
 
 		// not correct!
 		grpatch->mipmap->grInfo.smallLodLog2 = GR_LOD_LOG2_256;
