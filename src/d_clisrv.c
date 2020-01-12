@@ -1140,7 +1140,7 @@ static void CL_DrawPlayerList(void)
 	char player_name[MAXPLAYERNAME+1];
 	if (serverlist[joinnode].info.numberofplayer > 0)
 		for (i = 0; i < MAXPLAYERS; i++)
-			if (playerinfo[i].node < 255)
+			if (playerinfo[i].num < 255)
 			{
 				strncpy(player_name, playerinfo[i].name, MAXPLAYERNAME);
 				player_name[MAXPLAYERNAME] = '\0';
@@ -1475,11 +1475,11 @@ static void SV_SendPlayerInfo(INT32 node)
 	{
 		if (!playeringame[i])
 		{
-			netbuffer->u.playerinfo[i].node = 255; // This slot is empty.
+			netbuffer->u.playerinfo[i].num = 255; // This slot is empty.
 			continue;
 		}
 
-		netbuffer->u.playerinfo[i].node = (UINT8)playernode[i];
+		netbuffer->u.playerinfo[i].num = (UINT8)playernode[i];
 		memset(netbuffer->u.playerinfo[i].name, 0x00, sizeof(netbuffer->u.playerinfo[i].name));
 		memcpy(netbuffer->u.playerinfo[i].name, player_names[i], sizeof(player_names[i]));
 
@@ -4308,8 +4308,8 @@ FILESTAMP
 
 				if (server)
 				{
-					XBOXSTATIC UINT8 buf[2];
-					buf[0] = (UINT8)node;
+					UINT8 buf[2];
+					buf[0] = (UINT8)netconsole;
 					buf[1] = KICK_MSG_CON_FAIL;
 					SendNetXCmd(XD_KICK, &buf, 2);
 				}
@@ -4333,8 +4333,8 @@ FILESTAMP
 
 				if (server)
 				{
-					XBOXSTATIC UINT8 buf[2];
-					buf[0] = (UINT8)node;
+					UINT8 buf[2];
+					buf[0] = (UINT8)netconsole;
 					buf[1] = KICK_MSG_CON_FAIL;
 					SendNetXCmd(XD_KICK, &buf, 2);
 				}
@@ -4400,8 +4400,8 @@ FILESTAMP
 
 				if (server)
 				{
-					XBOXSTATIC char buf[2];
-					buf[0] = (char)node;
+					UINT8 buf[2];
+					buf[0] = (UINT8)netconsole;
 					buf[1] = KICK_MSG_CON_FAIL;
 					SendNetXCmd(XD_KICK, &buf, 2);
 				}
@@ -4419,8 +4419,8 @@ FILESTAMP
 
 				if (server)
 				{
-					XBOXSTATIC char buf[2];
-					buf[0] = (char)node;
+					UINT8 buf[2];
+					buf[0] = (UINT8)netconsole;
 					buf[1] = KICK_MSG_CON_FAIL;
 					SendNetXCmd(XD_KICK, &buf, 2);
 				}
@@ -4454,8 +4454,8 @@ FILESTAMP
 
 				if (server)
 				{
-					XBOXSTATIC UINT8 buf[2];
-					buf[0] = (UINT8)node;
+					UINT8 buf[2];
+					buf[0] = (UINT8)netconsole;
 					buf[1] = KICK_MSG_CON_FAIL;
 					SendNetXCmd(XD_KICK, &buf, 2);
 				}
@@ -5049,11 +5049,11 @@ static inline void PingUpdate(void)
 					if (pingtimeout[i] > cv_pingtimeout.value)
 // ok your net has been bad for too long, you deserve to die.
 					{
-						char buf[2];
+						UINT8 buf[2];
 
 						pingtimeout[i] = 0;
 
-						buf[0] = (char)i;
+						buf[0] = (UINT8)i;
 						buf[1] = KICK_MSG_PING_HIGH;
 						SendNetXCmd(XD_KICK, &buf, 2);
 					}
