@@ -84,6 +84,7 @@ EXPORT void HWRAPI(KillShaders) (void);
 EXPORT void HWRAPI(SetShader) (int shader);
 EXPORT void HWRAPI(UnSetShader) (void);
 
+EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value);
 EXPORT void HWRAPI(LoadCustomShader) (int number, char *shader, size_t size, boolean fragment);
 EXPORT void HWRAPI(InitCustomShaders) (void);
 
@@ -112,13 +113,6 @@ struct hwdriver_s
 	CreateModelVBOs     pfnCreateModelVBOs;
 	SetTransform        pfnSetTransform;
 	GetTextureUsed      pfnGetTextureUsed;
-	LoadShaders pfnLoadShaders;
-	KillShaders pfnKillShaders;
-	SetShader pfnSetShader;
-	UnSetShader pfnUnSetShader;
-
-	LoadCustomShader pfnLoadCustomShader;
-	InitCustomShaders pfnInitCustomShaders;
 #ifdef _WINDOWS
 	GetModeList         pfnGetModeList;
 #endif
@@ -134,6 +128,15 @@ struct hwdriver_s
 	MakeScreenTexture   pfnMakeScreenTexture;
 	MakeScreenFinalTexture  pfnMakeScreenFinalTexture;
 	DrawScreenFinalTexture  pfnDrawScreenFinalTexture;
+
+	LoadShaders         pfnLoadShaders;
+	KillShaders         pfnKillShaders;
+	SetShader           pfnSetShader;
+	UnSetShader         pfnUnSetShader;
+
+	SetShaderInfo       pfnSetShaderInfo;
+	LoadCustomShader    pfnLoadCustomShader;
+	InitCustomShaders   pfnInitCustomShaders;
 };
 
 extern struct hwdriver_s hwdriver;
