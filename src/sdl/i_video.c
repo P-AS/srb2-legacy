@@ -105,7 +105,7 @@ static consvar_t cv_stretch = {"stretch", "Off", CV_SAVE|CV_NOSHOWHELP, CV_OnOff
 static consvar_t cv_alwaysgrabmouse = {"alwaysgrabmouse", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 UINT8 graphics_started = 0; // Is used in console.c and screen.c
-boolean hwrenderloaded = false;
+INT32 hwrenderloaded = 0;
 
 // To disable fullscreen at startup; is set in VID_PrepareModeList
 boolean allow_fullscreen = false;
@@ -1503,7 +1503,7 @@ static SDL_bool Impl_CreateContext(void)
 #ifdef HWRENDER
 static void VID_CheckGLLoaded(rendermode_t oldrender)
 {
-	if (!hwrenderloaded) // Well, it didn't work the first time anyway.
+	if (hwrenderloaded == -1) // Well, it didn't work the first time anyway.
 	{
 		CONS_Alert(CONS_ERROR, "OpenGL never loaded\n");
 		rendermode = oldrender;
@@ -1534,8 +1534,13 @@ void VID_CheckRenderer(void)
 	{
 		rendermode = setrenderneeded;
 #ifdef HWRENDER
-		if (setrenderneeded == render_opengl)
+		if (rendermode == render_opengl)
+		{
 			VID_CheckGLLoaded(oldrenderer);
+			// Initialise OpenGL before calling SDLSetMode!!!
+			if (hwrenderloaded != 1)
+				I_StartupHardwareGraphics();
+		}
 #endif
 		Impl_CreateContext();
 	}
@@ -1551,14 +1556,14 @@ void VID_CheckRenderer(void)
 			bufSurface = NULL;
 		}
 #ifdef HWRENDER
-		HWR_FreeTextureCache();
+		if (hwrenderloaded == 1) // Only if OpenGL ever loaded!
+			HWR_FreeTextureCache();
 #endif
 		SCR_SetDrawFuncs();
 	}
 #ifdef HWRENDER
 	else if (rendermode == render_opengl)
 	{
-		I_StartupHardwareGraphics();
 		// Needs to check if switching failed somehow, too.
 		if (rendermode == render_opengl)
 		{
@@ -1759,7 +1764,8 @@ void I_StartupGraphics(void)
 	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY>>1,SDL_DEFAULT_REPEAT_INTERVAL<<2);
 	VID_Command_ModeList_f();
 #ifdef HWRENDER
-	I_StartupHardwareGraphics();
+	if (chosenrendermode == render_opengl)
+		I_StartupHardwareGraphics();
 #endif
 	// Fury: we do window initialization after GL setup to allow
 	// SDL_GL_LoadLibrary to work well on Windows
@@ -1859,7 +1865,7 @@ void I_StartupHardwareGraphics(void)
 			setrenderneeded = 0;
 		}
 		else
-		hwrenderloaded = true;
+		hwrenderloaded = 1;
 			glstartup = true;
 	}
 #endif
