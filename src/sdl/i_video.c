@@ -1563,10 +1563,7 @@ void VID_CheckRenderer(void)
 	}
 #ifdef HWRENDER
 	else if (rendermode == render_opengl)
-	{
 		R_InitHardwareMode();
-		HWR_Switch();
-	}
 #else
 	(void)oldrenderer;
 #endif
