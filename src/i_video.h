@@ -36,10 +36,10 @@ typedef enum
 */
 extern rendermode_t rendermode;
 
-/**	\brief hardware renderer loaded
+/**	\brief OpenGL state
 	0 = never loaded, 1 = loaded successfully, -1 = failed loading
 */
-extern INT32 hwrenderloaded;
+extern INT32 vid_opengl_state;
 
 
 /**	\brief use highcolor modes if true
@@ -50,11 +50,7 @@ extern boolean highcolor;
 */
 void I_StartupGraphics(void);
 
-/**	\brief setup hardware mode
-*/
-void I_StartupHardwareGraphics(void);
-
-/**	\brief restore old video mode
+/**	\brief shutdown video mode
 */
 void I_ShutdownGraphics(void);
 
@@ -94,6 +90,14 @@ INT32 VID_GetModeForSize(INT32 w, INT32 h);
 */
 INT32 VID_SetMode(INT32 modenum);
 void VID_CheckRenderer(void);
+
+/**	\brief Load OpenGL mode
+*/
+void VID_StartupOpenGL(void);
+
+/**	\brief Checks if OpenGL loaded
+*/
+void VID_CheckGLLoaded(rendermode_t oldrender);
 
 /**	\brief	The VID_GetModeName function
 

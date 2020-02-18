@@ -105,7 +105,7 @@ static consvar_t cv_stretch = {"stretch", "Off", CV_SAVE|CV_NOSHOWHELP, CV_OnOff
 static consvar_t cv_alwaysgrabmouse = {"alwaysgrabmouse", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 UINT8 graphics_started = 0; // Is used in console.c and screen.c
-INT32 hwrenderloaded = 0;
+INT32 vid_opengl_state = 0;
 
 // To disable fullscreen at startup; is set in VID_PrepareModeList
 boolean allow_fullscreen = false;
@@ -1470,7 +1470,7 @@ static SDL_bool Impl_CreateContext(void)
 {
 	// Renderer-specific stuff
 #ifdef HWRENDER
-	if ((rendermode == render_opengl) && (hwrenderloaded != -1))
+	if ((rendermode == render_opengl) && (vid_opengl_state != -1))
 	{
 		if (!sdlglcontext)
 			sdlglcontext = SDL_GL_CreateContext(window);
@@ -1503,12 +1503,12 @@ static SDL_bool Impl_CreateContext(void)
 	return SDL_TRUE;
 }
 
-#ifdef HWRENDER
-static void VID_CheckGLLoaded(rendermode_t oldrender)
+
+void VID_CheckGLLoaded(rendermode_t oldrender)
 {
-	if (hwrenderloaded == -1) // Well, it didn't work the first time anyway.
+#ifdef HWRENDER
+	if (vid_opengl_state == -1) // Well, it didn't work the first time anyway. 
 	{
-		CONS_Alert(CONS_ERROR, "OpenGL never loaded\n");
 		rendermode = oldrender;
 		if (chosenrendermode == render_opengl) // fallback to software
 			rendermode = render_soft;
@@ -1518,8 +1518,10 @@ static void VID_CheckGLLoaded(rendermode_t oldrender)
 			setrenderneeded = 0;
 		}
 	}
-}
 #endif
+}
+
+
 
 void VID_CheckRenderer(void)
 {
@@ -1528,11 +1530,6 @@ void VID_CheckRenderer(void)
 
 	if (dedicated)
 		return;
-
-#ifdef HWRENDER
-	if (!graphics_started)
-		VID_CheckGLLoaded(oldrenderer);
-#endif
 
 	if (setrenderneeded)
 	{
@@ -1544,9 +1541,9 @@ void VID_CheckRenderer(void)
 		{
 			VID_CheckGLLoaded(oldrenderer);
 			// Initialise OpenGL before calling SDLSetMode!!!
-			if (hwrenderloaded != 1)
-				I_StartupHardwareGraphics();
-			else if (hwrenderloaded == -1)
+			if (vid_opengl_state != 1)
+				VID_StartupOpenGL();
+			else if (vid_opengl_state == -1)
 				rendererchanged = SDL_FALSE;
 		}
 #endif
@@ -1565,7 +1562,7 @@ void VID_CheckRenderer(void)
 			bufSurface = NULL;
 		}
 #ifdef HWRENDER
-		if (hwrenderloaded == 1) // Only if OpenGL ever loaded!
+		if (vid_opengl_state == 1) // Only if OpenGL ever loaded!
 			HWR_FreeTextureCache();
 #endif
 		SCR_SetDrawFuncs();
@@ -1623,7 +1620,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
 	{
-		if (hwrenderloaded != -1)
+		if (vid_opengl_state != -1)
 			flags |= SDL_WINDOW_OPENGL;
 
 		// Without a 24-bit depth buffer many visuals are ruined by z-fighting.
@@ -1768,9 +1765,9 @@ void I_StartupGraphics(void)
 	VID_Command_ModeList_f();
 #ifdef HWRENDER
 	if (M_CheckParm("-nogl"))
-		hwrenderloaded = -1; // Don't call SDL_GL_LoadLibrary
+		vid_opengl_state = -1; // Don't call SDL_GL_LoadLibrary
 	else
-		I_StartupHardwareGraphics();
+		VID_StartupOpenGL();
 #endif
 	// Fury: we do window initialization after GL setup to allow
 	// SDL_GL_LoadLibrary to work well on Windows
@@ -1824,7 +1821,7 @@ void I_StartupGraphics(void)
 	graphics_started = true;
 }
 
-void I_StartupHardwareGraphics(void)
+void VID_StartupOpenGL(void)
 {
 #ifdef HWRENDER
 	static boolean glstartup = false;
@@ -1865,9 +1862,9 @@ void I_StartupHardwareGraphics(void)
 		HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
 		HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
 
-		hwrenderloaded = HWD.pfnInit() ? 1 : -1; // let load the OpenGL library
+		vid_opengl_state = HWD.pfnInit() ? 1 : -1; // let load the OpenGL library
 
-		if (hwrenderloaded == -1)// let load the OpenGL library
+		if (vid_opengl_state == -1)// let load the OpenGL library
 		{
 			rendermode = render_soft;
 			setrenderneeded = 0;

@@ -340,7 +340,7 @@ void SCR_ActuallyChangeRenderer(void)
 
 #ifdef HWRENDER
 	// Well, it didn't even load anyway.
-	if ((hwrenderloaded == -1) && (setrenderneeded == render_opengl))
+	if ((vid_opengl_state == -1) && (setrenderneeded == render_opengl))
 	{
 		if (M_CheckParm("-nogl"))
 			CONS_Alert(CONS_ERROR, "OpenGL rendering was disabled!\n");
@@ -364,9 +364,12 @@ void SCR_ChangeRenderer(void)
 	if (con_startup)
 	{
 		target_renderer = cv_renderer.value;
-		if (M_CheckParm("-opengl") && (hwrenderloaded == 1))
+#ifdef HWRENDER
+		if (M_CheckParm("-opengl") && (vid_opengl_state == 1))
 			target_renderer = rendermode = render_opengl;
-		else if (M_CheckParm("-software"))
+		else 
+#endif	
+		if (M_CheckParm("-software"))
 			target_renderer = rendermode = render_soft;
 		// set cv_renderer back
 		SCR_ChangeRendererCVars(rendermode);
