@@ -229,6 +229,8 @@ static float gr_fovlud;
 static angle_t gr_aimingangle;
 static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean skybox);
 
+boolean gr_shadersavailable = true;
+
 
 // ==========================================================================
 //   Lighting
@@ -243,7 +245,7 @@ void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *col
 	fade_color.rgba = (colormap != NULL) ? (UINT32)colormap->fadergba : GL_DEFAULTFOG;
 
 	// Crappy backup coloring if you can't do shaders
-	if (!cv_grshaders.value)
+	if (!cv_grshaders.value || !gr_shadersavailable)
 	{
 		// be careful, this may get negative for high lightlevel values.
 		float tint_alpha, fade_alpha;
@@ -296,7 +298,7 @@ UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap) // Let's see if 
 
 	realcolor.rgba = (colormap != NULL) ? colormap->rgba : GL_DEFAULTMIX;
 
-	if (cv_grshaders.value)
+	if (cv_grshaders.value && gr_shadersavailable)
 	{
 		surfcolor.s.alpha = (255 - light);
 	}
@@ -6262,7 +6264,8 @@ void HWR_Startup(void)
 		// read every custom shader
 		for (i = 0; i < numwadfiles; i++)
 			HWR_ReadShaders(i, (wadfiles[i]->type == RET_PK3));
-		HWR_LoadShaders();
+		if (!HWR_LoadShaders())
+			gr_shadersavailable = false;
 	}
 
 	if (rendermode == render_opengl)
@@ -6557,9 +6560,9 @@ static inline UINT16 HWR_CheckShader(UINT16 wadnum)
 	return INT16_MAX;
 }
 
-void HWR_LoadShaders(void)
+boolean HWR_LoadShaders(void)
 {
-	HWD.pfnInitCustomShaders();
+	return HWD.pfnInitCustomShaders();
 }
 
 void HWR_ReadShaders(UINT16 wadnum, boolean PK3)

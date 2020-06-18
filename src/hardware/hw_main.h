@@ -74,7 +74,7 @@ UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if
 
 
 void HWR_ReadShaders(UINT16 wadnum, boolean PK3);
-void HWR_LoadShaders(void);
+boolean HWR_LoadShaders(void);
 
 extern CV_PossibleValue_t granisotropicmode_cons_t[];
 
@@ -114,5 +114,7 @@ extern fixed_t *hwbbox;
 extern FTransform atransform;
 
 //bye bye floorinfo
+
+extern boolean gr_shadersavailable;
 
 #endif

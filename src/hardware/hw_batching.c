@@ -242,7 +242,7 @@ void HWR_RenderBatches(void)
 
 	// sort polygons
 	//rs_hw_batchsorttime = I_GetTimeMicros();
-	if (cv_grshaders.value) // TODO also have the shader availability check here when its done
+	if (cv_grshaders.value && gr_shadersavailable)
 		qsort(polygonIndexArray, polygonArraySize, sizeof(unsigned int), comparePolygons);
 	else
 		qsort(polygonIndexArray, polygonArraySize, sizeof(unsigned int), comparePolygonsNoShaders);
@@ -265,7 +265,7 @@ void HWR_RenderBatches(void)
 	
 	// set state for first batch
 	
-	if (cv_grshaders.value) // TODO also have the shader availability check here when its done
+	if (cv_grshaders.value && gr_shadersavailable)
 	{
 		HWD.pfnSetShader(currentShader);
 	}
@@ -351,7 +351,7 @@ void HWR_RenderBatches(void)
 			nextSurfaceInfo = polygonArray[nextIndex].surf;
 			if (nextPolyFlags & PF_NoTexture)
 				nextTexture = 0;
-			if (currentShader != nextShader)
+			if (currentShader != nextShader && cv_grshaders.value && gr_shadersavailable)
 			{
 				changeState = true;
 				changeShader = true;
@@ -366,7 +366,7 @@ void HWR_RenderBatches(void)
 				changeState = true;
 				changePolyFlags = true;
 			}
-			if (cv_grshaders.value) // TODO also have the shader availability check here when its done
+			if (cv_grshaders.value && gr_shadersavailable)
 			{
 				if (currentSurfaceInfo.PolyColor.rgba != nextSurfaceInfo.PolyColor.rgba ||
 					currentSurfaceInfo.TintColor.rgba != nextSurfaceInfo.TintColor.rgba ||
