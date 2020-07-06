@@ -3132,46 +3132,22 @@ static void HWR_Subsector(size_t num)
 	//gr_cursectorlight.blue  = light;
 	//gr_cursectorlight.alpha = light;
 
-// ----- for special tricks with HW renderer -----
-	if (gr_frontsector->pseudoSector)
-	{
-		cullFloorHeight = locFloorHeight = gr_frontsector->virtualFloorheight;
-		cullCeilingHeight = locCeilingHeight = gr_frontsector->virtualCeilingheight;
-	}
-	else if (gr_frontsector->virtualFloor)
-	{
-		///@TODO Is this whole virtualFloor mess even useful? I don't think it even triggers ever.
-		cullFloorHeight = locFloorHeight = gr_frontsector->virtualFloorheight;
-		if (gr_frontsector->virtualCeiling)
-			cullCeilingHeight = locCeilingHeight = gr_frontsector->virtualCeilingheight;
-		else
-			cullCeilingHeight = locCeilingHeight = gr_frontsector->ceilingheight;
-	}
-	else if (gr_frontsector->virtualCeiling)
-	{
-		cullCeilingHeight = locCeilingHeight = gr_frontsector->virtualCeilingheight;
-		cullFloorHeight   = locFloorHeight   = gr_frontsector->floorheight;
-	}
-	else
-	{
-		cullFloorHeight   = locFloorHeight   = gr_frontsector->floorheight;
-		cullCeilingHeight = locCeilingHeight = gr_frontsector->ceilingheight;
+	cullFloorHeight   = locFloorHeight   = gr_frontsector->floorheight;
+	cullCeilingHeight = locCeilingHeight = gr_frontsector->ceilingheight;
 
 
-		if (gr_frontsector->f_slope)
-		{
-			cullFloorHeight = P_GetZAt(gr_frontsector->f_slope, viewx, viewy);
-			locFloorHeight = P_GetZAt(gr_frontsector->f_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
-		}
-
-		if (gr_frontsector->c_slope)
-		{
-			cullCeilingHeight = P_GetZAt(gr_frontsector->c_slope, viewx, viewy);
-			locCeilingHeight = P_GetZAt(gr_frontsector->c_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
-		}
+	if (gr_frontsector->f_slope)
+	{
+		cullFloorHeight = P_GetZAt(gr_frontsector->f_slope, viewx, viewy);
+		locFloorHeight = P_GetZAt(gr_frontsector->f_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
 	}
-// ----- end special tricks -----
 
+	if (gr_frontsector->c_slope)
+	{
+		cullCeilingHeight = P_GetZAt(gr_frontsector->c_slope, viewx, viewy);
+		locCeilingHeight = P_GetZAt(gr_frontsector->c_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
+	}	
+	
 	if (gr_frontsector->ffloors)
 	{
 		boolean anyMoved = gr_frontsector->moved;

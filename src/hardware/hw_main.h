@@ -57,6 +57,7 @@ UINT8 *HWR_GetScreenshot(void);
 boolean HWR_Screenshot(const char *pathname);
 
 void HWR_AddCommands(void);
+void HWR_AddSessionCommands(void);
 void HWR_CorrectSWTricks(void);
 void transform(float *cx, float *cy, float *cz);
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
@@ -100,7 +101,7 @@ extern consvar_t cv_grgammablue;
 extern consvar_t cv_grfiltermode;
 extern consvar_t cv_granisotropicmode;
 extern consvar_t cv_grcorrecttricks;
-extern consvar_t cv_grfovchange;
+extern consvar_t cv_fovchange;
 extern consvar_t cv_grsolvetjoin;
 extern consvar_t cv_grshearing;
 extern consvar_t cv_grspritebillboarding;
