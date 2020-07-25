@@ -1274,24 +1274,11 @@ void CONS_Printf(const char *fmt, ...)
 	DEBFILE(txt);
 #endif
 
-	if (!con_started)
-	{
-#if defined (_XBOX) && defined (__GNUC__)
-		if (!keyboard_started) debugPrint(txt);
-#endif
-#ifdef PC_DOS
-		CON_LogMessage(txt);
-		free(txt);
-		return;
-#endif
-	}
-	else
-		// write message in con text buffer
+	// write message in con text buffer
+	if (con_started)
 		CON_Print(txt);
 
-#ifndef PC_DOS
-	CON_LogMessage(txt);
-#endif
+	CON_LogMessage(txt);	
 
 	// make sure new text is visible
 	con_scrollup = 0;
