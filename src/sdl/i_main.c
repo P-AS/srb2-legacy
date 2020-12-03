@@ -47,7 +47,8 @@ extern int SDL_main(int argc, char *argv[]);
 
 #ifdef LOGMESSAGES
 FILE *logstream = NULL;
-char  logfilename[1024];
+FILE *crashstream = NULL;
+char logfilename[1024];
 #endif
 
 #ifndef DOXYGEN
@@ -155,6 +156,9 @@ int main(int argc, char **argv)
 	// startup SRB2
 	CONS_Printf("Setting up SRB2...\n");
 	D_SRB2Main();
+
+	crashstream = fopen(va("%s" PATHSEP "%s", srb2home, "crash-log.txt"), "at");
+
 #ifdef LOGMESSAGES
 	if (!M_CheckParm("-nolog"))
 		CONS_Printf("Logfile: %s\n", logfilename);
