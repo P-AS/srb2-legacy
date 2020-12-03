@@ -142,7 +142,6 @@
 
 #ifdef LOGMESSAGES
 extern FILE *logstream;
-extern FILE *crashstream;
 extern char logfilename[1024];
 #endif
 
