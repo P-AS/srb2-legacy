@@ -31,8 +31,7 @@ build() {
 }
 
 package() {
-  [ "$CARCH" == "i686" ] && IS64BIT="" || IS64BIT="64"
-  install -Dm755 "$_pkgname"/bin/Linux$IS64BIT/Release/srb2legacy \
+  install -Dm755 "$_pkgname"/bin/lsdl2srb2legacy \
     "$pkgdir"/usr/bin/srb2legacy
 
   # icon + .desktop

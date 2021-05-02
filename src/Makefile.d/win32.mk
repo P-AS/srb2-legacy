@@ -1,148 +1,94 @@
 #
-# win32/Makefile.cfg for SRB2/Minwgw
+# Mingw, if you don't know, that's Win32/Win64
 #
 
-#
-#Mingw, if you don't know, that's Win32/Win64
-#
+ifndef MINGW64
+EXENAME?=srb2legacywin.exe
+else
+EXENAME?=srb2legacywin64.exe
+endif
+
+sources+=win32/Srb2win.rc
+opts+=-DSTDC_HEADERS
+libs+=-ladvapi32 -lkernel32 -lmsvcrt -luser32
+
+nasm_format:=win32
+
+SDL=1
+
+ifndef NOHW
+opts+=-DUSE_WGL_SWAP
+endif
 
 ifdef MINGW64
-	HAVE_LIBGME=1
-	LIBGME_CFLAGS=-I../libs/gme/include
-	LIBGME_LDFLAGS=-L../libs/gme/win64 -lgme
-
-ifdef HAVE_OPENMPT
-	LIBOPENMPT_CFLAGS?=-I../libs/libopenmpt/inc
-	LIBOPENMPT_LDFLAGS?=-L../libs/libopenmpt/lib/x86_64/mingw -lopenmpt
-endif
-
-	SDL_CFLAGS?=-I../libs/SDL2/x86_64-w64-mingw32/include/SDL2 -I../libs/SDL2_mixer/x86_64-w64-mingw32/include/SDL2 -Dmain=SDL_main
-	SDL_LDFLAGS?=-L../libs/SDL2/x86_64-w64-mingw32/lib -L../libs/SDL2_mixer/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
+libs+=-lws2_32
 else
-	HAVE_LIBGME=1
-	LIBGME_CFLAGS=-I../libs/gme/include
-	LIBGME_LDFLAGS=-L../libs/gme/win32 -lgme
-
-ifdef HAVE_OPENMPT
-	LIBOPENMPT_CFLAGS?=-I../libs/libopenmpt/inc
-	LIBOPENMPT_LDFLAGS?=-L../libs/libopenmpt/lib/x86/mingw -lopenmpt
+ifdef NO_IPV6
+libs+=-lwsock32
+else
+libs+=-lws2_32
 endif
-
-	SDL_CFLAGS?=-I../libs/SDL2/i686-w64-mingw32/include/SDL2 -I../libs/SDL2_mixer/i686-w64-mingw32/include/SDL2 -Dmain=SDL_main
-	SDL_LDFLAGS?=-L../libs/SDL2/i686-w64-mingw32/lib -L../libs/SDL2_mixer/i686-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
-endif
-
-ifndef NOASM
-	USEASM=1
 endif
 
 ifndef NONET
-ifndef MINGW64 #miniupnc is broken with MINGW64
-	HAVE_MINIUPNPC=1
+ifndef MINGW64 # miniupnc is broken with MINGW64
+opts+=-I../libs -DSTATIC_MINIUPNPC
+libs+=-L../libs/miniupnpc/mingw$(32) -lws2_32 -liphlpapi
 endif
 endif
 
-	OPTS=-DSTDC_HEADERS
-
-ifndef GCC44
-	#OPTS+=-mms-bitfields
-endif
-
-ifndef SDL
-	OPTS+=-D_WINDOWS
-endif
-	OPTS+=-D__USE_MINGW_ANSI_STDIO=0
-
-ifndef SDL
-	LIBS+=-lmingw32 -mwindows -ldinput -ldxguid -lgdi32 -lwinmm
-endif
-
-	LIBS+=-ladvapi32 -lkernel32 -lmsvcrt -luser32
-ifdef MINGW64
-	LIBS+=-lws2_32
+ifndef MINGW64
+32=32
+x86=x86
+i686=i686
 else
-ifdef NO_IPV6
-	LIBS+=-lwsock32
-else
-	LIBS+=-lws2_32
-endif
+32=64
+x86=x86_64
+i686=x86_64
 endif
 
-	# name of the exefile
-ifdef SDL
-	EXENAME?=srb2win.exe
-else
-	EXENAME?=srb2dd.exe
-endif
+mingw:=$(i686)-w64-mingw32
 
-ifdef SDL
-	i_system_o+=$(OBJDIR)/SRB2.res
-	#i_main_o+=$(OBJDIR)/win_dbg.o
-ifndef NOHW
-	OPTS+=-DUSE_WGL_SWAP
-endif
-else
-	D_FILES+=$(D_DIR)/fmodex.dll
-	CFLAGS+=-I../libs/fmodex/inc
-	LDFLAGS+=-L../libs/fmodex/lib
-ifdef MINGW64
-	LIBS+=-lfmodex64_vc
-else
-	LIBS+=-lfmodex_vc
-endif
-	i_cdmus_o=$(OBJDIR)/win_cd.o
-	i_net_o=$(OBJDIR)/win_net.o
-	i_system_o=$(OBJDIR)/win_sys.o $(OBJDIR)/SRB2.res
-	i_sound_o=$(OBJDIR)/win_snd.o
-	i_main_o=$(OBJDIR)/win_main.o
-	#i_main_o+=$(OBJDIR)/win_dbg.o
-	OBJS=$(OBJDIR)/dx_error.o $(OBJDIR)/fabdxlib.o $(OBJDIR)/win_vid.o $(OBJDIR)/win_dll.o
-endif
+define _set =
+$(1)_CFLAGS?=$($(1)_opts)
+$(1)_LDFLAGS?=$($(1)_libs)
+endef
 
+lib:=../libs/gme
+LIBGME_opts:=-I$(lib)/include
+LIBGME_libs:=-L$(lib)/win$(32) -lgme
+$(eval $(call _set,LIBGME))
 
-ZLIB_CFLAGS?=-I../libs/zlib
-ifdef MINGW64
-ZLIB_LDFLAGS?=-L../libs/zlib/win32 -lz64
-else
-ZLIB_LDFLAGS?=-L../libs/zlib/win32 -lz32
-endif
+lib:=../libs/libopenmpt
+LIBOPENMPT_opts:=-I$(lib)/inc
+LIBOPENMPT_libs:=-L$(lib)/lib/$(x86)/mingw -lopenmpt
+$(eval $(call _set,LIBOPENMPT))
 
-ifndef NOPNG
+lib:=../libs/SDL2_mixer/$(mingw)
+
+mixer_opts:=-I$(lib)/include/SDL2
+mixer_libs:=-L$(lib)/lib
+
+lib:=../libs/SDL2/$(mingw)
+SDL_opts:=-I$(lib)/include/SDL2\
+	$(mixer_opts) -Dmain=SDL_main
+SDL_libs:=-L$(lib)/lib $(mixer_libs)\
+	-lmingw32 -lSDL2main -lSDL2 -mwindows
+$(eval $(call _set,SDL))
+
+lib:=../libs/zlib
+ZLIB_opts:=-I$(lib)
+ZLIB_libs:=-L$(lib)/win32 -lz$(32)
+$(eval $(call _set,ZLIB))
+
 ifndef PNG_CONFIG
-	PNG_CFLAGS?=-I../libs/libpng-src
-ifdef MINGW64
-	PNG_LDFLAGS?=-L../libs/libpng-src/projects -lpng64
-else
-	PNG_LDFLAGS?=-L../libs/libpng-src/projects -lpng32
-endif #MINGW64
-endif #PNG_CONFIG
-endif #NOPNG
-
-ifdef GETTEXT
-ifndef CCBS
-	MSGFMT?=../libs/gettext/bin32/msgfmt.exe
+lib:=../libs/libpng-src
+PNG_opts:=-I$(lib)
+PNG_libs:=-L$(lib)/projects -lpng$(32)
+$(eval $(call _set,PNG))
 endif
-ifdef MINGW64
-	CPPFLAGS+=-I../libs/gettext/include64
-	LDFLAGS+=-L../libs/gettext/lib64
-	LIBS+=-lmingwex
-else
-	CPPFLAGS+=-I../libs/gettext/include32
-	LDFLAGS+=-L../libs/gettext/lib32
-	STATIC_GETTEXT=1
-endif #MINGW64
-ifdef STATIC_GETTEXT
-	LIBS+=-lasprintf -lintl
-else
-	LIBS+=-lintl.dll
-endif #STATIC_GETTEXT
-endif #GETTEXT
 
-ifdef HAVE_MINIUPNPC
-	CPPFLAGS+=-I../libs/ -DSTATIC_MINIUPNPC
-ifdef MINGW64
-	LDFLAGS+=-L../libs/miniupnpc/mingw64
-else
-	LDFLAGS+=-L../libs/miniupnpc/mingw32
-endif #MINGW64
-endif
+lib:=../libs/curl
+CURL_opts:=-I$(lib)/include
+CURL_libs:=-L$(lib)/lib$(32) -lcurl
+$(eval $(call _set,CURL))

@@ -1,116 +1,23 @@
 #
-# Makefile.cfg for SRB2
+# Flags to put a sock in GCC!
 #
 
-#
-# GNU compiler & tools' flags
-# and other things
-#
-
-ifdef GCC91
-GCC83=1
+# See the versions list in detect.mk
+# This will define all version flags going backward.
+# Yes, it's magic.
+define _predecessor =
+ifdef GCC$(firstword $(1))
+GCC$(lastword $(1)):=1
 endif
+endef
+_n:=$(words $(gcc_versions))
+$(foreach v,$(join $(wordlist 2,$(_n),- $(gcc_versions)),\
+	$(addprefix =,$(wordlist 2,$(_n),$(gcc_versions)))),\
+	$(and $(findstring =,$(v)),\
+	$(eval $(call _predecessor,$(subst =, ,$(v))))))
 
-ifdef GCC83
-GCC82=1
-endif
-
-ifdef GCC82
-GCC81=1
-endif
-
-ifdef GCC81
-GCC72=1
-endif
-
-ifdef GCC72
-GCC71=1
-endif
-
-ifdef GCC71
-GCC64=1
-endif
-
-ifdef GCC64
-GCC63=1
-endif
-
-ifdef GCC63
-GCC62=1
-endif
-
-ifdef GCC62
-GCC61=1
-endif
-
-ifdef GCC61
-GCC54=1
-endif
-
-ifdef GCC54
-GCC53=1
-endif
-
-ifdef GCC53
-GCC52=1
-endif
-
-ifdef GCC52
-GCC51=1
-endif
-
-ifdef GCC51
-GCC49=1
-endif
-
-ifdef GCC49
-GCC48=1
-endif
-
-ifdef GCC48
-GCC47=1
-endif
-
-ifdef GCC47
-GCC46=1
-endif
-
-ifdef GCC46
-GCC45=1
-endif
-
-ifdef GCC45
-GCC44=1
-endif
-
-ifdef GCC44
-GCC43=1
-endif
-
-ifdef GCC43
-GCC42=1
-endif
-
-ifdef GCC42
-GCC41=1
-endif
-
-ifdef GCC41
-GCC40=1
-VCHELP=1
-endif
-
-ifdef GCC295
-GCC29=1
-endif
-
-ifdef DC
-NOCASTALIGNWARN=1
-endif
-
-OLDWFLAGS:=$(WFLAGS)
 # -W -Wno-unused
-WFLAGS=-Wall
+WFLAGS:=-Wall
 ifndef GCC295
 #WFLAGS+=-Wno-packed
 endif
@@ -126,15 +33,13 @@ endif
 #WFLAGS+=-Wsystem-headers
 WFLAGS+=-Wfloat-equal
 #WFLAGS+=-Wtraditional
-ifdef VCHELP
- WFLAGS+=-Wdeclaration-after-statement
- WFLAGS+=-Wno-error=declaration-after-statement
-endif
  WFLAGS+=-Wundef
 ifndef GCC295
  WFLAGS+=-Wendif-labels
 endif
 ifdef GCC41
+ WFLAGS+=-Wdeclaration-after-statement
+ WFLAGS+=-Wno-error=declaration-after-statement
  WFLAGS+=-Wshadow
 endif
 #WFLAGS+=-Wlarger-than-%len%
@@ -170,14 +75,8 @@ endif
 ifdef GCC40
  WFLAGS+=-Wold-style-definition
 endif
-ifndef XBOX
- WFLAGS+=-Wmissing-prototypes -Wmissing-declarations
-endif
 ifdef GCC40
  WFLAGS+=-Wmissing-field-initializers
-endif
-ifndef XBOX
- WFLAGS+=-Wmissing-noreturn
 endif
 #WFLAGS+=-Wmissing-format-attribute
 #WFLAGS+=-Wno-multichar
@@ -216,8 +115,6 @@ ifdef ERRORMODE
 WFLAGS+=-Werror
 endif
 
-WFLAGS+=$(OLDWFLAGS)
-
 ifdef GCC43
  #WFLAGS+=-Wno-error=clobbered
 endif
@@ -246,268 +143,36 @@ ifdef GCC81
  WFLAGS+=-Wno-error=multistatement-macros
 endif
 
-
-#indicate platform and what interface use with
-ifndef WINCE
-ifndef XBOX
-ifndef PSP
-ifndef DC
-ifndef WII
-ifndef PS3N
-ifndef LINUX
-ifndef FREEBSD
-ifndef CYGWIN32
-ifndef MINGW
-ifndef MINGW64
-ifndef SDL
-ifndef NDS
-ifndef DUMMY
-	DJGPPDOS=1
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
+ifdef NONX86
+  ifdef X86_64 # yeah that SEEMS contradictory
+  opts+=-march=nocona
+  endif
+else
+  ifndef GCC29
+  opts+=-msse3 -mfpmath=sse
+  else
+  opts+=-mpentium
+  endif
 endif
 
-#determine the interface directory (where you put all i_*.c)
-i_cdmus_o=$(OBJDIR)/i_cdmus.o
-i_net_o=$(OBJDIR)/i_net.o
-i_system_o=$(OBJDIR)/i_system.o
-i_sound_o=$(OBJDIR)/i_sound.o
-i_main_o=$(OBJDIR)/i_main.o
-#set OBJDIR and BIN's starting place
-OBJDIR=../objs
-BIN=../bin
-#Nasm ASM and rm
-ifdef YASM
-NASM?=yasm
-else
-NASM?=nasm
-endif
-REMOVE?=rm -f
-CP?=cp
-MKDIR?=mkdir -p
-MKISOFS?=mkisofs
-DD?=dd
-GZIP?=gzip
-GZIP_OPTS?=-9 -f -n
-GZIP_OPT2=$(GZIP_OPTS) --rsyncable
-UPX?=upx
-UPX_OPTS?=--best --preserve-build-id
-ifndef ECHO
-UPX_OPTS+=-q
-endif
-
-#Interface Setup
-ifdef DJGPPDOS
-	INTERFACE=djgppdos
-	NASMFORMAT=coff
-	OBJDIR:=$(OBJDIR)/djgppdos
-ifdef WATTCP
-	OBJDIR:=$(OBJDIR)/wattcp
-endif
-	WFLAGS+=-Wno-format
-	BIN:=$(BIN)/Dos
-else
-ifdef DUMMY
-	INTERFACE=dummy
-	OBJDIR:=$(OBJDIR)/dummy
-	BIN:=$(BIN)/dummy
-else
-ifdef LINUX
-	NASMFORMAT=elf -DLINUX
-	SDL=1
-ifdef LINUX64
-	OBJDIR:=$(OBJDIR)/Linux64
-	BIN:=$(BIN)/Linux64
-else
-	OBJDIR:=$(OBJDIR)/Linux
-	BIN:=$(BIN)/Linux
-endif
-else
-ifdef FREEBSD
-	INTERFACE=sdl
-	NASMFORMAT=elf -DLINUX
-	SDL=1
-
-	OBJDIR:=$(OBJDIR)/FreeBSD
-	BIN:=$(BIN)/FreeBSD
-else
-ifdef SOLARIS
-	INTERFACE=sdl
-	NASMFORMAT=elf -DLINUX
-	SDL=1
-
-	OBJDIR:=$(OBJDIR)/Solaris
-	BIN:=$(BIN)/Solaris
-else
-ifdef CYGWIN32
-	INTERFACE=sdl
-	NASMFORMAT=win32
-	SDL=1
-
-	OBJDIR:=$(OBJDIR)/cygwin
-	BIN:=$(BIN)/Cygwin
-else
-ifdef MINGW64
-	INTERFACE=win32
-	#NASMFORMAT=win64
-	OBJDIR:=$(OBJDIR)/Mingw64
-	BIN:=$(BIN)/Mingw64
-else
-ifdef WII
-	INTERFACE=sdl12
-	NONX86=1
-	STATIC=1
-	PREFIX?=powerpc-eabi
-	SDL=1
-	SDL12=1
-	SDLMAIN=1
-	OBJDIR:=$(OBJDIR)/Wii
-	BIN:=$(BIN)/Wii
-	NOUPX=1
-else
-ifdef PS3N
-	INTERFACE=sdl12
-	NONX86=1
-	STATIC=1
-	PREFIX?=ppu
-	SDL=1
-	SDL12=1
-	# unsure?
-	#SDLMAIN=1
-	# can't compile SDL_mixer for ps3...
-	NOMIXER=1
-	OBJDIR:=$(OBJDIR)/PS3
-	BIN:=$(BIN)/PS3
-else
-ifdef MINGW
-	INTERFACE=win32
-	NASMFORMAT=win32
-	OBJDIR:=$(OBJDIR)/Mingw
-	BIN:=$(BIN)/Mingw
-else
-ifdef XBOX
-	INTERFACE=sdl12
-	NASMFORMAT=win32
-	PREFIX?=/usr/local/openxdk/bin/i386-pc-xbox
-	SDL=1
-	SDL12=1
-	OBJDIR:=$(OBJDIR)/XBOX
-	BIN:=$(BIN)/XBOX
-else
-ifdef PSP
-	INTERFACE=sdl12
-	NONX86=1
-	SDL=1
-	SDL12=1
-	OBJDIR:=$(OBJDIR)/PSP
-	BIN:=$(BIN)/PSP
-	NOUPX=1
-else
-ifdef DC
-	INTERFACE=sdl12
-	NONX86=1
-	SDL=1
-	SDL12=1
-	OBJDIR:=$(OBJDIR)/DC
-	BIN:=$(BIN)/DC
-	NOUPX=1
-else
-ifdef WINCE
-	INTERFACE=sdl12
-	NONX86=1
-	PREFIX?=arm-wince-pe
-	SDL=1
-	SDL12=1
-	OBJDIR:=$(OBJDIR)/WinCE
-	BIN:=$(BIN)/WinCE
-else
-ifdef NDS
-	INTERFACE=nds
-	OBJDIR:=$(OBJDIR)/nds
-	BIN:=$(BIN)/nds
-	NOUPX=1
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-
-ifdef GP2X
-ifdef SDL
-	SDL12=1
-endif
-endif
-
-ifdef ARCHNAME
-	OBJDIR:=$(OBJDIR)/$(ARCHNAME)
-	BIN:=$(BIN)/$(ARCHNAME)
-endif
-
-# gcc or g++
-ifdef PREFIX
-	CC=$(PREFIX)-gcc
-	CXX=$(PREFIX)-g++
-	OBJCOPY=$(PREFIX)-objcopy
-	OBJDUMP=$(PREFIX)-objdump
-	STRIP=$(PREFIX)-strip
-	WINDRES=$(PREFIX)-windres
-else
-	OBJCOPY=objcopy
-	OBJDUMP=objdump
-	STRIP=strip
-	WINDRES=windres
-endif
-
-# because Apple screws with us on this
-# need to get bintools from homebrew
-ifdef MACOSX
-	CC=clang
-	CXX=clang
-	OBJCOPY=gobjcopy
-	OBJDUMP=gobjdump
-endif
-
-OBJDUMP_OPTS?=--wide --source --line-numbers
-LD=$(CC)
-
-ifdef SDL
-# SDL 2.0
-ifndef SDL12
-	INTERFACE=sdl
-# SDL 1.2
-else
-	INTERFACE=sdl12
-endif
-	OBJDIR:=$(OBJDIR)/SDL
-endif
-
-ifndef DUMMY
 ifdef DEBUGMODE
-	OBJDIR:=$(OBJDIR)/Debug
-	BIN:=$(BIN)/Debug
+ifdef GCC48
+opts+=-Og
 else
-	OBJDIR:=$(OBJDIR)/Release
-	BIN:=$(BIN)/Release
+opts+=O0
+endif
+endif
+
+ifdef VALGRIND
+ifdef GCC46
+WFLAGS+=-Wno-error=unused-but-set-variable
+WFLAGS+=-Wno-unused-but-set-variable
+endif
+endif
+
+# Lua
+ifdef GCC43
+ifndef GCC44
+WFLAGS+=-Wno-logical-op
 endif
 endif
