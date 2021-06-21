@@ -171,11 +171,7 @@ include Makefile.d/detect.mk
 # make would try to remove the implicitly made directories
 .PRECIOUS : %/ comptime.c
 
-# very sophisticated dependency
-sources:=\
-	$(call List,Sourcefile)\
-	$(call List,blua/Sourcefile)\
-
+sources:=
 makedir:=../make
 
 # -DCOMPVERSION: flag to use comptime.h
@@ -198,6 +194,11 @@ endif
 
 depdir:=$(makedir)/deps
 objdir:=$(makedir)/objs
+
+# very sophisticated dependency
+sources+=\
+	$(call List,Sourcefile)\
+	$(call List,blua/Sourcefile)\
 
 depends:=$(basename $(filter %.c %.s,$(sources)))
 objects:=$(basename $(filter %.c %.s %.nas,$(sources)))
