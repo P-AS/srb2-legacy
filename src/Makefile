@@ -126,6 +126,10 @@ goals:=$(or $(MAKECMDGOALS),all)
 cleanonly:=$(filter $(clean_targets),$(goals))
 destructive:=$(filter-out info,$(cleanonly))
 
+ifndef cleanonly
+include Makefile.d/old.mk
+endif
+
 include Makefile.d/util.mk
 
 ifdef PREFIX
@@ -390,7 +394,7 @@ clean :
 	$(call _rm,$(exe) $(dbg) $(dbg).txt $(objects))
 
 distclean :
-	$(call _rm,../bin ../objs ../deps comptime.h)
+	$(call _rm,../bin ../objs ../deps ../make comptime.h)
 
 info:
 ifdef WINDOWSHELL
