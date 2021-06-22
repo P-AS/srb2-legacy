@@ -139,7 +139,7 @@ endif
 OBJDUMP_OPTS?=--wide --source --line-numbers
 
 OBJCOPY:=$(call Prefix,objcopy)
-OBJDUMP:=$(call Prefix,objdump) $(OBJDUMP_OPTS)
+OBJDUMP:=$(call Prefix,objdump)
 WINDRES:=$(call Prefix,windres)
 
 ifdef YASM
@@ -269,16 +269,18 @@ opts+=$(debug_opts)
 
 opts+=$(foreach v,$(passthru_opts),$(if $($(v)),-D$(v)))
 
-CFLAGS:=$(opts) $(WFLAGS) $(CPPFLAGS) $(CFLAGS)
-LDFLAGS:=$(libs) $(LDFLAGS)
-ASFLAGS+=-x assembler-with-cpp
+opts+=$(WFLAGS) $(CPPFLAGS) $(CFLAGS)
+libs+=$(LDFLAGS)
+asflags:=$(ASFLAGS) -x assembler-with-cpp
+
+cc=$(CC)
 
 ifdef DISTCC
-CC:=distcc $(CC)
+cc=distcc $(CC)
 endif
 
 ifdef CCACHE
-CC:=ccache $(CC)
+cc=ccache $(CC)
 endif
 
 ifndef SILENT
@@ -289,11 +291,11 @@ ifndef destructive
 $(shell $(CC) -v)
 define flags =
 
-CC ........ $(CC)
+CC ........ $(cc)
 
-CFLAGS .... $(CFLAGS)
+CFLAGS .... $(opts)
 
-LDFLAGS ... $(LDFLAGS)
+LDFLAGS ... $(libs)
 
 endef
 $(info $(flags))
@@ -307,11 +309,12 @@ endif
 endif
 
 LD:=$(CC)
-CC:=$(CC) $(CFLAGS)
-NASM:=$(NASM) $(NASMOPTS) -f $(nasm_format)
-GZIP:=$(GZIP) $(GZIP_OPTS)
-UPX:=$(UPX) $(UPX_OPTS)
-WINDRES:=$(WINDRES) $(WINDRESFLAGS)\
+cc:=$(cc) $(opts)
+nasm=$(NASM) $(NASMOPTS) -f $(nasm_format)
+ifdef UPX
+upx=$(UPX) $(UPX_OPTS)
+endif
+windres=$(WINDRES) $(WINDRESFLAGS)\
 	$(debug_opts) --include-dir=win32 -O coff
 
 %/ :
@@ -321,25 +324,28 @@ WINDRES:=$(WINDRES) $(WINDRESFLAGS)\
 # prerequisites
 .SECONDEXPANSION :
 
+# 'UPX' is also recognized in the environment by upx
+unexport UPX
+
 # executable stripped of debugging symbols
 $(exe) : $(dbg) | $$(@D)/
 	$(.)$(OBJCOPY) --strip-debug $< $@
 	$(.)-$(OBJCOPY) --add-gnu-debuglink=$< $@
 ifndef NOUPX
 	$(call Echo,Compressing final executable...)
-	$(.)-$(UPX) $@
+	$(.)-$(upx) $@
 endif
 
 # original executable with debugging symbols
 $(dbg) : $(objects) | $$(@D)/
 	$(call Echo,Linking $(@F)...)
-	$(.)$(LD) -o $@ $^ $(LDFLAGS)
+	$(.)$(LD) -o $@ $^ $(libs)
 
 # disassembly of executable
 $(dbg).txt : $(dbg)
 	$(call Echo,Dumping debugging info...)
-	$(.)$(OBJDUMP) $< > $@
-	$(.)$(GZIP) $@
+	$(.)$(OBJDUMP) $(OBJDUMP_OPTS) $< > $@
+	$(.)$(GZIP) $(GZIP_OPTS) $@
 
 # '::' means run unconditionally
 # this really updates comptime.h
@@ -364,11 +370,11 @@ ifdef Echo_name
 	@printf '%-20.20s\r' $$<
 endif
 endif
-	$(.)$(CC) -MM -MF $$@ -MT $(objdir)/$$(*F).o $(2) $$<
+	$(.)$(cc) -MM -MF $$@ -MT $(objdir)/$$(*F).o $(2) $$<
 endef
 
 $(eval $(call _recipe,c))
-$(eval $(call _recipe,s,$(ASFLAGS)))
+$(eval $(call _recipe,s,$(asflags)))
 
 # compiling recipe template
 # 1: target file suffix
@@ -380,10 +386,10 @@ $(objdir)/%.$(1) : %.$(2) | $$$$(@D)/
 	$(.)$(3)
 endef
 
-$(eval $(call _recipe,o,c,$(CC) -c -o $$@ $$<))
-$(eval $(call _recipe,o,nas,$(NASM) -o $$@ $$<))
-$(eval $(call _recipe,o,s,$(CC) $(ASFLAGS) -c -o $$@ $$<))
-$(eval $(call _recipe,res,rc,$(WINDRES) -i $$< -o $$@))
+$(eval $(call _recipe,o,c,$(cc) -c -o $$@ $$<))
+$(eval $(call _recipe,o,nas,$(nasm) -o $$@ $$<))
+$(eval $(call _recipe,o,s,$(cc) $(asflags) -c -o $$@ $$<))
+$(eval $(call _recipe,res,rc,$(windres) -i $$< -o $$@))
 
 _rm=$(.)$(rmrf) $(call Windows_path,$(1))
 
