@@ -9572,3 +9572,14 @@ void P_PlayerAfterThink(player_t *player)
 	if (P_IsObjectOnGround(player->mo))
 		player->mo->pmomz = 0;
 }
+
+void P_ForceLocalAngle(player_t *player, angle_t angle)
+{
+	angle = angle & ~UINT16_MAX;
+
+	if (player == &players[consoleplayer])
+		localangle = angle;
+	else if (player == &players[secondarydisplayplayer])
+		localangle2 = angle;
+}
+
