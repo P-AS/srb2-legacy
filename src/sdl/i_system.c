@@ -133,16 +133,16 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 // Locations for searching the srb2.srb
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2"
-#define DEFAULTWADLOCATION2 "/usr/local/games/SRB2"
-#define DEFAULTWADLOCATION3 "/usr/share/games/SRB2"
-#define DEFAULTWADLOCATION4 "/usr/games/SRB2"
+#define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2legacy"
+#define DEFAULTWADLOCATION2 "/usr/local/games/SRB2legacy"
+#define DEFAULTWADLOCATION3 "/usr/share/games/SRB2legacy"
+#define DEFAULTWADLOCATION4 "/usr/games/SRB2legacy"
 #define DEFAULTSEARCHPATH1 "/usr/local/games"
 #define DEFAULTSEARCHPATH2 "/usr/games"
 #define DEFAULTSEARCHPATH3 "/usr/local"
 #elif defined (_WIN32)
-#define DEFAULTWADLOCATION1 "c:\\games\\srb2"
-#define DEFAULTWADLOCATION2 "\\games\\srb2"
+#define DEFAULTWADLOCATION1 "c:\\games\\srb2legacy"
+#define DEFAULTWADLOCATION2 "\\games\\srb2legacy"
 #define DEFAULTSEARCHPATH1 "c:\\games"
 #define DEFAULTSEARCHPATH2 "\\games"
 #endif
@@ -2971,3 +2971,4 @@ const CPUInfoFlags *I_CPUInfo(void)
 // note CPUAFFINITY code used to reside here
 void I_RegisterSysCommands(void) {}
 #endif
+
