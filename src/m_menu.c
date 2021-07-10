@@ -1262,7 +1262,7 @@ static menuitem_t OP_GameOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Show HUD",               &cv_showhud,     50},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
 	                      NULL, "HUD Visibility",         &cv_translucenthud, 60},
-	{IT_STRING | IT_CVAR, NULL, "Timer Display",          &cv_timetic,     70},
+	{IT_STRING | IT_CVAR, NULL, "Score/Time/Rings",       &cv_timetic,     70},
 	{IT_STRING | IT_CVAR, NULL, "Always Compact Rankings",          &cv_compactscoreboard,     80},
 #ifdef SEENAMES
 	{IT_STRING | IT_CVAR, NULL, "HUD Player Names",       &cv_seenames,    90},
@@ -8015,3 +8015,4 @@ static void M_HandleFogColor(INT32 choice)
 	}
 }
 #endif
+

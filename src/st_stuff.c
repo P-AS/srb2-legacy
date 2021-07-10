@@ -135,10 +135,11 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	{  16,  42}, // HUD_RINGS
 	{ 220,  10}, // HUD_RINGSSPLIT
 	{ 112,  42}, // HUD_RINGSNUM
+	{ 136,  42}, // HUD_RINGSNUMTICS
 	{ 288,  10}, // HUD_RINGSNUMSPLIT
 
 	{  16,  10}, // HUD_SCORE
-	{ 128,  10}, // HUD_SCORENUM
+	{ 136,  10}, // HUD_SCORENUM
 
 	{  17,  26}, // HUD_TIME
 	{ 136,  10}, // HUD_TIMESPLIT
@@ -646,7 +647,7 @@ static void ST_drawTime(void)
 		tictrn  = G_TicsToCentiseconds(tics);
 	}
 
-	if (cv_timetic.value == 1) // Tics only -- how simple is this?
+	if (cv_timetic.value == 3) // Tics only -- how simple is this?
 		ST_DrawNumFromHudWS(HUD_SECONDS, tics);
 	else
 	{
@@ -654,7 +655,7 @@ static void ST_drawTime(void)
 		ST_DrawPatchFromHudWS(HUD_TIMECOLON, sbocolon); // Colon
 		ST_DrawPadNumFromHudWS(HUD_SECONDS, seconds, 2); // Seconds
 
-		if (!splitscreen && (cv_timetic.value == 2 || modeattacking)) // there's not enough room for tics in splitscreen, don't even bother trying!
+		if (!splitscreen && (cv_timetic.value == 1 || cv_timetic.value == 2 || modeattacking)) // there's not enough room for tics in splitscreen, don't even bother trying!
 		{
 			ST_DrawPatchFromHud(HUD_TIMETICCOLON, sboperiod); // Period
 			ST_DrawPadNumFromHud(HUD_TICS, tictrn, 2); // Tics
@@ -679,7 +680,10 @@ static inline void ST_drawRings(void)
 				ringnum += players[i].mo->health - 1;
 	}
 
-	ST_DrawNumFromHudWS(HUD_RINGSNUM, ringnum);
+	if (cv_timetic.value == 2)
+		ST_DrawNumFromHudWS(HUD_RINGSNUMTICS, ringnum);
+	else
+		ST_DrawNumFromHudWS(HUD_RINGSNUM, ringnum);
 }
 
 static void ST_drawLives(void)
@@ -1954,3 +1958,4 @@ void ST_Drawer(void)
 		}
 	}
 }
+

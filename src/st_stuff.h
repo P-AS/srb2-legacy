@@ -89,6 +89,7 @@ typedef enum
 	HUD_RINGS,
 	HUD_RINGSSPLIT,
 	HUD_RINGSNUM,
+	HUD_RINGSNUMTICS,
 	HUD_RINGSNUMSPLIT,
 
 	HUD_SCORE,
@@ -125,3 +126,4 @@ extern hudinfo_t hudinfo[NUMHUDITEMS];
 extern UINT16 objectsdrawn;
 
 #endif
+
