@@ -1262,18 +1262,19 @@ static menuitem_t OP_GameOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Show HUD",               &cv_showhud,     50},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
 	                      NULL, "HUD Visibility",         &cv_translucenthud, 60},
-	{IT_STRING | IT_CVAR, NULL, "Score/Time/Rings",       &cv_timetic,     70},
-	{IT_STRING | IT_CVAR, NULL, "Always Compact Rankings",          &cv_compactscoreboard,     80},
+	{IT_STRING | IT_CVAR, NULL, "Timer/Rings Display",    &cv_timetic,     70},
+	{IT_STRING | IT_CVAR, NULL, "Score Display",          &cv_scorepos,     80},
+	{IT_STRING | IT_CVAR, NULL, "Always Compact Rankings",          &cv_compactscoreboard,     90},
 #ifdef SEENAMES
-	{IT_STRING | IT_CVAR, NULL, "HUD Player Names",       &cv_seenames,    90},
+	{IT_STRING | IT_CVAR, NULL, "HUD Player Names",       &cv_seenames,    100},
 #endif
-	{IT_STRING | IT_CVAR, NULL, "Log Hazard Damage",      &cv_hazardlog,   100},
+	{IT_STRING | IT_CVAR, NULL, "Log Hazard Damage",      &cv_hazardlog,   110},
 
-	{IT_STRING | IT_CVAR, NULL, "Console Back Color",     &cons_backcolor, 110},
-	{IT_STRING | IT_CVAR, NULL, "Console Text Size",      &cv_constextsize,120},
-	{IT_STRING | IT_CVAR, NULL, "Uppercase Console",      &cv_allcaps,     130},
+	{IT_STRING | IT_CVAR, NULL, "Console Back Color",     &cons_backcolor, 120},
+	{IT_STRING | IT_CVAR, NULL, "Console Text Size",      &cv_constextsize,130},
+	{IT_STRING | IT_CVAR, NULL, "Uppercase Console",      &cv_allcaps,     140},
 
-	{IT_STRING | IT_CVAR, NULL, "Title Screen Demos",     &cv_rollingdemos, 140},
+	{IT_STRING | IT_CVAR, NULL, "Title Screen Demos",     &cv_rollingdemos, 150},
 };
 
 static menuitem_t OP_ChatOptionsMenu[] =

@@ -139,7 +139,8 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	{ 288,  10}, // HUD_RINGSNUMSPLIT
 
 	{  16,  10}, // HUD_SCORE
-	{ 136,  10}, // HUD_SCORENUM
+	{ 128,  10}, // HUD_SCORENUM
+	{ 136,  10}, // HUD_SCORENUMMODERN
 
 	{  17,  26}, // HUD_TIME
 	{ 136,  10}, // HUD_TIMESPLIT
@@ -621,6 +622,10 @@ static void ST_drawScore(void)
 		else
 			ST_DrawNumFromHud(HUD_SCORENUM, op_displayflags);
 	}
+	else
+
+	if (!splitscreen && (cv_scorepos.value == 1))
+		ST_DrawNumFromHud(HUD_SCORENUMMODERN, stplyr->score);
 	else
 		ST_DrawNumFromHud(HUD_SCORENUM, stplyr->score);
 }
