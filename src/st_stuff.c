@@ -622,7 +622,6 @@ static void ST_drawScore(void)
 		else
 			ST_DrawNumFromHud(HUD_SCORENUM, op_displayflags);
 	}
-	else
 
 	if (!splitscreen && (cv_scorepos.value == 1))
 		ST_DrawNumFromHud(HUD_SCORENUMMODERN, stplyr->score);
