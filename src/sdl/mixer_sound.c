@@ -1083,6 +1083,10 @@ boolean I_PlaySong(boolean looping)
 #ifdef HAVE_LIBGME
 	if (gme)
 	{
+#if GME_VERSION >= 0x000603
+		if (looping)
+			gme_set_autoload_playback_limit(gme, 0);
+#endif
 		gme_start_track(gme, 0);
 		current_track = 0;
 		Mix_HookMusic(mix_gme, gme);
@@ -1311,3 +1315,4 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
 		return false;
 }
 #endif
+
