@@ -1058,6 +1058,8 @@ void HU_clearChatChars(void)
 		w_chat[i] = 0; // reset this.
 	chat_on = false;
 	c_input = 0;
+
+	I_UpdateMouseGrab();
 }
 
 #ifndef NONET
@@ -1208,6 +1210,7 @@ boolean HU_Responder(event_t *ev)
 			chat_on = false;
 			c_input = 0; // reset input cursor
 			chat_scrollmedown = true; // you hit enter, so you might wanna autoscroll to see what you just sent. :)
+			I_UpdateMouseGrab();
 		}
 		else if (c == KEY_ESCAPE
 			|| ((c == gamecontrol[gc_talkkey][0] || c == gamecontrol[gc_talkkey][1]
@@ -1216,6 +1219,7 @@ boolean HU_Responder(event_t *ev)
 		{
 			chat_on = false;
 			c_input = 0; // reset input cursor
+			I_UpdateMouseGrab();
 		}
 		else if ((c == KEY_UPARROW || c == KEY_MOUSEWHEELUP) && chat_scroll > 0 && !OLDCHAT) // CHAT SCROLLING YAYS!
 		{
@@ -3077,3 +3081,4 @@ void HU_DoCEcho(const char *msg)
 	cechotext[sizeof(cechotext) - 1] = '\0';
 	cechotimer = cechoduration;
 }
+

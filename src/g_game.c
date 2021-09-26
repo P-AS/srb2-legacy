@@ -1703,6 +1703,7 @@ void G_DoLoadLevel(boolean resetplayer)
 		Y_EndIntermission();
 
 	G_SetGamestate(GS_LEVEL);
+	I_UpdateMouseGrab();
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

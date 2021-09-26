@@ -1354,6 +1354,8 @@ getBufferedData:
 	}
 }
 
+void I_UpdateMouseGrab(void) {}
+
 // ===========================================================================================
 //                                                                       DIRECT INPUT JOYSTICK
 // ===========================================================================================
@@ -3693,3 +3695,4 @@ void I_RegisterSysCommands(void)
 	CV_RegisterVar(&cv_cpuaffinity);
 }
 #endif
+

@@ -2281,10 +2281,7 @@ boolean M_Responder(event_t *ev)
 
 			case KEY_ESCAPE: // Pop up menu
 				if (chat_on)
-				{
 					HU_clearChatChars();
-					chat_on = false;
-				}
 				else
 					M_StartControlPanel();
 				return true;
@@ -2444,6 +2441,7 @@ boolean M_Responder(event_t *ev)
 				{
 					// D_StartTitle does its own wipe, since GS_TIMEATTACK is now a complete gamestate.
 					menuactive = false;
+					I_UpdateMouseGrab();
 					D_StartTitle();
 				}
 				else
@@ -2668,6 +2666,8 @@ void M_ClearMenus(boolean callexitmenufunc)
 	if (currentMenu == &MessageDef) // Oh sod off!
 		currentMenu = &MainDef; // Not like it matters
 	menuactive = false;
+
+	I_UpdateMouseGrab();
 }
 
 //

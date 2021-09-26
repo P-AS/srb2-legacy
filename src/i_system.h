@@ -292,6 +292,10 @@ void I_GetJoystick2Events(void);
 */
 void I_GetMouseEvents(void);
 
+/**	\brief Checks if the mouse needs to be grabbed
+*/
+void I_UpdateMouseGrab(void);
+
 char *I_GetEnv(const char *name);
 
 INT32 I_PutEnv(char *variable);
@@ -307,3 +311,4 @@ const char *I_ClipboardPaste(void);
 void I_RegisterSysCommands(void);
 
 #endif
+
