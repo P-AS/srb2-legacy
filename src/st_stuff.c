@@ -684,12 +684,6 @@ static inline void ST_drawRings(void)
 				ringnum += players[i].mo->health - 1;
 	}
 
-//This part is modified to be able to move the rings number position
-//for the mania hud mode backported from 2.2.
-//However, a strange bug causes splitscreen mode to only display the
-//correct ring number location when using the mania hud mode.
-//This works around it, but I don't understand why this happens. - PASRC
-
 		if (!splitscreen && (cv_timetic.value < 2 || cv_timetic.value == 3))
 			ST_DrawNumFromHudWS(HUD_RINGSNUM, ringnum);
 		else
