@@ -268,9 +268,10 @@ FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
 
 	I_OutputMsg("\nsignal_handler() error: %s\n", sigmsg);
 
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"Signal caught",
-		sigmsg, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"Signal caught",
+			sigmsg, NULL);
 	I_ShutdownSystem();
 	signal(num, SIG_DFL);               //default signal action
 	raise(num);
@@ -2235,9 +2236,10 @@ void I_Error(const char *error, ...)
 			// Implement message box with SDL_ShowSimpleMessageBox,
 			// which should fail gracefully if it can't put a message box up
 			// on the target system
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-				"SRB2 "VERSIONSTRING" Recursive Error",
-				buffer, NULL);
+			if (!M_CheckParm("-dedicated"))
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+					"SRB2 "VERSIONSTRING" Recursive Error",
+					buffer, NULL);
 
 			W_Shutdown();
 			exit(-1); // recursive errors detected
@@ -2280,9 +2282,10 @@ void I_Error(const char *error, ...)
 	// Implement message box with SDL_ShowSimpleMessageBox,
 	// which should fail gracefully if it can't put a message box up
 	// on the target system
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"SRB2 "VERSIONSTRING" Error",
-		buffer, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"SRB2 "VERSIONSTRING" Error",
+			buffer, NULL);
 	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
 	// initialized at the time, so calling it after SDL_Quit() is
 	// perfectly okay! In addition, we do this on purpose so the
