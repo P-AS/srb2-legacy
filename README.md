@@ -12,7 +12,7 @@ The goal of SRB2 Legacy is to include essential fixes and QOL improvements seen 
 
 ## Compiling
 
-See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling)
+See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling) or [nzar's guide](https://nzarx.github.io/srb21.html)
 
 ## Disclaimer
 Sonic Team Junior is in no way affiliated with SEGA or Sonic Team. We do not claim ownership of any of SEGA's intellectual property used in SRB2.
