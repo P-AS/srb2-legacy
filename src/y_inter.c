@@ -219,11 +219,14 @@ void Y_IntermissionDrawer(void)
 
 		// draw score
 		ST_DrawPatchFromHud(HUD_SCORE, sboscore);
-		ST_DrawNumFromHud(HUD_SCORENUM, data.coop.score);
+		if (!splitscreen && (cv_scorepos.value == 1))
+			ST_DrawNumFromHud(HUD_SCORENUMMODERN, data.coop.score);
+		else
+			ST_DrawNumFromHud(HUD_SCORENUM, data.coop.score);
 
 		// draw time
 		ST_DrawPatchFromHud(HUD_TIME, sbotime);
-		if (cv_timetic.value == 1)
+		if (cv_timetic.value == 3)
 			ST_DrawNumFromHud(HUD_SECONDS, data.coop.tics);
 		else
 		{
@@ -238,7 +241,7 @@ void Y_IntermissionDrawer(void)
 			ST_DrawPadNumFromHud(HUD_SECONDS, seconds, 2); // Seconds
 
 			// we should show centiseconds on the intermission screen too, if the conditions are right.
-			if (modeattacking || cv_timetic.value == 2)
+			if (modeattacking || cv_timetic.value == 1 || cv_timetic.value == 2)
 			{
 				ST_DrawPatchFromHud(HUD_TIMETICCOLON, sboperiod); // Period
 				ST_DrawPadNumFromHud(HUD_TICS, tictrn, 2); // Tics
@@ -1888,3 +1891,4 @@ static void Y_UnloadData(void)
 	}
 
 }
+
