@@ -230,17 +230,17 @@ void D_ProcessEvents(void)
 // added comment : there is a wipe eatch change of the gamestate
 gamestate_t wipegamestate = GS_LEVEL;
 
-static boolean D_Display(void)
+static void D_Display(void)
 {
 	boolean forcerefresh = false;
 	static boolean wipe = false;
 	INT32 wipedefindex = 0;
 
 	if (dedicated)
-		return false;
+		return;
 
 	if (nodrawers)
-		return false; // for comparative timing/profiling
+		return; // for comparative timing/profiling
 
 
 	// check for change of screen size (video mode)
@@ -523,9 +523,10 @@ static boolean D_Display(void)
 			M_DrawPerfStats();
 		}
 
-		return true; // Do I_FinishUpdate in the main loop
+		PS_START_TIMING(ps_swaptime);
+		I_FinishUpdate(); // page flip or blit buffer
+		PS_STOP_TIMING(ps_swaptime);
 	}
-	return false;
 }
 
 
@@ -543,7 +544,6 @@ void D_SRB2Loop(void)
 
 	boolean interp = false;
 	boolean doDisplay = false;
-	boolean screenUpdate = false;
 
 	if (dedicated)
 		server = true;
@@ -630,7 +630,7 @@ void D_SRB2Loop(void)
 #endif
 
 		interp = R_UsingFrameInterpolation() && !dedicated;
-		doDisplay = screenUpdate = false;
+		doDisplay = false;
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -705,10 +705,16 @@ void D_SRB2Loop(void)
 
 		if (interp || doDisplay)
 		{
-			screenUpdate = D_Display();
+			D_Display();
 		}
 
-		// consoleplayer -> displayplayer (hear sounds from viewpoint)
+		// Only take screenshots after drawing.
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot)
+			M_DoScreenShot();
+
+		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
 
 #ifdef HW3SOUND
@@ -717,15 +723,6 @@ void D_SRB2Loop(void)
 
 		LUA_Step();
 
-
-		// I_FinishUpdate is now here instead of D_Display,
-		// because it synchronizes it more closely with the frame counter.
-		if (screenUpdate == true)
-		{
-			PS_START_TIMING(ps_swaptime);
-			I_FinishUpdate(); // page flip or blit buffer
-			PS_STOP_TIMING(ps_swaptime);
-		}
 
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
