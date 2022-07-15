@@ -99,8 +99,6 @@ if(${SDL2_FOUND})
 
 	#target_link_libraries(SRB2SDL2 PRIVATE SRB2Core)
 
-	set_target_properties(SRB2SDL2 PROPERTIES VERSION ${SRB2_VERSION})
-
 	if(${CMAKE_SYSTEM} MATCHES Windows)
 		target_link_libraries(SRB2SDL2 PRIVATE
 			ws2_32
@@ -138,6 +136,7 @@ if(${SDL2_FOUND})
 		install(TARGETS SRB2SDL2
 			BUNDLE DESTINATION .
 		)
+		set_property(TARGET SRB2SDL2 PROPERTY INSTALL_RPATH_USE_LINK_PATH ON)
 	else()
 		install(TARGETS SRB2SDL2 SRB2SDL2
 			RUNTIME DESTINATION .
