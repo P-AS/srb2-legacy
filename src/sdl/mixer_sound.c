@@ -110,6 +110,27 @@ static void var_cleanup(void)
 	internal_volume = 100;
 }
 
+static const char* get_zlib_error(int zErr)
+{
+	switch (zErr)
+	{
+		case Z_ERRNO:
+			return "Z_ERRNO";
+		case Z_STREAM_ERROR:
+			return "Z_STREAM_ERROR";
+		case Z_DATA_ERROR:
+			return "Z_DATA_ERROR";
+		case Z_MEM_ERROR:
+			return "Z_MEM_ERROR";
+		case Z_BUF_ERROR:
+			return "Z_BUF_ERROR";
+		case Z_VERSION_ERROR:
+			return "Z_VERSION_ERROR";
+		default:
+			return "unknown error";
+	}
+}
+
 /// ------------------------
 /// Audio System
 /// ------------------------
@@ -346,7 +367,8 @@ void *I_GetSfx(sfxinfo_t *sfx)
 		if (zErr == Z_OK) // We're good to go
 		{
 			zErr = inflate(&stream, Z_FINISH);
-			if (zErr == Z_STREAM_END) {
+			if (zErr == Z_STREAM_END)
+			{
 				// Run GME on new data
 				if (!gme_open_data(inflatedData, inflatedLen, &emu, 44100))
 				{
@@ -371,51 +393,11 @@ void *I_GetSfx(sfxinfo_t *sfx)
 				}
 			}
 			else
-			{
-				const char *errorType;
-				switch (zErr)
-				{
-					case Z_ERRNO:
-						errorType = "Z_ERRNO"; break;
-					case Z_STREAM_ERROR:
-						errorType = "Z_STREAM_ERROR"; break;
-					case Z_DATA_ERROR:
-						errorType = "Z_DATA_ERROR"; break;
-					case Z_MEM_ERROR:
-						errorType = "Z_MEM_ERROR"; break;
-					case Z_BUF_ERROR:
-						errorType = "Z_BUF_ERROR"; break;
-					case Z_VERSION_ERROR:
-						errorType = "Z_VERSION_ERROR"; break;
-					default:
-						errorType = "unknown error";
-				}
-				CONS_Alert(CONS_ERROR,"Encountered %s when running inflate: %s\n", errorType, stream.msg);
-			}
+				CONS_Alert(CONS_ERROR,"Encountered %s when running inflate: %s\n", get_zlib_error(zErr), stream.msg);
 			(void)inflateEnd(&stream);
 		}
 		else // Hold up, zlib's got a problem
-		{
-			const char *errorType;
-			switch (zErr)
-			{
-				case Z_ERRNO:
-					errorType = "Z_ERRNO"; break;
-				case Z_STREAM_ERROR:
-					errorType = "Z_STREAM_ERROR"; break;
-				case Z_DATA_ERROR:
-					errorType = "Z_DATA_ERROR"; break;
-				case Z_MEM_ERROR:
-					errorType = "Z_MEM_ERROR"; break;
-				case Z_BUF_ERROR:
-					errorType = "Z_BUF_ERROR"; break;
-				case Z_VERSION_ERROR:
-					errorType = "Z_VERSION_ERROR"; break;
-				default:
-					errorType = "unknown error";
-			}
-			CONS_Alert(CONS_ERROR,"Encountered %s when running inflateInit: %s\n", errorType, stream.msg);
-		}
+			CONS_Alert(CONS_ERROR,"Encountered %s when running inflateInit: %s\n", get_zlib_error(zErr), stream.msg);
 		Z_Free(inflatedData); // GME didn't open jack, but don't let that stop us from freeing this up
 #else
 		return NULL; // No zlib support
@@ -942,77 +924,30 @@ boolean I_LoadSong(char *data, size_t len)
 		if (zErr == Z_OK) // We're good to go
 		{
 			zErr = inflate(&stream, Z_FINISH);
-			if (zErr == Z_STREAM_END) {
+			if (zErr == Z_STREAM_END)
+			{
 				// Run GME on new data
 				if (!gme_open_data(inflatedData, inflatedLen, &gme, 44100))
 				{
-					gme_equalizer_t eq = {GME_TREBLE, GME_BASS, 0,0,0,0,0,0,0,0};
-					gme_start_track(gme, 0);
-					current_track = 0;
-					gme_set_equalizer(gme, &eq);
-					Mix_HookMusic(mix_gme, gme);
 					Z_Free(inflatedData); // GME supposedly makes a copy for itself, so we don't need this lying around
 					return true;
 				}
 			}
 			else
-			{
-				const char *errorType;
-				switch (zErr)
-				{
-					case Z_ERRNO:
-						errorType = "Z_ERRNO"; break;
-					case Z_STREAM_ERROR:
-						errorType = "Z_STREAM_ERROR"; break;
-					case Z_DATA_ERROR:
-						errorType = "Z_DATA_ERROR"; break;
-					case Z_MEM_ERROR:
-						errorType = "Z_MEM_ERROR"; break;
-					case Z_BUF_ERROR:
-						errorType = "Z_BUF_ERROR"; break;
-					case Z_VERSION_ERROR:
-						errorType = "Z_VERSION_ERROR"; break;
-					default:
-						errorType = "unknown error";
-				}
-				CONS_Alert(CONS_ERROR,"Encountered %s when running inflate: %s\n", errorType, stream.msg);
-			}
+				CONS_Alert(CONS_ERROR, "Encountered %s when running inflate: %s\n", get_zlib_error(zErr), stream.msg);
 			(void)inflateEnd(&stream);
 		}
 		else // Hold up, zlib's got a problem
-		{
-			const char *errorType;
-			switch (zErr)
-			{
-				case Z_ERRNO:
-					errorType = "Z_ERRNO"; break;
-				case Z_STREAM_ERROR:
-					errorType = "Z_STREAM_ERROR"; break;
-				case Z_DATA_ERROR:
-					errorType = "Z_DATA_ERROR"; break;
-				case Z_MEM_ERROR:
-					errorType = "Z_MEM_ERROR"; break;
-				case Z_BUF_ERROR:
-					errorType = "Z_BUF_ERROR"; break;
-				case Z_VERSION_ERROR:
-					errorType = "Z_VERSION_ERROR"; break;
-				default:
-					errorType = "unknown error";
-			}
-			CONS_Alert(CONS_ERROR,"Encountered %s when running inflateInit: %s\n", errorType, stream.msg);
-		}
+			CONS_Alert(CONS_ERROR, "Encountered %s when running inflateInit: %s\n", get_zlib_error(zErr), stream.msg);
 		Z_Free(inflatedData); // GME didn't open jack, but don't let that stop us from freeing this up
+		return false;
 #else
-		CONS_Alert(CONS_ERROR,"Cannot decompress VGZ; no zlib support\n");
-		return true;
+		CONS_Alert(CONS_ERROR, "Cannot decompress VGZ; no zlib support\n");
+		return false;
 #endif
 	}
 	else if (!gme_open_data(data, len, &gme, 44100))
-	{
-		gme_equalizer_t eq = {GME_TREBLE, GME_BASS, 0,0,0,0,0,0,0,0};
-		gme_set_equalizer(gme, &eq);
 		return true;
-	}
 #endif
 
 	rw = SDL_RWFromMem(data, len);
@@ -1083,10 +1018,12 @@ boolean I_PlaySong(boolean looping)
 #ifdef HAVE_LIBGME
 	if (gme)
 	{
+		gme_equalizer_t eq = {GME_TREBLE, GME_BASS, 0,0,0,0,0,0,0,0};
 #if GME_VERSION >= 0x000603
 		if (looping)
 			gme_set_autoload_playback_limit(gme, 0);
 #endif
+		gme_set_equalizer(gme, &eq);
 		gme_start_track(gme, 0);
 		current_track = 0;
 		Mix_HookMusic(mix_gme, gme);
