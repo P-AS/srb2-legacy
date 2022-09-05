@@ -401,7 +401,6 @@ static void GIF_headwrite(void)
 {
 	UINT8 *gifhead = Z_Malloc(800, PU_STATIC, NULL);
 	UINT8 *p = gifhead;
-	RGBA_t *c;
 	INT32 i;
 	UINT16 rwidth, rheight;
 
@@ -435,10 +434,9 @@ static void GIF_headwrite(void)
 	RGBA_t *pal = gif_palette;
 	for (i = 0; i < 256; ++i)
 	{
-		c = &pLocalPalette[i];
-		WRITEUINT8(p, c->s.red);
-		WRITEUINT8(p, c->s.green);
-		WRITEUINT8(p, c->s.blue);
+		WRITEUINT8(p, pal[i].s.red);
+		WRITEUINT8(p, pal[i].s.green);
+		WRITEUINT8(p, pal[i].s.blue);
 	}
 
 	// write extension block
@@ -639,12 +637,16 @@ INT32 GIF_open(const char *filename)
 
 	// GIF color table
 	// In hardware mode, uses the master palette
+
 	/*gif_palette = ((cv_screenshot_colorprofile.value
 #ifdef HWRENDER
 	&& (rendermode == render_soft)
 #endif
 	) ? pLocalPalette
 	: pMasterPalette);*/
+
+	//TODO: Add pMasterPalette from 2.2
+	// pLocalPalette seems to work fine here for now.
 	gif_palette = pLocalPalette;
 
 	GIF_headwrite();
