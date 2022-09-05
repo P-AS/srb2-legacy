@@ -19,6 +19,10 @@
 #include "v_video.h"
 #include "i_video.h"
 
+#ifdef HWRENDER
+#include "hardware/hw_main.h"
+#endif
+
 // GIFs are always little-endian
 #include "byteptr.h"
 
@@ -28,6 +32,7 @@ consvar_t cv_gif_downscale =  {"gif_downscale", "On", CV_SAVE, CV_OnOff, NULL, 0
 #ifdef HAVE_ANIGIF
 static boolean gif_optimize = false; // So nobody can do something dumb
 static boolean gif_downscale = false; // like changing cvars mid output
+static RGBA_t *gif_palette = NULL;
 
 static FILE *gif_out = NULL;
 static INT32 gif_frames = 0;
@@ -427,6 +432,7 @@ static void GIF_headwrite(void)
 	WRITEUINT8(p, 0x00);
 
 	// write color table
+	RGBA_t *pal = gif_palette;
 	for (i = 0; i < 256; ++i)
 	{
 		c = &pLocalPalette[i];
@@ -451,6 +457,32 @@ const UINT8 gifframe_gchead[4] = {0x21,0xF9,0x04,0x04}; // GCE, bytes, packed by
 
 static UINT8 *gifframe_data = NULL;
 static size_t gifframe_size = 8192;
+
+#ifdef HWRENDER
+static void hwrconvert(void)
+{
+	UINT8 *linear = HWR_GetScreenshot();
+	UINT8 *dest = screens[2];
+	UINT8 r, g, b;
+	INT32 x, y;
+	size_t i = 0;
+
+	InitColorLUT(gif_palette);
+
+	for (y = 0; y < vid.height; y++)
+	{
+		for (x = 0; x < vid.width; x++, i += 3)
+		{
+			r = (UINT8)linear[i];
+			g = (UINT8)linear[i + 1];
+			b = (UINT8)linear[i + 2];
+			dest[(y * vid.width) + x] = colorlookup[r >> SHIFTCOLORBITS][g >> SHIFTCOLORBITS][b >> SHIFTCOLORBITS];
+		}
+	}
+
+	free(linear);
+}
+#endif
 
 //
 // GIF_framewrite
@@ -477,7 +509,12 @@ static void GIF_framewrite(void)
 		GIF_optimizeregion(cur_screen, movie_screen, &blitx, &blity, &blitw, &blith);
 
 		// blit to temp screen
-		I_ReadScreen(movie_screen);
+		if (rendermode == render_soft)
+			I_ReadScreen(movie_screen);
+#ifdef HWRENDER
+		else if (rendermode == render_opengl)
+			hwrconvert();
+#endif
 	}
 	else
 	{
@@ -486,7 +523,17 @@ static void GIF_framewrite(void)
 		blith = vid.height;
 
 		if (gif_frames == 0)
-			I_ReadScreen(movie_screen);
+		{
+			if (rendermode == render_soft)
+				I_ReadScreen(movie_screen);
+#ifdef HWRENDER
+			else if (rendermode == render_opengl)
+			{
+				hwrconvert();
+				VID_BlitLinearScreen(screens[2], screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
+			}
+#endif
+		}
 		movie_screen = screens[0];
 	}
 
@@ -575,7 +622,7 @@ static void GIF_framewrite(void)
 //
 INT32 GIF_open(const char *filename)
 {
-#ifdef HWRENDER
+#if 0
 	if (rendermode != render_soft)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("GIFs cannot be taken in non-software modes!\n"));
@@ -589,6 +636,17 @@ INT32 GIF_open(const char *filename)
 
 	gif_optimize = (!!cv_gif_optimize.value);
 	gif_downscale = (!!cv_gif_downscale.value);
+
+	// GIF color table
+	// In hardware mode, uses the master palette
+	/*gif_palette = ((cv_screenshot_colorprofile.value
+#ifdef HWRENDER
+	&& (rendermode == render_soft)
+#endif
+	) ? pLocalPalette
+	: pMasterPalette);*/
+	gif_palette = pLocalPalette;
+
 	GIF_headwrite();
 	gif_frames = 0;
 	return 1;
@@ -634,3 +692,4 @@ INT32 GIF_close(void)
 	return 1;
 }
 #endif //ifdef HAVE_ANIGIF
+
