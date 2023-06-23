@@ -259,8 +259,8 @@ static void D_Display(void)
 	// 5. The frame is ready to be drawn!
 
 	// stop movie if needs to change renderer
-	if (setrenderneeded && (moviemode != MM_OFF))
-		M_StopMovie();
+	//if (setrenderneeded && (moviemode != MM_OFF))
+		//M_StopMovie();
 
 	// check for change of renderer or screen size (video mode)
 	if ((setrenderneeded || setmodeneeded) && !wipe)
@@ -1497,4 +1497,3 @@ const char *D_Home(void)
 	if (usehome) return userhome;
 	else return NULL;
 }
-

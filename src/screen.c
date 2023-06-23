@@ -178,6 +178,8 @@ void SCR_SetMode(void)
 		needpatchflush = true;
 		needpatchrecache = true;
 		VID_CheckRenderer();
+		if (!setmodeneeded)
+			VID_SetMode(vid.modenum);
 	}
 
 	if (setmodeneeded)

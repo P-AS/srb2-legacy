@@ -1378,24 +1378,7 @@ INT32 VID_SetMode(INT32 modeNum)
 	vid.modenum = modeNum;
 
 	//Impl_SetWindowName("SRB2 "VERSIONSTRING);
-/*<<<<<<< HEAD
-
-	SDLSetMode(vid.width, vid.height, USE_FULLSCREEN);
-	Impl_VideoSetupBuffer();
-
-	if (rendermode == render_soft)
-	{
-		if (bufSurface)
-		{
-			SDL_FreeSurface(bufSurface);
-			bufSurface = NULL;
-		}
-
-	}
-
-=======*/
 	VID_CheckRenderer();
-//>>>>>>> c7e01a558 (initial stuff)
 	return SDL_TRUE;
 }
 
