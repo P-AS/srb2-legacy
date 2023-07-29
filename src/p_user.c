@@ -3913,6 +3913,15 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 	if (player->pflags & PF_JUMPSTASIS)
 		return;
 
+	if ((cmd->buttons & BT_USE) && ((player->pflags & PF_JUMPED) && !player->exiting && !P_PlayerInPain(player)))
+	{
+		if (!(player->pflags & PF_USEDOWN) && P_SuperReady(player))
+		{
+			// If you can turn super and aren't already,
+			// and you don't have a shield, do it!
+			P_DoSuperTransformation(player, false);
+		}
+	}
 	if (cmd->buttons & BT_USE && !(player->pflags & PF_JUMPDOWN) && !player->exiting && !P_PlayerInPain(player))
 	{
 		if (onground || player->climbing || player->pflags & (PF_CARRIED|PF_ITEMHANG|PF_ROPEHANG))
@@ -4005,12 +4014,6 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 		}
 		else if (player->pflags & PF_SLIDING || (gametype == GT_CTF && player->gotflag))
 			;
-		else if (P_SuperReady(player))
-		{
-			// If you can turn super and aren't already,
-			// and you don't have a shield, do it!
-			P_DoSuperTransformation(player, false);
-		}
 		else if (player->pflags & PF_JUMPED)
 		{
 #ifdef HAVE_BLUA
@@ -9582,4 +9585,3 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 	else if (player == &players[secondarydisplayplayer])
 		localangle2 = angle;
 }
-
