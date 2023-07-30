@@ -3944,7 +3944,7 @@ FILESTAMP
 			// If we've alredy received a ticcmd for this tic, just submit it for the next one.
 			tic_t faketic = maketic;
 			if ((!!(netcmds[maketic % BACKUPTICS][netconsole].angleturn & TICCMD_RECEIVED))
-				&& (maketic - firstticstosend < BACKUPTICS))
+				&& (maketic - firstticstosend < BACKUPTICS - 1))
 				faketic++;
 
 			// Copy ticcmd
