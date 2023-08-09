@@ -40,7 +40,7 @@ extern UINT8 keyboard_started;
 
 	\return	free memory in the system
 */
-UINT32 I_GetFreeMem(UINT32 *total);
+size_t I_GetFreeMem(size_t *total);
 
 /**	\brief  Called by D_SRB2Loop, returns current time in tics.
 */
