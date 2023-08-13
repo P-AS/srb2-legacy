@@ -1338,6 +1338,7 @@ void VID_CheckRenderer(void)
 	}
 
 	SDLSetMode(vid.width, vid.height, USE_FULLSCREEN);
+	Impl_VideoSetupBuffer();
 
 	if (rendermode == render_soft)
 	{
@@ -1346,7 +1347,6 @@ void VID_CheckRenderer(void)
 			SDL_FreeSurface(bufSurface);
 			bufSurface = NULL;
 		}
-		Impl_VideoSetupBuffer();
 #ifdef HWRENDER
 		HWR_FreeTextureCache();
 #endif
