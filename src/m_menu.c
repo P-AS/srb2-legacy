@@ -260,6 +260,9 @@ menu_t OP_VideoOptionsDef, OP_VideoModeDef;
 menu_t OP_OpenGLOptionsDef, OP_OpenGLFogDef, OP_OpenGLColorDef;
 #endif
 menu_t OP_SoundOptionsDef;
+#ifdef HAVE_OPENMPT
+menu_t OP_SoundAdvancedDef;
+#endif
 
 //Misc
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
@@ -1187,7 +1190,20 @@ static menuitem_t OP_SoundOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR,  NULL,  "Play SFX if Unfocused", &cv_playsoundsifunfocused,  90},
 	{IT_STRING | IT_CVAR,  NULL,  "Play Music if Unfocused", &cv_playmusicifunfocused, 100},
+
+#ifdef HAVE_OPENMPT
+	{IT_STRING 	  | IT_SUBMENU, NULL, "Advanced Settings...", &OP_SoundAdvancedDef, 120},
+#endif
 };
+
+#ifdef HAVE_OPENMPT
+static menuitem_t OP_SoundAdvancedMenu[] =
+{
+	{IT_HEADER, NULL, "MOD", NULL, 10},
+
+	{IT_STRING | IT_CVAR, NULL, "Instrument Filter", &cv_modfilter, 22}
+};
+#endif
 
 static menuitem_t OP_DataOptionsMenu[] =
 {
@@ -1696,6 +1712,9 @@ menu_t OP_VideoModeDef =
 	NULL
 };
 menu_t OP_SoundOptionsDef = DEFAULTMENUSTYLE("M_SOUND", OP_SoundOptionsMenu, &OP_MainDef, 60, 30);
+#ifdef HAVE_OPENMPT
+menu_t OP_SoundAdvancedDef = DEFAULTMENUSTYLE("M_SOUND", OP_SoundAdvancedMenu, &OP_SoundOptionsDef, 30, 30);
+#endif
 menu_t OP_GameOptionsDef = DEFAULTMENUSTYLE("M_GAME", OP_GameOptionsMenu, &OP_MainDef, 30, 30);
 menu_t OP_ServerOptionsDef = DEFAULTMENUSTYLE("M_SERVER", OP_ServerOptionsMenu, &OP_MainDef, 30, 30);
 
