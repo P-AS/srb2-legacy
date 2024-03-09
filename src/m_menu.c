@@ -1199,7 +1199,7 @@ static menuitem_t OP_SoundOptionsMenu[] =
 #ifdef HAVE_OPENMPT
 static menuitem_t OP_SoundAdvancedMenu[] =
 {
-	{IT_HEADER, NULL, "MOD", NULL, 10},
+	{IT_HEADER, NULL, "OpenMPT Settings", NULL, 10},
 
 	{IT_STRING | IT_CVAR, NULL, "Instrument Filter", &cv_modfilter, 22}
 };
