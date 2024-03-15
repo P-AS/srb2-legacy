@@ -2613,7 +2613,7 @@ static const char *locateWad(void)
 	const char *envstr;
 	const char *WadPath;
 
-	// SRB2WADDIR environment variable has been changed to SRB2LEGACYWADDIR to prevent conflicts with 2.2+.
+	// SRB2WADDIR environment variable has been renamed to SRB2LEGACYWADDIR to prevent conflicts with 2.2+.
 	I_OutputMsg("SRB2LEGACYWADDIR");
 	// does SRB2LEGACYWADDIR exist?
 	if (((envstr = I_GetEnv("SRB2LEGACYWADDIR")) != NULL) && isWadPathOk(envstr))
