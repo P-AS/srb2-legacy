@@ -1,4 +1,3 @@
-# Maintainer: PASRC <pasrc at proton dot me>
 # Contributor: carstene1ns <arch carsten-teibes de> - http://git.io/ctPKG
 # Contributor: DeedleFake <yisszev at beckforce dot com>
 # Contributor: JJK
@@ -6,7 +5,7 @@
 
 _pkgname="srb2-legacy"
 pkgname="${_pkgname}-git"
-pkgver=winbuild.r99.ga7598698
+pkgver=2.1.25
 _dataver=2.1.25
 pkgrel=1
 pkgdesc='Updated fork of Sonic Robo Blast 2 2.1.25'
@@ -16,15 +15,12 @@ url='https://github.com/P-AS/srb2-legacy'
 depends=('sdl2_mixer' 'libpng' 'libgme' "srb2-legacy-data>=$_dataver" 'libopenmpt')
 makedepends=('mesa' 'glu')
 makedepends_i686=('nasm')
+provides=("${_pkgname}")
+conflicts=("${_pkgname}")
 source=("git+https://github.com/P-AS/srb2-legacy.git"
         "srb2legacy.desktop")
 sha256sums=('SKIP'
             'cf7d494f6e42c1b691f94ceb80415ac1a1455a4983a32ca14ebb5bcde84d6267')
-
-pkgver() {
-  cd "$srcdir"/srb2-legacy
-  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
-}
 
 build() {
   cd "$srcdir"/srb2-legacy/src
