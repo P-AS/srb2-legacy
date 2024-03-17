@@ -1266,7 +1266,6 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 	extra_colormaps[mapnum].fog = fog;
 
 	// This code creates the colormap array used by software renderer
-	if (rendermode == render_soft)
 	{
 		double r, g, b, cbrightness;
 		int p;
@@ -1611,7 +1610,7 @@ void R_PrecacheLevel(void)
 				lump = sf->lumppat[k];
 				if (devparm)
 					spritememory += W_LumpLength(lump);
-				W_CachePatchNum(lump, PU_CACHE);
+				W_CachePatchNum(lump, PU_PATCH);
 			}
 		}
 	}

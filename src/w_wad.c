@@ -41,6 +41,7 @@
 #include "dehacked.h"
 #include "d_clisrv.h"
 #include "r_defs.h"
+#include "r_data.h"
 #include "i_system.h"
 #include "md5.h"
 #include "lua_script.h"
@@ -829,8 +830,11 @@ void W_UnloadWadFile(UINT16 num)
 	lumpcache = delwad->lumpcache;
 	numwadfiles--;
 #ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode == render_opengl)
+	{
+		HWR_FreeColormaps();
 		HWR_FreeTextureCache();
+	}
 	M_AATreeFree(delwad->hwrcache);
 #endif
 	if (*lumpcache)
@@ -1422,7 +1426,6 @@ void *W_CacheLumpNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 
 void *W_CacheLumpNum(lumpnum_t lumpnum, INT32 tag)
 {
-
 	return W_CacheLumpNumPwad(WADFILENUM(lumpnum),LUMPNUM(lumpnum),tag);
 }
 
