@@ -236,7 +236,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 #define UINT64_MAX 0xffffffffffffffffULL /* 18446744073709551615ULL */
 #endif
 
-union FColorRGBA
+extern union FColorRGBA
 {
 	UINT32 rgba;
 	struct
