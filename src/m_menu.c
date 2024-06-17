@@ -2311,6 +2311,7 @@ boolean M_Responder(event_t *ev)
 	switch (ch)
 	{
 		case KEY_DOWNARROW:
+		case KEY_KEYPAD2:
 			M_NextOpt();
 			S_StartSound(NULL, sfx_menu1);
 			if (currentMenu == &SP_PlayerDef)
@@ -2321,6 +2322,7 @@ boolean M_Responder(event_t *ev)
 			return true;
 
 		case KEY_UPARROW:
+		case KEY_KEYPAD8:
 			M_PrevOpt();
 			S_StartSound(NULL, sfx_menu1);
 			if (currentMenu == &SP_PlayerDef)
@@ -2331,6 +2333,7 @@ boolean M_Responder(event_t *ev)
 			return true;
 
 		case KEY_LEFTARROW:
+		case KEY_KEYPAD4:
 			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 			{
@@ -2341,6 +2344,7 @@ boolean M_Responder(event_t *ev)
 			return true;
 
 		case KEY_RIGHTARROW:
+		case KEY_KEYPAD6:
 			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 			{
@@ -3756,6 +3760,7 @@ static void M_HandleImageDef(INT32 choice)
 	switch (choice)
 	{
 		case KEY_RIGHTARROW:
+		case KEY_KEYPAD6:
 			if (currentMenu->numitems == 1)
 				break;
 
@@ -4105,10 +4110,12 @@ static void M_HandleSoundTest(INT32 choice)
 	switch (choice)
 	{
 		case KEY_DOWNARROW:
+		case KEY_KEYPAD2:
 			M_NextOpt();
 			S_StartSound(NULL, sfx_menu1);
 			break;
 		case KEY_UPARROW:
+		case KEY_KEYPAD8:
 			M_PrevOpt();
 			S_StartSound(NULL, sfx_menu1);
 			break;
@@ -4118,9 +4125,11 @@ static void M_HandleSoundTest(INT32 choice)
 			break;
 
 		case KEY_RIGHTARROW:
+		case KEY_KEYPAD6:
 			CV_AddValue(&cv_soundtest, 1);
 			break;
 		case KEY_LEFTARROW:
+		case KEY_KEYPAD4:
 			CV_AddValue(&cv_soundtest, -1);
 			break;
 		case KEY_ENTER:
@@ -4658,6 +4667,7 @@ static void M_HandleLoadSave(INT32 choice)
 	switch (choice)
 	{
 		case KEY_DOWNARROW:
+		case KEY_KEYPAD2:
 			S_StartSound(NULL, sfx_menu1);
 			++saveSlotSelected;
 			if (saveSlotSelected >= MAXSAVEGAMES)
@@ -4666,6 +4676,7 @@ static void M_HandleLoadSave(INT32 choice)
 			break;
 
 		case KEY_UPARROW:
+		case KEY_KEYPAD8:
 			S_StartSound(NULL, sfx_menu1);
 			--saveSlotSelected;
 			if (saveSlotSelected < 0)
@@ -5048,23 +5059,27 @@ static void M_HandleLevelStats(INT32 choice)
 	switch (choice)
 	{
 		case KEY_DOWNARROW:
+		case KEY_KEYPAD2:
 			S_StartSound(NULL, sfx_menu1);
 			if (statsLocation < statsMax)
 				++statsLocation;
 			break;
 
 		case KEY_UPARROW:
+		case KEY_KEYPAD8:
 			S_StartSound(NULL, sfx_menu1);
 			if (statsLocation)
 				--statsLocation;
 			break;
 
 		case KEY_RIGHTARROW:
+		case KEY_KEYPAD6:
 			S_StartSound(NULL, sfx_menu1);
 			statsLocation += (statsLocation+15 >= statsMax) ? statsMax-statsLocation : 15;
 			break;
 
 		case KEY_LEFTARROW:
+		case KEY_KEYPAD4:
 			S_StartSound(NULL, sfx_menu1);
 			statsLocation -= (statsLocation < 15) ? statsLocation : 15;
 			break;
@@ -5777,10 +5792,12 @@ static void M_HandleServerPage(INT32 choice)
 	switch (choice)
 	{
 		case KEY_DOWNARROW:
+		case KEY_KEYPAD2:
 			M_NextOpt();
 			S_StartSound(NULL, sfx_menu1);
 			break;
 		case KEY_UPARROW:
+		case KEY_KEYPAD8:
 			M_PrevOpt();
 			S_StartSound(NULL, sfx_menu1);
 			break;
@@ -5791,11 +5808,13 @@ static void M_HandleServerPage(INT32 choice)
 
 		case KEY_ENTER:
 		case KEY_RIGHTARROW:
+		case KEY_KEYPAD6:
 			S_StartSound(NULL, sfx_menu1);
 			if ((serverlistpage + 1) * SERVERS_PER_PAGE < serverlistcount)
 				serverlistpage++;
 			break;
 		case KEY_LEFTARROW:
+		case KEY_KEYPAD4:
 			S_StartSound(NULL, sfx_menu1);
 			if (serverlistpage > 0)
 				serverlistpage--;
@@ -6447,16 +6466,19 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 	switch (choice)
 	{
 		case KEY_DOWNARROW:
+		case KEY_KEYPAD2:
 			M_NextOpt();
 			S_StartSound(NULL,sfx_menu1); // Tails
 			break;
 
 		case KEY_UPARROW:
+		case KEY_KEYPAD8:
 			M_PrevOpt();
 			S_StartSound(NULL,sfx_menu1); // Tails
 			break;
 
 		case KEY_LEFTARROW:
+		case KEY_KEYPAD4:
 			if (itemOn == 2)       //player skin
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
@@ -6470,6 +6492,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			break;
 
 		case KEY_RIGHTARROW:
+		case KEY_KEYPAD6:
 			if (itemOn == 2)       //player skin
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
@@ -7165,18 +7188,21 @@ static void M_HandleVideoMode(INT32 ch)
 	else switch (ch)
 	{
 		case KEY_DOWNARROW:
+		case KEY_KEYPAD2:
 			S_StartSound(NULL, sfx_menu1);
 			if (++vidm_selected >= vidm_nummodes)
 				vidm_selected = 0;
 			break;
 
 		case KEY_UPARROW:
+		case KEY_KEYPAD8:
 			S_StartSound(NULL, sfx_menu1);
 			if (--vidm_selected < 0)
 				vidm_selected = vidm_nummodes - 1;
 			break;
 
 		case KEY_LEFTARROW:
+		case KEY_KEYPAD4:
 			S_StartSound(NULL, sfx_menu1);
 			vidm_selected -= vidm_column_size;
 			if (vidm_selected < 0)
@@ -7186,6 +7212,7 @@ static void M_HandleVideoMode(INT32 ch)
 			break;
 
 		case KEY_RIGHTARROW:
+		case KEY_KEYPAD6:
 			S_StartSound(NULL, sfx_menu1);
 			vidm_selected += vidm_column_size;
 			if (vidm_selected >= (vidm_column_size*3))
@@ -7363,11 +7390,13 @@ static void M_HandleFogColor(INT32 choice)
 	switch (choice)
 	{
 		case KEY_DOWNARROW:
+		case KEY_KEYPAD2:
 			S_StartSound(NULL, sfx_menu1);
 			itemOn++;
 			break;
 
 		case KEY_UPARROW:
+		case KEY_KEYPAD8:
 			S_StartSound(NULL, sfx_menu1);
 			itemOn--;
 			break;

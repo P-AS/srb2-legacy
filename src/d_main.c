@@ -1024,7 +1024,7 @@ void D_SRB2Main(void)
 	}
 
 	// rand() needs seeded regardless of password
-	srand((unsigned int)time(NULL));
+	srand(0);
 
 	if (M_CheckParm("-password") && M_IsNextParm())
 		D_SetPassword(M_GetNextParm());
