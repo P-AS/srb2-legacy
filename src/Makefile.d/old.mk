@@ -2,8 +2,8 @@
 # Warn about old build directories and offer to purge.
 #
 
-_old:=$(wildcard $(addprefix ../bin/,FreeBSD Linux \
-		Linux64 Mingw Mingw64 SDL dummy) ../objs ../deps)
+_old:=$(wildcard $(addprefix ../bin/,Dos FreeBSD Linux \
+		Linux64 Mingw Mingw64 SDL VC VC9 WinCE dummy) ../objs)
 
 ifdef _old
 $(foreach v,$(_old),$(info $(abspath $(v))))
