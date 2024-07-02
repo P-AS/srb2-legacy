@@ -8,7 +8,6 @@ dehacked.c
 z_zone.c
 f_finale.c
 f_wipe.c
-g_demo.c
 g_game.c
 g_input.c
 am_map.c
@@ -53,13 +52,9 @@ r_draw.c
 r_main.c
 r_plane.c
 r_segs.c
-r_skins.c
 r_sky.c
 r_splats.c
 r_things.c
-r_textures.c
-r_picformats.c
-r_portal.c
 screen.c
 v_video.c
 s_sound.c
@@ -67,7 +62,6 @@ sounds.c
 w_wad.c
 filesrch.c
 mserv.c
-http-mserv.c
 i_tcp.c
 lzf.c
 vid_copy.s

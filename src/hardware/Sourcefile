@@ -5,9 +5,5 @@ hw_main.c
 hw_clip.c
 hw_md2.c
 hw_cache.c
-hw_md2load.c
-hw_md3load.c
-hw_model.c
-u_list.c
-hw_batching.c
+hw_trick.c
 r_opengl/r_opengl.c
