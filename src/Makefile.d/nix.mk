@@ -4,7 +4,7 @@
 
 EXENAME?=lsdl2srb2legacy
 
-opts+=-DUNIXCOMMON -DLUA_USE_POSIX
+opts+=-DUNIXCOMMON -DHAVE_BLUA -DLUA_USE_POSIX
 libs+=-lm
 
 ifndef nasm_format
