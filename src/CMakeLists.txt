@@ -36,6 +36,7 @@ if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
 	"Use SRB2's internal copies of required dependencies (SDL2, PNG, zlib, GME, OpenMPT).")
 endif()
 
+add_definitions(-DHAVE_BLUA)
 add_subdirectory(blua)
 
 if(${SRB2_CONFIG_HAVE_GME})

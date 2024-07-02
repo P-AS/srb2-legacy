@@ -68,7 +68,6 @@ if(${SDL2_FOUND})
 		)
 	endif()
 
-	#add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32 ${SRB2_SDL2_TOTAL_SOURCES})
 	if(${CMAKE_SYSTEM} MATCHES Windows)
 		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacywin)
 	elseif(${CMAKE_SYSTEM} MATCHES Linux)
