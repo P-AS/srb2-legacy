@@ -112,14 +112,14 @@ static consvar_t cv_grbeta = {"gr_beta", "0", 0, CV_Unsigned, NULL, 0, NULL, NUL
 
 static float HWRWipeCounter = 1.0f;
 consvar_t cv_grrounddown = {"gr_rounddown", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grfov = {"gr_fov", "90", CV_FLOAT|CV_CALL, grfov_cons_t, CV_grFov_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grfogdensity = {"gr_fogdensity", "150", CV_CALL|CV_NOINIT, CV_Unsigned,
+consvar_t cv_grfov = {"gr_fov", "90", CV_FLOAT|CV_CALL|CV_SAVE, grfov_cons_t, CV_grFov_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grfogdensity = {"gr_fogdensity", "150", CV_CALL|CV_NOINIT|CV_SAVE, CV_Unsigned,
                              CV_FogDensity_ONChange, 0, NULL, NULL, 0, 0, NULL};
 
 // Unfortunately, this can no longer be saved..
-consvar_t cv_grfiltermode = {"gr_filtermode", "Nearest", CV_CALL, grfiltermode_cons_t,
+consvar_t cv_grfiltermode = {"gr_filtermode", "Nearest", CV_CALL|CV_SAVE, grfiltermode_cons_t,
                              CV_filtermode_ONChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_granisotropicmode = {"gr_anisotropicmode", "1", CV_CALL, granisotropicmode_cons_t,
+consvar_t cv_granisotropicmode = {"gr_anisotropicmode", "1", CV_CALL|CV_SAVE, granisotropicmode_cons_t,
                              CV_anisotropic_ONChange, 0, NULL, NULL, 0, 0, NULL};
 //static consvar_t cv_grzbuffer = {"gr_zbuffer", "On", 0, CV_OnOff};
 consvar_t cv_grcorrecttricks = {"gr_correcttricks", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
