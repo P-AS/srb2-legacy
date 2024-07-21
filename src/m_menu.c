@@ -2466,6 +2466,15 @@ boolean M_Responder(event_t *ev)
 					I_UpdateMouseGrab();
 					D_StartTitle();
 				}
+				else if (currentMenu == &SP_PlayerDef)
+				{
+					if (!Playing())
+					{
+						S_StopMusic();
+						S_ChangeMusicInternal("titles", looptitle);
+					}
+					M_SetupNextMenu(currentMenu->prevMenu);
+				}
 				else
 					M_SetupNextMenu(currentMenu->prevMenu);
 			}
