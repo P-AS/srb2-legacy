@@ -9523,23 +9523,27 @@ void P_PlayerAfterThink(player_t *player)
 		player->secondjump = 0;
 		player->pflags &= ~PF_THOKKED;
 
-		if (cmd->forwardmove > 0)
-			player->mo->tracer->target->lastlook += 2;
-		else if (cmd->forwardmove < 0 && player->mo->tracer->target->lastlook > player->mo->tracer->target->movecount)
-			player->mo->tracer->target->lastlook -= 2;
-
-		if (!(player->mo->tracer->target->flags & MF_SLIDEME) // Noclimb on chain parameters gives this
-		&& !(twodlevel || player->mo->flags2 & MF2_TWOD)) // why on earth would you want to turn them in 2D mode?
+		// TODO: ensure that the player lets go when mace is removed
+		if (!P_MobjWasRemoved(player->mo->tracer->target))
 		{
-			player->mo->tracer->target->health += cmd->sidemove;
-			player->mo->angle += cmd->sidemove<<ANGLETOFINESHIFT; // 2048 --> ANGLE_MAX
+			if (cmd->forwardmove > 0)
+				player->mo->tracer->target->lastlook += 2;
+			else if (cmd->forwardmove < 0 && player->mo->tracer->target->lastlook > player->mo->tracer->target->movecount)
+				player->mo->tracer->target->lastlook -= 2;
 
-			if (!demoplayback || P_AnalogMove(player))
+			if (!(player->mo->tracer->target->flags & MF_SLIDEME) // Noclimb on chain parameters gives this
+			&& !(twodlevel || player->mo->flags2 & MF2_TWOD)) // why on earth would you want to turn them in 2D mode?
 			{
-				if (player == &players[consoleplayer])
-					localangle = player->mo->angle; // Adjust the local control angle.
-				else if (player == &players[secondarydisplayplayer])
-					localangle2 = player->mo->angle;
+				player->mo->tracer->target->health += cmd->sidemove;
+				player->mo->angle += cmd->sidemove<<ANGLETOFINESHIFT; // 2048 --> ANGLE_MAX
+
+				if (!demoplayback || P_AnalogMove(player))
+				{
+					if (player == &players[consoleplayer])
+						localangle = player->mo->angle; // Adjust the local control angle.
+					else if (player == &players[secondarydisplayplayer])
+						localangle2 = player->mo->angle;
+				}
 			}
 		}
 	}
