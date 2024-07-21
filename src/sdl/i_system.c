@@ -79,6 +79,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define HAVE_SDLCPUINFO
 
 #if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
+#include <time.h>
 #if defined (__linux__)
 #include <sys/vfs.h>
 #else
@@ -1993,6 +1994,11 @@ static HMODULE winmm = NULL;
 static DWORD starttickcount = 0; // hack for win2k time bug
 static p_timeGetTime pfntimeGetTime = NULL;
 
+static LARGE_INTEGER basetime = {{0, 0}};
+
+// use this if High Resolution timer is found
+static LARGE_INTEGER frequency;
+
 // ---------
 // I_GetTime
 // Use the High Resolution Timer if available,
@@ -2007,10 +2013,6 @@ tic_t I_GetTime(void)
 	if (!starttickcount) // high precision timer
 	{
 		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-		static LARGE_INTEGER basetime = {{0, 0}};
-
-		// use this if High Resolution timer is found
-		static LARGE_INTEGER frequency;
 
 		if (!basetime.LowPart)
 		{
@@ -2039,6 +2041,38 @@ tic_t I_GetTime(void)
 	return newtics;
 }
 
+void I_SleepToTic(tic_t tic)
+{
+	tic_t untilnexttic = 0;
+
+	if (!starttickcount) // high precision timer
+	{
+		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
+		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
+		{
+			untilnexttic = (INT32)((currtime.QuadPart - basetime.QuadPart) * 1000
+				/ frequency.QuadPart % NEWTICRATE);
+		}
+		else if (pfntimeGetTime)
+		{
+			currtime.LowPart = pfntimeGetTime();
+			if (!basetime.LowPart)
+				basetime.LowPart = currtime.LowPart;
+			untilnexttic = ((currtime.LowPart - basetime.LowPart)%(1000/NEWTICRATE));
+		}
+	}
+	else
+	{
+		untilnexttic = (GetTickCount() - starttickcount)%(1000/NEWTICRATE);
+		untilnexttic = (1000/NEWTICRATE) - untilnexttic;
+	}
+
+	// give some extra slack then busy-wait on windows, since windows' sleep is garbage
+	if (untilnexttic > 2)
+		SDL_Delay(untilnexttic - 2);
+	while (tic > I_GetTime());
+}
+
 static void I_ShutdownTimer(void)
 {
 	pfntimeGetTime = NULL;
@@ -2052,25 +2086,58 @@ static void I_ShutdownTimer(void)
 	}
 }
 #else
+static struct timespec basetime;
+
 //
 // I_GetTime
 // returns time in 1/TICRATE second tics
 //
 tic_t I_GetTime (void)
 {
-	static Uint64 basetime = 0;
-		   Uint64 ticks = SDL_GetTicks();
+	struct timespec ts;
+	uint64_t ticks;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
 
-	if (!basetime)
-		basetime = ticks;
+	if (basetime.tv_sec == 0)
+		basetime = ts;
 
-	ticks -= basetime;
-
-	ticks = (ticks*TICRATE);
-
-	ticks = (ticks/1000);
+	ts.tv_sec -= basetime.tv_sec;
+	ts.tv_nsec -= basetime.tv_nsec;
+	if (ts.tv_nsec < 0)
+	{
+		ts.tv_sec--;
+		ts.tv_nsec += 1000000000;
+	}
+	ticks = ts.tv_sec * 1000000000 + ts.tv_nsec;
+	ticks = ticks * TICRATE / 1000000000;
 
 	return (tic_t)ticks;
+}
+
+void I_SleepToTic(tic_t tic)
+{
+	struct timespec ts;
+	uint64_t curtime, targettime;
+	int status;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+
+	ts.tv_sec -= basetime.tv_sec;
+	ts.tv_nsec -= basetime.tv_nsec;
+	if (ts.tv_nsec < 0)
+	{
+		ts.tv_sec--;
+		ts.tv_nsec += 1000000000;
+	}
+	curtime = ts.tv_sec * 1000000000 + ts.tv_nsec;
+	targettime = (uint64_t)tic * 1000000000 / TICRATE;
+	if (targettime < curtime)
+		return;
+
+	ts.tv_sec = (targettime - curtime) / 1000000000;
+	ts.tv_nsec = (targettime - curtime) % 1000000000;
+	do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+	while (status == EINTR);
+	I_Assert(status == 0);
 }
 #endif
 
