@@ -1688,6 +1688,19 @@ void I_GetMouseEvents(void)
 	}
 }
 
+void I_SetTextInputMode(boolean active)
+{
+	if (active)
+		SDL_StartTextInput();
+	else
+		SDL_StopTextInput();
+}
+
+boolean I_GetTextInputMode(void)
+{
+	return SDL_IsTextInputActive();
+}
+
 //
 // I_ShutdownMouse2
 //
