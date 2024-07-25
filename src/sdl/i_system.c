@@ -1688,19 +1688,6 @@ void I_GetMouseEvents(void)
 	}
 }
 
-void I_SetTextInputMode(boolean active)
-{
-	if (active)
-		SDL_StartTextInput();
-	else
-		SDL_StopTextInput();
-}
-
-boolean I_GetTextInputMode(void)
-{
-	return SDL_IsTextInputActive();
-}
-
 //
 // I_ShutdownMouse2
 //
@@ -1965,6 +1952,19 @@ void I_StartupMouse2(void)
 	SetCommState(mouse2filehandle, &dcb);
 	I_AddExitFunc(I_ShutdownMouse2);
 #endif
+}
+
+void I_SetTextInputMode(boolean active)
+{
+	if (active)
+		SDL_StartTextInput();
+	else
+		SDL_StopTextInput();
+}
+
+boolean I_GetTextInputMode(void)
+{
+	return SDL_IsTextInputActive();
 }
 
 //
