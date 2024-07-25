@@ -1545,9 +1545,9 @@ static void CL_LoadReceivedSavegame(void)
 {
 	UINT8 *savebuffer = NULL;
 	size_t length, decompressedlen;
-	XBOXSTATIC char tmpsave[256];
+	XBOXSTATIC char *tmpsave = Z_Malloc(512, PU_STATIC, NULL);
 
-	sprintf(tmpsave, "%s" PATHSEP TMPSAVENAME, srb2home);
+	snprintf(tmpsave, 512, "%s" PATHSEP TMPSAVENAME, srb2home);
 
 	length = FIL_ReadFile(tmpsave, &savebuffer);
 
@@ -1555,6 +1555,7 @@ static void CL_LoadReceivedSavegame(void)
 	if (!length)
 	{
 		I_Error("Can't read savegame sent");
+		Z_Free(tmpsave);
 		return;
 	}
 
@@ -1597,6 +1598,7 @@ static void CL_LoadReceivedSavegame(void)
 		save_p = NULL;
 		if (unlink(tmpsave) == -1)
 			CONS_Alert(CONS_ERROR, M_GetText("Can't delete %s\n"), tmpsave);
+		Z_Free(tmpsave);
 		return;
 	}
 
@@ -1605,6 +1607,7 @@ static void CL_LoadReceivedSavegame(void)
 	save_p = NULL;
 	if (unlink(tmpsave) == -1)
 		CONS_Alert(CONS_ERROR, M_GetText("Can't delete %s\n"), tmpsave);
+	Z_Free(tmpsave);
 	consistancy[gametic%BACKUPTICS] = Consistancy();
 	CON_ToggleOff();
 }
@@ -2018,9 +2021,9 @@ static void CL_ConnectToServer(boolean viams)
 	tic_t asksent;
 #endif
 #ifdef JOININGAME
-	XBOXSTATIC char tmpsave[256];
+	XBOXSTATIC char *tmpsave = Z_Malloc(512, PU_STATIC, NULL);
 
-	sprintf(tmpsave, "%s" PATHSEP TMPSAVENAME, srb2home);
+	snprintf(tmpsave, 512, "%s" PATHSEP TMPSAVENAME, srb2home);
 #endif
 
 	cl_mode = CL_SEARCHING;
@@ -2081,7 +2084,12 @@ static void CL_ConnectToServer(boolean viams)
 #else
 		if (!CL_ServerConnectionTicker(viams, (char*)NULL, &oldtic, (tic_t *)NULL))
 #endif
+		{
+#ifdef JOININGAME
+			Z_Free(tmpsave);
+#endif
 			return;
+		}
 
 		if (server)
 		{
@@ -2096,6 +2104,9 @@ static void CL_ConnectToServer(boolean viams)
 	DEBFILE(va("Synchronisation Finished\n"));
 
 	displayplayer = consoleplayer;
+#ifdef JOININGAME
+	Z_Free(tmpsave);
+#endif
 }
 
 #ifndef NONET
