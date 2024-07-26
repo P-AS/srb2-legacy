@@ -770,7 +770,7 @@ boolean CON_Responder(event_t *ev)
 		}
 	}
 
-	if (ev->type == ev_text || ev->type == ev_console)
+	if (ev->type == ev_text)
 	{
 		if (!consoletoggle && consoleready)
 			CON_InputAddChar(key);
