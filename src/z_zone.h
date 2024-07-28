@@ -39,6 +39,7 @@
 #define PU_SOUND               11 // static while playing
 #define PU_MUSIC               12 // static while playing
 #define PU_HUDGFX              13 // static until WAD added
+#define PU_PATCH               14 // static until renderer change
 
 #define PU_HWRPATCHINFO        21 // Hardware GLPatch_t struct for OpenGL texture cache
 #define PU_HWRPATCHCOLMIPMAP   22 // Hardware GLMipmap_t struct colromap variation of patch
@@ -59,6 +60,7 @@
 #define PU_HWRPATCHINFO_UNLOCKED 103
 
 void Z_Init(void);
+#define Z_FreeTag(tag) Z_FreeTags(tag, tag)
 void Z_FreeTags(INT32 lowtag, INT32 hightag);
 void Z_CheckMemCleanup(void);
 void Z_CheckHeap(INT32 i);
@@ -67,6 +69,11 @@ void Z_ChangeTag2(void *ptr, INT32 tag, const char *file, INT32 line);
 #else
 void Z_ChangeTag2(void *ptr, INT32 tag);
 #endif
+
+// for renderer switching, free a bunch of stuff
+extern boolean needpatchflush;
+extern boolean needpatchrecache;
+void Z_FlushCachedPatches(void);
 
 #ifdef PARANOIA
 void Z_SetUser2(void *ptr, void **newuser, const char *file, INT32 line);
