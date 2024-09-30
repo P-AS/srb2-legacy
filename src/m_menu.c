@@ -2949,6 +2949,7 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv)
 {
 	INT32 i;
 	INT32 range;
+	INT32 range_default;
 	patch_t *p;
 
 	for (i = 0; cv->PossibleValue[i+1].strvalue; i++);
@@ -2958,16 +2959,24 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv)
 
 	if (range < 0)
 		range = 0;
-	if (range > 100)
+	else if (range > 100)
 		range = 100;
 
-	x = BASEVIDWIDTH - x - SLIDER_WIDTH;
+	range_default = ((atoi(cv->defaultvalue) - cv->PossibleValue[0].value) * 100 /
+	 (cv->PossibleValue[i].value - cv->PossibleValue[0].value));
 
-	V_DrawScaledPatch(x - 8, y, 0, W_CachePatchName("M_SLIDEL", PU_CACHE));
+	if (range_default < 0)
+		range_default = 0;
+	else if (range_default > 100)
+		range_default = 100;
+
+	x = BASEVIDWIDTH - x - SLIDER_WIDTH;
 
 	p =  W_CachePatchName("M_SLIDEM", PU_CACHE);
 	for (i = 0; i < SLIDER_RANGE; i++)
 		V_DrawScaledPatch (x+i*8, y, 0,p);
+
+	V_DrawScaledPatch(x - 8, y, 0, W_CachePatchName("M_SLIDEL", PU_CACHE));
 
 	p = W_CachePatchName("M_SLIDER", PU_CACHE);
 	V_DrawScaledPatch(x+SLIDER_RANGE*8, y, 0, p);
@@ -2975,6 +2984,16 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv)
 	// draw the slider cursor
 	p = W_CachePatchName("M_SLIDEC", PU_CACHE);
 	V_DrawMappedPatch(x + ((SLIDER_RANGE-1)*8*range)/100, y, 0, p, yellowmap);
+
+	if (range != range_default)
+	{
+		// draw the default
+		V_DrawMappedPatch(x + ((SLIDER_RANGE-1)*8*range_default)/100, y, V_TRANSLUCENT, p, yellowmap);
+	}
+
+	// draw current value
+	V_DrawCenteredString(x + 40, y, V_30TRANS,
+			(cv->flags & CV_FLOAT) ? va("%.2f", FIXED_TO_FLOAT(cv->value)) : va("%d", cv->value));
 }
 
 //
@@ -8080,4 +8099,3 @@ static void M_HandleFogColor(INT32 choice)
 	}
 }
 #endif
-
