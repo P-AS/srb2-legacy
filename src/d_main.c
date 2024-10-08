@@ -74,7 +74,8 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
 #include "keys.h"
-#include "filesrch.h" // refreshdirmenu, mainwadstally
+#include "filesrch.h" // refreshdirmenu, mainwadstally 
+#include "r_fps.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -162,6 +163,7 @@ event_t events[MAXEVENTS];
 INT32 eventhead, eventtail;
 
 boolean dedicated = false;
+boolean tic_happened = false;
 
 //
 // D_PostEvent
@@ -237,7 +239,13 @@ static void D_Display(void)
 		return;
 
 	if (nodrawers)
-		return; // for comparative timing/profiling
+		return; // for comparative timing/profiling 
+
+	if (cv_capframerate.value == 0)
+	{
+		R_DoThinkerLerp(I_GetTimeFrac());
+	}
+
 
 	// check for change of screen size (video mode)
 	if (setmodeneeded && !wipe)
@@ -568,13 +576,11 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
-		if (!realtics && !singletics)
+		/*if (!realtics && !singletics)
 		{
-			entertic++;
-			I_SleepToTic(entertic);
-			oldentertics++;
-			realtics++;
-		}
+			I_Sleep();
+			continue;
+		}*/
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -586,7 +592,15 @@ void D_SRB2Loop(void)
 			realtics = 1;
 
 		// process tics (but maybe not if realtic == 0)
+		tic_happened = realtics ? true : false;
 		TryRunTics(realtics);
+
+        if (cv_capframerate.value == 0)
+		{
+			
+			D_Display();
+		}
+		
 
 		if (lastdraw || singletics || gametic > rendergametic)
 		{
@@ -594,7 +608,7 @@ void D_SRB2Loop(void)
 			rendertimeout = entertic+TICRATE/17;
 
 			// Update display, next frame, with current state.
-			D_Display();
+			cv_capframerate.value == 1 ? D_Display() : 0;
 
 			if (moviemode)
 				M_SaveFrame();
@@ -611,8 +625,7 @@ void D_SRB2Loop(void)
 				if (camera.chase)
 					P_MoveChaseCamera(&players[displayplayer], &camera, false);
 			}
-			D_Display();
-
+			cv_capframerate.value == 1 ? D_Display() : 0;
 			if (moviemode)
 				M_SaveFrame();
 			if (takescreenshot) // Only take screenshots after drawing.

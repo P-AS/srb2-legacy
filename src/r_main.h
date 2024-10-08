@@ -39,7 +39,8 @@ extern size_t validcount, linecount, loopcount, framecount;
 // Now with 32 levels.
 #define LIGHTLEVELS 32
 #define LIGHTSEGSHIFT 3
-
+#include "r_fps.h" // Uncapped framerate -- Fury
+#include "i_system.h"
 #define MAXLIGHTSCALE 48
 #define LIGHTSCALESHIFT 12
 #define MAXLIGHTZ 128
@@ -80,7 +81,13 @@ extern consvar_t cv_shadow, cv_shadowoffs;
 extern consvar_t cv_translucency;
 extern consvar_t cv_precipdensity, cv_drawdist, cv_drawdist_nights, cv_drawdist_precip;
 extern consvar_t cv_skybox;
-extern consvar_t cv_tailspickup;
+extern consvar_t cv_tailspickup; 
+
+// Uncapped Framerate
+extern tic_t prev_tics; 
+extern consvar_t cv_capframerate;
+
+
 
 // Called by startup code.
 void R_Init(void);

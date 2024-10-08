@@ -44,7 +44,8 @@
 #include "lzf.h"
 #include "lua_script.h"
 #include "lua_hook.h"
-#include "md5.h"
+#include "md5.h" 
+#include "r_fps.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -4679,8 +4680,9 @@ void TryRunTics(tic_t realtics)
 			// run the count * tics
 			while (neededtic > gametic)
 			{
-				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
+				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic)); 
 
+				prev_tics = I_GetTime();
 				G_Ticker((gametic % NEWTICRATERATIO) == 0);
 				ExtraDataTicker();
 				gametic++;

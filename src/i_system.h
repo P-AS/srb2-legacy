@@ -44,7 +44,11 @@ size_t I_GetFreeMem(size_t *total);
 
 /**	\brief  Called by D_SRB2Loop, returns current time in tics.
 */
-tic_t I_GetTime(void);
+tic_t I_GetTime(void); 
+
+/** \brief  Get the current time as a fraction of a tic since the last tic.
+*/
+fixed_t I_GetTimeFrac(void);
 
 /** \brief  Sleep until the next tic occurs.
 */
@@ -321,5 +325,7 @@ INT32 I_ClipboardCopy(const char *data, size_t size);
 const char *I_ClipboardPaste(void);
 
 void I_RegisterSysCommands(void);
+
+
 
 #endif

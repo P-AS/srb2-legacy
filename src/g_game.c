@@ -45,7 +45,9 @@
 #include "lua_hook.h"
 #include "b_bot.h"
 #include "m_cond.h" // condition sets
-#include "md5.h" // demo checksums
+#include "md5.h" // demo checksums 
+#include "r_fps.h" // Uncapped
+
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -2017,6 +2019,7 @@ void G_Ticker(boolean run)
 		case GS_LEVEL:
 			if (titledemo)
 				F_TitleDemoTicker();
+				R_UpdateViewInterpolation();
 			P_Ticker(run); // tic the game
 			ST_Ticker();
 			AM_Ticker();

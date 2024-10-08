@@ -172,7 +172,8 @@ static char returnWadPath[256];
 
 #include "../i_joy.h"
 
-#include "../m_argv.h"
+#include "../m_argv.h" 
+#include "../r_main.h" // Uncapped
 
 #ifdef MAC_ALERT
 #include "macosx/mac_alert.h"
@@ -2002,187 +2003,50 @@ ticcmd_t *I_BaseTiccmd2(void)
 	return &emptycmd2;
 }
 
-#if defined (_WIN32)
-static HMODULE winmm = NULL;
-static DWORD starttickcount = 0; // hack for win2k time bug
-static p_timeGetTime pfntimeGetTime = NULL;
 
-static LARGE_INTEGER basetime = {{0, 0}};
 
-// use this if High Resolution timer is found
-static LARGE_INTEGER frequency;
 
-// ---------
-// I_GetTime
-// Use the High Resolution Timer if available,
-// else use the multimedia timer which has 1 millisecond precision on Windowz 95,
-// but lower precision on Windows NT
-// ---------
-
-tic_t I_GetTime(void)
-{
-	tic_t newtics = 0;
-
-	if (!starttickcount) // high precision timer
-	{
-		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-
-		if (!basetime.LowPart)
-		{
-			if (!QueryPerformanceFrequency(&frequency))
-				frequency.QuadPart = 0;
-			else
-				QueryPerformanceCounter(&basetime);
-		}
-
-		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
-		{
-			newtics = (INT32)((currtime.QuadPart - basetime.QuadPart) * NEWTICRATE
-				/ frequency.QuadPart);
-		}
-		else if (pfntimeGetTime)
-		{
-			currtime.LowPart = pfntimeGetTime();
-			if (!basetime.LowPart)
-				basetime.LowPart = currtime.LowPart;
-			newtics = ((currtime.LowPart - basetime.LowPart)/(1000/NEWTICRATE));
-		}
-	}
-	else
-		newtics = (GetTickCount() - starttickcount)/(1000/NEWTICRATE);
-
-	return newtics;
-}
-
-void I_SleepToTic(tic_t tic)
-{
-	tic_t untilnexttic = 0;
-
-	if (!starttickcount) // high precision timer
-	{
-		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
-		{
-			untilnexttic = (INT32)((currtime.QuadPart - basetime.QuadPart) * 1000
-				/ frequency.QuadPart % NEWTICRATE);
-		}
-		else if (pfntimeGetTime)
-		{
-			currtime.LowPart = pfntimeGetTime();
-			if (!basetime.LowPart)
-				basetime.LowPart = currtime.LowPart;
-			untilnexttic = ((currtime.LowPart - basetime.LowPart)%(1000/NEWTICRATE));
-		}
-	}
-	else
-	{
-		untilnexttic = (GetTickCount() - starttickcount)%(1000/NEWTICRATE);
-		untilnexttic = (1000/NEWTICRATE) - untilnexttic;
-	}
-
-	// give some extra slack then busy-wait on windows, since windows' sleep is garbage
-	if (untilnexttic > 2)
-		SDL_Delay(untilnexttic - 2);
-	while (tic > I_GetTime());
-}
-
-static void I_ShutdownTimer(void)
-{
-	pfntimeGetTime = NULL;
-	if (winmm)
-	{
-		p_timeEndPeriod pfntimeEndPeriod = (p_timeEndPeriod)(LPVOID)GetProcAddress(winmm, "timeEndPeriod");
-		if (pfntimeEndPeriod)
-			pfntimeEndPeriod(1);
-		FreeLibrary(winmm);
-		winmm = NULL;
-	}
-}
-#else
-static struct timespec basetime;
-
-//
-// I_GetTime
-// returns time in 1/TICRATE second tics
-//
+static Uint64 basetime = 0;
 tic_t I_GetTime (void)
 {
-	struct timespec ts;
-	uint64_t ticks;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	 
+	Uint64 ticks = SDL_GetTicks();
+	tic_t tics = 0;
 
-	if (basetime.tv_sec == 0)
-		basetime = ts;
+	if (!basetime)
+		basetime = ticks;
 
-	ts.tv_sec -= basetime.tv_sec;
-	ts.tv_nsec -= basetime.tv_nsec;
-	if (ts.tv_nsec < 0)
-	{
-		ts.tv_sec--;
-		ts.tv_nsec += 1000000000;
-	}
-	ticks = ts.tv_sec * 1000000000 + ts.tv_nsec;
-	ticks = ticks * TICRATE / 1000000000;
+	tics = ticks;
+	tics -= basetime;
 
-	return (tic_t)ticks;
+	tics = (tics*TICRATE);
+	tics = (tics/1000);
+
+	return tics;
+
 }
 
-void I_SleepToTic(tic_t tic)
+
+
+fixed_t I_GetTimeFrac (void)
 {
-	struct timespec ts;
-	uint64_t curtime, targettime;
-	int status;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	Uint64 ticks;
+	Uint64 prevticks;
+	fixed_t frac;
 
-	ts.tv_sec -= basetime.tv_sec;
-	ts.tv_nsec -= basetime.tv_nsec;
-	if (ts.tv_nsec < 0)
-	{
-		ts.tv_sec--;
-		ts.tv_nsec += 1000000000;
-	}
-	curtime = ts.tv_sec * 1000000000 + ts.tv_nsec;
-	targettime = (uint64_t)tic * 1000000000 / TICRATE;
-	if (targettime < curtime)
-		return;
+	ticks = SDL_GetTicks() - basetime;
+	//if (ticks > tics * 1000 / TICRATE) return 1 * FRACUNIT;
+	prevticks = prev_tics * 1000 / TICRATE;
 
-	ts.tv_sec = (targettime - curtime) / 1000000000;
-	ts.tv_nsec = (targettime - curtime) % 1000000000;
-
-#if defined(__linux__) || defined(__FreeBSD__)
-	do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
-	while (status == EINTR);
-	I_Assert(status == 0);
-#else
-	do status = nanosleep(&ts, &ts);
-	while (status == EINTR);
-	I_Assert(status == 0);
-#endif
+	frac = FixedDiv((ticks - prevticks) * FRACUNIT, (int)roundf((1.f/TICRATE)*1000 * FRACUNIT));
+	return frac > FRACUNIT ? FRACUNIT : frac;
 }
-#endif
-
 //
 //I_StartupTimer
 //
 void I_StartupTimer(void)
 {
-#ifdef _WIN32
-	// for win2k time bug
-	if (M_CheckParm("-gettickcount"))
-	{
-		starttickcount = GetTickCount();
-		CONS_Printf("%s", M_GetText("Using GetTickCount()\n"));
-	}
-	winmm = LoadLibraryA("winmm.dll");
-	if (winmm)
-	{
-		p_timeEndPeriod pfntimeBeginPeriod = (p_timeEndPeriod)(LPVOID)GetProcAddress(winmm, "timeBeginPeriod");
-		if (pfntimeBeginPeriod)
-			pfntimeBeginPeriod(1);
-		pfntimeGetTime = (p_timeGetTime)(LPVOID)GetProcAddress(winmm, "timeGetTime");
-	}
-	I_AddExitFunc(I_ShutdownTimer);
-#endif
+
 }
 
 
