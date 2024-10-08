@@ -7651,6 +7651,8 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->x = x;
 	mobj->y = y;
 
+	mobj->firstlerp = 0;
+	
 	mobj->radius = info->radius;
 	mobj->height = info->height;
 	mobj->flags = info->flags;

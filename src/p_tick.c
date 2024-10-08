@@ -21,7 +21,7 @@
 #include "m_random.h"
 #include "lua_script.h"
 #include "lua_hook.h"
-
+#include "r_fps.h"
 // Object place
 #include "m_cheat.h"
 
@@ -567,7 +567,9 @@ static inline void P_DoCTFStuff(void)
 //
 void P_Ticker(boolean run)
 {
-	INT32 i;
+	INT32 i; 
+	R_SetThinkerOldStates();
+	R_ResetThinkerLerp();
 
 	//Increment jointime even if paused.
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -706,7 +708,9 @@ void P_Ticker(boolean run)
 			G_GhostTicker();
 	}
 
-	P_MapEnd();
+	P_MapEnd(); 
+	R_SetThinkerNewStates();
+
 
 //	Z_CheckMemCleanup();
 }
