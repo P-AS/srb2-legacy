@@ -5,7 +5,7 @@
 
 _pkgname="srb2-legacy"
 pkgname="${_pkgname}-git"
-pkgver=2.1.26
+pkgver=2.1.25
 _dataver=2.1.25
 pkgrel=1
 pkgdesc='Updated fork of Sonic Robo Blast 2 2.1.25'

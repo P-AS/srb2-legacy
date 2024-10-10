@@ -77,18 +77,20 @@ void R_InterpolateView(fixed_t frac)
 		viewsky    = oldview->sky;
 	}
 
-	if (rendermode == render_soft)
 	{
-		// clip it in the case we are looking a hardware 90 degrees full aiming
-		// (lmps, network and use F12...)
 		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
-
-		dy = AIMINGTODY(aimingangle) * viewwidth/BASEVIDWIDTH;
-
-		yslope = &yslopetab[(3*viewheight/2) - dy];
 	}
+
+	centeryfrac = centery<<FRACBITS; 
+	dy = AIMINGTODY(aimingangle) * viewwidth/BASEVIDWIDTH;
+
+	if (rendermode == render_soft)
+		centeryfrac += FixedMul(AIMINGTODY(aimingangle), FixedDiv(viewwidth<<FRACBITS, BASEVIDWIDTH<<FRACBITS));
+
 	centery = (viewheight/2) + dy;
-	centeryfrac = centery<<FRACBITS;
+
+	if (rendermode == render_soft)
+		yslope = &yslopetab[viewheight*8 - centery];
 }
 
 void R_UpdateViewInterpolation(void)

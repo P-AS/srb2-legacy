@@ -151,8 +151,8 @@ extern FILE *logstream;
 #else
 #define VERSION    201 // Game version
 #define SUBVERSION 26  // more precise version number
-#define VERSIONSTRING "v2.1.26"
-#define VERSIONSTRINGW L"v2.1.26"
+#define VERSIONSTRING "v2.1.25"
+#define VERSIONSTRINGW L"v2.1.25"
 // Hey! If you change this, add 1 to the MODVERSION below!
 // Otherwise we can't force updates!
 #endif
@@ -217,7 +217,7 @@ extern FILE *logstream;
 // it's only for detection of the version the player is using so the MS can alert them of an update.
 // Only set it higher, not lower, obviously.
 // Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
-#define MODVERSION 31
+#define MODVERSION 30
 
 // To version config.cfg, MAJOREXECVERSION is set equal to MODVERSION automatically.
 // Increment MINOREXECVERSION whenever a config change is needed that does not correspond
