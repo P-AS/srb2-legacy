@@ -72,6 +72,7 @@ patch_t *cred_font[CRED_FONTSIZE];
 
 static player_t *plr;
 boolean chat_on; // entering a chat message?
+boolean chat_on_first_event; // blocker for first chat input event
 static char w_chat[HU_MAXMSGLEN];
 static size_t c_input = 0; // let's try to make the chat input less shitty.
 static boolean headsupactive = false;
@@ -1056,6 +1057,7 @@ void HU_clearChatChars(void)
 	size_t i = 0;
 	for (;i<HU_MAXMSGLEN;i++)
 		w_chat[i] = 0; // reset this.
+	I_SetTextInputMode(false);
 	chat_on = false;
 	c_input = 0;
 
@@ -1078,7 +1080,7 @@ boolean HU_Responder(event_t *ev)
 	INT32 c=0;
 #endif
 
-	if (ev->type != ev_keydown)
+	if (ev->type != ev_keydown && ev->type != ev_text)
 		return false;
 
 	// only KeyDown events now...
@@ -1108,11 +1110,15 @@ boolean HU_Responder(event_t *ev)
 
 	if (!chat_on)
 	{
+		if (ev->type == ev_text)
+			return false;
 		// enter chat mode
 		if ((ev->data1 == gamecontrol[gc_talkkey][0] || ev->data1 == gamecontrol[gc_talkkey][1])
 			&& netgame && !OLD_MUTE) // check for old chat mute, still let the players open the chat incase they want to scroll otherwise.
 		{
+			I_SetTextInputMode(true);
 			chat_on = true;
+			chat_on_first_event = false;
 			w_chat[0] = 0;
 			teamtalk = false;
 			chat_scrollmedown = true;
@@ -1122,7 +1128,9 @@ boolean HU_Responder(event_t *ev)
 		if ((ev->data1 == gamecontrol[gc_teamkey][0] || ev->data1 == gamecontrol[gc_teamkey][1])
 			&& netgame && !OLD_MUTE)
 		{
+			I_SetTextInputMode(true);
 			chat_on = true;
+			chat_on_first_event = false;
 			w_chat[0] = 0;
 			teamtalk = G_GametypeHasTeams(); // Don't teamtalk if we don't have teams.
 			chat_scrollmedown = true;
@@ -1132,6 +1140,23 @@ boolean HU_Responder(event_t *ev)
 	}
 	else // if chat_on
 	{
+		if (!chat_on_first_event)
+		{
+			// since the text event is sent immediately after the keydown event,
+			// we need to make sure that nothing is displayed once the chat
+			// opens, otherwise a 't' would be outputted.
+			chat_on_first_event = true;
+			return true;
+		}
+
+		if (ev->type == ev_text)
+		{
+			if (!CHAT_MUTE && HU_keyInChatString(w_chat,c))
+			{
+				HU_queueChatChar(c);
+			}
+			return true;
+		}
 
 		// Ignore modifier keys
 		// Note that we do this here so users can still set
@@ -1141,23 +1166,8 @@ boolean HU_Responder(event_t *ev)
 		 || ev->data1 == KEY_LALT || ev->data1 == KEY_RALT)
 			return true;
 
-		c = (INT32)ev->data1;
-
-		// I know this looks very messy but this works. If it ain't broke, don't fix it!
-		// shift LETTERS to uppercase if we have capslock or are holding shift
-		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
-		{
-			if (shiftdown ^ capslock)
-				c = shiftxform[c];
-		}
-		else	// if we're holding shift we should still shift non letter symbols
-		{
-			if (shiftdown)
-				c = shiftxform[c];
-		}
-
 		// pasting. pasting is cool. chat is a bit limited, though :(
-		if (((c == 'v' || c == 'V') && ctrldown) && !CHAT_MUTE)
+		if ((c == 'v' && ctrldown) && !CHAT_MUTE)
 		{
 			const char *paste = I_ClipboardPaste();
 			size_t chatlen;
@@ -1201,12 +1211,16 @@ boolean HU_Responder(event_t *ev)
 			}
 		}
 
-		if (!CHAT_MUTE && HU_keyInChatString(w_chat,c))
+		if (ev->type == ev_keydown && (c < 32 || c >= 128))
 		{
-			HU_queueChatChar(c);
+			if (!CHAT_MUTE && HU_keyInChatString(w_chat,c))
+			{
+				HU_queueChatChar(c);
+			}
 		}
 		if (c == KEY_ENTER)
 		{
+			I_SetTextInputMode(false);
 			chat_on = false;
 			c_input = 0; // reset input cursor
 			chat_scrollmedown = true; // you hit enter, so you might wanna autoscroll to see what you just sent. :)
@@ -1217,6 +1231,7 @@ boolean HU_Responder(event_t *ev)
 			|| c == gamecontrol[gc_teamkey][0] || c == gamecontrol[gc_teamkey][1])
 			&& c >= KEY_MOUSE1)) // If it's not a keyboard key, then the chat button is used as a toggle.
 		{
+			I_SetTextInputMode(false);
 			chat_on = false;
 			c_input = 0; // reset input cursor
 			I_UpdateMouseGrab();

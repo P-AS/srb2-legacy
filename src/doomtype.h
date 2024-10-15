@@ -29,6 +29,12 @@
 
 /* 7.18.1.1  Exact-width integer types */
 #ifdef _MSC_VER
+// libopenmpt.h will include stdint.h later;
+// include it now so that INT8_MAX etc. don't get redefined
+#ifdef HAVE_OPENMPT
+#include <stdint.h>
+#endif
+
 #define UINT8 unsigned __int8
 #define SINT8 signed __int8
 
@@ -161,6 +167,15 @@ typedef long ssize_t;
 #define HAVE_DOSSTR_FUNCS
 #endif
 
+#if defined (__APPLE__)
+	#define SRB2_HAVE_STRLCPY
+#elif defined (__GLIBC_PREREQ)
+	// glibc 2.38: added strlcpy and strlcat to _DEFAULT_SOURCE
+	#if __GLIBC_PREREQ(2, 38)
+		#define SRB2_HAVE_STRLCPY
+	#endif
+#endif
+
 #ifndef HAVE_DOSSTR_FUNCS
 int strupr(char *n); // from dosstr.c
 int strlwr(char *n); // from dosstr.c
@@ -168,7 +183,7 @@ int strlwr(char *n); // from dosstr.c
 
 #include <stddef.h> // for size_t
 
-#ifndef __APPLE__
+#ifndef SRB2_HAVE_STRLCPY
 size_t strlcat(char *dst, const char *src, size_t siz);
 size_t strlcpy(char *dst, const char *src, size_t siz);
 #endif
@@ -206,6 +221,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 #endif // __BYTEBOOL__
 
 /* 7.18.2.1  Limits of exact-width integer types */
+
 #ifndef INT8_MIN
 #define INT8_MIN (-128)
 #endif

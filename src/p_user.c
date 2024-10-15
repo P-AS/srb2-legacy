@@ -3913,6 +3913,15 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 	if (player->pflags & PF_JUMPSTASIS)
 		return;
 
+	if ((cmd->buttons & BT_USE) && ((player->pflags & PF_JUMPED) && !player->exiting && !P_PlayerInPain(player)))
+	{
+		if (!(player->pflags & PF_USEDOWN) && P_SuperReady(player))
+		{
+			// If you can turn super and aren't already,
+			// and you don't have a shield, do it!
+			P_DoSuperTransformation(player, false);
+		}
+	}
 	if (cmd->buttons & BT_USE && !(player->pflags & PF_JUMPDOWN) && !player->exiting && !P_PlayerInPain(player))
 	{
 		if (onground || player->climbing || player->pflags & (PF_CARRIED|PF_ITEMHANG|PF_ROPEHANG))
@@ -4005,12 +4014,6 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 		}
 		else if (player->pflags & PF_SLIDING || (gametype == GT_CTF && player->gotflag))
 			;
-		else if (P_SuperReady(player))
-		{
-			// If you can turn super and aren't already,
-			// and you don't have a shield, do it!
-			P_DoSuperTransformation(player, false);
-		}
 		else if (player->pflags & PF_JUMPED)
 		{
 #ifdef HAVE_BLUA
@@ -9520,23 +9523,27 @@ void P_PlayerAfterThink(player_t *player)
 		player->secondjump = 0;
 		player->pflags &= ~PF_THOKKED;
 
-		if (cmd->forwardmove > 0)
-			player->mo->tracer->target->lastlook += 2;
-		else if (cmd->forwardmove < 0 && player->mo->tracer->target->lastlook > player->mo->tracer->target->movecount)
-			player->mo->tracer->target->lastlook -= 2;
-
-		if (!(player->mo->tracer->target->flags & MF_SLIDEME) // Noclimb on chain parameters gives this
-		&& !(twodlevel || player->mo->flags2 & MF2_TWOD)) // why on earth would you want to turn them in 2D mode?
+		// TODO: ensure that the player lets go when mace is removed
+		if (!P_MobjWasRemoved(player->mo->tracer->target))
 		{
-			player->mo->tracer->target->health += cmd->sidemove;
-			player->mo->angle += cmd->sidemove<<ANGLETOFINESHIFT; // 2048 --> ANGLE_MAX
+			if (cmd->forwardmove > 0)
+				player->mo->tracer->target->lastlook += 2;
+			else if (cmd->forwardmove < 0 && player->mo->tracer->target->lastlook > player->mo->tracer->target->movecount)
+				player->mo->tracer->target->lastlook -= 2;
 
-			if (!demoplayback || P_AnalogMove(player))
+			if (!(player->mo->tracer->target->flags & MF_SLIDEME) // Noclimb on chain parameters gives this
+			&& !(twodlevel || player->mo->flags2 & MF2_TWOD)) // why on earth would you want to turn them in 2D mode?
 			{
-				if (player == &players[consoleplayer])
-					localangle = player->mo->angle; // Adjust the local control angle.
-				else if (player == &players[secondarydisplayplayer])
-					localangle2 = player->mo->angle;
+				player->mo->tracer->target->health += cmd->sidemove;
+				player->mo->angle += cmd->sidemove<<ANGLETOFINESHIFT; // 2048 --> ANGLE_MAX
+
+				if (!demoplayback || P_AnalogMove(player))
+				{
+					if (player == &players[consoleplayer])
+						localangle = player->mo->angle; // Adjust the local control angle.
+					else if (player == &players[secondarydisplayplayer])
+						localangle2 = player->mo->angle;
+				}
 			}
 		}
 	}
@@ -9582,4 +9589,3 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 	else if (player == &players[secondarydisplayplayer])
 		localangle2 = angle;
 }
-

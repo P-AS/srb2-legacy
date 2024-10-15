@@ -622,8 +622,10 @@ void D_SRB2Loop(void)
 
 		if (!realtics && !singletics)
 		{
-			I_Sleep();
-			continue;
+			entertic++;
+			I_SleepToTic(entertic);
+			oldentertics++;
+			realtics++;
 		}
 
 #ifdef HW3SOUND

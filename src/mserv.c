@@ -553,9 +553,8 @@ const char *GetMODVersion(void)
 	}
 
 	msg.type = GET_VERSION_MSG;
-	msg.length = sizeof MODVERSION;
 	msg.room = MODID; // Might as well use it for something.
-	sprintf(msg.buffer,"%d",MODVERSION);
+	msg.length = sprintf(msg.buffer,"%d",MODVERSION);
 	if (MS_Write(&msg) < 0)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Could not send to the Master Server\n"));

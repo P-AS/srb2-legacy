@@ -40,11 +40,15 @@ extern UINT8 keyboard_started;
 
 	\return	free memory in the system
 */
-UINT32 I_GetFreeMem(UINT32 *total);
+size_t I_GetFreeMem(size_t *total);
 
 /**	\brief  Called by D_SRB2Loop, returns current time in tics.
 */
 tic_t I_GetTime(void);
+
+/** \brief  Sleep until the next tic occurs.
+*/
+void I_SleepToTic(tic_t tic);
 
 /**	\brief	The I_Sleep function
 
@@ -296,6 +300,14 @@ void I_GetMouseEvents(void);
 */
 void I_UpdateMouseGrab(void);
 
+/** \brief Sets text input mode. When enabled, keyboard inputs will respect dead keys.
+ */
+void I_SetTextInputMode(boolean active);
+
+/** \brief Retrieves current text input mode.
+ */
+boolean I_GetTextInputMode(void);
+
 char *I_GetEnv(const char *name);
 
 INT32 I_PutEnv(char *variable);
@@ -311,4 +323,3 @@ const char *I_ClipboardPaste(void);
 void I_RegisterSysCommands(void);
 
 #endif
-

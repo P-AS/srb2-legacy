@@ -3235,16 +3235,16 @@ static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 
 	if (ncs != FS_FOUND || toomany)
 	{
-		char message[256];
+		char *message = Z_Malloc(512, PU_STATIC, NULL);
 
 		if (toomany)
-			sprintf(message, M_GetText("Too many files loaded to add %s\n"), filename);
+			snprintf(message, 512, M_GetText("Too many files loaded to add %s\n"), filename);
 		else if (ncs == FS_NOTFOUND)
-			sprintf(message, M_GetText("The server doesn't have %s\n"), filename);
+			snprintf(message, 512, M_GetText("The server doesn't have %s\n"), filename);
 		else if (ncs == FS_MD5SUMBAD)
-			sprintf(message, M_GetText("Checksum mismatch on %s\n"), filename);
+			snprintf(message, 512, M_GetText("Checksum mismatch on %s\n"), filename);
 		else
-			sprintf(message, M_GetText("Unknown error finding wad file (%s)\n"), filename);
+			snprintf(message, 512, M_GetText("Unknown error finding wad file (%s)\n"), filename);
 
 		CONS_Printf("%s",message);
 
@@ -3252,6 +3252,7 @@ static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 			if (adminplayers[j])
 				COM_BufAddText(va("sayto %d %s", adminplayers[j], message));
 
+		Z_Free(message);
 		return;
 	}
 
@@ -3365,9 +3366,9 @@ static void Command_ListWADS_f(void)
 static void Command_Version_f(void)
 {
 #ifdef DEVELOP
-	CONS_Printf("Sonic Robo Blast 2 %s-%s (%s %s) ", compbranch, comprevision, compdate, comptime);
+	CONS_Printf("Sonic Robo Blast 2 Legacy %s-%s (%s %s) ", compbranch, comprevision, compdate, comptime);
 #else
-	CONS_Printf("Sonic Robo Blast 2 %s (%s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision);
+	CONS_Printf("Sonic Robo Blast 2 Legacy %s (%s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision);
 #endif
 
 	// Base library
@@ -4024,7 +4025,7 @@ void Command_Retry_f(void)
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 	else if (netgame || multiplayer)
 		CONS_Printf(M_GetText("This only works in single player.\n"));
-	else if (!&players[consoleplayer] || players[consoleplayer].lives <= 1)
+	else if (players[consoleplayer].lives <= 1)
 		CONS_Printf(M_GetText("You can't retry without any lives remaining!\n"));
 	else if (G_IsSpecialStage(gamemap))
 		CONS_Printf(M_GetText("You can't retry special stages!\n"));
@@ -4366,4 +4367,3 @@ static void Command_ShowTime_f(void)
 
 	CONS_Printf(M_GetText("The current time is %f.\nThe timelimit is %f\n"), (double)leveltime/TICRATE, (double)timelimitintics/TICRATE);
 }
-

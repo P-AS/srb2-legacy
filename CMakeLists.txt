@@ -1,8 +1,21 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.13)
+
+# Enable CCache early
+set(SRB2_USE_CCACHE OFF CACHE BOOL "Use CCache")
+if (${SRB2_USE_CCACHE})
+	find_program(CCACHE_PROGRAM ccache)
+	if(CCACHE_PROGRAM)
+		message(STATUS "Found CCache: ${CCACHE_PROGRAM}")
+		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+	else()
+		message(WARNING "You have specified to use CCACHE but it was not found. Object files will not be cached.")
+	endif()
+endif()
+
 # DO NOT CHANGE THIS SRB2 STRING! Some variable names depend on this string.
 # Version change is fine.
 project(SRB2
-	VERSION 2.1.25
+	VERSION 2.1.26
 	LANGUAGES C)
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
@@ -14,12 +27,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 ### Useful functions
 
-# Prepend sources with current source directory
-function(prepend_sources SOURCE_FILES)
-	foreach(SOURCE_FILE ${${SOURCE_FILES}})
-		set(MODIFIED ${MODIFIED} ${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_FILE})
-	endforeach()
-	set(${SOURCE_FILES} ${MODIFIED} PARENT_SCOPE)
+# Add sources from Sourcefile
+function(target_sourcefile type)
+	file(STRINGS Sourcefile list
+		REGEX "[-0-9A-Za-z_]+\.${type}")
+	target_sources(SRB2SDL2 PRIVATE ${list})
 endfunction()
 
 # Macro to add OSX framework

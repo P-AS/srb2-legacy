@@ -707,8 +707,12 @@ void P_ExplodeMissile(mobj_t *mo)
 		explodemo->momy -= (P_RandomByte() % 96) * FixedMul(FRACUNIT/8, explodemo->scale);
 		S_StartSound(explodemo, sfx_cybdth);
 
+		if (mo->info->deathsound && !(mo->flags2 & MF2_DEBRIS))
+			S_StartSound(mo, mo->info->deathsound);
+
 		// Hack: Release an animal.
 		P_DamageMobj(mo, NULL, NULL, 10000);
+		return;
 	}
 
 	mo->flags &= ~MF_MISSILE;
@@ -6085,7 +6089,7 @@ static void P_AddOverlay(mobj_t *thing)
 {
 	I_Assert(thing != NULL);
 
-	if (overlaycap == NULL)
+	if (P_MobjWasRemoved(overlaycap))
 		P_SetTarget(&overlaycap, thing);
 	else {
 		mobj_t *mo;

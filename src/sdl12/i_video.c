@@ -1745,7 +1745,7 @@ INT32 VID_SetMode(INT32 modeNum)
 	BitsPerPixel = (Uint8)cv_scr_depth.value;
 	//vid.bpp = BitsPerPixel==8?1:2;
 	// Window title
-	SDL_WM_SetCaption("SRB2 "VERSIONSTRING, "SRB2");
+	SDL_WM_SetCaption("SRB2 Legacy "VERSIONSTRING, "SRB2");
 
 	if (render_soft == rendermode)
 	{
@@ -1937,9 +1937,9 @@ void I_StartupGraphics(void)
 
 	// Window title
 #ifdef _WIN32_WCE
-	SDL_WM_SetCaption("SRB2 "VERSIONSTRING, "SRB2");
+	SDL_WM_SetCaption("SRB2 Legacy"VERSIONSTRING, "SRB2");
 #else
-	SDL_WM_SetCaption("SRB2: Starting up", "SRB2");
+	SDL_WM_SetCaption("SRB2 Legacy: Starting up", "SRB2");
 #endif
 
 	// Window icon

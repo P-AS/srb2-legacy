@@ -20,6 +20,7 @@
 /// \brief SRB2 graphics stuff for SDL
 
 #include <stdlib.h>
+#include <errno.h>
 
 #include <signal.h>
 
@@ -32,6 +33,7 @@
 #include "SDL.h"
 
 #ifdef _MSC_VER
+#include <windows.h>
 #pragma warning(default : 4214 4244)
 #endif
 
@@ -41,7 +43,7 @@
 
 #ifdef HAVE_IMAGE
 #include "SDL_image.h"
-#elif 1
+#elif (!defined(__APPLE__))
 #define LOAD_XPM //I want XPM!
 #include "IMG_xpm.c" //Alam: I don't want to add SDL_Image.dll/so
 #define HAVE_IMAGE //I have SDL_Image, sortof
@@ -93,7 +95,7 @@ static INT32 numVidModes = -1;
 */
 static char vidModeName[33][32]; // allow 33 different modes
 
-rendermode_t rendermode=render_soft;
+rendermode_t rendermode = render_none;
 
 boolean highcolor = false;
 
@@ -867,7 +869,18 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 	if (event.type != ev_console) D_PostEvent(&event);
 }
 
-
+static void Impl_HandleTextEvent(SDL_TextInputEvent evt)
+{
+	event_t event;
+	event.type = ev_text;
+	if (evt.text[1] != '\0')
+	{
+		// limit ourselves to ASCII for now, we can add UTF-8 support later
+		return;
+	}
+	event.data1 = evt.text[0];
+	D_PostEvent(&event);
+}
 
 void I_GetEvent(void)
 {
@@ -893,6 +906,9 @@ void I_GetEvent(void)
 			case SDL_KEYUP:
 			case SDL_KEYDOWN:
 				Impl_HandleKeyboardEvent(evt.key, evt.type);
+				break;
+			case SDL_TEXTINPUT:
+				Impl_HandleTextEvent(evt.text);
 				break;
 			case SDL_MOUSEMOTION:
 				//if (!mouseMotionOnce)
@@ -1403,7 +1419,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #endif
 
 	// Create a window
-	window = SDL_CreateWindow("SRB2 "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	window = SDL_CreateWindow("SRB2 Legacy "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			realwidth, realheight, flags);
 
 	if (window == NULL)
@@ -1481,6 +1497,13 @@ static void Impl_VideoSetupBuffer(void)
 	}
 }
 
+static FILE *
+OpenRendererFile (const char * mode)
+{
+	char * path = va(pandf,srb2home,"renderer.txt");
+	return fopen(path, mode);
+}
+
 void I_StartupGraphics(void)
 {
 	if (dedicated)
@@ -1529,6 +1552,62 @@ void I_StartupGraphics(void)
 	else if (M_CheckParm("-software"))
 #endif
 		rendermode = render_soft;
+
+	if (rendermode == render_none)
+	{
+#ifdef HWRENDER
+		char   line[16];
+		char * word;
+		FILE * file = OpenRendererFile("r");
+		if (file != NULL)
+		{
+			if (fgets(line, sizeof line, file) != NULL)
+			{
+				word = strtok(line, "\n");
+
+				if (strcasecmp(word, "software") == 0)
+				{
+					rendermode = render_soft;
+				}
+				else if (strcasecmp(word, "opengl") == 0)
+				{
+					rendermode = render_opengl;
+				}
+
+				if (rendermode != render_none)
+				{
+					CONS_Printf("Using last known renderer: %s\n", line);
+				}
+			}
+			fclose(file);
+		}
+#endif
+		if (rendermode == render_none)
+		{
+			rendermode = render_soft;
+			CONS_Printf("Using default software renderer.\n");
+		}
+	}
+	else
+	{
+		FILE * file = OpenRendererFile("w");
+		if (file != NULL)
+		{
+			if (rendermode == render_soft)
+			{
+				fputs("software\n", file);
+			}
+			else if (rendermode == render_opengl)
+			{
+				fputs("opengl\n", file);
+			}
+			fclose(file);
+		}
+		else
+		{
+			CONS_Printf("Could not save renderer to file: %s\n", strerror(errno));
+		}
+	}
 
 	usesdl2soft = M_CheckParm("-softblit");
 	borderlesswindow = M_CheckParm("-borderless");

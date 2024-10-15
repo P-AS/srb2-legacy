@@ -79,6 +79,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define HAVE_SDLCPUINFO
 
 #if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
+#include <time.h>
 #if defined (__linux__)
 #include <sys/vfs.h>
 #else
@@ -90,7 +91,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <kvm.h>
 #endif
 #include <nlist.h>
-#include <sys/vmmeter.h>
+#include <sys/sysctl.h>
 #endif
 #endif
 
@@ -532,7 +533,7 @@ static void Impl_HandleKeyboardConsoleEvent(KEY_EVENT_RECORD evt, HANDLE co)
 				break;
 			case VK_RETURN:
 				entering_con_command = false;
-				// Fall through.
+				/* FALLTHRU */
 			default:
 				event.data1 = MapVirtualKey(evt.wVirtualKeyCode,2); // convert in to char
 		}
@@ -1953,6 +1954,19 @@ void I_StartupMouse2(void)
 #endif
 }
 
+void I_SetTextInputMode(boolean active)
+{
+	if (active)
+		SDL_StartTextInput();
+	else
+		SDL_StopTextInput();
+}
+
+boolean I_GetTextInputMode(void)
+{
+	return SDL_IsTextInputActive();
+}
+
 //
 // I_Tactile
 //
@@ -1993,6 +2007,11 @@ static HMODULE winmm = NULL;
 static DWORD starttickcount = 0; // hack for win2k time bug
 static p_timeGetTime pfntimeGetTime = NULL;
 
+static LARGE_INTEGER basetime = {{0, 0}};
+
+// use this if High Resolution timer is found
+static LARGE_INTEGER frequency;
+
 // ---------
 // I_GetTime
 // Use the High Resolution Timer if available,
@@ -2007,10 +2026,6 @@ tic_t I_GetTime(void)
 	if (!starttickcount) // high precision timer
 	{
 		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-		static LARGE_INTEGER basetime = {{0, 0}};
-
-		// use this if High Resolution timer is found
-		static LARGE_INTEGER frequency;
 
 		if (!basetime.LowPart)
 		{
@@ -2039,6 +2054,38 @@ tic_t I_GetTime(void)
 	return newtics;
 }
 
+void I_SleepToTic(tic_t tic)
+{
+	tic_t untilnexttic = 0;
+
+	if (!starttickcount) // high precision timer
+	{
+		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
+		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
+		{
+			untilnexttic = (INT32)((currtime.QuadPart - basetime.QuadPart) * 1000
+				/ frequency.QuadPart % NEWTICRATE);
+		}
+		else if (pfntimeGetTime)
+		{
+			currtime.LowPart = pfntimeGetTime();
+			if (!basetime.LowPart)
+				basetime.LowPart = currtime.LowPart;
+			untilnexttic = ((currtime.LowPart - basetime.LowPart)%(1000/NEWTICRATE));
+		}
+	}
+	else
+	{
+		untilnexttic = (GetTickCount() - starttickcount)%(1000/NEWTICRATE);
+		untilnexttic = (1000/NEWTICRATE) - untilnexttic;
+	}
+
+	// give some extra slack then busy-wait on windows, since windows' sleep is garbage
+	if (untilnexttic > 2)
+		SDL_Delay(untilnexttic - 2);
+	while (tic > I_GetTime());
+}
+
 static void I_ShutdownTimer(void)
 {
 	pfntimeGetTime = NULL;
@@ -2052,25 +2099,65 @@ static void I_ShutdownTimer(void)
 	}
 }
 #else
+static struct timespec basetime;
+
 //
 // I_GetTime
 // returns time in 1/TICRATE second tics
 //
 tic_t I_GetTime (void)
 {
-	static Uint64 basetime = 0;
-		   Uint64 ticks = SDL_GetTicks();
+	struct timespec ts;
+	uint64_t ticks;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
 
-	if (!basetime)
-		basetime = ticks;
+	if (basetime.tv_sec == 0)
+		basetime = ts;
 
-	ticks -= basetime;
-
-	ticks = (ticks*TICRATE);
-
-	ticks = (ticks/1000);
+	ts.tv_sec -= basetime.tv_sec;
+	ts.tv_nsec -= basetime.tv_nsec;
+	if (ts.tv_nsec < 0)
+	{
+		ts.tv_sec--;
+		ts.tv_nsec += 1000000000;
+	}
+	ticks = ts.tv_sec * 1000000000 + ts.tv_nsec;
+	ticks = ticks * TICRATE / 1000000000;
 
 	return (tic_t)ticks;
+}
+
+void I_SleepToTic(tic_t tic)
+{
+	struct timespec ts;
+	uint64_t curtime, targettime;
+	int status;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+
+	ts.tv_sec -= basetime.tv_sec;
+	ts.tv_nsec -= basetime.tv_nsec;
+	if (ts.tv_nsec < 0)
+	{
+		ts.tv_sec--;
+		ts.tv_nsec += 1000000000;
+	}
+	curtime = ts.tv_sec * 1000000000 + ts.tv_nsec;
+	targettime = (uint64_t)tic * 1000000000 / TICRATE;
+	if (targettime < curtime)
+		return;
+
+	ts.tv_sec = (targettime - curtime) / 1000000000;
+	ts.tv_nsec = (targettime - curtime) % 1000000000;
+
+#if defined(__linux__) || defined(__FreeBSD__)
+	do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+	while (status == EINTR);
+	I_Assert(status == 0);
+#else
+	do status = nanosleep(&ts, &ts);
+	while (status == EINTR);
+	I_Assert(status == 0);
+#endif
 }
 #endif
 
@@ -2613,9 +2700,10 @@ static const char *locateWad(void)
 	const char *envstr;
 	const char *WadPath;
 
-	I_OutputMsg("SRB2WADDIR");
-	// does SRB2WADDIR exist?
-	if (((envstr = I_GetEnv("SRB2WADDIR")) != NULL) && isWadPathOk(envstr))
+	// SRB2WADDIR environment variable has been renamed to SRB2LEGACYWADDIR to prevent conflicts with 2.2+.
+	I_OutputMsg("SRB2LEGACYWADDIR");
+	// does SRB2LEGACYWADDIR exist?
+	if (((envstr = I_GetEnv("SRB2LEGACYWADDIR")) != NULL) && isWadPathOk(envstr))
 		return envstr;
 
 #ifndef NOCWD
@@ -2775,44 +2863,20 @@ static long get_entry(const char* name, const char* buf)
 }
 #endif
 
-// quick fix for compil
-UINT32 I_GetFreeMem(UINT32 *total)
+size_t I_GetFreeMem(size_t *total)
 {
 #ifdef FREEBSD
-	struct vmmeter sum;
-	kvm_t *kd;
-	struct nlist namelist[] =
-	{
-#define X_SUM   0
-		{"_cnt"},
-		{NULL}
-	};
-	if ((kd = kvm_open(NULL, NULL, NULL, O_RDONLY, "kvm_open")) == NULL)
-	{
-		if (total)
-			*total = 0L;
-		return 0;
-	}
-	if (kvm_nlist(kd, namelist) != 0)
-	{
-		kvm_close (kd);
-		if (total)
-			*total = 0L;
-		return 0;
-	}
-	if (kvm_read(kd, namelist[X_SUM].n_value, &sum,
-		sizeof (sum)) != sizeof (sum))
-	{
-		kvm_close(kd);
-		if (total)
-			*total = 0L;
-		return 0;
-	}
-	kvm_close(kd);
+	u_int v_free_count, v_page_size, v_page_count;
+	size_t size = sizeof(v_free_count);
+	sysctlbyname("vm.stats.vm.v_free_count", &v_free_count, &size, NULL, 0);
+	size = sizeof(v_page_size);
+	sysctlbyname("vm.stats.vm.v_page_size", &v_page_size, &size, NULL, 0);
+	size = sizeof(v_page_count);
+	sysctlbyname("vm.stats.vm.v_page_count", &v_page_count, &size, NULL, 0);
 
 	if (total)
-		*total = sum.v_page_count * sum.v_page_size;
-	return sum.v_free_count * sum.v_page_size;
+		*total = v_page_count * v_page_size;
+	return v_free_count * v_page_size;
 #elif defined (SOLARIS)
 	/* Just guess */
 	if (total)
@@ -2824,8 +2888,8 @@ UINT32 I_GetFreeMem(UINT32 *total)
 	info.dwLength = sizeof (MEMORYSTATUS);
 	GlobalMemoryStatus( &info );
 	if (total)
-		*total = (UINT32)info.dwTotalPhys;
-	return (UINT32)info.dwAvailPhys;
+		*total = (size_t)info.dwTotalPhys;
+	return (size_t)info.dwAvailPhys;
 #elif defined (__OS2__)
 	UINT32 pr_arena;
 
@@ -2840,8 +2904,8 @@ UINT32 I_GetFreeMem(UINT32 *total)
 	/* Linux */
 	char buf[1024];
 	char *memTag;
-	UINT32 freeKBytes;
-	UINT32 totalKBytes;
+	size_t freeKBytes;
+	size_t totalKBytes;
 	INT32 n;
 	INT32 meminfo_fd = -1;
 	long Cached;
@@ -2872,7 +2936,7 @@ UINT32 I_GetFreeMem(UINT32 *total)
 	}
 
 	memTag += sizeof (MEMTOTAL);
-	totalKBytes = atoi(memTag);
+	totalKBytes = (size_t)atoi(memTag);
 
 	if ((memTag = strstr(buf, MEMAVAILABLE)) == NULL)
 	{
@@ -2974,4 +3038,3 @@ const CPUInfoFlags *I_CPUInfo(void)
 // note CPUAFFINITY code used to reside here
 void I_RegisterSysCommands(void) {}
 #endif
-
