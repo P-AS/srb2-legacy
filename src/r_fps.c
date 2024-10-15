@@ -85,7 +85,7 @@ void R_InterpolateView(fixed_t frac)
 
 		dy = AIMINGTODY(aimingangle) * viewwidth/BASEVIDWIDTH;
 
-		yslope = &yslopetab[(3*viewheight/2) - dy];
+		yslope = &yslopetab[viewheight*8 - (viewheight/2 + dy)];
 	}
 	centery = (viewheight/2) + dy;
 	centeryfrac = centery<<FRACBITS;
