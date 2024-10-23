@@ -103,7 +103,8 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 {
 	I_Assert(_viewcontext == VIEWCONTEXT_PLAYER1
 			|| _viewcontext == VIEWCONTEXT_PLAYER2
-	);
+			|| _viewcontext == VIEWCONTEXT_SKY1
+			|| _viewcontext == VIEWCONTEXT_SKY2);
 	viewcontext = _viewcontext;
 
 	switch (viewcontext)
@@ -129,6 +130,7 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 			break;
 	}
 }
+
 
 void R_SetThinkerOldStates(void)
 {
