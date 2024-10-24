@@ -694,4 +694,3 @@ INT32 GIF_close(void)
 	return 1;
 }
 #endif //ifdef HAVE_ANIGIF
-
