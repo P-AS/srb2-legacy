@@ -245,7 +245,6 @@ static void M_SetupMultiPlayer2(INT32 choice);
 menu_t OP_AllControlsDef;
 menu_t OP_AllControls2Def; // for 2P
 menu_t OP_ControlsDef;
-//menu_t OP_MPControlsDef, OP_MiscControlsDef;
 menu_t OP_P1ControlsDef, OP_P2ControlsDef, OP_MouseOptionsDef;
 menu_t OP_Mouse2OptionsDef, OP_Joystick1Def, OP_Joystick2Def;
 static void M_VideoModeMenu(INT32 choice);
@@ -965,15 +964,6 @@ static menuitem_t OP_P2ControlsMenu[] =
 	{IT_STRING  | IT_CVAR, NULL, "Analog Control", &cv_useranalog2,  80},
 };
 
-/*
-static menuitem_t OP_ControlListMenu[] =
-{
-	{IT_SUBMENU | IT_STRING, NULL, "Movement Controls...",      &OP_AllControlsDef,   10},
-	{IT_SUBMENU | IT_STRING, NULL, "Multiplayer Controls...",   &OP_MPControlsDef,     20},
-	{IT_SUBMENU | IT_STRING, NULL, "Miscellaneous Controls...", &OP_MiscControlsDef,   30},
-};
-*/
-
 static menuitem_t OP_AllControlsMenu[] =
 {
 	{IT_HEADER, NULL, "  Movement", NULL, 0},
@@ -1068,41 +1058,6 @@ static menuitem_t OP_AllControls2Menu[] =
 	{IT_CALL | IT_STRING2, NULL, "Open/Close Menu (ESC)", M_ChangeControl, gc_systemmenu },
 	{IT_CALL | IT_STRING2, NULL, "Change Viewpoint",      M_ChangeControl, gc_viewpoint  },
 };
-
-/*
-static menuitem_t OP_MPControlsMenu[] =
-{
-	{IT_CALL | IT_STRING2, NULL, "Talk key",         M_ChangeControl, gc_talkkey      },
-	{IT_CALL | IT_STRING2, NULL, "Team-Talk key",    M_ChangeControl, gc_teamkey      },
-	{IT_CALL | IT_STRING2, NULL, "Rankings/Scores",  M_ChangeControl, gc_scores       },
-	{IT_CALL | IT_STRING2, NULL, "Toss Flag",        M_ChangeControl, gc_tossflag     },
-	{IT_CALL | IT_STRING2, NULL, "Next Weapon",      M_ChangeControl, gc_weaponnext   },
-	{IT_CALL | IT_STRING2, NULL, "Prev Weapon",      M_ChangeControl, gc_weaponprev   },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 1",    M_ChangeControl, gc_wepslot1     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 2",    M_ChangeControl, gc_wepslot2     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 3",    M_ChangeControl, gc_wepslot3     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 4",    M_ChangeControl, gc_wepslot4     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 5",    M_ChangeControl, gc_wepslot5     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 6",    M_ChangeControl, gc_wepslot6     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 7",    M_ChangeControl, gc_wepslot7     },
-	{IT_CALL | IT_STRING2, NULL, "Ring Toss",        M_ChangeControl, gc_fire         },
-	{IT_CALL | IT_STRING2, NULL, "Ring Toss Normal", M_ChangeControl, gc_firenormal   },
-};
-
-static menuitem_t OP_MiscControlsMenu[] =
-{
-	{IT_CALL | IT_STRING2, NULL, "Custom Action 1",  M_ChangeControl, gc_custom1      },
-	{IT_CALL | IT_STRING2, NULL, "Custom Action 2",  M_ChangeControl, gc_custom2      },
-	{IT_CALL | IT_STRING2, NULL, "Custom Action 3",  M_ChangeControl, gc_custom3      },
-
-	{IT_CALL | IT_STRING2, NULL, "Pause",            M_ChangeControl, gc_pause        },
-	{IT_CALL | IT_STRING2, NULL, "Screenshot",            M_ChangeControl, gc_screenshot },
-	{IT_CALL | IT_STRING2, NULL, "Toggle GIF Recording",  M_ChangeControl, gc_recordgif  },
-	{IT_CALL | IT_STRING2, NULL, "Open/Close Menu (ESC)", M_ChangeControl, gc_systemmenu },
-	{IT_CALL | IT_STRING2, NULL, "Change Viewpoint",      M_ChangeControl, gc_viewpoint  },
-	{IT_CALL | IT_STRING2, NULL, "Console",          M_ChangeControl, gc_console      },
-};
-*/
 
 static menuitem_t OP_Joystick1Menu[] =
 {
@@ -1755,11 +1710,8 @@ menu_t MP_PlayerSetupDef =
 // Options
 menu_t OP_MainDef = DEFAULTMENUSTYLE("M_OPTTTL", OP_MainMenu, &MainDef, 60, 30);
 menu_t OP_ControlsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_ControlsMenu, &OP_MainDef, 60, 30);
-//menu_t OP_ControlListDef = DEFAULTMENUSTYLE("M_CONTRO", OP_ControlListMenu, &OP_ControlsDef, 60, 30);
 menu_t OP_AllControlsDef = CONTROLMENUSTYLE(OP_AllControlsMenu, &OP_P1ControlsDef);
 menu_t OP_AllControls2Def = CONTROLMENUSTYLE(OP_AllControls2Menu, &OP_P2ControlsDef);
-//menu_t OP_MPControlsDef = CONTROLMENUSTYLE(OP_MPControlsMenu, &OP_ControlListDef);
-//menu_t OP_MiscControlsDef = CONTROLMENUSTYLE(OP_MiscControlsMenu, &OP_ControlListDef);
 menu_t OP_P1ControlsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_P1ControlsMenu, &OP_ControlsDef, 60, 30);
 menu_t OP_P2ControlsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_P2ControlsMenu, &OP_ControlsDef, 60, 30);
 menu_t OP_MouseOptionsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_MouseOptionsMenu, &OP_P1ControlsDef, 60, 30);
@@ -7567,16 +7519,6 @@ static void M_Setup1PControlsMenu(INT32 choice)
 	setupcontrols = gamecontrol;        // was called from main Options (for console player, then)
 	currentMenu->lastOn = itemOn;
 
-	/*
-	// Unhide the three non-P2 controls
-	OP_MPControlsMenu[0].status = IT_CALL|IT_STRING2;
-	OP_MPControlsMenu[1].status = IT_CALL|IT_STRING2;
-	OP_MPControlsMenu[2].status = IT_CALL|IT_STRING2;
-	// Unide the pause/console controls too
-	OP_MiscControlsMenu[3].status = IT_CALL|IT_STRING2;
-	OP_MiscControlsMenu[4].status = IT_CALL|IT_STRING2;
-	*/
-
 	OP_P1ControlsDef.prevMenu = &OP_ControlsDef;
 	M_SetupNextMenu(&OP_AllControlsDef);
 }
@@ -7588,17 +7530,6 @@ static void M_Setup2PControlsMenu(INT32 choice)
 	setupcontrols = gamecontrolbis;
 	currentMenu->lastOn = itemOn;
 
-	/*
-	// Hide the three non-P2 controls
-	OP_MPControlsMenu[0].status = IT_GRAYEDOUT2;
-	OP_MPControlsMenu[1].status = IT_GRAYEDOUT2;
-	OP_MPControlsMenu[2].status = IT_GRAYEDOUT2;
-	// Hide the pause/console and system menu controls too
-	OP_MiscControlsMenu[3].status = IT_GRAYEDOUT2;
-	OP_MiscControlsMenu[6].status = IT_GRAYEDOUT2;
-	OP_MiscControlsMenu[8].status = IT_GRAYEDOUT2;
-	*/
-
 	OP_P2ControlsDef.prevMenu = &OP_ControlsDef;
 	M_SetupNextMenu(&OP_AllControls2Def);
 }
@@ -7609,7 +7540,7 @@ static void M_Setup2PControlsMenu(INT32 choice)
 // Draws the Customise Controls menu
 static void M_DrawControl(void)
 {
-	highlightflags = V_YELLOWMAP; // for some reason without this text highlighting don't work
+	highlightflags = V_YELLOWMAP; // text highlighting doesn't work without this flag
 
 	char tmp[50];
 	INT32 x, y, i, max, cursory = 0, iter;
