@@ -41,7 +41,7 @@ typedef struct {
 //extern viewvars_t oldview;
 extern viewvars_t *newview;
 
-void R_InterpolateView(fixed_t frac);
+void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac);
 void R_UpdateViewInterpolation(void);
 void R_SetViewContext(enum viewcontext_e _viewcontext);
 void R_SetThinkerOldStates(void);

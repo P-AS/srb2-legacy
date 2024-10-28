@@ -14,6 +14,9 @@
 ///        according to adjacent sectors, respective
 ///        utility functions, etc.
 
+#include "m_fixed.h"
+#include "d_player.h"
+#include "r_defs.h"
 #ifndef __P_SPEC__
 #define __P_SPEC__
 
@@ -77,9 +80,6 @@ typedef struct
 	INT32 resetcount;
 	INT32 maxlight;    ///< The brightest light level to use.
 	INT32 minlight;    ///< The darkest light level to use. 
-	INT16 old_lightlevel;
-	INT16 new_lightlevel;
-	INT32 firstlerp;
 } fireflicker_t;
 
 typedef struct
@@ -88,9 +88,6 @@ typedef struct
 	sector_t *sector;
 	INT32 maxlight;
 	INT32 minlight;
-	INT16 old_lightlevel;
-	INT16 new_lightlevel;
-	INT32 firstlerp;
 } lightflash_t;
 
 /** Laser block thinker.
@@ -115,9 +112,6 @@ typedef struct
 	INT32 maxlight;    ///< The maximum light level to use.
 	INT32 darktime;    ///< How INT32 to use minlight.
 	INT32 brighttime;  ///< How INT32 to use maxlight.
-	INT16 old_lightlevel;
-	INT16 new_lightlevel;
-	INT32 firstlerp;
 } strobe_t;
 
 typedef struct
@@ -128,9 +122,6 @@ typedef struct
 	INT32 maxlight;
 	INT32 direction;
 	INT32 speed;
-	INT16 old_lightlevel;
-	INT16 new_lightlevel;
-	INT32 firstlerp;
 } glow_t;
 
 /** Thinker struct for fading lights.
@@ -222,9 +213,6 @@ typedef struct
 	INT32 olddirection;
 	fixed_t origspeed;    ///< The original, "real" speed.
 	INT32 sourceline;     ///< Index of the source linedef
-	fixed_t old_ceilingheight;
-	fixed_t new_ceilingheight;
-	INT32 firstlerp;
 } ceiling_t;
 
 #define CEILSPEED (FRACUNIT)
@@ -285,9 +273,6 @@ typedef struct
 	fixed_t origspeed;
 	fixed_t delay;
 	fixed_t delaytimer;
-	fixed_t old_floorheight;
-	fixed_t new_floorheight;
-	INT32 firstlerp;
 } floormove_t;
 
 typedef struct
@@ -310,11 +295,6 @@ typedef struct
 	fixed_t ceilingwasheight; // Height the ceiling WAS at
 	player_t *player; // Player who initiated the thinker (used for airbob)
 	line_t *sourceline;
-	fixed_t old_floorheight;
-	fixed_t old_ceilingheight;
-	fixed_t new_floorheight;
-	fixed_t new_ceilingheight;
-	INT32 firstlerp;
 } elevator_t;
 
 typedef struct
@@ -324,11 +304,6 @@ typedef struct
 	fixed_t var2s[16];   // Second misc variables buffer.
 	line_t *sourceline; // Source line of the thinker
 	sector_t *sector;   // Sector the thinker is from
-	fixed_t old_floorheight;
-	fixed_t old_ceilingheight;
-	fixed_t new_floorheight;
-	fixed_t new_ceilingheight;
-	INT32 firstlerp;
 } levelspecthink_t;
 
 #define ELEVATORSPEED (FRACUNIT*4)

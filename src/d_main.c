@@ -241,10 +241,7 @@ static void D_Display(void)
 	if (nodrawers)
 		return; // for comparative timing/profiling 
 
-	if (cv_capframerate.value == 0)
-	{
-		R_DoThinkerLerp(I_GetTimeFrac());
-	}
+	
 
 
 	// check for change of screen size (video mode)
@@ -576,11 +573,11 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
-		/*if (!realtics && !singletics)
+		if (!realtics && !singletics  && cv_capframerate.value != 0)
 		{
 			I_Sleep();
 			continue;
-		}*/
+		}
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -593,7 +590,14 @@ void D_SRB2Loop(void)
 
 		// process tics (but maybe not if realtic == 0)
 		tic_happened = realtics ? true : false;
-		TryRunTics(realtics);
+		TryRunTics(realtics); 
+
+
+		if (cv_capframerate.value == 0)
+			rendertimefrac = I_GetTimeFrac();
+		else
+			rendertimefrac = FRACUNIT;
+
 
         if (cv_capframerate.value == 0)
 		{

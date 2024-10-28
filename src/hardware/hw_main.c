@@ -4244,7 +4244,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	{
 		sSurf.FlatColor.s.alpha = (UINT8)(sSurf.FlatColor.s.alpha - floorheight/4);
 		HWD.pfnDrawPolygon(&sSurf, swallVerts, 4, PF_Translucent|PF_Modulated|PF_Clip);
-	}
+	} 
 }
 
 // This is expecting a pointer to an array containing 4 wallVerts for a sprite
@@ -5459,14 +5459,36 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	angle_t ang;
 	INT32 heightsec, phs;
 
+// uncapped/interpolation
+	fixed_t interpx;
+	fixed_t interpy;
+	fixed_t interpz;
+	
+
+
 	if (!thing)
 		return;
 	else
+	interpx = thing->x;
+	interpy = thing->y;
+	interpz = thing->z;
+	
+
+	if (cv_capframerate.value == 0 && !paused)
+	{
+		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
+		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
+		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+		
+	}
+
+
 		this_scale = FIXED_TO_FLOAT(thing->scale);
 
 	// transform the origin point
-	tr_x = FIXED_TO_FLOAT(thing->x) - gr_viewx;
-	tr_y = FIXED_TO_FLOAT(thing->y) - gr_viewy;
+	tr_x = FIXED_TO_FLOAT(interpx) - gr_viewx;
+	tr_y = FIXED_TO_FLOAT(interpy) - gr_viewy;
+
 
 	// rotation around vertical axis
 	tz = (tr_x * gr_viewcos) + (tr_y * gr_viewsin);
@@ -5476,8 +5498,9 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		return;
 
 	// The above can stay as it works for cutting sprites that are too close
-	tr_x = FIXED_TO_FLOAT(thing->x);
-	tr_y = FIXED_TO_FLOAT(thing->y);
+	tr_x = FIXED_TO_FLOAT(interpx);
+	tr_y = FIXED_TO_FLOAT(interpy);
+
 
 	// decide which patch to use for sprite relative to player
 #ifdef RANGECHECK
@@ -5515,7 +5538,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	if (sprframe->rotate)
 	{
 		// choose a different rotation based on player view
-		ang = R_PointToAngle(thing->x, thing->y); // uses viewx,viewy
+		ang = R_PointToAngle (thing->x, thing->y);
 		rot = (ang-thing->angle+ANGLE_202h)>>29;
 		//Fab: lumpid is the index for spritewidth,spriteoffset... tables
 		lumpoff = sprframe->lumpid[rot];
@@ -5552,12 +5575,12 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	if (thing->eflags & MFE_VERTICALFLIP)
 	{
-		gz = FIXED_TO_FLOAT(thing->z+thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
+		gz = FIXED_TO_FLOAT(interpz + thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gzt = gz + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
 	}
 	else
 	{
-		gzt = FIXED_TO_FLOAT(thing->z) + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
+		gzt = FIXED_TO_FLOAT(interpz) + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gz = gzt - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
 	}
 
@@ -5649,11 +5672,30 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	spriteframe_t *sprframe;
 	size_t lumpoff;
 	unsigned rot = 0;
-	UINT8 flip;
+	UINT8 flip; 
+
+		if (!thing)
+		return;
+
+	// uncapped/interpolation
+	fixed_t interpx = thing->x;
+	fixed_t interpy = thing->y;
+	fixed_t interpz = thing->z;
+
+	// do interpolation
+	if (cv_capframerate.value == 0 && !paused)
+	{
+		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
+		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
+		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+	}
+
+
 
 	// transform the origin point
-	tr_x = FIXED_TO_FLOAT(thing->x) - gr_viewx;
-	tr_y = FIXED_TO_FLOAT(thing->y) - gr_viewy;
+	tr_x = FIXED_TO_FLOAT(interpx) - gr_viewx;
+	tr_y = FIXED_TO_FLOAT(interpy) - gr_viewy;
+
 
 	// rotation around vertical axis
 	tz = (tr_x * gr_viewcos) + (tr_y * gr_viewsin);
@@ -5662,8 +5704,9 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	if (tz < ZCLIP_PLANE)
 		return;
 
-	tr_x = FIXED_TO_FLOAT(thing->x);
-	tr_y = FIXED_TO_FLOAT(thing->y);
+	tr_x = FIXED_TO_FLOAT(interpx);
+	tr_y = FIXED_TO_FLOAT(interpy);
+
 
 	// decide which patch to use for sprite relative to player
 	if ((unsigned)thing->sprite >= numsprites)
@@ -5735,7 +5778,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->colormap = colormaps;
 
 	// set top/bottom coords
-	vis->ty = FIXED_TO_FLOAT(thing->z + spritecachedinfo[lumpoff].topoffset);
+	vis->ty = FIXED_TO_FLOAT(interpz + spritecachedinfo[lumpoff].topoffset);
 
 	vis->precip = true;
 }
