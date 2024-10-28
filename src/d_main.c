@@ -593,7 +593,7 @@ void D_SRB2Loop(void)
 		TryRunTics(realtics); 
 
 
-		if (cv_capframerate.value == 0)
+		if (!P_AutoPause() && !paused)
 			rendertimefrac = I_GetTimeFrac();
 		else
 			rendertimefrac = FRACUNIT;

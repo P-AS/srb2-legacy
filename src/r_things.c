@@ -1088,7 +1088,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	
 
 	// do interpolation
-	if (cv_capframerate.value == 0 && !paused)
+	if (cv_capframerate.value == 0)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
@@ -1415,7 +1415,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	fixed_t interpz = thing->z;
 
 	// do interpolation
-	if (cv_capframerate.value == 0 && !paused)
+	if (cv_capframerate.value == 0)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);

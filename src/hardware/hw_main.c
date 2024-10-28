@@ -5474,7 +5474,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	interpz = thing->z;
 	
 
-	if (cv_capframerate.value == 0 && !paused)
+	if (cv_capframerate.value == 0)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
@@ -5538,7 +5538,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	if (sprframe->rotate)
 	{
 		// choose a different rotation based on player view
-		ang = R_PointToAngle (thing->x, thing->y);
+		ang = R_PointToAngle (interpx, interpy);
 		rot = (ang-thing->angle+ANGLE_202h)>>29;
 		//Fab: lumpid is the index for spritewidth,spriteoffset... tables
 		lumpoff = sprframe->lumpid[rot];
@@ -5683,7 +5683,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	fixed_t interpz = thing->z;
 
 	// do interpolation
-	if (cv_capframerate.value == 0 && !paused)
+	if (cv_capframerate.value == 0)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
