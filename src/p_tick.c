@@ -568,7 +568,9 @@ static inline void P_DoCTFStuff(void)
 void P_Ticker(boolean run)
 {
 	INT32 i; 
-	
+	R_SetSectorThinkerOldStates();
+	R_ResetSectorThinkerLerp();
+
 
 	//Increment jointime even if paused.
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -708,6 +710,8 @@ void P_Ticker(boolean run)
 	}
 
 	P_MapEnd(); 
+	R_SetSectorThinkerNewStates();
+
 	
 
 

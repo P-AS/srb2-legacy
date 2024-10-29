@@ -44,14 +44,15 @@ extern viewvars_t *newview;
 void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac);
 void R_UpdateViewInterpolation(void);
 void R_SetViewContext(enum viewcontext_e _viewcontext);
-void R_SetThinkerOldStates(void);
-void R_SetThinkerNewStates(void);
-void R_DoThinkerLerp(fixed_t frac);
-void R_ResetThinkerLerp(void);
+// I suck at naming functions - chromaticpipe
+void R_SetSectorThinkerOldStates(void);
+void R_SetSectorThinkerNewStates(void);
+void R_DoSectorThinkerLerp(fixed_t frac);
+void R_ResetSectorThinkerLerp(void); 
+
 
 fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac);
 INT32 R_LerpInt32(INT32 from, INT32 to, fixed_t frac);
-UINT32 R_LerpUInt32(UINT32 from, UINT32 to, fixed_t frac);
 angle_t R_LerpAngle(angle_t from, angle_t to, fixed_t frac);
 
 #endif

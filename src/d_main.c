@@ -241,7 +241,12 @@ static void D_Display(void)
 	if (nodrawers)
 		return; // for comparative timing/profiling 
 
-	
+	if (cv_capframerate.value == 0)
+	{
+		R_DoSectorThinkerLerp(I_GetTimeFrac());
+	}
+
+
 
 
 	// check for change of screen size (video mode)
