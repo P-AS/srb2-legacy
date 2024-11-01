@@ -49,6 +49,7 @@ void R_SetSectorThinkerOldStates(void);
 void R_SetSectorThinkerNewStates(void);
 void R_DoSectorThinkerLerp(fixed_t frac);
 void R_ResetSectorThinkerLerp(void); 
+void R_ResetFirstLerp(void);
 
 
 fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac);

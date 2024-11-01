@@ -1600,7 +1600,7 @@ static void CL_LoadReceivedSavegame(void)
 			CONS_Alert(CONS_ERROR, M_GetText("Can't delete %s\n"), tmpsave);
 		return;
 	}
-
+    R_ResetFirstLerp();
 	// done
 	Z_Free(savebuffer);
 	save_p = NULL;

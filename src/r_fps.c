@@ -819,6 +819,75 @@ void R_ResetSectorThinkerLerp(void)
 	}
 }
 
+void R_ResetFirstLerp(void)
+{
+	thinker_t *th;
+	
+
+	
+		if (cv_capframerate.value != 0)
+	{
+		return;
+	}
+
+	for (th = thinkercap.next; th != &thinkercap; th = th->next)
+		{
+			if (!th)
+				break;
+			{
+				if (ISA(T_MoveCeiling) || ISA(T_CrushCeiling))
+				{
+					CAST(s, ceiling_t);
+					s->firstlerp = 0;
+				}
+				else if (ISA(T_MoveFloor))
+				{
+					CAST(s, floormove_t);
+					s->firstlerp = 0;
+				}
+				else if (ISA(T_LightningFlash))
+				{
+					CAST(l, lightflash_t);
+					l->firstlerp = 0;
+				}
+				else if (ISA(T_StrobeFlash))
+				{
+					CAST(s, strobe_t);
+					s->firstlerp = 0;
+				}
+				else if (ISA(T_Glow))
+				{
+					CAST(g, glow_t);
+					g->firstlerp = 0;
+				}
+				else if (ISA(T_FireFlicker))
+				{
+					CAST(f, fireflicker_t);
+					f->firstlerp = 0;
+				}
+				else if (ISA(T_MoveElevator) || ISA(T_CameraScanner))
+				{
+					CAST(e, elevator_t);
+					e->firstlerp = 0;
+				}
+				
+				else if (ISA(T_LightFade))
+				{
+					CAST(l, lightlevel_t);
+					l->firstlerp = 0;
+				}
+				
+				else if (ISA(T_Scroll))
+				{
+					CAST(s, scroll_t);
+					s->firstlerp = 0;
+				}
+				
+			}
+		}
+	}
+
+
 
 
 
