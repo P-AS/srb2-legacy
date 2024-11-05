@@ -1225,12 +1225,23 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 	FTransform p;
 	md2_t *md2;
 	UINT8 color[4];
+	fixed_t interpx = spr->mobj->x;
+	fixed_t interpy = spr->mobj->y;
+	fixed_t interpz = spr->mobj->z;
+
+
 
 	if (!cv_grmd2.value)
 		return;
 
 	if (spr->precip)
 		return;
+	if (cv_capframerate.value == 0)
+	{
+		interpx = spr->mobj->old_x + FixedMul(rendertimefrac, spr->mobj->x - spr->mobj->old_x);
+		interpy = spr->mobj->old_y + FixedMul(rendertimefrac, spr->mobj->y - spr->mobj->old_y);
+		interpz = spr->mobj->old_z + FixedMul(rendertimefrac, spr->mobj->z - spr->mobj->old_z);
+	}
 
 	// MD2 colormap fix
 	// colormap test
@@ -1243,7 +1254,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		{
 			INT32 light;
 
-			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
+			light = R_GetPlaneLight(sector, interpz + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
 				lightlevel = *sector->lightlist[light].lightlevel;
@@ -1388,11 +1399,12 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		}
 
 		//Hurdler: it seems there is still a small problem with mobj angle
-		p.x = FIXED_TO_FLOAT(spr->mobj->x);
-		p.y = FIXED_TO_FLOAT(spr->mobj->y)+md2->offset;
+		p.x = FIXED_TO_FLOAT(interpx);
+		p.y = FIXED_TO_FLOAT(interpy)+md2->offset;
+
 
 		if (spr->mobj->eflags & MFE_VERTICALFLIP)
-			p.z = FIXED_TO_FLOAT(spr->mobj->z + spr->mobj->height);
+			p.z = FIXED_TO_FLOAT(interpz + spr->mobj->height);
 		else
 			p.z = FIXED_TO_FLOAT(spr->mobj->z);
 
@@ -1410,7 +1422,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		}
 		else
 		{
-			const fixed_t anglef = AngleFixed((R_PointToAngle(spr->mobj->x, spr->mobj->y))-ANGLE_180);
+			const fixed_t anglef = AngleFixed((R_PointToAngle(interpx, interpy))-ANGLE_180);
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 		p.anglex = 0.0f;
