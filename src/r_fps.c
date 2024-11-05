@@ -120,12 +120,17 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 	if (FIXED_TO_FLOAT(frac) < 0)
 		frac = 0;
 
+
+
 	viewx = oldview->x + R_LerpFixed(oldview->x, newview->x, frac);
 	viewy = oldview->y + R_LerpFixed(oldview->y, newview->y, frac);
 	viewz = oldview->z + R_LerpFixed(oldview->z, newview->z, frac);
 
 	viewangle = oldview->angle + R_LerpAngle(oldview->angle, newview->angle, frac);
 	aimingangle = oldview->aim + R_LerpAngle(oldview->aim, newview->aim, frac);
+
+
+
 
 	viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
@@ -199,6 +204,22 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 	}
 }
 
+void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
+{
+	out->x = mobj->old_x + R_LerpFixed(mobj->old_x, mobj->x, frac);
+	out->y = mobj->old_y + R_LerpFixed(mobj->old_y, mobj->y, frac);
+	out->z = mobj->old_z + R_LerpFixed(mobj->old_z, mobj->z, frac);
+
+
+}
+
+void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
+{
+	out->x = mobj->old_x + R_LerpFixed(mobj->old_x, mobj->x, frac);
+	out->y = mobj->old_y + R_LerpFixed(mobj->old_y, mobj->y, frac);
+	out->z = mobj->old_z + R_LerpFixed(mobj->old_z, mobj->z, frac);
+	out->angle = mobj->angle;
+}
 void R_SetSectorThinkerOldStates(void)
 {
 	thinker_t *th;

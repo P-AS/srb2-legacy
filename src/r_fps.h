@@ -38,6 +38,16 @@ typedef struct {
 	angle_t aim;
 } viewvars_t;
 
+
+
+typedef struct {
+	fixed_t x;
+	fixed_t y;
+	fixed_t z;
+	angle_t angle;
+} interpmobjstate_t;
+
+
 //extern viewvars_t oldview;
 extern viewvars_t *newview;
 
@@ -50,6 +60,9 @@ void R_SetSectorThinkerNewStates(void);
 void R_DoSectorThinkerLerp(fixed_t frac);
 void R_ResetSectorThinkerLerp(void); 
 void R_ResetFirstLerp(void);
+void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out);
+void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out);
+
 
 
 fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac);

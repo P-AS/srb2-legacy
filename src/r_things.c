@@ -31,6 +31,7 @@
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
 #endif
+#include "r_fps.h"
 
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
@@ -1078,33 +1079,25 @@ static void R_ProjectSprite(mobj_t *thing)
 	INT32 light = 0;
 	fixed_t this_scale = thing->scale; 
 
-		// uncapped/interpolation
-	fixed_t interpx = thing->x;
-	fixed_t interpy = thing->y;
-	fixed_t interpz = thing->z;
 
-	fixed_t oldinterpz = oldthing->z;
-
+    interpmobjstate_t interp = {0};
 	
 
 	// do interpolation
 	if (cv_capframerate.value == 0)
 	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-
-		oldinterpz = oldthing->old_z + FixedMul(rendertimefrac, oldthing->z - oldthing->old_z);
-
-		
-			
-		
+		R_InterpolateMobjState(thing, rendertimefrac, &interp);
+	}
+		else
+	{
+		R_InterpolateMobjState(thing, FRACUNIT, &interp);
 	}
 
 
+
 	// transform the origin point
-	tr_x = interpx - viewx;
-	tr_y = interpy - viewy;
+	tr_x = interp.x - viewx;
+	tr_y = interp.y - viewy;
 
 
 	gxt = FixedMul(tr_x, viewcos);
@@ -1171,7 +1164,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (sprframe->rotate)
 	{
 		// choose a different rotation based on player view
-		ang = R_PointToAngle (interpx, interpy);
+		ang = R_PointToAngle (interp.x, interp.y);
 		rot = (ang-thing->angle+ANGLE_202h)>>29;
 		//Fab: lumpid is the index for spritewidth,spriteoffset... tables
 		lump = sprframe->lumpid[rot];
@@ -1214,7 +1207,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (x2 < portalclipstart || x1 > portalclipend)
 			return;
 
-		if (P_PointOnLineSide(interpx, interpy, portalclipline) != 0)
+		if (P_PointOnLineSide(interp.x, interp.y, portalclipline) != 0)
 			return;
 	}
 
@@ -1224,12 +1217,12 @@ static void R_ProjectSprite(mobj_t *thing)
 		// When vertical flipped, draw sprites from the top down, at least as far as offsets are concerned.
 		// sprite height - sprite topoffset is the proper inverse of the vertical offset, of course.
 		// remember gz and gzt should be seperated by sprite height, not thing height - thing height can be shorter than the sprite itself sometimes!
-		gz = interpz + oldthing->height - FixedMul(spritecachedinfo[lump].topoffset, this_scale);
+		gz = interp.z + oldthing->height - FixedMul(spritecachedinfo[lump].topoffset, this_scale);
 		gzt = gz + FixedMul(spritecachedinfo[lump].height, this_scale);
 	}
 	else
 	{
-		gzt = oldinterpz + spritecachedinfo[lump].topoffset;
+		gzt = interp.z + spritecachedinfo[lump].topoffset;
 		gz = gzt - FixedMul(spritecachedinfo[lump].height, this_scale);
 	}
 
@@ -1246,7 +1239,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		light = thing->subsector->sector->numlights - 1;
 
 		for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
-			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interpx, interpy);
+			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interp.x, interp.y);
 
 			if (h <= gzt) {
 				light = lightnum - 1;
@@ -1290,12 +1283,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->mobjflags = thing->flags;
 	vis->scale = yscale; //<<detailshift;
 	vis->dispoffset = thing->info->dispoffset; // Monster Iestyn: 23/11/15
-	vis->gx = interpx;
-	vis->gy = interpy;
+	vis->gx = interp.x;
+	vis->gy = interp.y;
 	vis->gz = gz;
 	vis->gzt = gzt;
 	vis->thingheight = thing->height;
-	vis->pz = thing->z;
+	vis->pz = interp.z;
 	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = vis->gzt - viewz;
 
@@ -1410,22 +1403,21 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	fixed_t gz ,gzt; 
 
 	// uncapped/interpolation
-	fixed_t interpx = thing->x;
-	fixed_t interpy = thing->y;
-	fixed_t interpz = thing->z;
-
+    interpmobjstate_t interp = {0};
 	// do interpolation
 	if (cv_capframerate.value == 0)
 	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+		R_InterpolatePrecipMobjState(thing, rendertimefrac, &interp);
+	}
+     	else
+	{
+		R_InterpolatePrecipMobjState(thing, FRACUNIT, &interp);
 	}
 
 
 	// transform the origin point
-	tr_x = interpx - viewx;
-	tr_y = interpy - viewy;
+	tr_x = interp.x - viewx;
+	tr_y = interp.y - viewy;
 
 
 	gxt = FixedMul(tr_x, viewcos);
@@ -1495,7 +1487,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 		if (x2 < portalclipstart || x1 > portalclipend)
 			return;
 
-		if (P_PointOnLineSide(interpx, interpy, portalclipline) != 0)
+		if (P_PointOnLineSide(interp.x, interp.y, portalclipline) != 0)
 			return;
 	}
 
@@ -1511,7 +1503,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 
 	//SoM: 3/17/2000: Disregard sprites that are out of view..
-	gzt = interpz + spritecachedinfo[lump].topoffset;
+	gzt = interp.z + spritecachedinfo[lump].topoffset;
 	gz = gzt - spritecachedinfo[lump].height;
 
 	if (thing->subsector->sector->cullheight)
@@ -1524,13 +1516,13 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis = R_NewVisSprite();
 	vis->scale = yscale; //<<detailshift;
 	vis->dispoffset = 0; // Monster Iestyn: 23/11/15
-	vis->gx = interpx;
-	vis->gy = interpy;
+	vis->gx = interp.x;
+	vis->gy = interp.y;
 
 	vis->gz = gz;
 	vis->gzt = gzt;
 	vis->thingheight = 4*FRACUNIT;
-	vis->pz = thing->z;
+	vis->pz = interp.z;
 	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = vis->gzt - viewz;
 

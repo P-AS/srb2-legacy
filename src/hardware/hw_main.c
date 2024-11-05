@@ -48,7 +48,7 @@
 #ifdef NEWCLIP
 #include "hw_clip.h"
 #endif
-
+#include "../r_fps.h"
 #define R_FAKEFLOORS
 #define HWPRECIP
 #define SORTING
@@ -5475,34 +5475,31 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	INT32 heightsec, phs;
 
 // uncapped/interpolation
-	fixed_t interpx;
-	fixed_t interpy;
-	fixed_t interpz;
+interpmobjstate_t interp = {0};
 	
 
 
 	if (!thing)
 		return;
 	else
-	interpx = thing->x;
-	interpy = thing->y;
-	interpz = thing->z;
-	
+     
 
 	if (cv_capframerate.value == 0)
 	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-		
+      R_InterpolateMobjState(thing, rendertimefrac, &interp);
 	}
+		else
+	{
+		R_InterpolateMobjState(thing, FRACUNIT, &interp);
+	}
+
 
 
 		this_scale = FIXED_TO_FLOAT(thing->scale);
 
 	// transform the origin point
-	tr_x = FIXED_TO_FLOAT(interpx) - gr_viewx;
-	tr_y = FIXED_TO_FLOAT(interpy) - gr_viewy;
+	tr_x = FIXED_TO_FLOAT(interp.x) - gr_viewx;
+	tr_y = FIXED_TO_FLOAT(interp.y) - gr_viewy;
 
 
 	// rotation around vertical axis
@@ -5513,8 +5510,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		return;
 
 	// The above can stay as it works for cutting sprites that are too close
-	tr_x = FIXED_TO_FLOAT(interpx);
-	tr_y = FIXED_TO_FLOAT(interpy);
+	tr_x = FIXED_TO_FLOAT(interp.x);
+	tr_y = FIXED_TO_FLOAT(interp.y);
 
 
 	// decide which patch to use for sprite relative to player
@@ -5553,7 +5550,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	if (sprframe->rotate)
 	{
 		// choose a different rotation based on player view
-		ang = R_PointToAngle (interpx, interpy);
+		ang = R_PointToAngle (interp.x, interp.y);
 		rot = (ang-thing->angle+ANGLE_202h)>>29;
 		//Fab: lumpid is the index for spritewidth,spriteoffset... tables
 		lumpoff = sprframe->lumpid[rot];
@@ -5590,12 +5587,12 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	if (thing->eflags & MFE_VERTICALFLIP)
 	{
-		gz = FIXED_TO_FLOAT(interpz + thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
+		gz = FIXED_TO_FLOAT(interp.z + thing->height) - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gzt = gz + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
 	}
 	else
 	{
-		gzt = FIXED_TO_FLOAT(interpz) + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
+		gzt = FIXED_TO_FLOAT(interp.z) + FIXED_TO_FLOAT(spritecachedinfo[lumpoff].topoffset) * this_scale;
 		gz = gzt - FIXED_TO_FLOAT(spritecachedinfo[lumpoff].height) * this_scale;
 	}
 
@@ -5693,23 +5690,25 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 		return;
 
 	// uncapped/interpolation
-	fixed_t interpx = thing->x;
-	fixed_t interpy = thing->y;
-	fixed_t interpz = thing->z;
+    interpmobjstate_t interp = {0};
 
 	// do interpolation
 	if (cv_capframerate.value == 0)
 	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+		R_InterpolatePrecipMobjState(thing, rendertimefrac, &interp);
+	}
+		else
+	{
+		R_InterpolatePrecipMobjState(thing, FRACUNIT, &interp);
 	}
 
 
 
+
+
 	// transform the origin point
-	tr_x = FIXED_TO_FLOAT(interpx) - gr_viewx;
-	tr_y = FIXED_TO_FLOAT(interpy) - gr_viewy;
+	tr_x = FIXED_TO_FLOAT(interp.x) - gr_viewx;
+	tr_y = FIXED_TO_FLOAT(interp.y) - gr_viewy;
 
 
 	// rotation around vertical axis
@@ -5719,8 +5718,8 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	if (tz < ZCLIP_PLANE)
 		return;
 
-	tr_x = FIXED_TO_FLOAT(interpx);
-	tr_y = FIXED_TO_FLOAT(interpy);
+	tr_x = FIXED_TO_FLOAT(interp.x);
+	tr_y = FIXED_TO_FLOAT(interp.y);
 
 
 	// decide which patch to use for sprite relative to player
@@ -5793,7 +5792,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->colormap = colormaps;
 
 	// set top/bottom coords
-	vis->ty = FIXED_TO_FLOAT(interpz + spritecachedinfo[lumpoff].topoffset);
+	vis->ty = FIXED_TO_FLOAT(interp.z + spritecachedinfo[lumpoff].topoffset);
 
 	vis->precip = true;
 }
