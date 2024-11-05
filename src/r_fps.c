@@ -40,7 +40,74 @@ viewvars_t *newview = &p1view_new;
 enum viewcontext_e viewcontext = VIEWCONTEXT_PLAYER1;
 
 #define ISA(_THINKNAME_) th->function.acp1 == (actionf_p1)_THINKNAME_
-#define CAST(_NAME_,_TYPE_) _TYPE_ *_NAME_ = (_TYPE_ *)th
+#define CAST(_NAME_,_TYPE_) _TYPE_ *_NAME_ = (_TYPE_ *)th 
+
+static void SetPolyobjOldState(polyobj_t *pobj)
+{
+	UINT32 i;
+
+	for (i = 0; i < pobj->numVertices; i++)
+	{
+		vertex_t *vert = &pobj->newVerts[i];
+		pobj->oldVerts[i].x = vert->x;
+		pobj->oldVerts[i].y = vert->y;
+	}
+	pobj->oldCenterPt = pobj->newCenterPt;
+}
+
+static void SetPolyobjNewState(polyobj_t *pobj)
+{
+	UINT32 i;
+
+	if (pobj->firstlerp != 1)
+	{
+		pobj->firstlerp = 1;
+		for (i = 0; i < pobj->numVertices; i++)
+		{
+			vertex_t *vert = pobj->vertices[i];
+			pobj->oldVerts[i].x = vert->x;
+			pobj->oldVerts[i].y = vert->y;
+		}
+		pobj->oldCenterPt = pobj->centerPt;
+	}
+
+	for (i = 0; i < pobj->numVertices; i++)
+	{
+		vertex_t *vert = pobj->vertices[i];
+		pobj->newVerts[i].x = vert->x;
+		pobj->newVerts[i].y = vert->y;
+	}
+	pobj->newCenterPt = pobj->centerPt;
+}
+
+static void ResetPolyobjState(polyobj_t *pobj)
+{
+	UINT32 i;
+
+	for (i = 0; i < pobj->numVertices; i++)
+	{
+		vertex_t *vert = &pobj->newVerts[i];
+		pobj->vertices[i]->x = vert->x;
+		pobj->vertices[i]->y = vert->y;
+	}
+	pobj->centerPt = pobj->newCenterPt;
+}
+
+static void LerpPolyobjState(polyobj_t *pobj, fixed_t frac)
+{
+	UINT32 i;
+
+	for (i = 0; i < pobj->numVertices; i++)
+	{
+		vertex_t *oldVert = &pobj->oldVerts[i];
+		vertex_t *newVert = &pobj->newVerts[i];
+		pobj->vertices[i]->x = oldVert->x + R_LerpFixed(oldVert->x, newVert->x, frac);
+		pobj->vertices[i]->y = oldVert->y + R_LerpFixed(oldVert->y, newVert->y, frac);
+	}
+	pobj->centerPt.x = pobj->oldCenterPt.x + R_LerpFixed(pobj->oldCenterPt.x, pobj->newCenterPt.x, frac);
+	pobj->centerPt.y = pobj->oldCenterPt.y + R_LerpFixed(pobj->oldCenterPt.y, pobj->newCenterPt.y, frac);
+}
+
 
 // taken from r_main.c
 // WARNING: a should be unsigned but to add with 2048, it isn't!
@@ -217,12 +284,19 @@ void R_SetSectorThinkerOldStates(void)
 #ifdef POLYOBJECTS
 		if (ISA(T_PolyObjRotate))
 		{
-			//CAST(p, polyrotate_t);
+		    CAST(p, polyrotate_t);
+			polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+			if (pobj == NULL) continue;
+			SetPolyobjOldState(pobj);
+
 		}
 		if (ISA(T_PolyObjMove)
 			|| ISA(T_PolyObjFlag))
 		{
-			//CAST(p, polymove_t);
+			CAST(p, polymove_t);
+			polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+			if (pobj == NULL) continue;
+			SetPolyobjOldState(pobj);
 		}
 		if (ISA(T_PolyObjWaypoint))
 		{
@@ -230,11 +304,18 @@ void R_SetSectorThinkerOldStates(void)
 		}
 		if (ISA(T_PolyDoorSlide))
 		{
-			//CAST(p, polyslidedoor_t);
+			CAST(p, polyslidedoor_t);
+			polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+			if (pobj == NULL) continue;
+			SetPolyobjOldState(pobj);
 		}
 		if (ISA(T_PolyDoorSwing))
 		{
-			//CAST(p, polyswingdoor_t);
+			CAST(p, polyswingdoor_t);
+			polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+			if (pobj == NULL) continue;
+			SetPolyobjOldState(pobj);
+
 		}
 #endif
 		if (ISA(T_Scroll))
@@ -398,27 +479,36 @@ void R_SetSectorThinkerNewStates(void)
 			//CAST(d, disappear_t);
 		}
 #ifdef POLYOBJECTS
-		if (ISA(T_PolyObjRotate))
-		{
-			//CAST(p, polyrotate_t);
-		}
-		if (ISA(T_PolyObjMove)
-			|| ISA(T_PolyObjFlag))
-		{
-			//CAST(p, polymove_t);
-		}
-		if (ISA(T_PolyObjWaypoint))
-		{
-			//CAST(p, polywaypoint_t);
-		}
-		if (ISA(T_PolyDoorSlide))
-		{
-			//CAST(p, polyslidedoor_t);
-		}
-		if (ISA(T_PolyDoorSwing))
-		{
-			//CAST(p, polyswingdoor_t);
-		}
+if (ISA(T_PolyObjRotate))
+				{
+					CAST(p, polyrotate_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					SetPolyobjNewState(pobj);
+				}
+				else if (ISA(T_PolyObjMove)
+					|| ISA(T_PolyObjFlag))
+				{
+					CAST(p, polymove_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					SetPolyobjNewState(pobj);
+				}
+				else if (ISA(T_PolyDoorSlide))
+				{
+					CAST(p, polyslidedoor_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					SetPolyobjNewState(pobj);
+				}
+				else if (ISA(T_PolyDoorSwing))
+				{
+					CAST(p, polyswingdoor_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					SetPolyobjNewState(pobj);
+				}
+
 #endif
 		if (ISA(T_Scroll))
 		{
@@ -500,7 +590,6 @@ void R_DoSectorThinkerLerp(fixed_t frac)
 		}
 		
 
-		// Other thinkers
 		if (ISA(T_MoveCeiling) || ISA(T_CrushCeiling))
 		{
 			CAST(s, ceiling_t);
@@ -581,27 +670,35 @@ void R_DoSectorThinkerLerp(fixed_t frac)
 			//CAST(d, disappear_t);
 		}
 #ifdef POLYOBJECTS
-		if (ISA(T_PolyObjRotate))
-		{
-			//CAST(p, polyrotate_t);
-		}
-		if (ISA(T_PolyObjMove)
-			|| ISA(T_PolyObjFlag))
-		{
-			//CAST(p, polymove_t);
-		}
-		if (ISA(T_PolyObjWaypoint))
-		{
-			//CAST(p, polywaypoint_t);
-		}
-		if (ISA(T_PolyDoorSlide))
-		{
-			//CAST(p, polyslidedoor_t);
-		}
-		if (ISA(T_PolyDoorSwing))
-		{
-			//CAST(p, polyswingdoor_t);
-		}
+if (ISA(T_PolyObjRotate))
+					{
+						CAST(p, polyrotate_t);
+						polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+						if (pobj == NULL) continue;
+						LerpPolyobjState(pobj, frac);
+					}
+					else if (ISA(T_PolyObjMove)
+						|| ISA(T_PolyObjFlag))
+					{
+						CAST(p, polymove_t);
+						polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+						if (pobj == NULL) continue;
+						LerpPolyobjState(pobj, frac);
+					}
+					else if (ISA(T_PolyDoorSlide))
+					{
+						CAST(p, polyslidedoor_t);
+						polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+						if (pobj == NULL) continue;
+						LerpPolyobjState(pobj, frac);
+					}
+					else if (ISA(T_PolyDoorSwing))
+					{
+						CAST(p, polyswingdoor_t);
+						polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+						if (pobj == NULL) continue;
+						LerpPolyobjState(pobj, frac);
+					}
 #endif
 		if (ISA(T_Scroll))
 		{
@@ -749,27 +846,36 @@ void R_ResetSectorThinkerLerp(void)
 			//CAST(d, disappear_t);
 		}
 #ifdef POLYOBJECTS
-		if (ISA(T_PolyObjRotate))
-		{
-			//CAST(p, polyrotate_t);
-		}
-		if (ISA(T_PolyObjMove)
-			|| ISA(T_PolyObjFlag))
-		{
-			//CAST(p, polymove_t);
-		}
-		if (ISA(T_PolyObjWaypoint))
-		{
-			//CAST(p, polywaypoint_t);
-		}
-		if (ISA(T_PolyDoorSlide))
-		{
-			//CAST(p, polyslidedoor_t);
-		}
-		if (ISA(T_PolyDoorSwing))
-		{
-			//CAST(p, polyswingdoor_t);
-		}
+	if (ISA(T_PolyObjRotate))
+				{
+					CAST(p, polyrotate_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					ResetPolyobjState(pobj);
+				}
+				else if (ISA(T_PolyObjMove)
+					|| ISA(T_PolyObjFlag))
+				{
+					CAST(p, polymove_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					ResetPolyobjState(pobj);
+				}
+				else if (ISA(T_PolyDoorSlide))
+				{
+					CAST(p, polyslidedoor_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					ResetPolyobjState(pobj);
+				}
+				else if (ISA(T_PolyDoorSwing))
+				{
+					CAST(p, polyswingdoor_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					ResetPolyobjState(pobj);
+				}
+
 #endif
 		if (ISA(T_Scroll))
 		{
@@ -835,6 +941,36 @@ void R_ResetFirstLerp(void)
 			if (!th)
 				break;
 			{
+				if (ISA(T_PolyObjRotate))
+				{
+					CAST(p, polyrotate_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					pobj->firstlerp = 0;
+				}
+				else if (ISA(T_PolyObjMove)
+					|| ISA(T_PolyObjFlag))
+				{
+					CAST(p, polymove_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					pobj->firstlerp = 0;
+				}
+				else if (ISA(T_PolyDoorSlide))
+				{
+					CAST(p, polyslidedoor_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					pobj->firstlerp = 0;
+				}
+				else if (ISA(T_PolyDoorSwing))
+				{
+					CAST(p, polyswingdoor_t);
+					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
+					if (pobj == NULL) continue;
+					pobj->firstlerp = 0;
+				}
+
 				if (ISA(T_MoveCeiling) || ISA(T_CrushCeiling))
 				{
 					CAST(s, ceiling_t);
