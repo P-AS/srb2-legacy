@@ -299,21 +299,9 @@ static void Polyobj_addVertex(polyobj_t *po, vertex_t *v)
 			(vertex_t *)Z_Realloc(po->tmpVerts,
 			                      po->numVerticesAlloc * sizeof(vertex_t),
 			                      PU_LEVEL, NULL);
-		po->oldVerts =
-			(vertex_t *)Z_Realloc(po->oldVerts,
-			                      po->numVerticesAlloc * sizeof(vertex_t),
-			                      PU_LEVEL, NULL);
-
-		po->newVerts =
-			(vertex_t *)Z_Realloc(po->newVerts,
-			                      po->numVerticesAlloc * sizeof(vertex_t),
-			                      PU_LEVEL, NULL);
-
 	}
 	po->vertices[po->numVertices] = v;
 	po->origVerts[po->numVertices] = *v;
-	po->oldVerts[po->numVertices] = *v;
-	po->newVerts[po->numVertices] = *v;
 	po->numVertices++;
 }
 
