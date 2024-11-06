@@ -241,10 +241,6 @@ static void D_Display(void)
 	if (nodrawers)
 		return; // for comparative timing/profiling 
 
-	if (cv_capframerate.value == 0)
-	{
-		R_DoSectorThinkerLerp(I_GetTimeFrac());
-	}
 
 
 
@@ -363,6 +359,7 @@ static void D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
+			R_ApplyLevelInterpolators(cv_capframerate.value == 0 ? rendertimefrac : FRACUNIT);
 			if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 			{
 				topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
@@ -406,6 +403,7 @@ static void D_Display(void)
 				if (postimgtype2)
 					V_DoPostProcessor(1, postimgtype2, postimgparam2);
 			}
+			R_RestoreLevelInterpolators();
 		}
 
 		if (lastdraw)

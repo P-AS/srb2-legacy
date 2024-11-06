@@ -600,9 +600,14 @@ INT32 EV_DoCeiling(line_t *line, ceiling_e type)
 		ceiling->tag = sec->tag;
 		ceiling->type = type;
 		firstone = 0;
+
+		// interpolation
+		R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, true);
 	}
 	return rtn;
 }
+
+
 
 /** Starts a ceiling crusher.
   *
@@ -676,6 +681,11 @@ INT32 EV_DoCrush(line_t *line, ceiling_e type)
 
 		ceiling->tag = sec->tag;
 		ceiling->type = type;
+
+		// interpolation
+		R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, false);
+		R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, true);
 	}
 	return rtn;
 }
+

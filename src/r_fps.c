@@ -21,7 +21,8 @@
 #include "r_state.h"
 #ifdef POLYOBJECTS
 #include "p_polyobj.h"
-#endif
+#endif 
+#include "z_zone.h"
 
 static viewvars_t p1view_old;
 static viewvars_t p1view_new;
@@ -39,74 +40,12 @@ viewvars_t *newview = &p1view_new;
 
 enum viewcontext_e viewcontext = VIEWCONTEXT_PLAYER1;
 
-#define ISA(_THINKNAME_) th->function.acp1 == (actionf_p1)_THINKNAME_
-#define CAST(_NAME_,_TYPE_) _TYPE_ *_NAME_ = (_TYPE_ *)th 
+static levelinterpolator_t **levelinterpolators;
+static size_t levelinterpolators_len;
+static size_t levelinterpolators_size;
 
-static void SetPolyobjOldState(polyobj_t *pobj)
-{
-	UINT32 i;
 
-	for (i = 0; i < pobj->numVertices; i++)
-	{
-		vertex_t *vert = &pobj->newVerts[i];
-		pobj->oldVerts[i].x = vert->x;
-		pobj->oldVerts[i].y = vert->y;
-	}
-	pobj->oldCenterPt = pobj->newCenterPt;
-}
 
-static void SetPolyobjNewState(polyobj_t *pobj)
-{
-	UINT32 i;
-
-	if (pobj->firstlerp != 1)
-	{
-		pobj->firstlerp = 1;
-		for (i = 0; i < pobj->numVertices; i++)
-		{
-			vertex_t *vert = pobj->vertices[i];
-			pobj->oldVerts[i].x = vert->x;
-			pobj->oldVerts[i].y = vert->y;
-		}
-		pobj->oldCenterPt = pobj->centerPt;
-	}
-
-	for (i = 0; i < pobj->numVertices; i++)
-	{
-		vertex_t *vert = pobj->vertices[i];
-		pobj->newVerts[i].x = vert->x;
-		pobj->newVerts[i].y = vert->y;
-	}
-	pobj->newCenterPt = pobj->centerPt;
-}
-
-static void ResetPolyobjState(polyobj_t *pobj)
-{
-	UINT32 i;
-
-	for (i = 0; i < pobj->numVertices; i++)
-	{
-		vertex_t *vert = &pobj->newVerts[i];
-		pobj->vertices[i]->x = vert->x;
-		pobj->vertices[i]->y = vert->y;
-	}
-	pobj->centerPt = pobj->newCenterPt;
-}
-
-static void LerpPolyobjState(polyobj_t *pobj, fixed_t frac)
-{
-	UINT32 i;
-
-	for (i = 0; i < pobj->numVertices; i++)
-	{
-		vertex_t *oldVert = &pobj->oldVerts[i];
-		vertex_t *newVert = &pobj->newVerts[i];
-		pobj->vertices[i]->x = oldVert->x + R_LerpFixed(oldVert->x, newVert->x, frac);
-		pobj->vertices[i]->y = oldVert->y + R_LerpFixed(oldVert->y, newVert->y, frac);
-	}
-	pobj->centerPt.x = pobj->oldCenterPt.x + R_LerpFixed(pobj->oldCenterPt.x, pobj->newCenterPt.x, frac);
-	pobj->centerPt.y = pobj->oldCenterPt.y + R_LerpFixed(pobj->oldCenterPt.y, pobj->newCenterPt.y, frac);
-}
 
 
 // taken from r_main.c
@@ -122,12 +61,12 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 
 
 
-	viewx = oldview->x + R_LerpFixed(oldview->x, newview->x, frac);
-	viewy = oldview->y + R_LerpFixed(oldview->y, newview->y, frac);
-	viewz = oldview->z + R_LerpFixed(oldview->z, newview->z, frac);
+	viewx =  R_LerpFixed(oldview->x, newview->x, frac);
+	viewy =  R_LerpFixed(oldview->y, newview->y, frac);
+	viewz =  R_LerpFixed(oldview->z, newview->z, frac);
 
-	viewangle = oldview->angle + R_LerpAngle(oldview->angle, newview->angle, frac);
-	aimingangle = oldview->aim + R_LerpAngle(oldview->aim, newview->aim, frac);
+	viewangle   =  R_LerpAngle(oldview->angle, newview->angle, frac);
+	aimingangle =  R_LerpAngle(oldview->aim, newview->aim, frac);
 
 
 
@@ -206,861 +145,304 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 
 void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
-	out->x = mobj->old_x + R_LerpFixed(mobj->old_x, mobj->x, frac);
-	out->y = mobj->old_y + R_LerpFixed(mobj->old_y, mobj->y, frac);
-	out->z = mobj->old_z + R_LerpFixed(mobj->old_z, mobj->z, frac);
+	out->x =  R_LerpFixed(mobj->old_x, mobj->x, frac);
+	out->y =  R_LerpFixed(mobj->old_y, mobj->y, frac);
+	out->z =  R_LerpFixed(mobj->old_z, mobj->z, frac);
 
 
 }
 
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
-	out->x = mobj->old_x + R_LerpFixed(mobj->old_x, mobj->x, frac);
-	out->y = mobj->old_y + R_LerpFixed(mobj->old_y, mobj->y, frac);
-	out->z = mobj->old_z + R_LerpFixed(mobj->old_z, mobj->z, frac);
+	out->x =  R_LerpFixed(mobj->old_x, mobj->x, frac);
+	out->y =  R_LerpFixed(mobj->old_y, mobj->y, frac);
+	out->z =  R_LerpFixed(mobj->old_z, mobj->z, frac);
 	out->angle = mobj->angle;
 }
-void R_SetSectorThinkerOldStates(void)
-{
-	thinker_t *th;
 
-	for (th = thinkercap.next; th != &thinkercap; th = th->next)
+static void AddInterpolator(levelinterpolator_t* interpolator)
+{
+	if (levelinterpolators_len >= levelinterpolators_size)
 	{
-		if (th == NULL)
+		if (levelinterpolators_size == 0)
 		{
-			break;
+			levelinterpolators_size = 128;
+		}
+		else
+		{
+			levelinterpolators_size *= 2;
 		}
 		
-		// Other thinkers
-		if (ISA(T_MoveCeiling) || ISA(T_CrushCeiling))
-		{
-			CAST(s, ceiling_t);
-			s->old_ceilingheight = s->new_ceilingheight;
-		}
-		if (ISA(T_MoveFloor))
-		{
-			CAST(s, floormove_t);
-			s->old_floorheight = s->new_floorheight;
-		}
-		if (ISA(T_LightningFlash))
-		{
-			CAST(l, lightflash_t);
-			l->old_lightlevel = l->new_lightlevel;
-		}
-		if (ISA(T_StrobeFlash))
-		{
-			CAST(s, strobe_t);
-			s->old_lightlevel = s->new_lightlevel;
-		}
-		if (ISA(T_Glow))
-		{
-			CAST(g, glow_t);
-			g->old_lightlevel = g->new_lightlevel;
-		}
-		if (ISA(T_FireFlicker))
-		{
-			CAST(f, fireflicker_t);
-			f->old_lightlevel = f->new_lightlevel;
-		}
-		if (ISA(T_MoveElevator)
-			|| ISA(T_CameraScanner)
-			|| ISA(T_StartCrumble))
-		{
-			CAST(e, elevator_t);
-			e->old_floorheight = e->new_floorheight;
-			e->old_ceilingheight = e->new_ceilingheight;
-		}
-		if (ISA(T_ContinuousFalling)
-			|| ISA(T_ThwompSector)
-			|| ISA(T_NoEnemiesSector)
-			|| ISA(T_EachTimeThinker)
-			|| ISA(T_RaiseSector)
-			|| ISA(T_BounceCheese)
-			|| ISA(T_MarioBlock)
-			|| ISA(T_SpikeSector)
-			|| ISA(T_FloatSector)
-			|| ISA(T_BridgeThinker))
-		{
-			CAST(l, levelspecthink_t);
-			l->old_floorheight = l->new_floorheight;
-			l->old_ceilingheight = l->new_ceilingheight;
-		}
-		if (ISA(T_LaserFlash))
-		{
-			//CAST(l, laserthink_t);
-		}
-		if (ISA(T_LightFade))
-		{
-			CAST(l, lightlevel_t);
-			l->old_lightlevel = l->new_lightlevel;
-		}
-		if (ISA(T_ExecutorDelay))
-		{
-			//CAST(e, executor_t);
-		}
-		if (ISA(T_Disappear))
-		{
-			//CAST(d, disappear_t);
-		}
-#ifdef POLYOBJECTS
-		if (ISA(T_PolyObjRotate))
-		{
-		    CAST(p, polyrotate_t);
-			polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-			if (pobj == NULL) continue;
-			SetPolyobjOldState(pobj);
+		levelinterpolators = Z_ReallocAlign(
+			(void*) levelinterpolators,
+			sizeof(levelinterpolator_t*) * levelinterpolators_size,
+			PU_LEVEL,
+			NULL,
+			sizeof(levelinterpolator_t*) * 8
+		);
+	}
+	levelinterpolators[levelinterpolators_len] = interpolator;
+	levelinterpolators_len += 1;
+}
 
-		}
-		if (ISA(T_PolyObjMove)
-			|| ISA(T_PolyObjFlag))
-		{
-			CAST(p, polymove_t);
-			polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-			if (pobj == NULL) continue;
-			SetPolyobjOldState(pobj);
-		}
-		if (ISA(T_PolyObjWaypoint))
-		{
-			//CAST(p, polywaypoint_t);
-		}
-		if (ISA(T_PolyDoorSlide))
-		{
-			CAST(p, polyslidedoor_t);
-			polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-			if (pobj == NULL) continue;
-			SetPolyobjOldState(pobj);
-		}
-		if (ISA(T_PolyDoorSwing))
-		{
-			CAST(p, polyswingdoor_t);
-			polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-			if (pobj == NULL) continue;
-			SetPolyobjOldState(pobj);
+static levelinterpolator_t *CreateInterpolator(levelinterpolator_type_e type, thinker_t *thinker)
+{
+	levelinterpolator_t *ret = (levelinterpolator_t*) Z_CallocAlign(
+		sizeof(levelinterpolator_t),
+		PU_LEVEL,
+		NULL,
+		sizeof(levelinterpolator_t) * 8
+	);
+	ret->type = type;
+	ret->thinker = thinker;
+	AddInterpolator(ret);
+	return ret;
+}
 
-		}
-#endif
-		if (ISA(T_Scroll))
-		{
-			CAST(s, scroll_t);
-			switch (s->type)
-			{
-				case sc_side:
-					s->old_textureoffset = s->new_textureoffset;
-					s->old_rowoffset = s->new_rowoffset;
-					break;
-				case sc_floor:
-				case sc_ceiling:
-					s->old_xoffs = s->new_xoffs;
-					s->old_yoffs = s->new_yoffs;
-					break;
-				case sc_carry:
-				case sc_carry_ceiling:
-					break;
-			}
-		}
-		if (ISA(T_Friction))
-		{
-			//CAST(f, friction_t);
-		}
-		if (ISA(T_Pusher))
-		{
-			//CAST(f, pusher_t);
-		}
+void R_CreateInterpolator_SectorPlane(thinker_t *thinker, sector_t *sector, boolean ceiling)
+{
+	levelinterpolator_t *interp = CreateInterpolator(LVLINTERP_SectorPlane, thinker);
+	interp->sectorplane.sector = sector;
+	interp->sectorplane.ceiling = ceiling;
+	if (ceiling)
+	{
+		interp->sectorplane.oldheight = interp->sectorplane.bakheight = sector->ceilingheight;
+	}
+	else
+	{
+		interp->sectorplane.oldheight = interp->sectorplane.bakheight = sector->floorheight;
 	}
 }
 
-void R_SetSectorThinkerNewStates(void)
+void R_CreateInterpolator_SectorScroll(thinker_t *thinker, sector_t *sector, boolean ceiling)
 {
-	thinker_t *th;
-
-	for (th = thinkercap.next; th != &thinkercap; th = th->next)
+	levelinterpolator_t *interp = CreateInterpolator(LVLINTERP_SectorScroll, thinker);
+	interp->sectorscroll.sector = sector;
+	interp->sectorscroll.ceiling = ceiling;
+	if (ceiling)
 	{
-		if (th == NULL)
-		{
-			break;
-		}
-		
-
-		// Other thinkers
-		if (ISA(T_MoveCeiling) || ISA(T_CrushCeiling))
-		{
-			CAST(s, ceiling_t);
-			if (s->firstlerp != 1)
-			{
-				s->firstlerp = 1;
-				s->old_ceilingheight = s->sector->ceilingheight;
-			}
-			s->new_ceilingheight = s->sector->ceilingheight;
-		}
-		if (ISA(T_MoveFloor))
-		{
-			CAST(s, floormove_t);
-			if (s->firstlerp != 1)
-			{
-				s->firstlerp = 1;
-				s->old_floorheight = s->sector->floorheight;
-			}
-			s->new_floorheight = s->sector->floorheight;
-		}
-		if (ISA(T_LightningFlash))
-		{
-			CAST(l, lightflash_t);
-			if (l->firstlerp != 1)
-			{
-				l->firstlerp = 1;
-				l->old_lightlevel = l->sector->lightlevel;
-			}
-			l->new_lightlevel = l->sector->lightlevel;
-		}
-		if (ISA(T_StrobeFlash))
-		{
-			CAST(s, strobe_t);
-			if (s->firstlerp != 1)
-			{
-				s->firstlerp = 1;
-				s->old_lightlevel = s->sector->lightlevel;
-			}
-			s->new_lightlevel = s->sector->lightlevel;
-		}
-		if (ISA(T_Glow))
-		{
-			CAST(g, glow_t);
-			if (g->firstlerp != 1)
-			{
-				g->firstlerp = 1;
-				g->old_lightlevel = g->sector->lightlevel;
-			}
-			g->new_lightlevel = g->sector->lightlevel;
-		}
-		if (ISA(T_FireFlicker))
-		{
-			CAST(f, fireflicker_t);
-			if (f->firstlerp != 1)
-			{
-				f->firstlerp = 1;
-				f->old_lightlevel = f->sector->lightlevel;
-			}
-			f->new_lightlevel = f->sector->lightlevel;
-		}
-		if (ISA(T_MoveElevator)
-			|| ISA(T_CameraScanner)
-			|| ISA(T_StartCrumble))
-		{
-			CAST(e, elevator_t);
-			if (e->firstlerp != 1)
-			{
-				e->firstlerp = 1;
-				e->old_floorheight = e->sector->floorheight;
-				e->old_ceilingheight = e->sector->ceilingheight;
-			}
-			e->new_floorheight = e->sector->floorheight;
-			e->new_ceilingheight = e->sector->ceilingheight;
-		}
-		if (ISA(T_ContinuousFalling)
-			|| ISA(T_ThwompSector)
-			|| ISA(T_NoEnemiesSector)
-			|| ISA(T_EachTimeThinker)
-			|| ISA(T_RaiseSector)
-			|| ISA(T_BounceCheese)
-			|| ISA(T_MarioBlock)
-			|| ISA(T_SpikeSector)
-			|| ISA(T_FloatSector)
-			|| ISA(T_BridgeThinker))
-		{
-			CAST(l, levelspecthink_t);
-			if (l->firstlerp != 1)
-			{
-				l->firstlerp = 1;
-				l->old_floorheight = l->sector->floorheight;
-				l->old_ceilingheight = l->sector->ceilingheight;
-			}
-			l->new_floorheight = l->sector->floorheight;
-			l->new_ceilingheight = l->sector->ceilingheight;
-		}
-		if (ISA(T_LaserFlash))
-		{
-			//CAST(l, laserthink_t);
-		}
-		if (ISA(T_LightFade))
-		{
-			CAST(l, lightlevel_t);
-			if (l->firstlerp != 1)
-			{
-				l->firstlerp = 1;
-				l->old_lightlevel = l->sector->lightlevel;
-			}
-			l->new_lightlevel = l->sector->lightlevel;
-		}
-		if (ISA(T_ExecutorDelay))
-		{
-			//CAST(e, executor_t);
-		}
-		if (ISA(T_Disappear))
-		{
-			//CAST(d, disappear_t);
-		}
-#ifdef POLYOBJECTS
-if (ISA(T_PolyObjRotate))
-				{
-					CAST(p, polyrotate_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					SetPolyobjNewState(pobj);
-				}
-				else if (ISA(T_PolyObjMove)
-					|| ISA(T_PolyObjFlag))
-				{
-					CAST(p, polymove_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					SetPolyobjNewState(pobj);
-				}
-				else if (ISA(T_PolyDoorSlide))
-				{
-					CAST(p, polyslidedoor_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					SetPolyobjNewState(pobj);
-				}
-				else if (ISA(T_PolyDoorSwing))
-				{
-					CAST(p, polyswingdoor_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					SetPolyobjNewState(pobj);
-				}
-
-#endif
-		if (ISA(T_Scroll))
-		{
-			CAST(s, scroll_t);
-			switch (s->type)
-			{
-				case sc_side:
-				{
-					side_t *side;
-					side = sides + s->affectee;
-					if (s->firstlerp != 1)
-					{
-						s->firstlerp = 1;
-						s->old_textureoffset = side->textureoffset;
-						s->old_rowoffset = side->rowoffset;
-					}
-					s->new_textureoffset = side->textureoffset;
-					s->new_rowoffset = side->rowoffset;
-					break;
-				}
-				case sc_floor:
-				{
-					sector_t *sec;
-					sec = sectors + s->affectee;
-					if (s->firstlerp != 1)
-					{
-						s->firstlerp = 1;
-						s->old_xoffs = sec->floor_xoffs;
-						s->old_yoffs = sec->floor_yoffs;
-					}
-					s->new_xoffs = sec->floor_xoffs;
-					s->new_yoffs = sec->floor_yoffs;
-					break;
-				}
-				case sc_ceiling:
-				{
-					sector_t *sec;
-					sec = sectors + s->affectee;
-					if (s->firstlerp != 1)
-					{
-						s->firstlerp = 1;
-						s->old_xoffs = sec->ceiling_xoffs;
-						s->old_yoffs = sec->ceiling_yoffs;
-					}
-					s->new_xoffs = sec->ceiling_xoffs;
-					s->new_yoffs = sec->ceiling_yoffs;
-					break;
-				}
-				case sc_carry:
-				case sc_carry_ceiling:
-					break;
-			}
-		}
-		if (ISA(T_Friction))
-		{
-			//CAST(f, friction_t);
-		}
-		if (ISA(T_Pusher))
-		{
-			//CAST(f, pusher_t);
-		}
+		interp->sectorscroll.oldxoffs = interp->sectorscroll.bakxoffs = sector->ceiling_xoffs;
+		interp->sectorscroll.oldyoffs = interp->sectorscroll.bakyoffs = sector->ceiling_yoffs;
+	}
+	else
+	{
+		interp->sectorscroll.oldxoffs = interp->sectorscroll.bakxoffs = sector->floor_xoffs;
+		interp->sectorscroll.oldyoffs = interp->sectorscroll.bakyoffs = sector->floor_yoffs;
 	}
 }
 
-void R_DoSectorThinkerLerp(fixed_t frac)
-{
-	thinker_t *th;
 
-	if (cv_capframerate.value != 0)
+void R_CreateInterpolator_SideScroll(thinker_t *thinker, side_t *side)
+{
+	levelinterpolator_t *interp = CreateInterpolator(LVLINTERP_SideScroll, thinker);
+	interp->sidescroll.side = side;
+	interp->sidescroll.oldtextureoffset = interp->sidescroll.baktextureoffset = side->textureoffset;
+	interp->sidescroll.oldrowoffset = interp->sidescroll.bakrowoffset = side->rowoffset;
+}
+
+void R_CreateInterpolator_Polyobj(thinker_t *thinker, polyobj_t *polyobj)
+{
+	levelinterpolator_t *interp = CreateInterpolator(LVLINTERP_Polyobj, thinker);
+	interp->polyobj.polyobj = polyobj;
+	interp->polyobj.vertices_size = polyobj->numVertices;
+
+	interp->polyobj.oldvertices = Z_CallocAlign(sizeof(fixed_t) * 2 * polyobj->numVertices, PU_LEVEL, NULL, 32);
+	interp->polyobj.bakvertices = Z_CallocAlign(sizeof(fixed_t) * 2 * polyobj->numVertices, PU_LEVEL, NULL, 32);
+	for (size_t i = 0; i < polyobj->numVertices; i++)
 	{
-		return;
+		interp->polyobj.oldvertices[i * 2    ] = interp->polyobj.bakvertices[i * 2    ] = polyobj->vertices[i]->x;
+		interp->polyobj.oldvertices[i * 2 + 1] = interp->polyobj.bakvertices[i * 2 + 1] = polyobj->vertices[i]->y;
 	}
 
-	for (th = thinkercap.next; th != &thinkercap; th = th->next)
-	{
-		if (th == NULL)
-		{
-			break;
-		}
-		
+	interp->polyobj.oldcx = interp->polyobj.bakcx = polyobj->centerPt.x;
+	interp->polyobj.oldcy = interp->polyobj.bakcy = polyobj->centerPt.y;
+}
 
-		if (ISA(T_MoveCeiling) || ISA(T_CrushCeiling))
+
+void R_InitializeLevelInterpolators(void)
+{
+	levelinterpolators_len = 0;
+	levelinterpolators_size = 0;
+	levelinterpolators = NULL;
+}
+
+static void UpdateLevelInterpolatorState(levelinterpolator_t *interp)
+{
+	size_t i;
+
+	switch (interp->type)
+	{
+	case LVLINTERP_SectorPlane:
+		interp->sectorplane.oldheight = interp->sectorplane.bakheight;
+		interp->sectorplane.bakheight = interp->sectorplane.ceiling ? interp->sectorplane.sector->ceilingheight : interp->sectorplane.sector->floorheight;
+		break;
+
+	case LVLINTERP_SectorScroll:
+		interp->sectorscroll.oldxoffs = interp->sectorscroll.bakxoffs;
+		interp->sectorscroll.bakxoffs = interp->sectorscroll.ceiling ? interp->sectorscroll.sector->ceiling_xoffs : interp->sectorscroll.sector->floor_xoffs;
+		interp->sectorscroll.oldyoffs = interp->sectorscroll.bakyoffs;
+		interp->sectorscroll.bakyoffs = interp->sectorscroll.ceiling ? interp->sectorscroll.sector->ceiling_yoffs : interp->sectorscroll.sector->floor_yoffs;
+		break;
+	case LVLINTERP_SideScroll:
+		interp->sidescroll.oldtextureoffset = interp->sidescroll.baktextureoffset;
+		interp->sidescroll.baktextureoffset = interp->sidescroll.side->textureoffset;
+		interp->sidescroll.oldrowoffset = interp->sidescroll.bakrowoffset;
+		interp->sidescroll.bakrowoffset = interp->sidescroll.side->rowoffset;
+		break;
+
+			case LVLINTERP_Polyobj:
+		for (i = 0; i < interp->polyobj.vertices_size; i++)
 		{
-			CAST(s, ceiling_t);
-			if (s->firstlerp != 1) continue;
-			s->sector->ceilingheight = s->old_ceilingheight + R_LerpFixed(s->old_ceilingheight, s->new_ceilingheight, frac);
+			interp->polyobj.oldvertices[i * 2    ] = interp->polyobj.bakvertices[i * 2    ];
+			interp->polyobj.oldvertices[i * 2 + 1] = interp->polyobj.bakvertices[i * 2 + 1];
+			interp->polyobj.bakvertices[i * 2    ] = interp->polyobj.polyobj->vertices[i]->x;
+			interp->polyobj.bakvertices[i * 2 + 1] = interp->polyobj.polyobj->vertices[i]->y;
 		}
-		if (ISA(T_MoveFloor))
-		{
-			CAST(s, floormove_t);
-			if (s->firstlerp != 1) continue;
-			s->sector->floorheight = s->old_floorheight + R_LerpFixed(s->old_floorheight, s->new_floorheight, frac);
-		}
-		if (ISA(T_LightningFlash))
-		{
-			CAST(l, lightflash_t);
-			if (l->firstlerp != 1) continue;
-			l->sector->lightlevel = l->old_lightlevel + (INT16) R_LerpInt32(l->old_lightlevel, l->new_lightlevel, frac);
-		}
-		if (ISA(T_StrobeFlash))
-		{
-			CAST(s, strobe_t);
-			if (s->firstlerp != 1) continue;
-			s->sector->lightlevel = s->old_lightlevel + (INT16) R_LerpInt32(s->old_lightlevel, s->new_lightlevel, frac);
-		}
-		if (ISA(T_Glow))
-		{
-			CAST(g, glow_t);
-			if (g->firstlerp != 1) continue;
-			g->sector->lightlevel = g->old_lightlevel + (INT16) R_LerpInt32(g->old_lightlevel, g->new_lightlevel, frac);
-		}
-		if (ISA(T_FireFlicker))
-		{
-			CAST(f, fireflicker_t);
-			if (f->firstlerp != 1) continue;
-			f->sector->lightlevel = f->old_lightlevel + (INT16) R_LerpInt32(f->old_lightlevel, f->new_lightlevel, frac);
-		}
-		if (ISA(T_MoveElevator)
-			|| ISA(T_CameraScanner)
-			|| ISA(T_StartCrumble))
-		{
-			CAST(e, elevator_t);
-			if (e->firstlerp != 1) continue;
-			e->sector->ceilingheight = e->old_ceilingheight + R_LerpFixed(e->old_ceilingheight, e->new_ceilingheight, frac);
-			e->sector->floorheight = e->old_floorheight + R_LerpFixed(e->old_floorheight, e->new_floorheight, frac);
-		}
-		if (ISA(T_ContinuousFalling)
-			|| ISA(T_ThwompSector)
-			|| ISA(T_NoEnemiesSector)
-			|| ISA(T_EachTimeThinker)
-			|| ISA(T_RaiseSector)
-			|| ISA(T_BounceCheese)
-			|| ISA(T_MarioBlock)
-			|| ISA(T_SpikeSector)
-			|| ISA(T_FloatSector)
-			|| ISA(T_BridgeThinker))
-		{
-			CAST(l, levelspecthink_t);
-			if (l->firstlerp != 1) continue;
-			l->sector->ceilingheight = l->old_ceilingheight + R_LerpFixed(l->old_ceilingheight, l->new_ceilingheight, frac);
-			l->sector->floorheight = l->old_floorheight + R_LerpFixed(l->old_floorheight, l->new_floorheight, frac);
-		}
-		if (ISA(T_LaserFlash))
-		{
-			//CAST(l, laserthink_t);
-		}
-		if (ISA(T_LightFade))
-		{
-			CAST(l, lightlevel_t);
-			if (l->firstlerp != 1) continue;
-			l->sector->lightlevel = l->old_lightlevel + (INT16) R_LerpInt32(l->old_lightlevel, l->new_lightlevel, frac);
-		}
-		if (ISA(T_ExecutorDelay))
-		{
-			//CAST(e, executor_t);
-		}
-		if (ISA(T_Disappear))
-		{
-			//CAST(d, disappear_t);
-		}
-#ifdef POLYOBJECTS
-if (ISA(T_PolyObjRotate))
-					{
-						CAST(p, polyrotate_t);
-						polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-						if (pobj == NULL) continue;
-						LerpPolyobjState(pobj, frac);
-					}
-					else if (ISA(T_PolyObjMove)
-						|| ISA(T_PolyObjFlag))
-					{
-						CAST(p, polymove_t);
-						polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-						if (pobj == NULL) continue;
-						LerpPolyobjState(pobj, frac);
-					}
-					else if (ISA(T_PolyDoorSlide))
-					{
-						CAST(p, polyslidedoor_t);
-						polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-						if (pobj == NULL) continue;
-						LerpPolyobjState(pobj, frac);
-					}
-					else if (ISA(T_PolyDoorSwing))
-					{
-						CAST(p, polyswingdoor_t);
-						polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-						if (pobj == NULL) continue;
-						LerpPolyobjState(pobj, frac);
-					}
-#endif
-		if (ISA(T_Scroll))
-		{
-			CAST(s, scroll_t);
-			switch (s->type)
-			{
-				case sc_side:
-				{
-					side_t *side;
-					side = sides + s->affectee;
-					if (s->firstlerp != 1) break;
-					side->textureoffset = s->old_textureoffset + R_LerpFixed(s->old_textureoffset, s->new_textureoffset, frac);
-					side->rowoffset = s->old_rowoffset + R_LerpFixed(s->old_rowoffset, s->new_rowoffset, frac);
-					break;
-				}
-				case sc_floor:
-				{
-					sector_t *sec;
-					sec = sectors + s->affectee;
-					if (s->firstlerp != 1) break;
-					sec->floor_xoffs = s->old_xoffs + R_LerpFixed(s->old_xoffs, s->new_xoffs, frac);
-					sec->floor_yoffs = s->old_yoffs + R_LerpFixed(s->old_yoffs, s->new_yoffs, frac);
-					break;
-				}
-				case sc_ceiling:
-				{
-					sector_t *sec;
-					sec = sectors + s->affectee;
-					if (s->firstlerp != 1) break;
-					sec->ceiling_xoffs = s->old_xoffs + R_LerpFixed(s->old_xoffs, s->new_xoffs, frac);
-					sec->ceiling_yoffs = s->old_yoffs + R_LerpFixed(s->old_yoffs, s->new_yoffs, frac);
-					break;
-				}
-				case sc_carry:
-				case sc_carry_ceiling:
-					break;
-			}
-		}
-		if (ISA(T_Friction))
-		{
-			//CAST(f, friction_t);
-		}
-		if (ISA(T_Pusher))
-		{
-			//CAST(f, pusher_t);
-		}
+		interp->polyobj.oldcx = interp->polyobj.bakcx;
+		interp->polyobj.oldcy = interp->polyobj.bakcy;
+		interp->polyobj.bakcx = interp->polyobj.polyobj->centerPt.x;
+		interp->polyobj.bakcy = interp->polyobj.polyobj->centerPt.y;
+		break;
+
 	}
 }
 
-void R_ResetSectorThinkerLerp(void)
+void R_UpdateLevelInterpolators(void)
 {
-	thinker_t *th;
-
-	if (cv_capframerate.value != 0)
+	size_t i;
+	for (i = 0; i < levelinterpolators_len; i++)
 	{
-		return;
-	}
-
-	for (th = thinkercap.next; th != &thinkercap; th = th->next)
-	{
-		if (th == NULL)
-		{
-			break;
-		}
+		levelinterpolator_t *interp = levelinterpolators[i];
 		
-
-		// Other thinkers
-		if (ISA(T_MoveCeiling) || ISA(T_CrushCeiling))
-		{
-			CAST(s, ceiling_t);
-			if (s->firstlerp != 1) continue;
-			s->sector->ceilingheight = s->new_ceilingheight;
-		}
-		if (ISA(T_MoveFloor))
-		{
-			CAST(s, floormove_t);
-			if (s->firstlerp != 1) continue;
-			s->sector->floorheight = s->new_floorheight;
-		}
-		if (ISA(T_LightningFlash))
-		{
-			CAST(l, lightflash_t);
-			if (l->firstlerp != 1) continue;
-			l->sector->lightlevel = l->new_lightlevel;
-		}
-		if (ISA(T_StrobeFlash))
-		{
-			CAST(s, strobe_t);
-			if (s->firstlerp != 1) continue;
-			s->sector->lightlevel = s->new_lightlevel;
-		}
-		if (ISA(T_Glow))
-		{
-			CAST(g, glow_t);
-			if (g->firstlerp != 1) continue;
-			g->sector->lightlevel = g->new_lightlevel;
-		}
-		if (ISA(T_FireFlicker))
-		{
-			CAST(f, fireflicker_t);
-			if (f->firstlerp != 1) continue;
-			f->sector->lightlevel = f->new_lightlevel;
-		}
-		if (ISA(T_MoveElevator)
-			|| ISA(T_CameraScanner)
-			|| ISA(T_StartCrumble))
-		{
-			CAST(e, elevator_t);
-			if (e->firstlerp != 1) continue;
-			e->sector->ceilingheight = e->new_ceilingheight;
-			e->sector->floorheight = e->new_floorheight;
-		}
-		if (ISA(T_ContinuousFalling)
-			|| ISA(T_ThwompSector)
-			|| ISA(T_NoEnemiesSector)
-			|| ISA(T_EachTimeThinker)
-			|| ISA(T_RaiseSector)
-			|| ISA(T_BounceCheese)
-			|| ISA(T_MarioBlock)
-			|| ISA(T_SpikeSector)
-			|| ISA(T_FloatSector)
-			|| ISA(T_BridgeThinker))
-		{
-			CAST(l, levelspecthink_t);
-			if (l->firstlerp != 1) continue;
-			l->sector->ceilingheight = l->new_ceilingheight;
-			l->sector->floorheight = l->new_floorheight;
-		}
-		if (ISA(T_LaserFlash))
-		{
-			//CAST(l, laserthink_t);
-		}
-		if (ISA(T_LightFade))
-		{
-			CAST(l, lightlevel_t);
-			if (l->firstlerp != 1) continue;
-			l->sector->lightlevel = l->new_lightlevel;
-		}
-		if (ISA(T_ExecutorDelay))
-		{
-			//CAST(e, executor_t);
-		}
-		if (ISA(T_Disappear))
-		{
-			//CAST(d, disappear_t);
-		}
-#ifdef POLYOBJECTS
-	if (ISA(T_PolyObjRotate))
-				{
-					CAST(p, polyrotate_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					ResetPolyobjState(pobj);
-				}
-				else if (ISA(T_PolyObjMove)
-					|| ISA(T_PolyObjFlag))
-				{
-					CAST(p, polymove_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					ResetPolyobjState(pobj);
-				}
-				else if (ISA(T_PolyDoorSlide))
-				{
-					CAST(p, polyslidedoor_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					ResetPolyobjState(pobj);
-				}
-				else if (ISA(T_PolyDoorSwing))
-				{
-					CAST(p, polyswingdoor_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					ResetPolyobjState(pobj);
-				}
-
-#endif
-		if (ISA(T_Scroll))
-		{
-			CAST(s, scroll_t);
-			switch (s->type)
-			{
-				case sc_side:
-				{
-					side_t *side;
-					side = sides + s->affectee;
-					if (s->firstlerp != 1) break;
-					side->textureoffset = s->new_textureoffset;
-					side->rowoffset = s->new_rowoffset;
-					break;
-				}
-				case sc_floor:
-				{
-					sector_t *sec;
-					sec = sectors + s->affectee;
-					if (s->firstlerp != 1) break;
-					sec->floor_xoffs = s->new_xoffs;
-					sec->floor_yoffs = s->new_yoffs;
-					break;
-				}
-				case sc_ceiling:
-				{
-					sector_t *sec;
-					sec = sectors + s->affectee;
-					if (s->firstlerp != 1) break;
-					sec->ceiling_xoffs = s->new_xoffs;
-					sec->ceiling_yoffs = s->new_yoffs;
-					break;
-				}
-				case sc_carry:
-				case sc_carry_ceiling:
-					break;
-			}
-		}
-		if (ISA(T_Friction))
-		{
-			//CAST(f, friction_t);
-		}
-		if (ISA(T_Pusher))
-		{
-			//CAST(f, pusher_t);
-		}
+		UpdateLevelInterpolatorState(interp);
 	}
 }
 
-void R_ResetFirstLerp(void)
+void R_ClearLevelInterpolatorState(thinker_t *thinker)
 {
-	thinker_t *th;
 	
-
-	
-		if (cv_capframerate.value != 0)
+	size_t i;
+	for (i = 0; i < levelinterpolators_len; i++)
 	{
-		return;
-	}
-
-	for (th = thinkercap.next; th != &thinkercap; th = th->next)
+		levelinterpolator_t *interp = levelinterpolators[i];
+		
+		if (interp->thinker == thinker)
 		{
-			if (!th)
-				break;
-			{
-				if (ISA(T_PolyObjRotate))
-				{
-					CAST(p, polyrotate_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					pobj->firstlerp = 0;
-				}
-				else if (ISA(T_PolyObjMove)
-					|| ISA(T_PolyObjFlag))
-				{
-					CAST(p, polymove_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					pobj->firstlerp = 0;
-				}
-				else if (ISA(T_PolyDoorSlide))
-				{
-					CAST(p, polyslidedoor_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					pobj->firstlerp = 0;
-				}
-				else if (ISA(T_PolyDoorSwing))
-				{
-					CAST(p, polyswingdoor_t);
-					polyobj_t *pobj = Polyobj_GetForNum(p->polyObjNum);
-					if (pobj == NULL) continue;
-					pobj->firstlerp = 0;
-				}
-
-				if (ISA(T_MoveCeiling) || ISA(T_CrushCeiling))
-				{
-					CAST(s, ceiling_t);
-					s->firstlerp = 0;
-				}
-				else if (ISA(T_MoveFloor))
-				{
-					CAST(s, floormove_t);
-					s->firstlerp = 0;
-				}
-				else if (ISA(T_LightningFlash))
-				{
-					CAST(l, lightflash_t);
-					l->firstlerp = 0;
-				}
-				else if (ISA(T_StrobeFlash))
-				{
-					CAST(s, strobe_t);
-					s->firstlerp = 0;
-				}
-				else if (ISA(T_Glow))
-				{
-					CAST(g, glow_t);
-					g->firstlerp = 0;
-				}
-				else if (ISA(T_FireFlicker))
-				{
-					CAST(f, fireflicker_t);
-					f->firstlerp = 0;
-				}
-				else if (ISA(T_MoveElevator) || ISA(T_CameraScanner))
-				{
-					CAST(e, elevator_t);
-					e->firstlerp = 0;
-				}
-				
-				else if (ISA(T_LightFade))
-				{
-					CAST(l, lightlevel_t);
-					l->firstlerp = 0;
-				}
-				
-				else if (ISA(T_Scroll))
-				{
-					CAST(s, scroll_t);
-					s->firstlerp = 0;
-				}
-				
-			}
+			// Do it twice to make the old state match the new
+			UpdateLevelInterpolatorState(interp);
+			UpdateLevelInterpolatorState(interp);
 		}
 	}
+}
+
+void R_ApplyLevelInterpolators(fixed_t frac)
+{
+	size_t i, ii;
+	for (i = 0; i < levelinterpolators_len; i++)
+	{
+		levelinterpolator_t *interp = levelinterpolators[i];
+		switch (interp->type)
+		{
+		case LVLINTERP_SectorPlane:
+			if (interp->sectorplane.ceiling)
+			{
+				interp->sectorplane.sector->ceilingheight = R_LerpFixed(interp->sectorplane.oldheight, interp->sectorplane.bakheight, frac);
+			}
+			else
+			{
+				interp->sectorplane.sector->floorheight = R_LerpFixed(interp->sectorplane.oldheight, interp->sectorplane.bakheight, frac);
+			}
+			break;
+
+		case LVLINTERP_SectorScroll:
+			if (interp->sectorscroll.ceiling)
+			{
+				interp->sectorscroll.sector->ceiling_xoffs = R_LerpFixed(interp->sectorscroll.oldxoffs, interp->sectorscroll.bakxoffs, frac);
+				interp->sectorscroll.sector->ceiling_yoffs = R_LerpFixed(interp->sectorscroll.oldyoffs, interp->sectorscroll.bakyoffs, frac);
+			}
+			else
+			{
+				interp->sectorscroll.sector->floor_xoffs = R_LerpFixed(interp->sectorscroll.oldxoffs, interp->sectorscroll.bakxoffs, frac);
+				interp->sectorscroll.sector->floor_yoffs = R_LerpFixed(interp->sectorscroll.oldyoffs, interp->sectorscroll.bakyoffs, frac);
+			}
+			break;
+
+        case LVLINTERP_SideScroll:
+			interp->sidescroll.side->textureoffset = R_LerpFixed(interp->sidescroll.oldtextureoffset, interp->sidescroll.baktextureoffset, frac);
+			interp->sidescroll.side->rowoffset = R_LerpFixed(interp->sidescroll.oldrowoffset, interp->sidescroll.bakrowoffset, frac);
+			break;
+
+		case LVLINTERP_Polyobj:
+			for (ii = 0; ii < interp->polyobj.vertices_size; ii++)
+			{
+				interp->polyobj.polyobj->vertices[ii]->x = R_LerpFixed(interp->polyobj.oldvertices[ii * 2    ], interp->polyobj.bakvertices[ii * 2    ], frac);
+				interp->polyobj.polyobj->vertices[ii]->y = R_LerpFixed(interp->polyobj.oldvertices[ii * 2 + 1], interp->polyobj.bakvertices[ii * 2 + 1], frac);
+			}
+			interp->polyobj.polyobj->centerPt.x = R_LerpFixed(interp->polyobj.oldcx, interp->polyobj.bakcx, frac);
+			interp->polyobj.polyobj->centerPt.y = R_LerpFixed(interp->polyobj.oldcy, interp->polyobj.bakcy, frac);
+			break;
 
 
+		}
+	}
+}
+
+void R_RestoreLevelInterpolators(void)
+{
+	size_t i, ii;;
+	for (i = 0; i < levelinterpolators_len; i++)
+	{
+		levelinterpolator_t *interp = levelinterpolators[i];
+		
+		switch (interp->type)
+		{
+		case LVLINTERP_SectorPlane:
+			if (interp->sectorplane.ceiling)
+			{
+				interp->sectorplane.sector->ceilingheight = interp->sectorplane.bakheight;
+			}
+			else
+			{
+				interp->sectorplane.sector->floorheight = interp->sectorplane.bakheight;
+			}
+			break;
+		case LVLINTERP_SectorScroll:
+			if (interp->sectorscroll.ceiling)
+			{
+				interp->sectorscroll.sector->ceiling_xoffs = interp->sectorscroll.bakxoffs;
+				interp->sectorscroll.sector->ceiling_yoffs = interp->sectorscroll.bakyoffs;
+			}
+			else
+			{
+				interp->sectorscroll.sector->floor_xoffs = interp->sectorscroll.bakxoffs;
+				interp->sectorscroll.sector->floor_yoffs = interp->sectorscroll.bakyoffs;
+			}
+			break;
+		case LVLINTERP_SideScroll:
+			interp->sidescroll.side->textureoffset = interp->sidescroll.baktextureoffset;
+			interp->sidescroll.side->rowoffset = interp->sidescroll.bakrowoffset;
+			break;
+        case LVLINTERP_Polyobj:
+			for (ii = 0; ii < interp->polyobj.vertices_size; ii++)
+			{
+				interp->polyobj.polyobj->vertices[ii]->x = interp->polyobj.bakvertices[ii * 2    ];
+				interp->polyobj.polyobj->vertices[ii]->y = interp->polyobj.bakvertices[ii * 2 + 1];
+			}
+			interp->polyobj.polyobj->centerPt.x = interp->polyobj.bakcx;
+			interp->polyobj.polyobj->centerPt.y = interp->polyobj.bakcy;
+			break;
 
 
-
-
+		}
+	}
+}
 	
 fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac)
 {
-	return FixedMul(frac, to - from);
-}
-
-INT32 R_LerpInt32(INT32 from, INT32 to, fixed_t frac)
-{
-	return FixedInt(FixedMul(frac, (to*FRACUNIT) - (from*FRACUNIT)));
+	return from + FixedMul(frac, to - from);
 }
 
 angle_t R_LerpAngle(angle_t from, angle_t to, fixed_t frac)
 {
-	return FixedMul(frac, to - from);
+	return from + FixedMul(frac, to - from);
 }

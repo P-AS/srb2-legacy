@@ -568,8 +568,6 @@ static inline void P_DoCTFStuff(void)
 void P_Ticker(boolean run)
 {
 	INT32 i; 
-	R_SetSectorThinkerOldStates();
-	R_ResetSectorThinkerLerp();
 
 
 	//Increment jointime even if paused.
@@ -708,9 +706,13 @@ void P_Ticker(boolean run)
 		if (modeattacking)
 			G_GhostTicker();
 	}
+ 
+ 	if (run)
+	{
+		R_UpdateLevelInterpolators();
+	}
 
 	P_MapEnd(); 
-	R_SetSectorThinkerNewStates();
 
 	
 

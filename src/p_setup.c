@@ -2830,7 +2830,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	// clear the splats from previous level
 	R_ClearLevelSplats();
 #endif
-
+    R_InitializeLevelInterpolators();
 	P_InitThinkers();
 	P_InitCachedActions();
 
@@ -2859,7 +2859,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_MakeMapMD5(lastloadedmaplumpnum, &mapmd5);
     
 
-	R_ResetFirstLerp();
+
 	// HACK ALERT: Cache the WAD, get the map data into the tables, free memory.
 	// As it is implemented right now, we're assuming an uncompressed WAD.
 	// (As in, a normal PWAD, not ZWAD or anything. The lump itself can be compressed.)
