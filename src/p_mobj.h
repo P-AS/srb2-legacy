@@ -265,6 +265,7 @@ typedef struct mobj_s
 
 	// Info for drawing: position.
 	fixed_t x, y, z;
+	fixed_t new_x, new_y, new_z;
 	fixed_t old_x, old_y, old_z; // position lerped between new and old, reset before tick
 
 	// More list: links in sector (if needed)
