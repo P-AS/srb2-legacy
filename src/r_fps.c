@@ -45,6 +45,8 @@ static size_t levelinterpolators_len;
 static size_t levelinterpolators_size;
 
 
+static boolean oldview_valid = false;
+
 
 
 
@@ -54,19 +56,27 @@ static size_t levelinterpolators_size;
 
 void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 {
+	viewvars_t* prevview = oldview;
 	INT32 dy = 0;
 
 	if (FIXED_TO_FLOAT(frac) < 0)
 		frac = 0;
 
 
+    
+		if (oldview_valid == false)
+	{
+		// interpolate from newview to newview
+		prevview = newview;
+	}
 
-	viewx =  R_LerpFixed(oldview->x, newview->x, frac);
-	viewy =  R_LerpFixed(oldview->y, newview->y, frac);
-	viewz =  R_LerpFixed(oldview->z, newview->z, frac);
 
-	viewangle   =  R_LerpAngle(oldview->angle, newview->angle, frac);
-	aimingangle =  R_LerpAngle(oldview->aim, newview->aim, frac);
+	viewx =  R_LerpFixed(prevview->x, newview->x, frac);
+	viewy =  R_LerpFixed(prevview->y, newview->y, frac);
+	viewz =  R_LerpFixed(prevview->z, newview->z, frac);
+
+	viewangle   =  R_LerpAngle(prevview->angle, newview->angle, frac);
+	aimingangle =  R_LerpAngle(prevview->aim, newview->aim, frac);
 
 
 
@@ -109,7 +119,14 @@ void R_UpdateViewInterpolation(void)
 	p2view_old = p2view_new;
 	sky1view_old = sky1view_new;
 	sky2view_old = sky2view_new;
+	oldview_valid = true;
 }
+
+void R_ResetViewInterpolation(void)
+{
+	oldview_valid = false;
+}
+
 
 void R_SetViewContext(enum viewcontext_e _viewcontext)
 {

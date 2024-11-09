@@ -3174,6 +3174,8 @@ boolean P_SetupLevel(boolean skipprecip)
 		LUAh_MapLoad();
 #endif
 	}
+    R_ResetViewInterpolation();
+	R_ResetViewInterpolation();
 
 	return true;
 }
