@@ -945,7 +945,7 @@ void R_SkyboxFrame(player_t *player)
 	newview->z = 0;
 
 	if (viewmobj->spawnpoint)
-		viewz = ((fixed_t)viewmobj->spawnpoint->angle)<<FRACBITS;
+		newview->z = ((fixed_t)viewmobj->spawnpoint->angle)<<FRACBITS;
 
 	newview->x += quake.x;
 	newview->y += quake.y;
