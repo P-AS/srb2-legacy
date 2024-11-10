@@ -47,31 +47,6 @@ static size_t levelinterpolators_size;
 
 static boolean oldview_valid = false;
 
-fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac)
-{
-	return from + FixedMul(frac, to - from);
-}
-
-angle_t R_LerpAngle(angle_t from, angle_t to, fixed_t frac)
-{
-	return from + FixedMul(frac, to - from);
-}
-
-static vector2_t *R_LerpVector2(const vector2_t *from, const vector2_t *to, fixed_t frac, vector2_t *out)
-{
-	FV2_SubEx(to, from, out);
-	FV2_MulEx(out, frac, out);
-	FV2_AddEx(from, out, out);
-	return out;
-}
-
-static vector3_t *R_LerpVector3(const vector3_t *from, const vector3_t *to, fixed_t frac, vector3_t *out)
-{
-	FV3_SubEx(to, from, out);
-	FV3_MulEx(out, frac, out);
-	FV3_AddEx(from, out, out);
-	return out;
-}
 
 
 
@@ -81,18 +56,15 @@ static vector3_t *R_LerpVector3(const vector3_t *from, const vector3_t *to, fixe
 
 void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 {
-	(void)player;
-	(void)skybox;
-
 	viewvars_t* prevview = oldview;
 	INT32 dy = 0;
 
-      if (FIXED_TO_FLOAT(frac) < 0)
+	if (FIXED_TO_FLOAT(frac) < 0)
 		frac = 0;
 
 
     
-	if (oldview_valid == false)
+		if (oldview_valid == false)
 	{
 		// interpolate from newview to newview
 		prevview = newview;
@@ -118,13 +90,13 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 	{
 		viewplayer = newview->player;
 		viewsector = newview->sector;
-		
+		viewsky    = newview->sky;
 	}
 	else
 	{
 		viewplayer = oldview->player;
 		viewsector = oldview->sector;
-		
+		viewsky    = oldview->sky;
 	}
 
 	if (rendermode == render_soft)
@@ -303,20 +275,6 @@ void R_CreateInterpolator_Polyobj(thinker_t *thinker, polyobj_t *polyobj)
 	interp->polyobj.oldcy = interp->polyobj.bakcy = polyobj->centerPt.y;
 }
 
-void R_CreateInterpolator_DynSlope(thinker_t *thinker, pslope_t *slope)
-{
-	levelinterpolator_t *interp = CreateInterpolator(LVLINTERP_DynSlope, thinker);
-	interp->dynslope.slope = slope;
-
-	FV3_Copy(&interp->dynslope.oldo, &slope->o);
-	FV3_Copy(&interp->dynslope.bako, &slope->o);
-
-	FV2_Copy(&interp->dynslope.oldd, &slope->d);
-	FV2_Copy(&interp->dynslope.bakd, &slope->d);
-
-	interp->dynslope.oldzdelta = interp->dynslope.bakzdelta = slope->zdelta;
-}
-
 
 void R_InitializeLevelInterpolators(void)
 {
@@ -348,7 +306,8 @@ static void UpdateLevelInterpolatorState(levelinterpolator_t *interp)
 		interp->sidescroll.oldrowoffset = interp->sidescroll.bakrowoffset;
 		interp->sidescroll.bakrowoffset = interp->sidescroll.side->rowoffset;
 		break;
-	case LVLINTERP_Polyobj:
+
+			case LVLINTERP_Polyobj:
 		for (i = 0; i < interp->polyobj.vertices_size; i++)
 		{
 			interp->polyobj.oldvertices[i * 2    ] = interp->polyobj.bakvertices[i * 2    ];
@@ -360,15 +319,6 @@ static void UpdateLevelInterpolatorState(levelinterpolator_t *interp)
 		interp->polyobj.oldcy = interp->polyobj.bakcy;
 		interp->polyobj.bakcx = interp->polyobj.polyobj->centerPt.x;
 		interp->polyobj.bakcy = interp->polyobj.polyobj->centerPt.y;
-		break;
-	case LVLINTERP_DynSlope:
-		FV3_Copy(&interp->dynslope.oldo, &interp->dynslope.bako);
-		FV2_Copy(&interp->dynslope.oldd, &interp->dynslope.bakd);
-		interp->dynslope.oldzdelta = interp->dynslope.bakzdelta;
-
-		FV3_Copy(&interp->dynslope.bako, &interp->dynslope.slope->o);
-		FV2_Copy(&interp->dynslope.bakd, &interp->dynslope.slope->d);
-		interp->dynslope.bakzdelta = interp->dynslope.slope->zdelta;
 		break;
 
 	}
@@ -448,11 +398,7 @@ void R_ApplyLevelInterpolators(fixed_t frac)
 			interp->polyobj.polyobj->centerPt.x = R_LerpFixed(interp->polyobj.oldcx, interp->polyobj.bakcx, frac);
 			interp->polyobj.polyobj->centerPt.y = R_LerpFixed(interp->polyobj.oldcy, interp->polyobj.bakcy, frac);
 			break;
-        case LVLINTERP_DynSlope:
-			R_LerpVector3(&interp->dynslope.oldo, &interp->dynslope.bako, frac, &interp->dynslope.slope->o);
-			R_LerpVector2(&interp->dynslope.oldd, &interp->dynslope.bakd, frac, &interp->dynslope.slope->d);
-			interp->dynslope.slope->zdelta = R_LerpFixed(interp->dynslope.oldzdelta, interp->dynslope.bakzdelta, frac);
-			break;
+
 
 		}
 	}
@@ -502,13 +448,18 @@ void R_RestoreLevelInterpolators(void)
 			interp->polyobj.polyobj->centerPt.x = interp->polyobj.bakcx;
 			interp->polyobj.polyobj->centerPt.y = interp->polyobj.bakcy;
 			break;
-        case LVLINTERP_DynSlope:
-			FV3_Copy(&interp->dynslope.slope->o, &interp->dynslope.bako);
-			FV2_Copy(&interp->dynslope.slope->d, &interp->dynslope.bakd);
-			interp->dynslope.slope->zdelta = interp->dynslope.bakzdelta;
-			break;
+
 
 		}
 	}
 }
 	
+fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac)
+{
+	return from + FixedMul(frac, to - from);
+}
+
+angle_t R_LerpAngle(angle_t from, angle_t to, fixed_t frac)
+{
+	return from + FixedMul(frac, to - from);
+}
