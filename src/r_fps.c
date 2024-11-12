@@ -85,10 +85,12 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 
 	if (FIXED_TO_FLOAT(frac) < 0)
 		frac = 0;
+	if (frac > FRACUNIT)
+		frac = FRACUNIT;
 
 
     
-		if (oldview_valid == false)
+    if (oldview_valid == false)
 	{
 		// interpolate from newview to newview
 		prevview = newview;
@@ -110,18 +112,9 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 
 	// this is gonna create some interesting visual errors for long distance teleports...
 	// might want to recalculate the view sector every frame instead...
-	if (frac >= FRACUNIT)
-	{
-		viewplayer = newview->player;
-		viewsector = newview->sector;
-		viewsky    = newview->sky;
-	}
-	else
-	{
-		viewplayer = oldview->player;
-		viewsector = oldview->sector;
-		viewsky    = oldview->sky;
-	}
+	viewplayer = newview->player;
+	viewsector = R_PointInSubsector(viewx, viewy)->sector;
+	viewsky = newview->sky;
 
 	if (rendermode == render_soft)
 	{
