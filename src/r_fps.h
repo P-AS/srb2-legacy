@@ -54,6 +54,7 @@ typedef enum {
 	LVLINTERP_SectorScroll,
 	LVLINTERP_SideScroll,
 	LVLINTERP_Polyobj,
+	LVLINTERP_DynSlope,
 } levelinterpolator_type_e;
 // Tagged union of a level interpolator
 typedef struct levelinterpolator_s {
@@ -83,7 +84,12 @@ typedef struct levelinterpolator_s {
 			size_t vertices_size;
 			fixed_t oldcx, oldcy, bakcx, bakcy;
 		} polyobj;
-
+        struct {
+			pslope_t *slope;
+			vector3_t oldo, bako;
+			vector2_t oldd, bakd;
+			fixed_t oldzdelta, bakzdelta;
+		} dynslope;
 	};
 } levelinterpolator_t;
 
