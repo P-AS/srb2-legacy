@@ -348,14 +348,14 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],     // SPR_RCRY
 
 	// Powerup Indicators
-	&lspr[NOLIGHT],     // SPR_ARMA
+	&lspr[REDSHIELD_L],     // SPR_ARMA
 	&lspr[NOLIGHT],     // SPR_ARMF
 	&lspr[NOLIGHT],     // SPR_ARMB
-	&lspr[NOLIGHT],     // SPR_WIND
-	&lspr[NOLIGHT],     // SPR_MAGN
-	&lspr[NOLIGHT],     // SPR_ELEM
-	&lspr[NOLIGHT],     // SPR_FORC
-	&lspr[NOLIGHT],     // SPR_PITY
+	&lspr[WHITESHIELD_L],     // SPR_WIND
+	&lspr[YELLOWSHIELD_L],     // SPR_MAGN
+	&lspr[GREENSHIELD_L],     // SPR_ELEM
+	&lspr[BLUESHIELD_L],     // SPR_FORC
+	&lspr[GREENSHIELD_L],     // SPR_PITY
 	&lspr[INVINCIBLE_L],     // SPR_IVSP
 	&lspr[SUPERSPARK_L],     // SPR_SSPK
 
