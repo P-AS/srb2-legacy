@@ -9,4 +9,8 @@ This build restores coronas and lighting from the version it debuted in, the fin
 ![1000016800](https://github.com/user-attachments/assets/9a9424ad-c94b-4873-872e-60827837cd6b)
 
 ## Disclaimer
-Sonic Team Junior is in no way affiliated with SEGA or Sonic Team. We do not claim ownership of any of SEGA's intellectual property used in SRB2.
+I do not own srb2 or srb2-legacy itself, this is just fork of srb2 legacy I made for the sake of it.
+
+SRB2 Belongs to STJr
+
+SRB2-Legacy Belongs P-AS
