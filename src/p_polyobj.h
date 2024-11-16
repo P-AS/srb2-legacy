@@ -104,6 +104,7 @@ typedef struct polyobj_s
 
 	// these are saved for netgames, so do not let Lua touch these!
 	INT32 spawnflags; // Flags the polyobject originally spawned with
+
 } polyobj_t;
 
 //
@@ -203,7 +204,7 @@ typedef struct polydisplace_s
 	struct sector_s *controlSector;
 	fixed_t dx;
 	fixed_t dy;
-	fixed_t oldHeights;
+	fixed_t oldHeights; 
 } polydisplace_t;
 
 //

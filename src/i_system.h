@@ -50,10 +50,6 @@ tic_t I_GetTime(void);
 */
 fixed_t I_GetTimeFrac(void);
 
-/** \brief  Sleep until the next tic occurs.
-*/
-void I_SleepToTic(tic_t tic);
-
 /**	\brief	The I_Sleep function
 
 	\return	void

@@ -27,7 +27,11 @@ extern INT32 centerx, centery;
 extern fixed_t centerxfrac, centeryfrac;
 extern fixed_t projection, projectiony;
 
-extern size_t validcount, linecount, loopcount, framecount;
+extern size_t validcount, linecount, loopcount, framecount; 
+
+extern fixed_t rendertimefrac;
+
+
 
 //
 // Lighting LUT.

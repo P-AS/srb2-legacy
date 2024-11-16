@@ -334,6 +334,13 @@ void I_Sleep(void)
 }
 
 
+fixed_t I_GetTimeFrac(void)
+{
+  
+  return 0;
+}
+
+
 static UINT8 joystick_detected = false;
 static UINT8 joystick2_detected = false;
 

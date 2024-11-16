@@ -241,10 +241,8 @@ static void D_Display(void)
 	if (nodrawers)
 		return; // for comparative timing/profiling 
 
-	if (cv_capframerate.value == 0)
-	{
-		R_DoThinkerLerp(I_GetTimeFrac());
-	}
+
+
 
 
 	// check for change of screen size (video mode)
@@ -361,6 +359,7 @@ static void D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
+			R_ApplyLevelInterpolators(cv_capframerate.value == 0 ? rendertimefrac : FRACUNIT);
 			if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 			{
 				topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
@@ -404,6 +403,7 @@ static void D_Display(void)
 				if (postimgtype2)
 					V_DoPostProcessor(1, postimgtype2, postimgparam2);
 			}
+			R_RestoreLevelInterpolators();
 		}
 
 		if (lastdraw)
@@ -576,11 +576,11 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
-		/*if (!realtics && !singletics)
+		if (!realtics && !singletics  && cv_capframerate.value != 0)
 		{
 			I_Sleep();
 			continue;
-		}*/
+		}
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -593,7 +593,14 @@ void D_SRB2Loop(void)
 
 		// process tics (but maybe not if realtic == 0)
 		tic_happened = realtics ? true : false;
-		TryRunTics(realtics);
+		TryRunTics(realtics); 
+
+
+		if (!P_AutoPause() && !paused)
+			rendertimefrac = I_GetTimeFrac();
+		else
+			rendertimefrac = FRACUNIT;
+
 
         if (cv_capframerate.value == 0)
 		{

@@ -1602,7 +1602,6 @@ static void CL_LoadReceivedSavegame(void)
 		Z_Free(tmpsave);
 		return;
 	}
-
 	// done
 	Z_Free(savebuffer);
 	save_p = NULL;

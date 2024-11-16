@@ -740,6 +740,10 @@ void P_ResetDynamicSlopes(void) {
 // Various utilities related to slopes
 //
 
+
+
+
+
 //
 // P_GetZAt
 //
@@ -751,6 +755,13 @@ fixed_t P_GetZAt(pslope_t *slope, fixed_t x, fixed_t y)
                   FixedMul(y - slope->o.y, slope->d.y);
 
    return slope->o.z + FixedMul(dist, slope->zdelta);
+}
+
+
+// Returns the height of the light list at (x, y)
+fixed_t P_GetLightZAt(const lightlist_t *light, fixed_t x, fixed_t y)
+{
+	return light->slope ? P_GetZAt(light->slope, x, y) : light->height;
 }
 
 

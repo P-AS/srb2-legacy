@@ -2830,8 +2830,9 @@ boolean P_SetupLevel(boolean skipprecip)
 	// clear the splats from previous level
 	R_ClearLevelSplats();
 #endif
-
+    R_InitializeLevelInterpolators();
 	P_InitThinkers();
+	R_InitMobjInterpolators();
 	P_InitCachedActions();
 
 	/// \note for not spawning precipitation, etc. when loading netgame snapshots
@@ -2857,6 +2858,8 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skynum, true);
 
 	P_MakeMapMD5(lastloadedmaplumpnum, &mapmd5);
+    
+
 
 	// HACK ALERT: Cache the WAD, get the map data into the tables, free memory.
 	// As it is implemented right now, we're assuming an uncompressed WAD.
@@ -3172,6 +3175,8 @@ boolean P_SetupLevel(boolean skipprecip)
 		LUAh_MapLoad();
 #endif
 	}
+    R_ResetViewInterpolation();
+	R_ResetViewInterpolation();
 
 	return true;
 }

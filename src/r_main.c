@@ -73,6 +73,8 @@ boolean skyVisible1, skyVisible2; // saved values of skyVisible for P1 and P2, f
 sector_t *viewsector;
 player_t *viewplayer;
 
+
+fixed_t rendertimefrac;
 // PORTALS!
 // You can thank and/or curse JTE for these.
 UINT8 portalrender;
@@ -761,21 +763,6 @@ static mobj_t *viewmobj;
 // recalc necessary stuff for mouseaiming
 // slopes are already calculated for the full possible view (which is 4*viewheight).
 // 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
-static void R_SetupFreelook(void)
-{
-	/*INT32 dy = 0;
-	if (rendermode == render_soft)
-	{
-		// clip it in the case we are looking a hardware 90 degrees full aiming
-		// (lmps, network and use F12...)
-		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
-		dy = AIMINGTODY(aimingangle) * viewwidth/BASEVIDWIDTH;
-		yslope = &yslopetab[viewheight*8 - (viewheight/2 + dy)];
-	}
-	centery = (viewheight/2) + dy;
-	centeryfrac = centery<<FRACBITS; */
-	R_InterpolateView(cv_capframerate.value == 0 ? I_GetTimeFrac() : FRACUNIT);
-}
 
 #undef AIMINGTODY
 
@@ -889,7 +876,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 	//newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	//viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_SetupFreelook();
+	R_InterpolateView(player, false, cv_capframerate.value == 0 ? rendertimefrac : FRACUNIT);
 }
 
 void R_SkyboxFrame(player_t *player)
@@ -958,7 +945,7 @@ void R_SkyboxFrame(player_t *player)
 	newview->z = 0;
 
 	if (viewmobj->spawnpoint)
-		viewz = ((fixed_t)viewmobj->spawnpoint->angle)<<FRACBITS;
+		newview->z = ((fixed_t)viewmobj->spawnpoint->angle)<<FRACBITS;
 
 	newview->x += quake.x;
 	newview->y += quake.y;
@@ -1129,7 +1116,8 @@ void R_SkyboxFrame(player_t *player)
 	//viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	//viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_SetupFreelook();
+	R_InterpolateView(player, true, cv_capframerate.value == 0 ? rendertimefrac : FRACUNIT);
+
 }
 
 #define ANGLED_PORTALS
