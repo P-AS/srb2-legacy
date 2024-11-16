@@ -762,6 +762,10 @@ void HWR_WallLighting(FOutVector *wlVerts)
 #ifdef DL_HIGH_QUALITY
 		Surf.FlatColor.s.alpha = (UINT8)((1-dist_p2d/DL_SQRRADIUS(j))*Surf.FlatColor.s.alpha);
 #endif
+#ifdef CORONASRESTORED
+        if (P_MobjWasRemoved(dynlights->mo[j]))
+			return;
+#endif
 		if (!dynlights->mo[j]->state)
 			return;
 		// next state is null so fade out with alpha
@@ -1018,7 +1022,7 @@ void HWR_DrawCoronas(void)
 // --------------------------------------------------------------------------
 void HWR_ResetLights(void)
 {
-	dynlights->nb = 0;
+	memset(dynlights,0,sizeof(dynlights_t));
 }
 
 // --------------------------------------------------------------------------
