@@ -3852,10 +3852,7 @@ void P_NullPrecipThinker(precipmobj_t *mobj)
 void P_SnowThinker(precipmobj_t *mobj)
 { 
 
-	// reset old state (for interpolation)
-	mobj->old_x = mobj->x;
-	mobj->old_y = mobj->y;
-	mobj->old_z = mobj->z;
+    R_ResetPrecipitationMobjInterpolationState(mobj);
 
 	P_CycleStateAnimation((mobj_t *)mobj);
 
@@ -3866,10 +3863,7 @@ void P_SnowThinker(precipmobj_t *mobj)
 
 void P_RainThinker(precipmobj_t *mobj)
 { 
-	// reset old state (for interpolation)
-	mobj->old_x = mobj->x;
-	mobj->old_y = mobj->y;
-	mobj->old_z = mobj->z;
+	R_ResetPrecipitationMobjInterpolationState(mobj);
 
 	P_CycleStateAnimation((mobj_t *)mobj);
 
@@ -6195,10 +6189,8 @@ void P_MobjThinker(mobj_t *mobj)
 	I_Assert(!P_MobjWasRemoved(mobj)); 
 
 
-	// Set old position (for interpolation)
-	mobj->old_x = mobj->x;
-	mobj->old_y = mobj->y;
-	mobj->old_z = mobj->z;
+
+
 
 
 	if (mobj->flags & MF_NOTHINK)
@@ -7899,10 +7891,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 	if (CheckForReverseGravity && !(mobj->flags & MF_NOBLOCKMAP))
 		P_CheckGravity(mobj, false); 
-			// set old state too (for interpolation)
-	mobj->old_x = mobj->x;
-	mobj->old_y = mobj->y;
-	mobj->old_z = mobj->z;
+    	
+	R_AddMobjInterpolator(mobj);
+
 
 
 
@@ -7958,10 +7949,7 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 	 || mobj->subsector->sector->floorpic == skyflatnum)
 		mobj->precipflags |= PCF_PIT;
 
-// set initial old positions (for interpolation)
-	mobj->old_x = mobj->x;
-	mobj->old_y = mobj->y;
-	mobj->old_z = mobj->z;
+    R_ResetPrecipitationMobjInterpolationState(mobj);
 
 	return mobj;
 }
@@ -8047,6 +8035,7 @@ void P_RemoveMobj(mobj_t *mobj)
 	//
 	// Remove any references to other mobjs.
 	P_SetTarget(&mobj->target, P_SetTarget(&mobj->tracer, NULL));
+    R_RemoveMobjInterpolator(mobj);
 
 	// free block
 	// DBG: set everything in mobj_t to 0xFF instead of leaving it. debug memory error.

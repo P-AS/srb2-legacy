@@ -101,6 +101,7 @@ boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 
 	thing->floorz = tmfloorz;
 	thing->ceilingz = tmceilingz;
+    R_ResetMobjInterpolationState(thing);
 
 	return true;
 }

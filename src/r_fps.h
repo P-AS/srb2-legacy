@@ -124,7 +124,19 @@ void R_ClearLevelInterpolatorState(thinker_t *thinker);
 void R_ApplyLevelInterpolators(fixed_t frac);
 // Restore level interpolators to the real game state
 void R_RestoreLevelInterpolators(void);
+// Destroy interpolators associated with a thinker
+void R_DestroyLevelInterpolators(thinker_t *thinker);
 
+
+// Initialize internal mobj interpolator list (e.g. during level loading)
+void R_InitMobjInterpolators(void);
+// Add interpolation state for the given mobj
+void R_AddMobjInterpolator(mobj_t *mobj);
+// Remove the interpolation state for the given mobj
+void R_RemoveMobjInterpolator(mobj_t *mobj);
+void R_UpdateMobjInterpolators(void);
+void R_ResetMobjInterpolationState(mobj_t *mobj);
+void R_ResetPrecipitationMobjInterpolationState(precipmobj_t *mobj);
 
 
 fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac);

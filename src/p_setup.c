@@ -2832,6 +2832,7 @@ boolean P_SetupLevel(boolean skipprecip)
 #endif
     R_InitializeLevelInterpolators();
 	P_InitThinkers();
+	R_InitMobjInterpolators();
 	P_InitCachedActions();
 
 	/// \note for not spawning precipitation, etc. when loading netgame snapshots

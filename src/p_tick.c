@@ -227,6 +227,7 @@ void P_RemoveThinkerDelayed(void *pthinker)
 			 * thinker->prev->next = thinker->next */
 			(next->prev = currentthinker = thinker->prev)->next = next;
 		}
+		R_DestroyLevelInterpolators(thinker);
 		Z_Free(thinker);
 	}
 }
@@ -580,8 +581,10 @@ void P_Ticker(boolean run)
 		if (OP_FreezeObjectplace())
 		{
 			P_MapStart();
+			R_UpdateMobjInterpolators();
 			OP_ObjectplaceMovement(&players[0]);
 			P_MoveChaseCamera(&players[0], &camera, false);
+			R_UpdateViewInterpolation();
 			P_MapEnd();
 			return;
 		}
@@ -596,7 +599,8 @@ void P_Ticker(boolean run)
 	P_MapStart();
 
 	if (run)
-	{
+	{ 
+		R_UpdateMobjInterpolators();
 		if (demorecording)
 			G_WriteDemoTiccmd(&players[consoleplayer].cmd, 0);
 		if (demoplayback)
