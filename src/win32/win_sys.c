@@ -259,6 +259,38 @@ tic_t I_GetTime(void)
 	return newtics;
 }
 
+void I_SleepToTic(tic_t tic)
+{
+	tic_t untilnexttic = 0;
+
+	if (!starttickcount) // high precision timer
+	{
+		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
+		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
+		{
+			untilnexttic = (INT32)((currtime.QuadPart - basetime.QuadPart) * 1000
+				/ frequency.QuadPart % NEWTICRATE);
+		}
+		else if (pfntimeGetTime)
+		{
+			currtime.LowPart = pfntimeGetTime();
+			if (!basetime.LowPart)
+				basetime.LowPart = currtime.LowPart;
+			untilnexttic = ((currtime.LowPart - basetime.LowPart)%(1000/NEWTICRATE));
+		}
+	}
+	else
+	{
+		untilnexttic = (GetTickCount() - starttickcount)%(1000/NEWTICRATE);
+		untilnexttic = (1000/NEWTICRATE) - untilnexttic;
+	}
+
+	// give some extra slack then busy-wait on windows, since windows' sleep is garbage
+	if (untilnexttic > 2)
+		Sleep(untilnexttic - 2);
+	while (tic > I_GetTime());
+}
+
 void I_Sleep(void)
 {
 	if (cv_sleep.value != -1)

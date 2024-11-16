@@ -79,6 +79,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define HAVE_SDLCPUINFO
 
 #if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
+#include <time.h>
 #if defined (__linux__)
 #include <sys/vfs.h>
 #else
@@ -1952,6 +1953,19 @@ void I_StartupMouse2(void)
 	SetCommState(mouse2filehandle, &dcb);
 	I_AddExitFunc(I_ShutdownMouse2);
 #endif
+}
+
+void I_SetTextInputMode(boolean active)
+{
+	if (active)
+		SDL_StartTextInput();
+	else
+		SDL_StopTextInput();
+}
+
+boolean I_GetTextInputMode(void)
+{
+	return SDL_IsTextInputActive();
 }
 
 //

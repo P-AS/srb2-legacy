@@ -41,6 +41,7 @@ extern boolean demoplayback, titledemo, demorecording, timingdemo;
 // Quit after playing a demo from cmdline.
 extern boolean singledemo;
 extern boolean demo_start;
+extern UINT16 demoversion;
 
 extern mobj_t *metalplayback;
 

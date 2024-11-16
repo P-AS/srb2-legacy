@@ -2012,12 +2012,21 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 						tmhitthing = tmfloorthing;
 					return false; // too big a step up
 				}
+				else if ((!demoplayback || demoversion >= 0x000A) && thingtop > tmceilingz && P_IsObjectOnGround(thing))
+				{
+					thing->z = tmceilingz - thing->height;
+					thing->ceilingz = tmceilingz;
+				}
 			}
 			else if (tmfloorz - thing->z > maxstep)
 			{
 				if (tmfloorthing)
 					tmhitthing = tmfloorthing;
 				return false; // too big a step up
+			}
+			else if ((!demoplayback || demoversion >= 0x000A) && thing->z < tmfloorz && P_IsObjectOnGround(thing))
+			{
+				thing->z = thing->floorz = tmfloorz;
 			}
 
 			if (!allowdropoff && !(thing->flags & MF_FLOAT) && thing->type != MT_SKIM && !tmfloorthing)

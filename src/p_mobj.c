@@ -6094,7 +6094,7 @@ static void P_AddOverlay(mobj_t *thing)
 {
 	I_Assert(thing != NULL);
 
-	if (overlaycap == NULL)
+	if (P_MobjWasRemoved(overlaycap))
 		P_SetTarget(&overlaycap, thing);
 	else {
 		mobj_t *mo;

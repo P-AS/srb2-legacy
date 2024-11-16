@@ -718,8 +718,6 @@ static void CON_InputDelChar(void)
 //
 boolean CON_Responder(event_t *ev)
 {
-	static UINT8 consdown = false; // console is treated differently due to rare usage
-
 	// sequential completions a la 4dos
 	static char completion[80];
 	static INT32 comskips, varskips;
@@ -731,27 +729,23 @@ boolean CON_Responder(event_t *ev)
 		return false;
 
 	// let go keyup events, don't eat them
-	if (ev->type != ev_keydown && ev->type != ev_console)
+	if (ev->type != ev_keydown && ev->type != ev_text && ev->type != ev_console)
 	{
-		if (ev->data1 == gamecontrol[gc_console][0] || ev->data1 == gamecontrol[gc_console][1])
-			consdown = false;
 		return false;
 	}
 
 	key = ev->data1;
 
 	// check for console toggle key
-	if (ev->type != ev_console)
+	if (ev->type == ev_keydown)
 	{
 		if (modeattacking || metalrecording)
 			return false;
 
-		if (key == gamecontrol[gc_console][0] || key == gamecontrol[gc_console][1])
+		if ((key == gamecontrol[gc_console][0] || key == gamecontrol[gc_console][1]) && !shiftdown)
 		{
-			if (consdown) // ignore repeat
-				return true;
+			I_SetTextInputMode(con_destlines == 0); // inverse, since this is changed next tic.
 			consoletoggle = true;
-			consdown = true;
 			return true;
 		}
 
@@ -770,9 +764,17 @@ boolean CON_Responder(event_t *ev)
 		// escape key toggle off console
 		if (key == KEY_ESCAPE)
 		{
+			I_SetTextInputMode(false);
 			consoletoggle = true;
 			return true;
 		}
+	}
+
+	if (ev->type == ev_text)
+	{
+		if (!consoletoggle && consoleready)
+			CON_InputAddChar(key);
+		return true;
 	}
 
 	// Always eat ctrl/shift/alt if console open, so the menu doesn't get ideas
@@ -1062,24 +1064,10 @@ boolean CON_Responder(event_t *ev)
 	if (key < 32 || key > 127)
 		return true;
 
-	if (ev->type != ev_console)
-	{
-		if (key >= 'a' && key <= 'z')
-		{
-			if (capslock ^ shiftdown)
-				key = shiftxform[key];
-		}
-		else if (shiftdown)
-			key = shiftxform[key];
-
-		// add key to cmd line here
-		if (key >= 'A' && key <= 'Z' && !(shiftdown ^ capslock)) //this is only really necessary for dedicated servers
-			key = key + 'a' - 'A';
-	}
-
 	if (input_sel != input_cur)
 		CON_InputDelSelection();
-	CON_InputAddChar(key);
+	if (ev->type == ev_console)
+		CON_InputAddChar(key);
 
 	return true;
 }

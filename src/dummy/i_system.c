@@ -159,6 +159,16 @@ void I_GetMouseEvents(void){}
 
 void I_UpdateMouseGrab(void){}
 
+void I_SetTextInputMode(boolean active)
+{
+	(void)active;
+}
+
+boolean I_GetTextInputMode(void)
+{
+	return false;
+}
+
 char *I_GetEnv(const char *name)
 {
 	(void)name;

@@ -43,7 +43,7 @@
 
 #ifdef HAVE_IMAGE
 #include "SDL_image.h"
-#elif 1
+#elif (!defined(__APPLE__))
 #define LOAD_XPM //I want XPM!
 #include "IMG_xpm.c" //Alam: I don't want to add SDL_Image.dll/so
 #define HAVE_IMAGE //I have SDL_Image, sortof
@@ -868,7 +868,18 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 	if (event.type != ev_console) D_PostEvent(&event);
 }
 
-
+static void Impl_HandleTextEvent(SDL_TextInputEvent evt)
+{
+	event_t event;
+	event.type = ev_text;
+	if (evt.text[1] != '\0')
+	{
+		// limit ourselves to ASCII for now, we can add UTF-8 support later
+		return;
+	}
+	event.data1 = evt.text[0];
+	D_PostEvent(&event);
+}
 
 void I_GetEvent(void)
 {
@@ -894,6 +905,9 @@ void I_GetEvent(void)
 			case SDL_KEYUP:
 			case SDL_KEYDOWN:
 				Impl_HandleKeyboardEvent(evt.key, evt.type);
+				break;
+			case SDL_TEXTINPUT:
+				Impl_HandleTextEvent(evt.text);
 				break;
 			case SDL_MOUSEMOTION:
 				//if (!mouseMotionOnce)

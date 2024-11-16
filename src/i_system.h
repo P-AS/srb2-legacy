@@ -300,6 +300,14 @@ void I_GetMouseEvents(void);
 */
 void I_UpdateMouseGrab(void);
 
+/** \brief Sets text input mode. When enabled, keyboard inputs will respect dead keys.
+ */
+void I_SetTextInputMode(boolean active);
+
+/** \brief Retrieves current text input mode.
+ */
+boolean I_GetTextInputMode(void);
+
 char *I_GetEnv(const char *name);
 
 INT32 I_PutEnv(char *variable);
