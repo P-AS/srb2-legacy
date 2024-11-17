@@ -961,14 +961,14 @@ void R_SkyboxFrame(player_t *player)
 			{
 				fixed_t x = 0, y = 0;
 				if (mh->skybox_scalex > 0)
-					newview->x = (player->awayviewmobj->x - skyboxmo[1]->x) / mh->skybox_scalex;
+					x = (player->awayviewmobj->x - skyboxmo[1]->x) / mh->skybox_scalex;
 				else if (mh->skybox_scalex < 0)
-					newview->x = (player->awayviewmobj->x - skyboxmo[1]->x) * -mh->skybox_scalex;
+					x = (player->awayviewmobj->x - skyboxmo[1]->x) * -mh->skybox_scalex;
 
 				if (mh->skybox_scaley > 0)
-					newview->y = (player->awayviewmobj->y - skyboxmo[1]->y) / mh->skybox_scaley;
+					y = (player->awayviewmobj->y - skyboxmo[1]->y) / mh->skybox_scaley;
 				else if (mh->skybox_scaley < 0)
-					newview->y = (player->awayviewmobj->y - skyboxmo[1]->y) * -mh->skybox_scaley;
+					y = (player->awayviewmobj->y - skyboxmo[1]->y) * -mh->skybox_scaley;
 
 				if (viewmobj->angle == 0)
 				{
@@ -1013,14 +1013,14 @@ void R_SkyboxFrame(player_t *player)
 			{
 				fixed_t x = 0, y = 0;
 				if (mh->skybox_scalex > 0)
-					newview->x = (thiscam->x - skyboxmo[1]->x) / mh->skybox_scalex;
+					x = (thiscam->x - skyboxmo[1]->x) / mh->skybox_scalex;
 				else if (mh->skybox_scalex < 0)
-					newview->x = (thiscam->x - skyboxmo[1]->x) * -mh->skybox_scalex;
+					x = (thiscam->x - skyboxmo[1]->x) * -mh->skybox_scalex;
 
 				if (mh->skybox_scaley > 0)
-					newview->y = (thiscam->y - skyboxmo[1]->y) / mh->skybox_scaley;
+					y = (thiscam->y - skyboxmo[1]->y) / mh->skybox_scaley;
 				else if (mh->skybox_scaley < 0)
-					newview->y = (thiscam->y - skyboxmo[1]->y) * -mh->skybox_scaley;
+					y = (thiscam->y - skyboxmo[1]->y) * -mh->skybox_scaley;
 
 				if (viewmobj->angle == 0)
 				{
@@ -1065,13 +1065,13 @@ void R_SkyboxFrame(player_t *player)
 			{
 				fixed_t x = 0, y = 0;
 				if (mh->skybox_scalex > 0)
-					newview->x += (player->mo->x - skyboxmo[1]->x) / mh->skybox_scalex;
+					x += (player->mo->x - skyboxmo[1]->x) / mh->skybox_scalex;
 				else if (mh->skybox_scalex < 0)
-					newview->x += (player->mo->x - skyboxmo[1]->x) * -mh->skybox_scalex;
+					x += (player->mo->x - skyboxmo[1]->x) * -mh->skybox_scalex;
 				if (mh->skybox_scaley > 0)
 					newview->y += (player->mo->y - skyboxmo[1]->y) / mh->skybox_scaley;
 				else if (mh->skybox_scaley < 0)
-					newview->y += (player->mo->y - skyboxmo[1]->y) * -mh->skybox_scaley;
+					y += (player->mo->y - skyboxmo[1]->y) * -mh->skybox_scaley;
 
 				if (viewmobj->angle == 0)
 				{
