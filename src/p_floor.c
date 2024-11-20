@@ -3231,6 +3231,10 @@ INT32 EV_MarioBlock(sector_t *sec, sector_t *roversector, fixed_t topheight, mob
 		block->vars[5] = FRACUNIT; // distance
 		block->vars[6] = 1; // low
 
+		// interpolation
+		R_CreateInterpolator_SectorPlane(&block->thinker, roversector, false);
+		R_CreateInterpolator_SectorPlane(&block->thinker, roversector, true);
+
 		if (itsamonitor)
 		{
 			oldx = thing->x;
@@ -3239,9 +3243,9 @@ INT32 EV_MarioBlock(sector_t *sec, sector_t *roversector, fixed_t topheight, mob
 		}
 
 		P_UnsetThingPosition(thing);
-		thing->x = roversector->soundorg.x;
-		thing->y = roversector->soundorg.y;
-		thing->z = topheight;
+		thing->x = thing->old_x = roversector->soundorg.x;
+		thing->y = thing->old_y = roversector->soundorg.y;
+		thing->z = thing->old_z = topheight;
 		thing->momz = FixedMul(6*FRACUNIT, thing->scale);
 		P_SetThingPosition(thing);
 		if (thing->flags & MF_SHOOTABLE)
@@ -3270,9 +3274,9 @@ INT32 EV_MarioBlock(sector_t *sec, sector_t *roversector, fixed_t topheight, mob
 		if (itsamonitor)
 		{
 			P_UnsetThingPosition(tmthing);
-			tmthing->x = oldx;
-			tmthing->y = oldy;
-			tmthing->z = oldz;
+			tmthing->x = thing->old_x = oldx;
+			tmthing->y = thing->old_y = oldy;
+			tmthing->z = thing->old_z = oldz;
 			tmthing->momx = 1;
 			tmthing->momy = 1;
 			P_SetThingPosition(tmthing);
@@ -3283,3 +3287,4 @@ INT32 EV_MarioBlock(sector_t *sec, sector_t *roversector, fixed_t topheight, mob
 
 	return 1;
 }
+
