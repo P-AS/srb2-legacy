@@ -136,7 +136,7 @@ if(${CMAKE_SYSTEM} MATCHES "Darwin")
 	set(CPACK_GENERATOR "DragNDrop")
 endif()
 
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Sonic Robo Blast 2" CACHE STRING "Program name for display purposes")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Sonic Robo Blast 2 Legacy" CACHE STRING "Program name for display purposes")
 set(CPACK_PACKAGE_VENDOR "Sonic Team Jr." CACHE STRING "Vendor name for display purposes")
 #set(CPACK_PACKAGE_DESCRIPTION_FILE )
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
