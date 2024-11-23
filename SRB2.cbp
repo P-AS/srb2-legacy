@@ -148,7 +148,7 @@ HW3SOUND for 3D hardware sound  support
 					<Add option="-D_DEBUG" />
 					<Add option="-DCOMPVERSION" />
 					<Add option="-DHAVE_BLUA" />
-					<Add option="-DHAVE_LIBGME" />
+					<Add option="-DHAVE_GME" />
 					<Add directory="libs/libpng-src" />
 					<Add directory="libs/zlib" />
 					<Add directory="libs/gme/include" />
@@ -198,7 +198,7 @@ HW3SOUND for 3D hardware sound  support
 					<Add option="-DNDEBUG" />
 					<Add option="-DCOMPVERSION" />
 					<Add option="-DHAVE_BLUA" />
-					<Add option="-DHAVE_LIBGME" />
+					<Add option="-DHAVE_GME" />
 					<Add directory="libs/libpng-src" />
 					<Add directory="libs/zlib" />
 					<Add directory="libs/gme/include" />
@@ -243,7 +243,7 @@ HW3SOUND for 3D hardware sound  support
 					<Add option="-D_DEBUG" />
 					<Add option="-DCOMPVERSION" />
 					<Add option="-DHAVE_BLUA" />
-					<Add option="-DHAVE_LIBGME" />
+					<Add option="-DHAVE_GME" />
 					<Add directory="libs/libpng-src" />
 					<Add directory="libs/zlib" />
 					<Add directory="libs/fmodex/inc" />
@@ -291,7 +291,7 @@ HW3SOUND for 3D hardware sound  support
 					<Add option="-DNDEBUG" />
 					<Add option="-DCOMPVERSION" />
 					<Add option="-DHAVE_BLUA" />
-					<Add option="-DHAVE_LIBGME" />
+					<Add option="-DHAVE_GME" />
 					<Add directory="libs/libpng-src" />
 					<Add directory="libs/zlib" />
 					<Add directory="libs/fmodex/inc" />

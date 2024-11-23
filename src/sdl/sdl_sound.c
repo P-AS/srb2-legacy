@@ -75,7 +75,7 @@
 #include "hwsym_sdl.h"
 #endif
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 #include "gme/gme.h"
 #endif
 
@@ -182,7 +182,7 @@ static Mix_Music *music[2] = { NULL, NULL };
 
 typedef struct srb2audio_s {
 	void *userdata;
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	Music_Emu *gme_emu;
 	UINT8 gme_pause;
 	UINT8 gme_loop;
@@ -990,7 +990,7 @@ FUNCINLINE static ATTRINLINE void I_UpdateStream16M(Uint8 *stream, int len)
 	if (Snd_Mutex) SDL_UnlockMutex(Snd_Mutex);
 }
 
-#if 0 //#ifdef HAVE_LIBGME
+#if 0 //#ifdef HAVE_GME
 static void I_UpdateSteamGME(Music_Emu *emu, INT16 *stream, int len, UINT8 looping)
 {
 	#define GME_BUFFER_LEN 44100*2048
@@ -1052,7 +1052,7 @@ static void SDLCALL I_UpdateStream(void *userdata, Uint8 *stream, int len)
 		I_UpdateStream16S(stream, len);
 
 		// Crashes! But no matter; this build doesn't play music anyway...
-// #ifdef HAVE_LIBGME
+// #ifdef HAVE_GME
 // 		if (userdata)
 // 		{
 // 			srb2audio_t *sa_userdata = userdata;
@@ -1326,7 +1326,7 @@ void I_StartupSound(void)
 //  MUSIC SYSTEM
 /// ------------------------
 
-#if 0 //#ifdef HAVE_LIBGME
+#if 0 //#ifdef HAVE_GME
 static void I_ShutdownGMEMusic(void)
 {
 	Snd_LockAudio();
@@ -1339,7 +1339,7 @@ static void I_ShutdownGMEMusic(void)
 
 void I_InitMusic(void)
 {
-#if 0 //#ifdef HAVE_LIBGME
+#if 0 //#ifdef HAVE_GME
 	I_AddExitFunc(I_ShutdownGMEMusic);
 #endif
 }
@@ -1410,7 +1410,7 @@ UINT32 I_GetSongPosition(void)
 //  MUSIC PLAYBACK
 /// ------------------------
 
-#if 0 //#ifdef HAVE_LIBGME
+#if 0 //#ifdef HAVE_GME
 static void I_StopGME(void)
 {
 	Snd_LockAudio();
@@ -1444,14 +1444,14 @@ boolean I_PlaySong(boolean looping)
 
 void I_StopSong(void)
 {
-#if 0 //#ifdef HAVE_LIBGME
+#if 0 //#ifdef HAVE_GME
 	I_StopGME();
 #endif
 }
 
 void I_PauseSong(void)
 {
-#if 0 //#ifdef HAVE_LIBGME
+#if 0 //#ifdef HAVE_GME
 	I_PauseGME();
 #endif
 }
@@ -1521,7 +1521,7 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
 //        then move to Playback section
 /// ------------------------
 
-#if 0 //#ifdef HAVE_LIBGME
+#if 0 //#ifdef HAVE_GME
 static void I_CleanupGME(void *userdata)
 {
 	Z_Free(userdata);
