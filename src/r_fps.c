@@ -187,8 +187,7 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 	out->x =  R_LerpFixed(mobj->old_x, mobj->x, frac);
 	out->y =  R_LerpFixed(mobj->old_y, mobj->y, frac);
 	out->z =  R_LerpFixed(mobj->old_z, mobj->z, frac);
-
-
+	out->angle = R_LerpAngle(mobj->old_angle, mobj->angle, frac);
 }
 
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
@@ -196,7 +195,7 @@ void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjst
 	out->x =  R_LerpFixed(mobj->old_x, mobj->x, frac);
 	out->y =  R_LerpFixed(mobj->old_y, mobj->y, frac);
 	out->z =  R_LerpFixed(mobj->old_z, mobj->z, frac);
-	out->angle = mobj->angle;
+	out->angle = R_LerpAngle(mobj->old_angle, mobj->angle, frac);
 }
 
 // NOTE: This will NOT check that the mobj has already been added, for perf
@@ -269,7 +268,7 @@ void R_UpdateMobjInterpolators(void)
 }
 
 //
-// P_ResetMobjInterpolationState
+// R_ResetMobjInterpolationState
 //
 // Reset the rendering interpolation state of the mobj.
 //
@@ -278,10 +277,11 @@ void R_ResetMobjInterpolationState(mobj_t *mobj)
 	mobj->old_x = mobj->x;
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
+	mobj->old_angle = mobj->angle;
 }
 
 //
-// P_ResetPrecipitationMobjInterpolationState
+// R_ResetPrecipitationMobjInterpolationState
 //
 // Reset the rendering interpolation state of the precipmobj.
 //
@@ -290,7 +290,9 @@ void R_ResetPrecipitationMobjInterpolationState(precipmobj_t *mobj)
 	mobj->old_x = mobj->x;
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
+	mobj->old_angle = mobj->angle;
 }
+
 static void AddInterpolator(levelinterpolator_t* interpolator)
 {
 	if (levelinterpolators_len >= levelinterpolators_size)

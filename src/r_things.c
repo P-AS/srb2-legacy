@@ -1165,7 +1165,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	{
 		// choose a different rotation based on player view
 		ang = R_PointToAngle (interp.x, interp.y);
-		rot = (ang-thing->angle+ANGLE_202h)>>29;
+		rot = (ang-interp.angle+ANGLE_202h)>>29;
 		//Fab: lumpid is the index for spritewidth,spriteoffset... tables
 		lump = sprframe->lumpid[rot];
 		flip = sprframe->flip & (1<<rot);
