@@ -4280,11 +4280,26 @@ static void HWR_RotateSpritePolyToAim(gr_vissprite_t *spr, FOutVector *wallVerts
 {
 	if (cv_grspritebillboarding.value && spr && spr->mobj && wallVerts)
 	{
-		float basey = FIXED_TO_FLOAT(spr->mobj->z);
+		
+		// uncapped/interpolation
+		interpmobjstate_t interp = {0};
+
+
+		// do interpolation
+	    if (cv_capframerate.value == 0)
+	    {
+	      R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
+	    }
+	    else
+	    {
+	      R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
+	    }
+
+        float basey = FIXED_TO_FLOAT(interp.z);
 		float lowy = wallVerts[0].y;
 		if (P_MobjFlip(spr->mobj) == -1)
 		{
-			basey = FIXED_TO_FLOAT(spr->mobj->z + spr->mobj->height);
+			basey = FIXED_TO_FLOAT(interp.z + spr->mobj->height);
 		}
 		// Rotate sprites to fully billboard with the camera
 		// X, Y, AND Z need to be manipulated for the polys to rotate around the
@@ -5487,8 +5502,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	angle_t ang;
 	INT32 heightsec, phs;
 
-// uncapped/interpolation
-interpmobjstate_t interp = {0};
+   // uncapped/interpolation
+   interpmobjstate_t interp = {0};
 	
 
 
