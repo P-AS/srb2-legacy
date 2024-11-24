@@ -13,7 +13,7 @@
 #include <fmod_errors.h>
 #undef errcode
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 #include "gme/gme.h"
 #define GME_TREBLE 5.0
 #define GME_BASS 1.0
@@ -35,7 +35,7 @@
 
 #include "zlib.h"
 #endif // HAVE_ZLIB
-#endif // HAVE_LIBGME
+#endif // HAVE_GME
 
 static FMOD_SYSTEM *fsys;
 static FMOD_SOUND *music_stream;
@@ -44,7 +44,7 @@ static FMOD_CHANNEL *music_channel;
 static UINT8 music_volume, midi_volume, sfx_volume;
 static INT32 current_track;
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 static Music_Emu *gme;
 #endif
 
@@ -90,7 +90,7 @@ void I_StartupSound(void)
 	FMR(FMOD_System_SetDSPBufferSize(fsys, 44100 / 30, 2));
 	FMR(FMOD_System_Init(fsys, 64, FMOD_INIT_VOL0_BECOMES_VIRTUAL, NULL));
 	music_stream = NULL;
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	gme = NULL;
 #endif
 	current_track = -1;
@@ -101,7 +101,7 @@ void I_ShutdownSound(void)
 	I_Assert(sound_started);
 	sound_started = false;
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 		gme_delete(gme);
 #endif
@@ -113,7 +113,7 @@ void I_UpdateSound(void)
 	FMR(FMOD_System_Update(fsys));
 }
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 // Callback hook to read streaming GME data.
 static FMOD_RESULT F_CALLBACK GMEReadCallback(FMOD_SOUND *sound, void *data, unsigned int datalen)
 {
@@ -195,7 +195,7 @@ void *I_GetSfx(sfxinfo_t *sfx)
 	FMOD_SOUND *sound;
 	char *lump;
 	FMOD_CREATESOUNDEXINFO fmt;
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	Music_Emu *emu;
 	gme_info_t *info;
 #endif
@@ -219,7 +219,7 @@ void *I_GetSfx(sfxinfo_t *sfx)
 	fmt.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
 	fmt.length = sfx->length;
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	// VGZ format
 	if ((UINT8)lump[0] == 0x1F
 		&& (UINT8)lump[1] == 0x8B)
@@ -459,7 +459,7 @@ musictype_t I_SongType(void)
 {
 	FMOD_SOUND_TYPE type;
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 		return MU_GME;
 #endif
@@ -517,7 +517,7 @@ boolean I_SetSongSpeed(float speed)
 	if (speed > 250.0f)
 		speed = 250.0f; //limit speed up to 250x
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	// Try to set GME speed
 	if (gme)
 	{
@@ -553,7 +553,7 @@ boolean I_LoadSong(char *data, size_t len)
 	unsigned int loopstart, loopend;
 
 	if (
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 		gme ||
 #endif
 		music_stream
@@ -563,7 +563,7 @@ boolean I_LoadSong(char *data, size_t len)
 	memset(&fmt, 0, sizeof(FMOD_CREATESOUNDEXINFO));
 	fmt.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if ((UINT8)data[0] == 0x1F
 		&& (UINT8)data[1] == 0x8B)
 	{
@@ -743,7 +743,7 @@ boolean I_LoadSong(char *data, size_t len)
 void I_UnloadSong(void)
 {
 	I_StopSong();
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		gme_delete(gme);
@@ -759,7 +759,7 @@ void I_UnloadSong(void)
 
 boolean I_PlaySong(boolean looping)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		gme_start_track(gme, 0);
@@ -875,7 +875,7 @@ boolean I_SetSongTrack(INT32 track)
 	{
 		FMOD_RESULT e;
 
-		#ifdef HAVE_LIBGME
+		#ifdef HAVE_GME
 		// If the specified track is within the number of tracks playing, then change it
 		if (gme)
 		{
@@ -893,7 +893,7 @@ boolean I_SetSongTrack(INT32 track)
 			}
 			return false;
 		}
-		#endif // HAVE_LIBGME
+		#endif // HAVE_GME
 
 		// Try to set it via FMOD
 		e = FMOD_Channel_SetPosition(music_channel, (UINT32)track, FMOD_TIMEUNIT_MODORDER);

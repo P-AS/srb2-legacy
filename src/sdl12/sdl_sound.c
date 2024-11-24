@@ -75,7 +75,7 @@
 #include "hwsym_sdl.h"
 #endif
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 #include "gme/gme.h"
 #endif
 
@@ -199,7 +199,7 @@ static Mix_Music *music[2] = { NULL, NULL };
 
 typedef struct srb2audio_s {
 	void *userdata;
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	Music_Emu *gme_emu;
 	UINT8 gme_pause;
 	UINT8 gme_loop;
@@ -1005,7 +1005,7 @@ FUNCINLINE static ATTRINLINE void I_UpdateStream16M(Uint8 *stream, int len)
 	if (Snd_Mutex) SDL_UnlockMutex(Snd_Mutex);
 }
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 static void I_UpdateSteamGME(Music_Emu *emu, INT16 *stream, int len, UINT8 looping)
 {
 	#define GME_BUFFER_LEN 44100*2048
@@ -1068,7 +1068,7 @@ static void SDLCALL I_UpdateStream(void *userdata, Uint8 *stream, int len)
 	else if (audio.channels == 2 && audio.format == AUDIO_S16SYS)
 	{
 		I_UpdateStream16S(stream, len);
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 		if (userdata)
 		{
 			srb2audio_t *sa_userdata = userdata;
@@ -1347,7 +1347,7 @@ void I_ShutdownMIDIMusic(void)
 	if (nodigimusic) I_ShutdownMusic();
 }
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 static void I_ShutdownGMEMusic(void)
 {
 	Snd_LockAudio();
@@ -1499,7 +1499,7 @@ void I_InitMusic(void)
 	int mixflags;
 #endif
 #endif
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	I_AddExitFunc(I_ShutdownGMEMusic);
 #endif
 
@@ -1635,7 +1635,7 @@ boolean I_PlaySong(INT32 handle, boolean looping)
 
 static void I_PauseGME(void)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	localdata.gme_pause = true;
 #endif
 }
@@ -1655,7 +1655,7 @@ void I_PauseSong(INT32 handle)
 
 static void I_ResumeGME(void)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	localdata.gme_pause = false;
 #endif
 }
@@ -1739,7 +1739,7 @@ void I_SetMIDIMusicVolume(UINT8 volume)
 #endif
 }
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 static void I_CleanupGME(void *userdata)
 {
 	Z_Free(userdata);
@@ -1748,7 +1748,7 @@ static void I_CleanupGME(void *userdata)
 
 static boolean I_StartGMESong(const char *musicname, boolean looping)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	XBOXSTATIC char filename[9];
 	void *data;
 	lumpnum_t lumpnum;
@@ -1964,7 +1964,7 @@ boolean I_StartDigSong(const char *musicname, boolean looping)
 
 static void I_StopGME(void)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	Snd_LockAudio();
 	gme_seek(localdata.gme_emu, 0);
 	Snd_UnlockAudio();

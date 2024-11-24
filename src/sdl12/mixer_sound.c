@@ -42,7 +42,7 @@
 	(SDL_MIXER_COMPILEDVERSION >= SDL_VERSIONNUM(X, Y, Z))
 #endif
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 #include "gme/gme.h"
 #define GME_TREBLE 5.0
 #define GME_BASS 1.0
@@ -77,7 +77,7 @@ static Mix_Music *music;
 static UINT8 music_volume, midi_volume, sfx_volume;
 static float loop_point;
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 static Music_Emu *gme;
 static INT32 current_track;
 #endif
@@ -107,7 +107,7 @@ void I_ShutdownSound(void)
 #if SDL_MIXER_VERSION_ATLEAST(1,2,11)
 	Mix_Quit();
 #endif
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 		gme_delete(gme);
 #endif
@@ -233,7 +233,7 @@ void *I_GetSfx(sfxinfo_t *sfx)
 {
 	void *lump;
 	Mix_Chunk *chunk;
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	Music_Emu *emu;
 	gme_info_t *info;
 #endif
@@ -253,7 +253,7 @@ void *I_GetSfx(sfxinfo_t *sfx)
 	}
 
 	// Not a doom sound? Try something else.
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	// VGZ format
 	if (((UINT8 *)lump)[0] == 0x1F
 		&& ((UINT8 *)lump)[1] == 0x8B)
@@ -429,7 +429,7 @@ static void music_loop(void)
 	Mix_SetMusicPosition(loop_point);
 }
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 static void mix_gme(void *udata, Uint8 *stream, int len)
 {
 	int i;
@@ -478,7 +478,7 @@ void I_ResumeSong(INT32 handle)
 
 void I_InitDigMusic(void)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	gme = NULL;
 	current_track = -1;
 #endif
@@ -488,7 +488,7 @@ void I_ShutdownDigMusic(void)
 {
 	if (midimode)
 		return;
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		Mix_HookMusic(NULL, NULL);
@@ -510,7 +510,7 @@ boolean I_StartDigSong(const char *musicname, boolean looping)
 	lumpnum_t lumpnum = W_CheckNumForName(va("O_%s",musicname));
 
 	I_Assert(!music);
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	I_Assert(!gme);
 #endif
 
@@ -527,7 +527,7 @@ boolean I_StartDigSong(const char *musicname, boolean looping)
 	data = (char *)W_CacheLumpNum(lumpnum, PU_MUSIC);
 	len = W_LumpLength(lumpnum);
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if ((UINT8)data[0] == 0x1F
 		&& (UINT8)data[1] == 0x8B)
 	{
@@ -686,7 +686,7 @@ void I_StopDigSong(void)
 {
 	if (midimode)
 		return;
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		Mix_HookMusic(NULL, NULL);
@@ -715,7 +715,7 @@ boolean I_SetSongSpeed(float speed)
 {
 	if (speed > 250.0f)
 		speed = 250.0f; //limit speed up to 250x
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		SDL_LockAudio();
@@ -731,7 +731,7 @@ boolean I_SetSongSpeed(float speed)
 
 boolean I_SetSongTrack(int track)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (current_track == track)
 		return false;
 
