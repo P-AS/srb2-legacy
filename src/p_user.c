@@ -1454,6 +1454,11 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	if (mobj->flags2 & MF2_OBJECTFLIP)
 		ghost->flags |= MF2_OBJECTFLIP;
 
+	ghost->old_x = mobj->old_x2;
+	ghost->old_y = mobj->old_y2;
+	ghost->old_z = mobj->old_z2;
+	ghost->old_angle = mobj->old_angle2;
+	
 	return ghost;
 }
 
