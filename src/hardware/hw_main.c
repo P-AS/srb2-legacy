@@ -4096,9 +4096,22 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	fixed_t floorheight, mobjfloor;
 	float offset = 0;
 
+
+    
+    interpmobjstate_t interp = {0};
+
+	if (cv_capframerate.value == 0)
+	{
+	  R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
+	}
+	else
+	{
+	  R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
+	}
+
 	mobjfloor = HWR_OpaqueFloorAtPos(
-		spr->mobj->x, spr->mobj->y,
-		spr->mobj->z, spr->mobj->height);
+		interp.x, interp.y,
+		interp.z, spr->mobj->height);
 	if (cv_shadowoffs.value)
 	{
 		angle_t shadowdir;
@@ -4111,9 +4124,9 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 
 		// Find floorheight
 		floorheight = HWR_OpaqueFloorAtPos(
-			spr->mobj->x + P_ReturnThrustX(spr->mobj, shadowdir, spr->mobj->z - mobjfloor),
-			spr->mobj->y + P_ReturnThrustY(spr->mobj, shadowdir, spr->mobj->z - mobjfloor),
-			spr->mobj->z, spr->mobj->height);
+			interp.x + P_ReturnThrustX(spr->mobj, shadowdir, interp.z - mobjfloor),
+			interp.y + P_ReturnThrustY(spr->mobj, shadowdir, interp.z - mobjfloor),
+			interp.z, spr->mobj->height);
 
 		// The shadow is falling ABOVE it's mobj?
 		// Don't draw it, then!
@@ -4123,21 +4136,21 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 		{
 			fixed_t floorz;
 			floorz = HWR_OpaqueFloorAtPos(
-				spr->mobj->x + P_ReturnThrustX(spr->mobj, shadowdir, spr->mobj->z - floorheight),
-				spr->mobj->y + P_ReturnThrustY(spr->mobj, shadowdir, spr->mobj->z - floorheight),
-				spr->mobj->z, spr->mobj->height);
+				interp.x + P_ReturnThrustX(spr->mobj, shadowdir, interp.z - floorheight),
+				interp.y + P_ReturnThrustY(spr->mobj, shadowdir, interp.z - floorheight),
+				interp.z, spr->mobj->height);
 			// The shadow would be falling on a wall? Don't draw it, then.
 			// Would draw midair otherwise.
 			if (floorz < floorheight)
 				return;
 		}
 
-		floorheight = FixedInt(spr->mobj->z - floorheight);
+		floorheight = FixedInt(interp.z - floorheight);
 
 		offset = floorheight;
 	}
 	else
-		floorheight = FixedInt(spr->mobj->z - mobjfloor);
+		floorheight = FixedInt(interp.z - mobjfloor);
 
 	// create the sprite billboard
 	//

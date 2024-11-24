@@ -1069,7 +1069,7 @@ void R_SkyboxFrame(player_t *player)
 				else if (mh->skybox_scalex < 0)
 					x += (player->mo->x - skyboxmo[1]->x) * -mh->skybox_scalex;
 				if (mh->skybox_scaley > 0)
-					newview->y += (player->mo->y - skyboxmo[1]->y) / mh->skybox_scaley;
+					y += (player->mo->y - skyboxmo[1]->y) / mh->skybox_scaley;
 				else if (mh->skybox_scaley < 0)
 					y += (player->mo->y - skyboxmo[1]->y) * -mh->skybox_scaley;
 
