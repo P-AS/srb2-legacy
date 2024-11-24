@@ -1240,11 +1240,11 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 
 	if (cv_capframerate.value == 0)
 	{
-		R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
+	  R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
 	}
 	else
 	{
-	R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
+	  R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
 	}
 
 
@@ -1422,7 +1422,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 
 		if (sprframe->rotate)
 		{
-			const fixed_t anglef = AngleFixed(spr->mobj->angle);
+			const fixed_t anglef = AngleFixed(interp.angle);
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 		else
