@@ -192,10 +192,10 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
-	out->x =  R_LerpFixed(mobj->old_x, mobj->x, frac);
-	out->y =  R_LerpFixed(mobj->old_y, mobj->y, frac);
-	out->z =  R_LerpFixed(mobj->old_z, mobj->z, frac);
-	out->angle = R_LerpAngle(mobj->old_angle, mobj->angle, frac);
+	out->x =  mobj->x;
+	out->y =  mobj->y;
+	out->z =  mobj->z;
+	out->angle = mobj->angle;
 }
 
 // NOTE: This will NOT check that the mobj has already been added, for perf
