@@ -2149,15 +2149,9 @@ void I_SleepToTic(tic_t tic)
 	ts.tv_sec = (targettime - curtime) / 1000000000;
 	ts.tv_nsec = (targettime - curtime) % 1000000000;
 
-#if defined(__linux__) || defined(__FreeBSD__)
-	do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
-	while (status == EINTR);
-	I_Assert(status == 0);
-#else
 	do status = nanosleep(&ts, &ts);
 	while (status == EINTR);
 	I_Assert(status == 0);
-#endif
 }
 #endif
 
