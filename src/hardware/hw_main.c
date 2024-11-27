@@ -6844,7 +6844,7 @@ void HWR_DoPostProcessor(player_t *player)
 		// 10 by 10 grid. 2 coordinates (xy)
 		float v[SCREENVERTS][SCREENVERTS][2];
 		static double disStart = 0;
-		static fixed_t last_fractime = 0;
+		static float last_fractime = 0;
 		UINT8 x, y;
 		INT32 WAVELENGTH;
 		INT32 AMPLITUDE;
@@ -6874,15 +6874,15 @@ void HWR_DoPostProcessor(player_t *player)
 			}
 		}
 		HWD.pfnPostImgRedraw(v);
-		if (renderdeltatics > FRACUNIT)
+		if (tic_happened)
 		{
-			disStart = disStart - FIXED_TO_FLOAT(last_fractime) + 1 + FIXED_TO_FLOAT(rendertimefrac);
+			disStart = disStart - last_fractime + 1 + FIXED_TO_FLOAT(I_GetTimeFrac());
 		}
 		else
 		{
-			disStart = disStart - FIXED_TO_FLOAT(last_fractime) + FIXED_TO_FLOAT(rendertimefrac);
+			disStart = disStart - last_fractime + FIXED_TO_FLOAT(I_GetTimeFrac());
 		}
-		last_fractime = rendertimefrac;
+		last_fractime = FIXED_TO_FLOAT(I_GetTimeFrac());
 
 
 		// Capture the screen again for screen waving on the intermission

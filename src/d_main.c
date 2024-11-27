@@ -597,25 +597,9 @@ void D_SRB2Loop(void)
 
 
 		if (!P_AutoPause() && !paused)
-		{
-			if (cv_capframerate.value == 0)
-			{
-				fixed_t entertimefrac = I_GetTimeFrac();
-				// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
-				renderdeltatics = realtics * FRACUNIT;
-				if (entertimefrac > rendertimefrac)
-					renderdeltatics += entertimefrac - rendertimefrac;
-				else
-					renderdeltatics -= rendertimefrac - entertimefrac;
-
-				rendertimefrac = entertimefrac;
-			}
-			else
-			{
-				rendertimefrac = FRACUNIT;
-				renderdeltatics = realtics * FRACUNIT;
-			}
-		}
+			rendertimefrac = I_GetTimeFrac();
+		else
+			rendertimefrac = FRACUNIT;
 
 
         if (cv_capframerate.value == 0)
