@@ -73,8 +73,10 @@ boolean skyVisible1, skyVisible2; // saved values of skyVisible for P1 and P2, f
 sector_t *viewsector;
 player_t *viewplayer;
 
-
 fixed_t rendertimefrac;
+fixed_t renderdeltatics;
+
+
 // PORTALS!
 // You can thank and/or curse JTE for these.
 UINT8 portalrender;
