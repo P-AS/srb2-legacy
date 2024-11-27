@@ -163,7 +163,6 @@ event_t events[MAXEVENTS];
 INT32 eventhead, eventtail;
 
 boolean dedicated = false;
-boolean tic_happened = false;
 
 //
 // D_PostEvent
@@ -592,7 +591,6 @@ void D_SRB2Loop(void)
 			realtics = 1;
 
 		// process tics (but maybe not if realtic == 0)
-		tic_happened = realtics ? true : false;
 		TryRunTics(realtics); 
 
 
@@ -620,7 +618,6 @@ void D_SRB2Loop(void)
 
         if (cv_capframerate.value == 0)
 		{
-			
 			D_Display();
 		}
 		
@@ -643,10 +640,16 @@ void D_SRB2Loop(void)
 			// Lagless camera! Yay!
 			if (gamestate == GS_LEVEL && netgame)
 			{
-				if (splitscreen && camera2.chase)
-					P_MoveChaseCamera(&players[secondarydisplayplayer], &camera2, false);
-				if (camera.chase)
-					P_MoveChaseCamera(&players[displayplayer], &camera, false);
+				// Evaluate the chase cam once for every local realtic
+				// This might actually be better suited inside G_Ticker or TryRunTics
+				for (tic_t chasecamtics = 0; chasecamtics < realtics; chasecamtics++)
+				{
+					if (splitscreen && camera2.chase)
+						P_MoveChaseCamera(&players[secondarydisplayplayer], &camera2, false);
+					if (camera.chase)
+						P_MoveChaseCamera(&players[displayplayer], &camera, false);
+				}
+				R_UpdateViewInterpolation();
 			}
 			cv_capframerate.value == 1 ? D_Display() : 0;
 			if (moviemode)
