@@ -2121,7 +2121,7 @@ tic_t I_GetTime (void)
 		ts.tv_sec--;
 		ts.tv_nsec += 1000000000;
 	}
-	ticks = ts.tv_sec * 1000000000 + ts.tv_nsec;
+	ticks = ((uint64_t)ts.tv_sec * 1000000000) + ts.tv_nsec;
 	ticks = ticks * TICRATE / 1000000000;
 
 	return (tic_t)ticks;
@@ -2141,8 +2141,8 @@ void I_SleepToTic(tic_t tic)
 		ts.tv_sec--;
 		ts.tv_nsec += 1000000000;
 	}
-	curtime = ts.tv_sec * 1000000000 + ts.tv_nsec;
-	targettime = (uint64_t)tic * 1000000000 / TICRATE;
+	curtime = ((uint64_t)ts.tv_sec * 1000000000) + ts.tv_nsec;
+	targettime = ((uint64_t)tic * 1000000000) / TICRATE;
 	if (targettime < curtime)
 		return;
 
