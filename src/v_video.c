@@ -41,7 +41,7 @@ UINT8 *screens[5];
 static CV_PossibleValue_t gamma_cons_t[] = {{0, "MIN"}, {4, "MAX"}, {0, NULL}};
 static void CV_usegamma_OnChange(void);
 
-static CV_PossibleValue_t ticrate_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} }; 
+static CV_PossibleValue_t ticrate_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
 consvar_t cv_ticrate = { "showfps", "No", CV_SAVE, ticrate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 consvar_t cv_usegamma = {"gamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_usegamma_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
@@ -268,13 +268,6 @@ static void CV_Gammaxxx_ONChange(void)
 }
 #endif
 
-
-#if defined (__GNUC__) && defined (__i386__) && !defined (NOASM) && !defined (__APPLE__) && !defined (NORUSEASM)
-void VID_BlitLinearScreen_ASM(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT32 height, size_t srcrowbytes,
-	size_t destrowbytes);
-#define HAVE_VIDCOPY
-#endif
-
 static void CV_constextsize_OnChange(void)
 {
 	con_recalc = true;
@@ -287,9 +280,6 @@ static void CV_constextsize_OnChange(void)
 void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT32 height, size_t srcrowbytes,
 	size_t destrowbytes)
 {
-#ifdef HAVE_VIDCOPY
-    VID_BlitLinearScreen_ASM(srcptr,destptr,width,height,srcrowbytes,destrowbytes);
-#else
 	if (srcrowbytes == destrowbytes)
 		M_Memcpy(destptr, srcptr, srcrowbytes * height);
 	else
@@ -302,7 +292,6 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 			srcptr += srcrowbytes;
 		}
 	}
-#endif
 }
 
 static UINT8 hudplusalpha[11]  = { 10,  8,  6,  4,  2,  0,  0,  0,  0,  0,  0};
@@ -2261,4 +2250,3 @@ void V_Init(void)
 		CONS_Debug(DBG_RENDER, " screens[%d] = %x\n", i, screens[i]);
 #endif
 }
-

@@ -45,11 +45,6 @@ else()
 endif()
 
 if(${SDL2_FOUND})
-	if(${SRB2_USEASM})
-		set_source_files_properties(${SRB2_ASM_SOURCES} PROPERTIES LANGUAGE C)
-		set_source_files_properties(${SRB2_ASM_SOURCES} PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
-	endif()
-
 	if(${CMAKE_SYSTEM} MATCHES Windows)
 		target_sources(SRB2SDL2 PRIVATE
 			../win32/win_dbg.c
@@ -109,18 +104,6 @@ if(${SDL2_FOUND})
 	endif()
 
 	#target_link_libraries(SRB2SDL2 PRIVATE SRB2Core)
-
-	if(${SRB2_USEASM})
-		if(${SRB2_CONFIG_YASM})
-			set(ASM_ASSEMBLER_TEMP ${CMAKE_ASM_YASM_COMPILER})
-			set(ASM_ASSEMBLER_OBJFORMAT ${CMAKE_ASM_YASM_OBJECT_FORMAT})
-			set_source_files_properties(${SRB2_NASM_SOURCES} LANGUAGE ASM_YASM)
-		else()
-			set(ASM_ASSEMBLER_TEMP ${CMAKE_ASM_NASM_COMPILER})
-			set(ASM_ASSEMBLER_OBJFORMAT ${CMAKE_ASM_NASM_OBJECT_FORMAT})
-			set_source_files_properties(${SRB2_NASM_SOURCES} LANGUAGE ASM_NASM)
-		endif()
-	endif()
 
 	set_target_properties(SRB2SDL2 PROPERTIES VERSION ${SRB2_VERSION})
 
