@@ -6844,7 +6844,6 @@ void HWR_DoPostProcessor(player_t *player)
 		// 10 by 10 grid. 2 coordinates (xy)
 		float v[SCREENVERTS][SCREENVERTS][2];
 		static double disStart = 0;
-		static fixed_t last_fractime = 0;
 		UINT8 x, y;
 		INT32 WAVELENGTH;
 		INT32 AMPLITUDE;
@@ -6853,14 +6852,14 @@ void HWR_DoPostProcessor(player_t *player)
 		// Modifies the wave.
 		if (*type == postimg_water)
 		{
-			WAVELENGTH = 20; // Lower is longer
+			WAVELENGTH = 5; // Lower is longer
 			AMPLITUDE = 20; // Lower is bigger
-			FREQUENCY = 16; // Lower is faster
+			FREQUENCY = 8; // Lower is faster
 		}
 		else
 		{
 			WAVELENGTH = 10; // Lower is longer
-			AMPLITUDE = 30; // Lower is bigger
+			AMPLITUDE = 60; // Lower is bigger
 			FREQUENCY = 4; // Lower is faster
 		}
 
@@ -6874,15 +6873,8 @@ void HWR_DoPostProcessor(player_t *player)
 			}
 		}
 		HWD.pfnPostImgRedraw(v);
-		if (renderdeltatics > FRACUNIT)
-		{
-			disStart = disStart - FIXED_TO_FLOAT(last_fractime) + 1 + FIXED_TO_FLOAT(rendertimefrac);
-		}
-		else
-		{
-			disStart = disStart - FIXED_TO_FLOAT(last_fractime) + FIXED_TO_FLOAT(rendertimefrac);
-		}
-		last_fractime = rendertimefrac;
+		if (!(paused || P_AutoPause()))
+		disStart += FIXED_TO_FLOAT(renderdeltatics);
 
 
 		// Capture the screen again for screen waving on the intermission
