@@ -6,10 +6,6 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32)
 target_sourcefile(c)
 target_sources(SRB2SDL2 PRIVATE comptime.c md5.c config.h.in)
 
-set(SRB2_ASM_SOURCES vid_copy.s)
-
-set(SRB2_NASM_SOURCES tmap_mmx.nas tmap.nas)
-
 ### Configuration
 set(SRB2_CONFIG_HAVE_BLUA ON CACHE BOOL
 	"Enable Lua interpreter support")
@@ -23,10 +19,6 @@ set(SRB2_CONFIG_HAVE_OPENMPT ON CACHE BOOL
 	"Enable OpenMPT support.")
 set(SRB2_CONFIG_HWRENDER ON CACHE BOOL
 	"Enable hardware rendering through OpenGL.")
-set(SRB2_CONFIG_USEASM OFF CACHE BOOL
-	"Enable NASM tmap implementation for software mode speedup.")
-set(SRB2_CONFIG_YASM OFF CACHE BOOL
-	"Use YASM in place of NASM.")
 set(SRB2_CONFIG_STATIC_OPENGL OFF CACHE BOOL
 	"Use statically linked OpenGL. NOT RECOMMENDED.")
 
@@ -156,33 +148,6 @@ if(${SRB2_CONFIG_HWRENDER} AND ${SRB2_CONFIG_STATIC_OPENGL})
 	else()
 		message(WARNING "You have specified static opengl but opengl was not found. Not setting HWRENDER.")
 	endif()
-endif()
-
-if(${SRB2_CONFIG_USEASM})
-	#SRB2_ASM_FLAGS can be used to pass flags to either nasm or yasm.
-	if(${CMAKE_SYSTEM} MATCHES "Linux")
-		set(SRB2_ASM_FLAGS "-DLINUX ${SRB2_ASM_FLAGS}")
-	endif()
-
-	if(${SRB2_CONFIG_YASM})
-		set(CMAKE_ASM_YASM_SOURCE_FILE_EXTENSIONS ${CMAKE_ASM_YASM_SOURCE_FILE_EXTENSIONS} nas)
-		set(CMAKE_ASM_YASM_FLAGS "${SRB2_ASM_FLAGS}" CACHE STRING "Flags used by the assembler during all build types.")
-		enable_language(ASM_YASM)
-	else()
-		set(CMAKE_ASM_NASM_SOURCE_FILE_EXTENSIONS ${CMAKE_ASM_NASM_SOURCE_FILE_EXTENSIONS} nas)
-		set(CMAKE_ASM_NASM_FLAGS "${SRB2_ASM_FLAGS}" CACHE STRING "Flags used by the assembler during all build types.")
-		enable_language(ASM_NASM)
-	endif()
-
-	set(SRB2_USEASM ON)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DUSEASM)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3 -mfpmath=sse")
-
-	target_sources(SRB2SDL2 PRIVATE ${SRB2_ASM_SOURCES}
-		${SRB2_NASM_SOURCES})
-else()
-	set(SRB2_USEASM OFF)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DNONX86 -DNORUSEASM)
 endif()
 
 # Targets

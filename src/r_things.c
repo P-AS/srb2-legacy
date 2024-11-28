@@ -646,11 +646,7 @@ void R_DrawMaskedColumn(column_t *column)
 			// quick fix... something more proper should be done!!!
 			if (ylookup[dc_yl])
 				colfunc();
-			else if (colfunc == R_DrawColumn_8
-#ifdef USEASM
-			|| colfunc == R_DrawColumn_8_ASM || colfunc == R_DrawColumn_8_MMX
-#endif
-			)
+			else if (colfunc == R_DrawColumn_8)
 			{
 				static INT32 first = 1;
 				if (first)
@@ -717,11 +713,7 @@ static void R_DrawFlippedMaskedColumn(column_t *column, INT32 texheight)
 			// Still drawn by R_DrawColumn.
 			if (ylookup[dc_yl])
 				colfunc();
-			else if (colfunc == R_DrawColumn_8
-#ifdef USEASM
-			|| colfunc == R_DrawColumn_8_ASM || colfunc == R_DrawColumn_8_MMX
-#endif
-			)
+			else if (colfunc == R_DrawColumn_8)
 			{
 				static INT32 first = 1;
 				if (first)

@@ -30,10 +30,6 @@
 #include "f_finale.h"
 
 
-#if defined (USEASM) && !defined (NORUSEASM)//&& (!defined (_MSC_VER) || (_MSC_VER <= 1200))
-#define RUSEASM //MSC.NET can't patch itself
-#endif
-
 // --------------------------------------------
 // assembly or c drawer routines for 8bpp/16bpp
 // --------------------------------------------
@@ -87,16 +83,6 @@ UINT8 *scr_borderpatch; // flat used to fill the reduced view borders set at ST_
 //  Short and Tall sky drawer, for the current color mode
 void (*walldrawerfunc)(void);
 
-boolean R_ASM = true;
-boolean R_486 = false;
-boolean R_586 = false;
-boolean R_MMX = false;
-boolean R_SSE = false;
-boolean R_3DNow = false;
-boolean R_MMXExt = false;
-boolean R_SSE2 = false;
-
-
 void SCR_SetMode(void)
 {
 	if (dedicated)
@@ -125,28 +111,6 @@ void SCR_SetMode(void)
 		walldrawerfunc = R_DrawWallColumn_8;
 		twosmultipatchfunc = R_Draw2sMultiPatchColumn_8;
 		twosmultipatchtransfunc = R_Draw2sMultiPatchTranslucentColumn_8;
-#ifdef RUSEASM
-		if (R_ASM)
-		{
-			if (R_MMX)
-			{
-				colfunc = basecolfunc = R_DrawColumn_8_MMX;
-				//shadecolfunc = R_DrawShadeColumn_8_ASM;
-				//fuzzcolfunc = R_DrawTranslucentColumn_8_ASM;
-				walldrawerfunc = R_DrawWallColumn_8_MMX;
-				twosmultipatchfunc = R_Draw2sMultiPatchColumn_8_MMX;
-				spanfunc = basespanfunc = R_DrawSpan_8_MMX;
-			}
-			else
-			{
-				colfunc = basecolfunc = R_DrawColumn_8_ASM;
-				//shadecolfunc = R_DrawShadeColumn_8_ASM;
-				//fuzzcolfunc = R_DrawTranslucentColumn_8_ASM;
-				walldrawerfunc = R_DrawWallColumn_8_ASM;
-				twosmultipatchfunc = R_Draw2sMultiPatchColumn_8_ASM;
-			}
-		}
-#endif
 	}
 /*	else if (vid.bpp > 1)
 	{
@@ -174,50 +138,6 @@ void SCR_SetMode(void)
 //
 void SCR_Startup(void)
 {
-	const CPUInfoFlags *RCpuInfo = I_CPUInfo();
-	if (!M_CheckParm("-NOCPUID") && RCpuInfo)
-	{
-#if defined (__i386__) || defined (_M_IX86) || defined (__WATCOMC__)
-		R_486 = true;
-#endif
-		if (RCpuInfo->RDTSC)
-			R_586 = true;
-		if (RCpuInfo->MMX)
-			R_MMX = true;
-		if (RCpuInfo->AMD3DNow)
-			R_3DNow = true;
-		if (RCpuInfo->MMXExt)
-			R_MMXExt = true;
-		if (RCpuInfo->SSE)
-			R_SSE = true;
-		if (RCpuInfo->SSE2)
-			R_SSE2 = true;
-		CONS_Printf("CPU Info: 486: %i, 586: %i, MMX: %i, 3DNow: %i, MMXExt: %i, SSE2: %i\n", R_486, R_586, R_MMX, R_3DNow, R_MMXExt, R_SSE2);
-	}
-
-	if (M_CheckParm("-noASM"))
-		R_ASM = false;
-	if (M_CheckParm("-486"))
-		R_486 = true;
-	if (M_CheckParm("-586"))
-		R_586 = true;
-	if (M_CheckParm("-MMX"))
-		R_MMX = true;
-	if (M_CheckParm("-3DNow"))
-		R_3DNow = true;
-	if (M_CheckParm("-MMXExt"))
-		R_MMXExt = true;
-
-	if (M_CheckParm("-SSE"))
-		R_SSE = true;
-	if (M_CheckParm("-noSSE"))
-		R_SSE = false;
-
-	if (M_CheckParm("-SSE2"))
-		R_SSE2 = true;
-
-	M_SetupMemcpy();
-
 	if (dedicated)
 	{
 		V_Init();
@@ -415,18 +335,18 @@ void SCR_DisplayTicRate(void)
 			++totaltics;
 
 	if (totaltics <= TICRATE/2) ticcntcolor = V_REDMAP;
-	else if (totaltics == TICRATE) ticcntcolor = V_GREENMAP;  
+	else if (totaltics == TICRATE) ticcntcolor = V_GREENMAP;
 
 	if (cv_ticrate.value == 2) // compact counter
 	V_DrawString(vid.width - (16 * vid.dupx), vid.height-(8*vid.dupy),
-		ticcntcolor| V_NOSCALESTART, va("%02d", totaltics)); 
+		ticcntcolor| V_NOSCALESTART, va("%02d", totaltics));
 	else if (cv_ticrate.value == 1) // full counter
-	{ 
+	{
  		V_DrawString(vid.width - (24 * vid.dupx), vid.height - (16 * vid.dupy),
 			V_YELLOWMAP | V_NOSCALESTART, "FPS");
  		V_DrawString(vid.width - (40 * vid.dupx), vid.height - (8 * vid.dupy),
 		 	ticcntcolor | V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));
 	}
 		lasttic = ontic;
-	
+
 }
