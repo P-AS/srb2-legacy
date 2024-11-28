@@ -1154,7 +1154,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Show FPS",            &cv_ticrate,    110},
 	{IT_STRING | IT_CVAR,    NULL, "Clear Before Redraw", &cv_homremoval, 120},
 	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    130},
-	{IT_STRING | IT_CVAR,    NULL, "Cap Framerate",       &cv_capframerate, 140},
+	{IT_STRING | IT_CVAR,    NULL, "Frame Interpolation",       &cv_frameinterpolation, 140},
 };
 
 static menuitem_t OP_VideoModeMenu[] =

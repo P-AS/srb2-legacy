@@ -1076,7 +1076,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	
 
 	// do interpolation
-	if (cv_capframerate.value == 0)
+	if (cv_frameinterpolation.value == 1)
 	{
 		R_InterpolateMobjState(thing, rendertimefrac, &interp);
 	}
@@ -1397,7 +1397,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	// uncapped/interpolation
     interpmobjstate_t interp = {0};
 	// do interpolation
-	if (cv_capframerate.value == 0)
+	if (cv_frameinterpolation.value == 1)
 	{
 		R_InterpolatePrecipMobjState(thing, rendertimefrac, &interp);
 	}

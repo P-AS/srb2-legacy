@@ -358,7 +358,7 @@ static void D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
-			R_ApplyLevelInterpolators(cv_capframerate.value == 0 ? rendertimefrac : FRACUNIT);
+			R_ApplyLevelInterpolators(cv_frameinterpolation.value == 1 ? rendertimefrac : FRACUNIT);
 			if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 			{
 				topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
@@ -575,7 +575,7 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
-		if (!realtics && !singletics  && cv_capframerate.value != 0)
+		if (!realtics && !singletics  && cv_frameinterpolation.value != 1)
 		{
 			I_Sleep();
 			continue;
@@ -596,7 +596,7 @@ void D_SRB2Loop(void)
 
 		if (!P_AutoPause() && !paused)
 		{
-			if (cv_capframerate.value == 0)
+			if (cv_frameinterpolation.value == 1)
 			{
 				fixed_t entertimefrac = I_GetTimeFrac();
 				// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
@@ -616,7 +616,7 @@ void D_SRB2Loop(void)
 		}
 
 
-        if (cv_capframerate.value == 0)
+        if (cv_frameinterpolation.value == 1)
 		{
 			D_Display();
 		}
@@ -628,7 +628,7 @@ void D_SRB2Loop(void)
 			rendertimeout = entertic+TICRATE/17;
 
 			// Update display, next frame, with current state.
-			cv_capframerate.value == 1 ? D_Display() : 0;
+			cv_frameinterpolation.value == 0 ? D_Display() : 0;
 
 			if (moviemode)
 				M_SaveFrame();
@@ -651,7 +651,7 @@ void D_SRB2Loop(void)
 				}
 				R_UpdateViewInterpolation();
 			}
-			cv_capframerate.value == 1 ? D_Display() : 0;
+			cv_frameinterpolation.value == 0 ? D_Display() : 0;
 			if (moviemode)
 				M_SaveFrame();
 			if (takescreenshot) // Only take screenshots after drawing.
