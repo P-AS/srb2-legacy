@@ -162,7 +162,7 @@ static void F_NewCutscene(const char *basetext)
 //
 // F_DrawPatchCol
 //
-/*static void F_DrawPatchCol(INT32 x, patch_t *patch, INT32 col)
+static void F_DrawPatchCol(INT32 x, patch_t *patch, INT32 col)
 {
 	const column_t *column;
 	const UINT8 *source;
@@ -208,41 +208,46 @@ static void F_NewCutscene(const char *basetext)
 
 		desttop += SHORT(patch->height)*vid.dupy*vid.width;
 	} while(dest < destbottom);
-}*/
+}
 
 //
 // F_SkyScroll
 //
 static void F_SkyScroll(INT32 scrollspeed)
 {
-	INT32 x, w, y;
+	INT32 scrolled, x, mx, fakedwidth;
 	patch_t *pat;
 
-	pat = W_CachePatchName("SKY1", PU_CACHE); //who's gonna notice at all
+	pat = W_CachePatchName("TITLESKY", PU_CACHE);
 
-	animtimer = (SHORT(pat->width)<<FRACBITS) - ((((finalecount * scrollspeed) % (SHORT(pat->width)*16))<<FRACBITS) + (I_GetTimeFrac() * scrollspeed))/16;
+	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width);
 
-	w = (vid.width / vid.dupx)<<FRACBITS;
+	fakedwidth = vid.width / vid.dupx;
 
-	 if (rendermode != render_none)
-	{ 
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 120);
-
-		x = -animtimer;
-		y = 0;
-		while (x < w)
+	if (rendermode == render_soft)
+	{ // if only hardware rendering could be this elegant and complete
+		scrolled = (SHORT(pat->width) - animtimer) - 1;
+		for (x = 0, mx = scrolled; x < fakedwidth; x++, mx = (mx+1)%SHORT(pat->width))
+			F_DrawPatchCol(x, pat, mx);
+	}
+#ifdef HWRENDER
+	else if (rendermode != render_none)
+	{ // if only software rendering could be this simple and retarded
+		INT32 dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
+		INT32 y, pw = SHORT(pat->width) * dupz, ph = SHORT(pat->height) * dupz;
+		scrolled = animtimer * dupz;
+		for (x = 0; x < vid.width; x += pw)
 		{
-			V_DrawFixedPatch(x, y, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT, pat, NULL);
-			x += SHORT(pat->width)<<FRACBITS;
-		}
-		x = -animtimer;
-		y = (BASEVIDHEIGHT - SHORT(pat->height))<<FRACBITS;
-		while (x < w)
-		{
-			V_DrawFixedPatch(x, y, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, pat, NULL);
-			x += SHORT(pat->width)<<FRACBITS;
+			for (y = 0; y < vid.height; y += ph)
+			{
+				if (scrolled > 0)
+					V_DrawScaledPatch(scrolled - pw, y, V_NOSCALESTART, pat);
+
+				V_DrawScaledPatch(x + scrolled, y, V_NOSCALESTART, pat);
+			}
 		}
 	}
+#endif
 
 	W_UnlockCachedPatch(pat);
 }
