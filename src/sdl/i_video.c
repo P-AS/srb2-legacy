@@ -1077,6 +1077,8 @@ void I_FinishUpdate(void)
 	if (I_SkipFrame())
 		return;
 
+	SCR_CalcAproxFps();
+
 	if (cv_ticrate.value)
 		SCR_DisplayTicRate();
 

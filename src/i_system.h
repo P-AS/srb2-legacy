@@ -50,6 +50,15 @@ tic_t I_GetTime(void);
 */
 fixed_t I_GetTimeFrac(void);
 
+/**	\brief	Returns precise time value for performance measurement.
+  */
+precise_t I_GetPreciseTime(void);
+
+/**	\brief	Returns the difference between precise times as microseconds.
+  */
+int I_PreciseToMicros(precise_t);
+
+
 /**	\brief	The I_Sleep function
 
 	\return	void

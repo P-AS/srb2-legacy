@@ -2004,29 +2004,34 @@ ticcmd_t *I_BaseTiccmd2(void)
 }
 
 
-
-
+static Uint64 timer_frequency;
+static Uint64 tic_epoch;
+static double tic_frequency;
 static Uint64 basetime = 0;
 tic_t I_GetTime (void)
 {
-	 
-	Uint64 ticks = SDL_GetTicks();
-	tic_t tics = 0;
+	static double elapsed;
 
-	if (!basetime)
-		basetime = ticks;
+	const Uint64 now = SDL_GetPerformanceCounter();
+	elapsed += (now - tic_epoch) / tic_frequency;
+	tic_epoch = now; // moving epoch
 
-	tics = ticks;
-	tics -= basetime;
-
-	tics = (tics*TICRATE);
-	tics = (tics/1000);
-
-	return tics;
-
+	return (tic_t)elapsed;
 }
 
+precise_t I_GetPreciseTime(void)
+{
+	return SDL_GetPerformanceCounter();
+}
 
+int I_PreciseToMicros(precise_t d)
+{
+	return (int)(d / (timer_frequency / 1000000.0));
+}
+Uint64 I_GetPrecisePrecision(void)
+{
+	return SDL_GetPerformanceFrequency();
+}
 
 fixed_t I_GetTimeFrac (void)
 {
@@ -2038,7 +2043,7 @@ fixed_t I_GetTimeFrac (void)
 	//if (ticks > tics * 1000 / TICRATE) return 1 * FRACUNIT;
 	prevticks = prev_tics * 1000 / TICRATE;
 
-	frac = FixedDiv((ticks - prevticks) * FRACUNIT, (int)roundf((1.f/TICRATE)*1000 * FRACUNIT));
+	frac = FixedDiv((ticks - prevticks) * FRACUNIT, (int)lroundf((1.f/TICRATE)*1000 * FRACUNIT));
 	return frac > FRACUNIT ? FRACUNIT : frac;
 }
 //
@@ -2046,7 +2051,9 @@ fixed_t I_GetTimeFrac (void)
 //
 void I_StartupTimer(void)
 {
-
+	timer_frequency = SDL_GetPerformanceFrequency();
+	tic_epoch       = SDL_GetPerformanceCounter();
+	tic_frequency   = timer_frequency / (double)NEWTICRATE;
 }
 
 
