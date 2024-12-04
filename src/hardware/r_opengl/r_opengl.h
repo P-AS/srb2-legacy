@@ -35,7 +35,6 @@
 
 #else
 #include <GL/gl.h>
-#include <GL/glu.h>
 
 #ifndef MINI_GL_COMPATIBILITY
 #ifdef STATIC_OPENGL // Because of the 1.3 functions, you'll need GLext to compile it if static
@@ -132,6 +131,7 @@ extern GLint            screen_width;
 extern GLint            screen_height;
 extern GLbyte           screen_depth;
 extern GLint            maximumAnisotropy;
+extern boolean		supportMipMap;
 
 /**	\brief OpenGL flags for video driver
 */
