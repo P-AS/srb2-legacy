@@ -155,6 +155,7 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	const GLvoid *glvendor = NULL, *glrenderer = NULL, *glversion = NULL;
 
 	cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
+	static int majorGL = 0, minorGL = 0;
 
 	glvendor = pglGetString(GL_VENDOR);
 	// Get info and extensions.
@@ -174,6 +175,12 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 		pglGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maximumAnisotropy);
 	else
 		maximumAnisotropy = 1;
+
+	if (sscanf((const char*)glversion, "%d.%d", &majorGL, &minorGL)
+		&& (!(majorGL == 1 && minorGL <= 3)))
+		supportMipMap = true;
+	else
+		supportMipMap = false;
 
 	SetupGLFunc13();
 
