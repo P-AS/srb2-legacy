@@ -1152,9 +1152,10 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Precip Density",      &cv_precipdensity, 90},
 
 	{IT_STRING | IT_CVAR,    NULL, "Show FPS",            &cv_ticrate,    110},
-	{IT_STRING | IT_CVAR,    NULL, "Clear Before Redraw", &cv_homremoval, 120},
-	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    130},
-	{IT_STRING | IT_CVAR,    NULL, "Frame Interpolation",       &cv_frameinterpolation, 140},
+	{IT_STRING | IT_CVAR,    NULL, "Show TPS",            &cv_tpscounter,    120},
+	{IT_STRING | IT_CVAR,    NULL, "Clear Before Redraw", &cv_homremoval, 130},
+	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    140},
+	{IT_STRING | IT_CVAR,    NULL, "Frame Interpolation",       &cv_frameinterpolation, 150},
 };
 
 static menuitem_t OP_VideoModeMenu[] =

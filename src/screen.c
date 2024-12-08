@@ -176,6 +176,7 @@ void SCR_Startup(void)
 
 	V_Init();
 	CV_RegisterVar(&cv_ticrate);
+	CV_RegisterVar(&cv_tpscounter);
 	CV_RegisterVar(&cv_constextsize);
 
 	V_SetPalette(0);
@@ -363,6 +364,8 @@ void SCR_DisplayTicRate(void)
 	tic_t totaltics = 0;
 	UINT8 ticcntcolor = '\x80', fpscntcolor = '\x80';
 	const INT32 h = vid.height-(8*vid.dupy);
+	UINT8 yellowchr = '\x80' + (V_YELLOWMAP >> V_CHARCOLORSHIFT);
+	const char *formatstr = "%cFPS:%c% 02.2f";
 
 	if (gamestate == GS_NULL)
 		return;
@@ -382,27 +385,24 @@ void SCR_DisplayTicRate(void)
 	if (aproxfps <= 15.0f) fpscntcolor += (V_REDMAP >> V_CHARCOLORSHIFT);
 	else if (aproxfps >= (cv_frameinterpolation.value ? 60.0f : TICRATE)) fpscntcolor += (V_GREENMAP >> V_CHARCOLORSHIFT);
 
+	if (aproxfps >= 100.0f)
+		formatstr = "%cFPS:%c%02.2f";
+
 	if (cv_ticrate.value == 2) // compact counter
-	{
-		V_DrawString(vid.width- (16 * vid.dupx), h-(8*vid.dupy), V_NOSCALESTART,
-			va("%c%02d", ticcntcolor, totaltics));
 		V_DrawString(vid.width- (16 * vid.dupx), h, V_NOSCALESTART,
 			va("%c%02d", fpscntcolor, (UINT32)aproxfps));
-	}
+
 	else if (cv_ticrate.value == 1) // full counter
-	{
-		UINT8 yellowchr = '\x80' + (V_YELLOWMAP >> V_CHARCOLORSHIFT);
-
-		const char *formatstr = "%cFPS:%c% 02.2f";
-		if (aproxfps >= 100.0f)
-			formatstr = "%cFPS:%c%02.2f";
-
-		V_DrawString(vid.width- (80 * vid.dupx), h-(8*vid.dupy), V_NOSCALESTART|V_MONOSPACE,
-			va("%cTPS:%c %02d/%02u", yellowchr, ticcntcolor, totaltics, TICRATE));
 		V_DrawString(vid.width- (80 * vid.dupx), h, V_NOSCALESTART|V_MONOSPACE,
 			va(formatstr, yellowchr, fpscntcolor, aproxfps));
-	}
+	 
+	if (cv_tpscounter.value == 2)
+			V_DrawString(vid.width- (16 * vid.dupx), h-(8*vid.dupy), V_NOSCALESTART,
+			va("%c%02d", ticcntcolor, totaltics));
 
+	else if (cv_tpscounter.value == 1)
+			V_DrawString(vid.width- (80 * vid.dupx), h-(8*vid.dupy), V_NOSCALESTART|V_MONOSPACE,
+			va("%cTPS:%c %02d/%02u", yellowchr, ticcntcolor, totaltics, TICRATE));
 	lasttic = ontic;
 }
 

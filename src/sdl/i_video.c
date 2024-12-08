@@ -1079,8 +1079,7 @@ void I_FinishUpdate(void)
 
 	SCR_CalcAproxFps();
 
-	if (cv_ticrate.value)
-		SCR_DisplayTicRate();
+	SCR_DisplayTicRate();
 
 	if (rendermode == render_soft && screens[0])
 	{
