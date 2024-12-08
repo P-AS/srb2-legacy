@@ -5045,6 +5045,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	UINT8 flip;
 	angle_t ang;
 	INT32 heightsec, phs;
+	md2_t *md2;
 
 	// uncapped/interpolation
 	interpmobjstate_t interp = {0};
@@ -5072,8 +5073,21 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	tz = (tr_x * gr_viewcos) + (tr_y * gr_viewsin);
 
 	// thing is behind view plane?
-	if (tz < ZCLIP_PLANE && (!cv_grmd2.value || md2_models[thing->sprite].notfound == true)) //Yellow: Only MD2's dont disappear
-		return;
+	if (tz < ZCLIP_PLANE)
+	{
+		if (cv_grmd2.value) //Yellow: Only MD2's dont disappear
+		{
+			if (thing->skin && thing->sprite == SPR_PLAY)
+				md2 = &md2_playermodels[( (skin_t *)thing->skin - skins )];
+			else
+				md2 = &md2_models[thing->sprite];
+
+			if (md2->notfound || md2->scale < 0.0f)
+				return;
+		}
+		else
+			return;
+	}
 
 	// The above can stay as it works for cutting sprites that are too close
 	tr_x = FIXED_TO_FLOAT(interp.x);
