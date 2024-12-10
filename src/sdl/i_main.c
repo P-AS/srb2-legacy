@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 			logstream = fopen(va("."PATHSEP"logs"PATHSEP"%s", logfile), "wt");
 		}
 #endif
-
+	}
 	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
 #if defined (_WIN32)
@@ -161,6 +161,5 @@ int main(int argc, char **argv)
 
 	// return to OS
 	return 0;
-}
 }
 #endif
