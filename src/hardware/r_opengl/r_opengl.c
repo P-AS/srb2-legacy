@@ -1664,7 +1664,6 @@ static void CreateModelVBOTiny(mesh_t *mesh, tinyframe_t *frame)
 	// since this is called mid-frame
 	pglBindBuffer(GL_ARRAY_BUFFER, 0);
 }
-}
 
 EXPORT void HWRAPI(CreateModelVBOs) (model_t *model)
 {
