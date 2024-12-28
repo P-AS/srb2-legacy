@@ -898,6 +898,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 	FTransform p;
 	md2_t *md2;
 	UINT8 color[4];
+	interpmobjstate_t interp;
 
 	if (!cv_grmd2.value)
 		return;
