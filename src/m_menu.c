@@ -1176,6 +1176,7 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 #ifdef _WINDOWS
 	{IT_STRING|IT_CVAR,         NULL, "Fullscreen",      &cv_fullscreen,       50},
 #endif
+{IT_STRING|IT_CVAR,         NULL, "Ambient lighting",    &cv_grmodellighting,      60},
 #ifdef ALAM_LIGHTING
 	{IT_SUBMENU|IT_STRING,      NULL, "Lighting...",     &OP_OpenGLLightingDef,     70},
 #endif

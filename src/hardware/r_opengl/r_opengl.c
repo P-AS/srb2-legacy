@@ -88,6 +88,7 @@ static GLint mag_filter = GL_LINEAR;
 static GLint anisotropic_filter = 0;
 static FTransform  md2_transform;
 boolean supportMipMap = false;
+static boolean model_lighting = true;
 
 const GLubyte *gl_extensions = NULL;
 
@@ -1406,6 +1407,10 @@ EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
 		}
 #endif
 
+		case HWD_SET_MODEL_LIGHTING:
+			model_lighting = Value;
+			break;
+
 		case HWD_SET_FOG_COLOR:
 		{
 			GLfloat fogcolor[4];
@@ -1781,21 +1786,31 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, INT32 duration, INT32 
 	}
 #endif
 
-	pglLightfv(GL_LIGHT0, GL_POSITION, LightPos);
+	if (model_lighting)
+	{
+		pglLightfv(GL_LIGHT0, GL_POSITION, LightPos);
+		pglShadeModel(GL_SMOOTH);
+	}
 
-	pglShadeModel(GL_SMOOTH);
 	if (color)
 	{
 #ifdef GL_LIGHT_MODEL_AMBIENT
-		pglEnable(GL_LIGHTING);
-		pglMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
-		pglMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
+		if (model_lighting)
+		{
+			pglEnable(GL_LIGHTING);
+			pglMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
+			pglMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
+		}
+		else
 #endif
+			pglColor4ubv((GLubyte*)color);
+
 		if (color[3] < 255)
 			SetBlend(PF_Translucent|PF_Modulated|PF_Clip);
 		else
 			SetBlend(PF_Masked|PF_Modulated|PF_Occlude|PF_Clip);
 	}
+
 
 	pglPushMatrix(); // should be the same as glLoadIdentity
 	//Hurdler: now it seems to work
@@ -1944,7 +1959,7 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 	pglLoadIdentity();
 	if (stransform)
 	{
-		boolean fovx90;
+		
 		// keep a trace of the transformation for md2
 		memcpy(&md2_transform, stransform, sizeof (md2_transform));
 

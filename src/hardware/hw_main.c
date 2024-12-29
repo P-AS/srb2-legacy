@@ -83,6 +83,7 @@ static void HWR_RenderTransparentWalls(void);
 static void HWR_FoggingOn(void);
 static UINT32 atohex(const char *s);
 
+static void CV_grmodellighting_OnChange(void);
 static void CV_filtermode_ONChange(void);
 static void CV_anisotropic_ONChange(void);
 static void CV_FogDensity_ONChange(void);
@@ -125,6 +126,8 @@ consvar_t cv_granisotropicmode = {"gr_anisotropicmode", "1", CV_CALL|CV_SAVE, gr
 consvar_t cv_grcorrecttricks = {"gr_correcttricks", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_grmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
 static void CV_FogDensity_ONChange(void)
 {
 	HWD.pfnSetSpecialState(HWD_SET_FOG_DENSITY, cv_grfogdensity.value);
@@ -138,6 +141,12 @@ static void CV_filtermode_ONChange(void)
 static void CV_anisotropic_ONChange(void)
 {
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_granisotropicmode.value);
+}
+
+static void CV_grmodellighting_OnChange(void)
+{
+	if (rendermode == render_opengl)
+		HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
 }
 
 /*
@@ -6396,6 +6405,7 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_granisotropicmode);
 	CV_RegisterVar(&cv_grcorrecttricks);
 	CV_RegisterVar(&cv_grsolvetjoin);
+	CV_RegisterVar(&cv_grmodellighting);
 }
 
 static inline void HWR_AddEngineCommands(void)
