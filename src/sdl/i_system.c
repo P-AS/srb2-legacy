@@ -1483,7 +1483,7 @@ const char *I_GetJoyName(INT32 joyindex)
 		{
 			tempname = SDL_JoystickNameForIndex(joyindex);
 			if (tempname)
-				strncpy(joyname, tempname, 254);
+				strncpy(joyname, tempname, sizeof(joyname)-1);
 		}
 		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
 	}

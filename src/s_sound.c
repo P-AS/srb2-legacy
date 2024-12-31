@@ -1329,7 +1329,7 @@ boolean S_MusicInfo(char *mname, UINT16 *mflags, boolean *looping)
 	if (!I_SongPlaying())
 		return false;
 
-	strncpy(mname, music_name, 7);
+	memcpy(mname, music_name, sizeof(mname)-1);
 	mname[6] = 0;
 	*mflags = music_flags;
 	*looping = music_looping;
