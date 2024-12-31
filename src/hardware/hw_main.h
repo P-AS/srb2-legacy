@@ -97,6 +97,7 @@ extern consvar_t cv_grsolvetjoin;
 extern consvar_t cv_grspritebillboarding;
 extern consvar_t cv_grmodellighting;
 extern consvar_t cv_grskydome;
+extern consvar_t cv_glloadingscreen;
 
 extern float gr_viewwidth, gr_viewheight, gr_baseviewwindowy;
 
