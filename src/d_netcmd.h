@@ -113,6 +113,10 @@ extern consvar_t cv_sleep;
 
 extern consvar_t cv_freedemocamera;
 
+#ifndef NONET
+extern consvar_t cv_netcompat;
+#endif
+
 typedef enum
 {
 	XD_NAMEANDCOLOR = 1,
@@ -204,4 +208,3 @@ void D_SetPassword(const char *pw);
 UINT8 CanChangeSkin(INT32 playernum);
 
 #endif
-

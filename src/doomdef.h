@@ -151,6 +151,7 @@ extern FILE *logstream;
 #else
 #define VERSION    201 // Game version
 #define SUBVERSION 26  // more precise version number
+#define SUBVERSION_NETCOMPAT 25  // for backwards compatibility with 2.1.25 servers
 #define VERSIONSTRING "v2.1.26"
 #define VERSIONSTRINGW L"v2.1.26"
 // Hey! If you change this, add 1 to the MODVERSION below!
