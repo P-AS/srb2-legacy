@@ -369,6 +369,11 @@ consvar_t cv_mute = {"mute", "Off", CV_NETVAR|CV_CALL, CV_OnOff, Mute_OnChange, 
 consvar_t cv_sleep = {"cpusleep", "-1", CV_SAVE, sleeping_cons_t, NULL, -1, NULL, NULL, 0, 0, NULL};
 consvar_t cv_freedemocamera = {"freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL};
 
+// Netplay Compatibility with 2.1.25
+#ifndef NONET
+consvar_t cv_netcompat = {"netcompat", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+#endif
+
 
 INT16 gametype = GT_COOP;
 boolean splitscreen = false;
@@ -794,6 +799,10 @@ void D_RegisterClientCommands(void)
 //	CV_RegisterVar(&cv_snapto);
 
 	CV_RegisterVar(&cv_freedemocamera);
+
+#ifndef NONET
+	CV_RegisterVar(&cv_netcompat);
+#endif
 
 	// add cheat commands
 	COM_AddCommand("noclip", Command_CheatNoClip_f);
