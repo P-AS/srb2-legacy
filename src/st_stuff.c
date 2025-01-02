@@ -135,12 +135,10 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	{  16,  42}, // HUD_RINGS
 	{ 220,  10}, // HUD_RINGSSPLIT
 	{ 112,  42}, // HUD_RINGSNUM
-	{ 136,  42}, // HUD_RINGSNUMTICS
 	{ 288,  10}, // HUD_RINGSNUMSPLIT
 
 	{  16,  10}, // HUD_SCORE
 	{ 128,  10}, // HUD_SCORENUM
-	{ 136,  10}, // HUD_SCORENUMMODERN
 
 	{  17,  26}, // HUD_TIME
 	{ 136,  10}, // HUD_TIMESPLIT
@@ -164,6 +162,10 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	{ 152, 168}, // HUD_HUNTPICS
 	{ 152,  24}, // HUD_GRAVBOOTSICO
 	{ 240, 160}, // HUD_LAP
+
+	// Do not modify above this line.
+	{ 136,  42}, // HUD_RINGSNUMTICS
+	{ 136,  10}, // HUD_SCORENUMMODERN
 };
 
 //
@@ -684,10 +686,10 @@ static inline void ST_drawRings(void)
 				ringnum += players[i].mo->health - 1;
 	}
 
-		if (!splitscreen && (cv_timetic.value < 2 || cv_timetic.value == 3))
-			ST_DrawNumFromHudWS(HUD_RINGSNUM, ringnum);
-		else
-			ST_DrawNumFromHudWS(HUD_RINGSNUMTICS, ringnum);
+	if (cv_timetic.value != 2 || splitscreen)
+		ST_DrawNumFromHudWS(HUD_RINGSNUM, ringnum);
+	else
+		ST_DrawNumFromHudWS(HUD_RINGSNUMTICS, ringnum);
 }
 
 static void ST_drawLives(void)
@@ -1962,4 +1964,3 @@ void ST_Drawer(void)
 		}
 	}
 }
-
