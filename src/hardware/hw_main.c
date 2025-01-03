@@ -693,6 +693,7 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 	HWR_Lighting(pSurf, lightlevel, wallcolormap);
 
 	HWD.pfnSetShader(2);	// wall shader
+	HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude);
 
 #ifdef WALLSPLATS
 	if (gr_curline->linedef->splats && cv_splats.value)
