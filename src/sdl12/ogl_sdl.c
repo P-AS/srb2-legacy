@@ -194,10 +194,10 @@ boolean OglSdlSurface(INT32 w, INT32 h, boolean isFullscreen)
 	glversion = pglGetString(GL_VERSION);
 	gl_extensions = pglGetString(GL_EXTENSIONS);
 
-	DBG_Printf("Vendor     : %s\n", glvendor);
-	DBG_Printf("Renderer   : %s\n", glrenderer);
-	DBG_Printf("Version    : %s\n", glversion);
-	DBG_Printf("Extensions : %s\n", gl_extensions);
+	GL_DBG_Printf("Vendor     : %s\n", glvendor);
+	GL_DBG_Printf("Renderer   : %s\n", glrenderer);
+	GL_DBG_Printf("Version    : %s\n", glversion);
+	GL_DBG_Printf("Extensions : %s\n", gl_extensions);
 	oglflags = 0;
 
 #ifdef _WIN32
@@ -209,7 +209,7 @@ boolean OglSdlSurface(INT32 w, INT32 h, boolean isFullscreen)
 	if (strstr(glrenderer, "G200")) oglflags |= GLF_NOTEXENV;
 	if (strstr(glrenderer, "G400")) oglflags |= GLF_NOTEXENV;
 #endif
-	DBG_Printf("oglflags   : 0x%X\n", oglflags );
+	GL_DBG_Printf("oglflags   : 0x%X\n", oglflags );
 
 #ifdef USE_PALETTED_TEXTURE
 	if (isExtAvailable("GL_EXT_paletted_texture", gl_extensions))

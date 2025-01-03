@@ -36,6 +36,7 @@
 
 #ifdef HWRENDER
 #include "../hardware/r_opengl/r_opengl.h"
+#include "../hardware/hw_main.h"
 #include "ogl_sdl.h"
 #include "../i_system.h"
 #include "hwsym_sdl.h"
@@ -85,10 +86,10 @@ boolean LoadGL(void)
 
 	if (SDL_GL_LoadLibrary(OGLLibname) != 0)
 	{
-		I_OutputMsg("Could not load OpenGL Library: %s\n"
+		CONS_Alert(CONS_ERROR, "Could not load OpenGL Library: %s\n"
 					"Falling back to Software mode.\n", SDL_GetError());
 		if (!M_CheckParm ("-OGLlib"))
-			I_OutputMsg("If you know what is the OpenGL library's name, use -OGLlib\n");
+			CONS_Printf("If you know what is the OpenGL library's name, use -OGLlib\n");
 		return 0;
 	}
 #endif
@@ -105,10 +106,9 @@ boolean LoadGL(void)
 */
 boolean OglSdlSurface(INT32 w, INT32 h)
 {
-	INT32 cbpp;
+	INT32 cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
 	const GLvoid *glvendor = NULL, *glrenderer = NULL, *glversion = NULL;
 
-	cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
 	static int majorGL = 0, minorGL = 0;
 
 	glvendor = pglGetString(GL_VENDOR);
@@ -119,10 +119,10 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	glversion = pglGetString(GL_VERSION);
 	gl_extensions = pglGetString(GL_EXTENSIONS);
 
-	DBG_Printf("Vendor     : %s\n", glvendor);
-	DBG_Printf("Renderer   : %s\n", glrenderer);
-	DBG_Printf("Version    : %s\n", glversion);
-	DBG_Printf("Extensions : %s\n", gl_extensions);
+	GL_DBG_Printf("Vendor     : %s\n", glvendor);
+	GL_DBG_Printf("Renderer   : %s\n", glrenderer);
+	GL_DBG_Printf("Version    : %s\n", glversion);
+	GL_DBG_Printf("Extensions : %s\n", gl_extensions);
 	oglflags = 0;
 
 	if (isExtAvailable("GL_EXT_texture_filter_anisotropic", gl_extensions))
@@ -136,7 +136,7 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	else
 		supportMipMap = false;
 
-	SetupGLFunc13();
+	SetupGLFunc4();
 
 	granisotropicmode_cons_t[1].value = maximumAnisotropy;
 

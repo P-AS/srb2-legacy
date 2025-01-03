@@ -755,14 +755,8 @@ subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y)
 
 static mobj_t *viewmobj;
 
-// WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) ((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)>>FRACBITS)
 
-// recalc necessary stuff for mouseaiming
-// slopes are already calculated for the full possible view (which is 4*viewheight).
-// 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
 
-#undef AIMINGTODY
 
 void R_SetupFrame(player_t *player, boolean skybox)
 {

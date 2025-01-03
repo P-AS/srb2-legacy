@@ -789,6 +789,12 @@ UINT16 W_InitFile(const char *filename)
 	wadfiles[numwadfiles] = wadfile;
 	numwadfiles++; // must come BEFORE W_LoadDehackedLumps, so any addfile called by COM_BufInsertText called by Lua doesn't overwrite what we just loaded
 
+	#ifdef HWRENDER
+	if (rendermode == render_opengl)
+		HWR_LoadShaders(numwadfiles - 1, (wadfile->type == RET_PK3));
+	#endif
+
+
 	// TODO: HACK ALERT - Load Lua & SOC stuff right here. I feel like this should be out of this place, but... Let's stick with this for now.
 	switch (wadfile->type)
 	{
@@ -1762,6 +1768,10 @@ int W_VerifyNMUSlumps(const char *filename)
 		{"RRINGS", 6}, // Rings HUD (not named as SBO)
 		{"YB_", 3}, // Intermission graphics, goes with the above
 		{"M_", 2}, // As does menu stuff
+		#ifdef HWRENDER
+		{"SHADERS", 7},
+		{"SH_", 3},
+		#endif
 
 		{NULL, 0},
 	};

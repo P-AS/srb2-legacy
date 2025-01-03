@@ -91,7 +91,6 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(DrawModel);
 	GETFUNC(CreateModelVBOs);
 	GETFUNC(SetTransform);
-	GETFUNC(GetRenderVersion);
 	GETFUNC(PostImgRedraw);
 	GETFUNC(FlushScreenTextures);
 	GETFUNC(StartScreenWipe);
@@ -101,6 +100,13 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(MakeScreenTexture);
 	GETFUNC(MakeScreenFinalTexture);
 	GETFUNC(DrawScreenFinalTexture);
+	GETFUNC(LoadShaders);
+	GETFUNC(KillShaders);
+	GETFUNC(SetShader);
+	GETFUNC(UnSetShader);
+
+	GETFUNC(LoadCustomShader);
+	GETFUNC(InitCustomShaders);
 #else //HWRENDER
 	if (0 == strcmp("FinishUpdate", funcName))
 		return funcPointer; //&FinishUpdate;

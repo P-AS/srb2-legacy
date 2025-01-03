@@ -537,11 +537,21 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// \note   Required for proper collision with moving sloped surfaces that have sector specials on them.
 //#define SECTORSPECIALSAFTERTHINK
 
+
 /// FINALLY some real clipping that doesn't make walls dissappear AND speeds the game up
 /// (that was the original comment from SRB2CB, sadly it is a lie and actually slows game down)
 /// on the bright side it fixes some weird issues with translucent walls
 /// \note	SRB2CB port.
 ///      	SRB2CB itself ported this from PrBoom+
 #define NEWCLIP
+
+
+
+/// Hardware renderer: OpenGL
+#define GL_SHADERS
+
+// WARNING: a should be unsigned but to add with 2048, it isn't!
+#define AIMINGTODY(a) (FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)
+
 
 #endif // __DOOMDEF__
