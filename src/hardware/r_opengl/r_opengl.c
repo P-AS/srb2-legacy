@@ -31,6 +31,7 @@
 #include <math.h>
 #include "r_opengl.h"
 #include "r_vbo.h"
+#include "../../p_tick.h" // for leveltime
 
 #if defined (HWRENDER) && !defined (NOROPENGL)
 
@@ -581,18 +582,7 @@ static gl_shaderprogram_t gl_shaderprograms[MAXSHADERPROGRAMS];
 //
 
 
-#if 0
-// Old ZDoom style
-#define GLSL_DOOM_COLORMAP \
-	"float R_DoomColormap(float light, float z)\n" \
-	"{\n" \
-		"float vis = min(29.0 / z, 24.0 / 32.0);\n" \
-		"float shade = 2.0 - (light + 12.0) / 128.0;\n" \
-		"float lightscale = shade - vis;\n" \
-		"return lightscale * 31.0;\n" \
-	"}\n"
-#else
-// TODO: This is R_PlaneColormap, need a way to get polygon normal to add R_WallColormap
+
 #define GLSL_DOOM_COLORMAP \
 	"float R_DoomColormap(float light, float z)\n" \
 	"{\n" \
@@ -602,7 +592,7 @@ static gl_shaderprogram_t gl_shaderprograms[MAXSHADERPROGRAMS];
 		"float scale = 160.0 / (lightz + 1.0);\n" \
 		"return startmap - scale * 0.5;\n" \
 	"}\n"
-#endif
+
 
 #define GLSL_DOOM_LIGHT_EQUATION \
 	"float R_DoomLightingEquation(float light)\n" \
@@ -653,6 +643,67 @@ static gl_shaderprogram_t gl_shaderprograms[MAXSHADERPROGRAMS];
 
 
 //
+// Water surface shader
+//
+// Mostly guesstimated, rather than the rest being built off Software science.
+// Still needs to distort things underneath/around the water...
+//
+
+#define GLSL_WATER_FRAGMENT_SHADER \
+	"uniform sampler2D tex;\n" \
+	"uniform vec4 poly_color;\n" \
+	"uniform vec4 tint_color;\n" \
+	"uniform vec4 fade_color;\n" \
+	"uniform float lighting;\n" \
+	"uniform float fade_start;\n" \
+	"uniform float fade_end;\n" \
+	"uniform float leveltime;\n" \
+	"const float freq = 0.025;\n" \
+	"const float amp = 0.025;\n" \
+	"const float speed = 2.0;\n" \
+	"const float pi = 3.14159;\n" \
+	GLSL_DOOM_COLORMAP \
+	GLSL_DOOM_LIGHT_EQUATION \
+	"void main(void) {\n" \
+		"float z = (gl_FragCoord.z / gl_FragCoord.w) / 2.0;\n" \
+		"float a = -pi * (z * freq) + (leveltime * speed);\n" \
+		"float sdistort = sin(a) * amp;\n" \
+		"float cdistort = cos(a) * amp;\n" \
+		"vec4 texel = texture2D(tex, vec2(gl_TexCoord[0].s - sdistort, gl_TexCoord[0].t - cdistort));\n" \
+		"vec4 base_color = texel * poly_color;\n" \
+		"vec4 final_color = base_color;\n" \
+		GLSL_SOFTWARE_TINT_EQUATION \
+		GLSL_SOFTWARE_FADE_EQUATION \
+		"final_color.a = texel.a * poly_color.a;\n" \
+		"gl_FragColor = final_color;\n" \
+	"}\0"
+
+
+
+
+//
+// Fog block shader
+//
+// Alpha of the planes themselves are still slightly off -- see HWR_FogBlockAlpha
+//
+#define GLSL_FOG_FRAGMENT_SHADER \
+	"uniform vec4 tint_color;\n" \
+	"uniform vec4 fade_color;\n" \
+	"uniform float lighting;\n" \
+	"uniform float fade_start;\n" \
+	"uniform float fade_end;\n" \
+	GLSL_DOOM_COLORMAP \
+	GLSL_DOOM_LIGHT_EQUATION \
+	"void main(void) {\n" \
+		"vec4 base_color = gl_Color;\n" \
+		"vec4 final_color = base_color;\n" \
+		GLSL_SOFTWARE_TINT_EQUATION \
+		GLSL_SOFTWARE_FADE_EQUATION \
+		"gl_FragColor = final_color;\n" \
+	"}\0"
+
+
+//
 // GLSL generic fragment shader
 //
 
@@ -680,17 +731,15 @@ static const char *fragment_shaders[] = {
 	GLSL_SOFTWARE_FRAGMENT_SHADER,
 
 	// Water fragment shader
-	GLSL_SOFTWARE_FRAGMENT_SHADER,
+	GLSL_WATER_FRAGMENT_SHADER,
 
 	// Fog fragment shader
-	"void main(void) {\n"
-		"gl_FragColor = gl_Color;\n"
-	"}\0",
+	GLSL_FOG_FRAGMENT_SHADER,
 
 	// Sky fragment shader
 	"uniform sampler2D tex;\n"
 	"void main(void) {\n"
-		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st);\n" \
+		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st);\n"
 	"}\0",
 
 	NULL,
@@ -731,6 +780,7 @@ static const char *vertex_shaders[] = {
 
 	// Water vertex shader
 	GLSL_DEFAULT_VERTEX_SHADER,
+
 
 	// Fog vertex shader
 	GLSL_DEFAULT_VERTEX_SHADER,
@@ -1796,12 +1846,12 @@ static void load_shaders(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *
 				UNIFORM_1(shader->uniforms[gluniform_lighting], Surface->LightInfo.light_level, pglUniform1f);
 				UNIFORM_1(shader->uniforms[gluniform_fade_start], Surface->LightInfo.fade_start, pglUniform1f);
 				UNIFORM_1(shader->uniforms[gluniform_fade_end], Surface->LightInfo.fade_end, pglUniform1f);
+				UNIFORM_1(shader->uniforms[gluniform_leveltime], ((float)leveltime) / TICRATE, pglUniform1f);
 
 				// Custom shader uniforms
-				if (custom)
-				{
-					UNIFORM_1(shader->uniforms[gluniform_leveltime], (float)gl_leveltime, pglUniform1f);
-				}
+				//if (custom) { }
+				(void)custom;
+
 				#undef UNIFORM_1
 				#undef UNIFORM_2
 				#undef UNIFORM_3
