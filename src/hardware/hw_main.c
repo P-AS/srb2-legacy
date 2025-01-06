@@ -4932,7 +4932,8 @@ static void HWR_AddSprites(sector_t *sec)
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
+		if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW ||
+					thing == r_viewmobj)
 				continue;
 
 			approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
@@ -4947,7 +4948,8 @@ static void HWR_AddSprites(sector_t *sec)
 	{
 		// Draw everything in sector, no checks
 		for (thing = sec->thinglist; thing; thing = thing->snext)
-			if (!(thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW))
+			if (!(thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW ||
+						thing == r_viewmobj))
 				HWR_ProjectSprite(thing);
 	}
 
@@ -4995,6 +4997,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	float gz, gzt;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
+	md2_t *md2;
 	size_t lumpoff;
 	unsigned rot;
 	UINT8 flip;
@@ -5027,8 +5030,20 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	tz = (tr_x * gr_viewcos) + (tr_y * gr_viewsin);
 
 	// thing is behind view plane?
-	if (tz < ZCLIP_PLANE && (!cv_grmd2.value || md2_models[thing->sprite].notfound == true)) //Yellow: Only MD2's dont disappear
-		return;
+
+	if (tz < ZCLIP_PLANE)
+	{
+		if (cv_grmd2.value) //Yellow: Only MD2's dont disappear
+		{
+			if (thing->skin && thing->sprite == SPR_PLAY)
+				md2 = &md2_playermodels[( (skin_t *)thing->skin - skins )];
+			else
+				md2 = &md2_models[thing->sprite];
+
+			if (md2->notfound || md2->scale < 0.0f)
+				return;
+		}
+	}
 
 	// The above can stay as it works for cutting sprites that are too close
 	tr_x = FIXED_TO_FLOAT(interp.x);
