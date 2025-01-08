@@ -103,6 +103,7 @@ static CV_PossibleValue_t grfakecontrast_cons_t[] = {{0, "Off"}, {1, "On"}, {2, 
 consvar_t cv_grshaders = {"gr_shaders", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_grfakecontrast = {"gr_fakecontrast", "Smooth", CV_SAVE, grfakecontrast_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grslopecontrast = {"gr_slopecontrast", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 boolean drawsky = true;
 
@@ -321,6 +322,89 @@ UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap) // Let's see if 
 	return surfcolor.s.alpha;
 }
 
+static FUINT HWR_CalcWallLight(FUINT lightnum, fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y)
+{
+	INT16 finallight = lightnum;
+
+	if (cv_grfakecontrast.value != 0)
+	{
+		const UINT8 contrast = 8;
+		fixed_t extralight = 0;
+
+		if (cv_grfakecontrast.value == 2) // Smooth setting
+		{
+			extralight = (-(contrast<<FRACBITS) +
+			FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
+				abs(v1x - v2x),
+				abs(v1y - v2y))), 90<<FRACBITS)
+			* (contrast * 2)) >> FRACBITS;
+		}
+		else
+		{
+			if (v1y == v2y)
+				extralight = -contrast;
+			else if (v1x == v2x)
+				extralight = contrast;
+		}
+
+		if (extralight != 0)
+		{
+			finallight += extralight;
+
+			if (finallight < 0)
+				finallight = 0;
+			if (finallight > 255)
+				finallight = 255;
+		}
+	}
+
+	return (FUINT)finallight;
+}
+
+static FUINT HWR_CalcSlopeLight(FUINT lightnum, angle_t dir, fixed_t delta)
+{
+	INT16 finallight = lightnum;
+
+	if (cv_grfakecontrast.value != 0 && cv_grslopecontrast.value != 0)
+	{
+		const UINT8 contrast = 8;
+		fixed_t extralight = 0;
+
+		if (cv_grfakecontrast.value == 2) // Smooth setting
+		{
+			fixed_t dirmul = abs(FixedDiv(AngleFixed(dir) - (180<<FRACBITS), 180<<FRACBITS));
+
+			extralight = -(contrast<<FRACBITS) + (dirmul * (contrast * 2));
+
+			extralight = FixedMul(extralight, delta*4) >> FRACBITS;
+		}
+		else
+		{
+			dir = ((dir + ANGLE_45) / ANGLE_90) * ANGLE_90;
+
+			if (dir == ANGLE_180)
+				extralight = -contrast;
+			else if (dir == 0)
+				extralight = contrast;
+
+			if (delta >= FRACUNIT/2)
+				extralight *= 2;
+		}
+
+		if (extralight != 0)
+		{
+			finallight += extralight;
+
+			if (finallight < 0)
+				finallight = 0;
+			if (finallight > 255)
+				finallight = 255;
+		}
+	}
+
+	return (FUINT)finallight;
+}
+
 // ==========================================================================
 //                                   FLOOR/CEILING GENERATION FROM SUBSECTORS
 // ==========================================================================
@@ -521,6 +605,13 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, boolean is
 		}
 #endif
 	}
+
+
+#ifdef ESLOPE
+	if (slope)
+		lightlevel = HWR_CalcSlopeLight(lightlevel, R_PointToAngle2(0, 0, slope->normal.x, slope->normal.y), abs(slope->zdelta));
+#endif
+
 
 	HWR_Lighting(&Surf, lightlevel, planecolormap);
 
@@ -758,46 +849,6 @@ static float HWR_ClipViewSegment(INT32 x, polyvertex_t *v1, polyvertex_t *v2)
 	return num / den;
 }
 #endif
-
-static FUINT HWR_CalcWallLight(FUINT lightnum, fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y)
-{
-	INT16 finallight = lightnum;
-
-	if (cv_grfakecontrast.value != 0)
-	{
-		const UINT8 contrast = 8;
-		fixed_t extralight = 0;
-
-		if (cv_grfakecontrast.value == 2) // Smooth setting
-		{
-			extralight = -(contrast<<FRACBITS) +
-			FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
-				abs(v1x - v2x),
-				abs(v1y - v2y))), 90<<FRACBITS)
-			* (contrast * 2);
-			extralight = FixedFloor(extralight + (FRACUNIT>>1)) >> FRACBITS;
-		}
-		else
-		{
-			if (v1y == v2y)
-				extralight = -contrast;
-			else if (v1x == v2x)
-				extralight = contrast;
-		}
-
-		if (extralight != 0)
-		{
-			finallight += extralight;
-
-			if (finallight < 0)
-				finallight = 0;
-			if (finallight > 255)
-				finallight = 255;
-		}
-	}
-
-	return (FUINT)finallight;
-}
 
 //
 // HWR_SplitWall
@@ -4823,7 +4874,10 @@ void HWR_AddTransparentFloor(lumpnum_t lumpnum, extrasubsector_t *xsub, boolean 
 
 	planeinfo[numplanes].isceiling = isceiling;
 	planeinfo[numplanes].fixedheight = fixedheight;
-	planeinfo[numplanes].lightlevel = lightlevel;
+	if (planecolormap && (planecolormap->fog & 1))
+		planeinfo[numplanes].lightlevel = lightlevel;
+	else
+		planeinfo[numplanes].lightlevel = 255;
 	planeinfo[numplanes].lumpnum = lumpnum;
 	planeinfo[numplanes].xsub = xsub;
 	planeinfo[numplanes].alpha = alpha;
@@ -4855,7 +4909,10 @@ void HWR_AddTransparentPolyobjectFloor(lumpnum_t lumpnum, polyobj_t *polysector,
 
 	polyplaneinfo[numpolyplanes].isceiling = isceiling;
 	polyplaneinfo[numpolyplanes].fixedheight = fixedheight;
-	polyplaneinfo[numpolyplanes].lightlevel = lightlevel;
+	if (planecolormap && (planecolormap->fog & 1))
+		polyplaneinfo[numpolyplanes].lightlevel = lightlevel;
+	else
+		polyplaneinfo[numpolyplanes].lightlevel = 255;
 	polyplaneinfo[numpolyplanes].lumpnum = lumpnum;
 	polyplaneinfo[numpolyplanes].polysector = polysector;
 	polyplaneinfo[numpolyplanes].alpha = alpha;
@@ -6209,6 +6266,7 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_grshearing);
 	CV_RegisterVar(&cv_grshaders);
 	CV_RegisterVar(&cv_grfakecontrast);
+	CV_RegisterVar(&cv_grslopecontrast);
 }
 
 static inline void HWR_AddEngineCommands(void)
