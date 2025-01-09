@@ -2850,8 +2850,8 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 		// https://zdoom.org/wiki/Y-shearing
 		if (shearing)
 		{
-			float dy = FIXED_TO_FLOAT(AIMINGTODY(stransform->viewaiming)) * 2; //screen_width/BASEVIDWIDTH;
-			pglTranslatef(0.0f, -dy/BASEVIDHEIGHT, 0.0f);
+			float fdy = stransform->viewaiming * 2;
+			pglTranslatef(0.0f, -fdy/BASEVIDHEIGHT, 0.0f);
 		}
 		special_splitscreen = (stransform->splitscreen == 1 && stransform->fovxangle == 90.0f);
 		if (special_splitscreen)
