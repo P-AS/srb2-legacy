@@ -16,19 +16,19 @@
   <launchable type="desktop-id">org.srb2.srb2-legacy.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image>https://file.garden/ZuUiCPHqjV5ssvQM/metadata/tiltescreen.png</image>
+      <image>https://git.do.srb2.org/PAS/srb2-legacy/-/wikis/uploads/03ba436b7831eff418aa189773a17929/srb20001.png</image>
       <caption>Title screen</caption>
     </screenshot>
     <screenshot>
-      <image>https://file.garden/ZuUiCPHqjV5ssvQM/metadata/sonic-gfz1.png</image>
+      <image>https://git.do.srb2.org/PAS/srb2-legacy/-/wikis/uploads/81349ccd6c3791e1fde9f9862ccc10b1/srb20002.png</image>
       <caption>Sonic in Greenflower Zone Act 1</caption>
     </screenshot>
     <screenshot>
-      <image>https://file.garden/ZuUiCPHqjV5ssvQM/metadata/tails-cez2.png</image>
+      <image>https://git.do.srb2.org/PAS/srb2-legacy/-/wikis/uploads/609f8f70358dc2e1ef012ea92644d25c/srb20004.png</image>
       <caption>Tails in Castle Eggman Zone Act 2</caption>
     </screenshot>
     <screenshot>
-      <image>https://file.garden/ZuUiCPHqjV5ssvQM/metadata/knuckles-acz1.png</image>
+      <image>https://git.do.srb2.org/PAS/srb2-legacy/-/wikis/uploads/f63b62e4bdc0f41e20161dcdce30d067/srb20008.png</image>
       <caption>Knuckles in Arid Canyon Zone Act 1</caption>
     </screenshot>
   </screenshots>
