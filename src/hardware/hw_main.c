@@ -75,13 +75,10 @@ void HWR_AddTransparentFloor(lumpnum_t lumpnum, extrasubsector_t *xsub, boolean 
 
 void HWR_AddTransparentPolyobjectFloor(lumpnum_t lumpnum, polyobj_t *polysector, boolean isceiling, fixed_t fixedheight,
                              INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, extracolormap_t *planecolormap);
-static void HWR_FoggingOn(void);
-static UINT32 atohex(const char *s);
 
 static void CV_grmodellighting_OnChange(void);
 static void CV_filtermode_ONChange(void);
 static void CV_anisotropic_ONChange(void);
-static void CV_FogDensity_ONChange(void);
 static void CV_grFov_OnChange(void);
 // ==========================================================================
 //                                          3D ENGINE COMMANDS & CONSOLE VARS
@@ -118,8 +115,6 @@ static consvar_t cv_grbeta = {"gr_beta", "0", 0, CV_Unsigned, NULL, 0, NULL, NUL
 static float HWRWipeCounter = 1.0f;
 consvar_t cv_grrounddown = {"gr_rounddown", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grfov = {"gr_fov", "90", CV_FLOAT|CV_CALL|CV_SAVE, grfov_cons_t, CV_grFov_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grfogdensity = {"gr_fogdensity", "150", CV_CALL|CV_NOINIT|CV_SAVE, CV_Unsigned,
-                             CV_FogDensity_ONChange, 0, NULL, NULL, 0, 0, NULL};
 
 // Unfortunately, this can no longer be saved..
 consvar_t cv_grfiltermode = {"gr_filtermode", "Nearest", CV_CALL|CV_SAVE, grfiltermode_cons_t,
@@ -137,10 +132,6 @@ consvar_t cv_grshearing = {"gr_shearing", "Off", CV_SAVE, CV_OnOff, NULL, 0, NUL
 
 consvar_t cv_glloadingscreen = {"glloadingscreen", "Off", CV_SAVE, glloadingscreen_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-static void CV_FogDensity_ONChange(void)
-{
-	HWD.pfnSetSpecialState(HWD_SET_FOG_DENSITY, cv_grfogdensity.value);
-}
 
 static void CV_filtermode_ONChange(void)
 {
@@ -240,7 +231,6 @@ static void HWR_SetTransformAiming(FTransform *trans);
 //   Lighting
 // ==========================================================================
 
-#define CALCLIGHT(x,y) ((float)(x)*((y)/255.0f))
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap)
 {
 	RGBA_t poly_color, tint_color, fade_color;
@@ -5859,14 +5849,6 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	//------------------------------------------------------------------------
 	HWR_ClearView();
 
-if (0)
-{ // I don't think this is ever used.
-	if (cv_grfog.value)
-		HWR_FoggingOn(); // First of all, turn it on, set the default user settings too
-	else
-		HWD.pfnSetSpecialState(HWD_SET_FOG_MODE, 0); // Turn it off
-}
-
 	if (drawsky)
 		HWR_DrawSkyBackground(player);
 
@@ -5962,9 +5944,6 @@ if (0)
 	HWD.pfnSetTransform(NULL);
 	HWD.pfnUnSetShader();
 
-	// put it off for menus etc
-	if (cv_grfog.value)
-		HWD.pfnSetSpecialState(HWD_SET_FOG_MODE, 0);
 
 	// Check for new console commands.
 	NetUpdate();
@@ -6077,13 +6056,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	//------------------------------------------------------------------------
 	HWR_ClearView(); // Clears the depth buffer and resets the view I believe
 
-if (0)
-{ // I don't think this is ever used.
-	if (cv_grfog.value)
-		HWR_FoggingOn(); // First of all, turn it on, set the default user settings too
-	else
-		HWD.pfnSetSpecialState(HWD_SET_FOG_MODE, 0); // Turn it off
-}
 
 	if (!skybox && drawsky) // Don't draw the regular sky if there's a skybox
 		HWR_DrawSkyBackground(player);
@@ -6182,9 +6154,6 @@ if (0)
 	HWD.pfnSetTransform(NULL);
 	HWD.pfnUnSetShader();
 
-	// put it off for menus etc
-	if (cv_grfog.value)
-		HWD.pfnSetSpecialState(HWD_SET_FOG_MODE, 0);
 
 	HWR_DoPostProcessor(player);
 
@@ -6196,48 +6165,6 @@ if (0)
 	HWD.pfnGClipRect(0, 0, vid.width, vid.height, NZCLIP_PLANE);
 }
 
-// ==========================================================================
-//                                                                        FOG
-// ==========================================================================
-
-/// \author faB
-
-static UINT32 atohex(const char *s)
-{
-	INT32 iCol;
-	const char *sCol;
-	char cCol;
-	INT32 i;
-
-	if (strlen(s)<6)
-		return 0;
-
-	iCol = 0;
-	sCol = s;
-	for (i = 0; i < 6; i++, sCol++)
-	{
-		iCol <<= 4;
-		cCol = *sCol;
-		if (cCol >= '0' && cCol <= '9')
-			iCol |= cCol - '0';
-		else
-		{
-			if (cCol >= 'F')
-				cCol -= 'a' - 'A';
-			if (cCol >= 'A' && cCol <= 'F')
-				iCol = iCol | (cCol - 'A' + 10);
-		}
-	}
-	//CONS_Debug(DBG_RENDER, "col %x\n", iCol);
-	return iCol;
-}
-
-static void HWR_FoggingOn(void)
-{
-	HWD.pfnSetSpecialState(HWD_SET_FOG_COLOR, atohex(cv_grfogcolor.string));
-	HWD.pfnSetSpecialState(HWD_SET_FOG_DENSITY, cv_grfogdensity.value);
-	HWD.pfnSetSpecialState(HWD_SET_FOG_MODE, 1);
-}
 
 // ==========================================================================
 //                                                         3D ENGINE COMMANDS
@@ -6272,7 +6199,6 @@ void HWR_AddCommands(void)
 {
 	CV_RegisterVar(&cv_grrounddown);
 	CV_RegisterVar(&cv_grfov);
-	CV_RegisterVar(&cv_grfogdensity);
 	CV_RegisterVar(&cv_grfiltermode);
 	CV_RegisterVar(&cv_granisotropicmode);
 	CV_RegisterVar(&cv_grcorrecttricks);
