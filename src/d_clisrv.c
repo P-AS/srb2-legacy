@@ -3568,6 +3568,8 @@ static void HandleConnect(SINT8 node)
 #ifdef JOININGAME
 		if (nodewaiting[node])
 		{
+			netbuffer->packettype = PT_ISFUSIONADVANCE;
+			HSendPacket(node, false, 0, 0);
 			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && newnode)
 			{
 				SV_SendSaveGame(node); // send a complete game state
@@ -3824,6 +3826,10 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			if (node == servernode)
 				break;
 			/* FALLTHRU */
+
+		case PT_ISFUSIONADVANCE:
+			CONS_Printf("hi im on fusion advance\n");
+			break;
 
 		default:
 			DEBFILE(va("unknown packet received (%d) from unknown host\n",netbuffer->packettype));
@@ -4273,6 +4279,9 @@ FILESTAMP
 			}
 			if (client)
 				Got_Filetxpak();
+			break;
+		case PT_ISFUSIONADVANCE:
+			CONS_Printf("hi im on fusion advance\n");
 			break;
 		default:
 			DEBFILE(va("UNKNOWN PACKET TYPE RECEIVED %d from host %d\n",
