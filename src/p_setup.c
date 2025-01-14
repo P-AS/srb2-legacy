@@ -2254,7 +2254,7 @@ lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 //
 // Some player initialization for map start.
 //
-static void P_LevelInitStuff(void)
+static void P_LevelInitStuff(boolean reloadinggamestate)
 {
 	INT32 i;
 
@@ -2285,7 +2285,10 @@ static void P_LevelInitStuff(void)
 	// circuit, race and competition stuff
 	circuitmap = false;
 	numstarposts = 0;
-	totalrings = timeinmap = 0;
+	totalrings = 0;
+
+	if (!reloadinggamestate)
+		timeinmap = 0;
 
 	// special stage
 	stagefailed = false;
@@ -2363,7 +2366,7 @@ void P_LoadThingsOnly(void)
 			P_RemoveMobj(mo);
 	}
 
-	P_LevelInitStuff();
+	P_LevelInitStuff(false);
 
 	if (W_IsLumpWad(lastloadedmaplumpnum)) // welp it's a map wad in a pk3
 	{ // HACK: Open wad file rather quickly so we can use the things lump
@@ -2665,7 +2668,7 @@ static boolean P_CanSave(void)
   * \param skipprecip If true, don't spawn precipitation.
   * \todo Clean up, refactor, split up; get rid of the bloat.
   */
-boolean P_SetupLevel(boolean skipprecip)
+boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 {
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
@@ -2708,7 +2711,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	if (cv_runscripts.value && mapheaderinfo[gamemap-1]->scriptname[0] != '#')
 		P_RunLevelScript(mapheaderinfo[gamemap-1]->scriptname);
 
-	P_LevelInitStuff();
+	P_LevelInitStuff(reloadinggamestate);
 
 	postimgtype = postimgtype2 = postimg_none;
 
@@ -2735,13 +2738,19 @@ boolean P_SetupLevel(boolean skipprecip)
 			CV_SetValue(&cv_chasecam2, chase);
 	}
 
+	
+
 	// Initial height of PointOfView
 	// will be set by player think.
 	players[consoleplayer].viewz = 1;
+	
+	// Cancel all d_main.c fadeouts (keep fade in though).
+	if (reloadinggamestate)
+		wipegamestate = gamestate; // Don't fade if reloading the gamestate
 
 	// Special stage fade to white
 	// This is handled BEFORE sounds are stopped.
-	if (rendermode != render_none && G_IsSpecialStage(gamemap))
+	else if (rendermode != render_none && G_IsSpecialStage(gamemap))
 	{
 		tic_t starttime = I_GetTime();
 		tic_t endtime = starttime + (3*TICRATE)/2;
@@ -2780,11 +2789,12 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	// As oddly named as this is, this handles music only.
 	// We should be fine starting it here.
-	S_Start();
+	if (!reloadinggamestate)
+		S_Start();
 
 	// Let's fade to black here
 	// But only if we didn't do the special stage wipe
-	if (rendermode != render_none && !ranspecialwipe)
+	if (rendermode != render_none && !ranspecialwipe && !reloadinggamestate)
 	{
 		F_WipeStartScreen();
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -3129,7 +3139,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
-	if (rendermode != render_none)
+	if (rendermode != render_none && (!reloadinggamestate))
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, (ranspecialwipe) ? 0 : 31);
 
 	if (precache || dedicated)

@@ -106,7 +106,7 @@ static inline void P_UnArchivePlayer(void)
 //
 // P_NetArchivePlayers
 //
-static void P_NetArchivePlayers(void)
+static void P_NetArchivePlayers(boolean resending)
 {
 	INT32 i, j;
 	UINT16 flags;
@@ -116,12 +116,17 @@ static void P_NetArchivePlayers(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		if (resending)
+			WRITESINT8(save_p, (SINT8)adminplayers[i]);
 		if (!playeringame[i])
 			continue;
 
 		flags = 0;
 
 		// no longer send ticcmds, player name, skin, or color
+
+			if (resending)
+			WRITESTRINGN(save_p, player_names[i], MAXPLAYERNAME);
 
 		WRITEANGLE(save_p, players[i].aiming);
 		WRITEANGLE(save_p, players[i].awayviewaiming);
@@ -142,6 +147,12 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT16(save_p, players[i].flashpal);
 		WRITEUINT16(save_p, players[i].flashcount);
+
+		if (resending)
+		{
+			WRITEUINT8(save_p, players[i].skincolor);
+			WRITEINT32(save_p, players[i].skin);
+		}
 
 		WRITEUINT32(save_p, players[i].score);
 		WRITEFIXED(save_p, players[i].dashspeed);
@@ -278,7 +289,7 @@ static void P_NetArchivePlayers(void)
 //
 // P_NetUnArchivePlayers
 //
-static void P_NetUnArchivePlayers(void)
+static void P_NetUnArchivePlayers(boolean resending)
 {
 	INT32 i, j;
 	UINT16 flags;
@@ -288,6 +299,8 @@ static void P_NetUnArchivePlayers(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+			if (resending)
+			adminplayers[i] = (INT32)READSINT8(save_p);
 		// Do NOT memset player struct to 0
 		// other areas may initialize data elsewhere
 		//memset(&players[i], 0, sizeof (player_t));
@@ -297,6 +310,9 @@ static void P_NetUnArchivePlayers(void)
 		// NOTE: sending tics should (hopefully) no longer be necessary
 		// sending player names, skin and color should not be necessary at all!
 		// (that data is handled in the server config now)
+
+		if (resending)
+			READSTRINGN(save_p, player_names[i], MAXPLAYERNAME);
 
 		players[i].aiming = READANGLE(save_p);
 		players[i].awayviewaiming = READANGLE(save_p);
@@ -317,6 +333,12 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].flashpal = READUINT16(save_p);
 		players[i].flashcount = READUINT16(save_p);
+
+		if (resending)
+		{
+			players[i].skincolor = READUINT8(save_p);
+			players[i].skin = READINT32(save_p);
+		}
 
 		players[i].score = READUINT32(save_p);
 		players[i].dashspeed = READFIXED(save_p); // dashing speed
@@ -3174,15 +3196,21 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 	playeringame[consoleplayer] = true;
 }
 
-static void P_NetArchiveMisc(void)
+static void P_NetArchiveMisc(boolean resending)
 {
 	UINT32 pig = 0;
 	INT32 i;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
+
+	if (resending)
+		WRITEUINT32(save_p, gametic);
+
 	WRITEINT16(save_p, gamemap);
 	WRITEINT16(save_p, gamestate);
+	if (resending)
+		WRITEINT16(save_p, gametype);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		pig |= (playeringame[i] != 0)<<i;
@@ -3233,13 +3261,18 @@ static void P_NetArchiveMisc(void)
 		WRITEUINT8(save_p, 0x2e);
 }
 
-static inline boolean P_NetUnArchiveMisc(void)
+FUNCINLINE static ATTRINLINE boolean P_NetUnArchiveMisc(boolean reloading)
 {
 	UINT32 pig;
 	INT32 i;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
+
+	
+
+	if (reloading)
+		gametic = READUINT32(save_p);
 
 	gamemap = READINT16(save_p);
 
@@ -3250,9 +3283,14 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	// tell the sound code to reset the music since we're skipping what
 	// normally sets this flag
-	mapmusflags |= MUSIC_RELOADRESET;
+	if (!reloading)
+		mapmusflags |= MUSIC_RELOADRESET;
 
 	G_SetGamestate(READINT16(save_p));
+
+
+	if (reloading)
+		gametype = READINT16(save_p);
 
 	pig = READUINT32(save_p);
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -3265,8 +3303,11 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	tokenlist = READUINT32(save_p);
 
-	if (!P_SetupLevel(true))
+	if (!P_SetupLevel(true, reloading))
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
 		return false;
+	}
 
 	// get the time
 	leveltime = READUINT32(save_p);
@@ -3318,14 +3359,14 @@ void P_SaveGame(void)
 	WRITEUINT8(save_p, 0x1d); // consistency marker
 }
 
-void P_SaveNetGame(void)
+void P_SaveNetGame(boolean resending)
 {
 	thinker_t *th;
 	mobj_t *mobj;
 	INT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
 
 	CV_SaveNetVars(&save_p);
-	P_NetArchiveMisc();
+	P_NetArchiveMisc(resending);
 
 	// Assign the mobjnumber for pointer tracking
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
@@ -3339,7 +3380,7 @@ void P_SaveNetGame(void)
 		}
 	}
 
-	P_NetArchivePlayers();
+	P_NetArchivePlayers(resending);
 	if (gamestate == GS_LEVEL)
 	{
 		P_NetArchiveWorld();
@@ -3372,12 +3413,12 @@ boolean P_LoadGame(INT16 mapoverride)
 	return true;
 }
 
-boolean P_LoadNetGame(void)
+boolean P_LoadNetGame(boolean resending)
 {
 	CV_LoadNetVars(&save_p);
-	if (!P_NetUnArchiveMisc())
+	if (!P_NetUnArchiveMisc(resending))
 		return false;
-	P_NetUnArchivePlayers();
+	P_NetUnArchivePlayers(resending);
 	if (gamestate == GS_LEVEL)
 	{
 		P_NetUnArchiveWorld();

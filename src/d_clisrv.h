@@ -75,8 +75,11 @@ typedef enum
 
 #ifdef NEWPING
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
-	PT_ISFUSIONADVANCE,
 #endif
+	PT_ISFUSIONADVANCE,
+	PT_WILLRESENDGAMESTATE, // Hey Client, I am about to resend you the gamestate!
+	PT_CANRECEIVEGAMESTATE, // Okay Server, I'm ready to receive it, you can go ahead.
+	PT_RECEIVEDGAMESTATE,   // Thank you Server, I am ready to play again!
 	NUMPACKETTYPE
 } packettype_t;
 
@@ -538,6 +541,7 @@ UINT8 GetFreeXCmdSize(void);
 void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *dest);
 
 extern UINT8 hu_resynching;
+extern UINT8 hu_redownloadinggamestate;
 
 extern UINT8 adminpassmd5[16];
 extern boolean adminpasswordset;
