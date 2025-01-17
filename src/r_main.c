@@ -1121,6 +1121,32 @@ void R_SkyboxFrame(player_t *player)
 
 }
 
+
+boolean R_IsViewpointFirstPerson(player_t *player, boolean skybox)
+{
+	boolean chasecam = false;
+	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])
+		chasecam = (cv_chasecam2.value != 0);
+	else
+		chasecam = (cv_chasecam.value != 0);
+
+	if (player->climbing || (player->pflags & PF_NIGHTSMODE)  || player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN)
+		chasecam = true; // force chasecam on
+	else if (player->spectator) // no spectator chasecam
+		chasecam = false; // force chasecam off
+
+	// cut-away view stuff
+	if (player->awayviewtics || skybox)
+		return chasecam;
+	// use outside cam view
+	else if (!player->spectator && chasecam)
+		return true;
+
+	// use the player's eyes view
+	return false;
+}
+
+
 #define ANGLED_PORTALS
 
 static void R_PortalFrame(line_t *start, line_t *dest, portal_pair *portal)
