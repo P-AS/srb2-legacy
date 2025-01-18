@@ -1496,7 +1496,7 @@ void R_SkyboxFrame(player_t *player)
 }
 
 
-boolean R_IsViewpointFirstPerson(player_t *player, boolean skybox)
+boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox)
 {
 	boolean chasecam = false;
 	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])

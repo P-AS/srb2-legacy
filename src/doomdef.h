@@ -554,7 +554,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 
 
-/// Hardware renderer: OpenGL
+/// OpenGL shaders
 #define GL_SHADERS
 
 #endif // __DOOMDEF__
