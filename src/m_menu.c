@@ -1172,22 +1172,20 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 	{IT_STRING|IT_CVAR,         NULL, "3D Models",    &cv_grmd2,      10},
 	{IT_STRING|IT_CVAR,         NULL, "Model Interpolation",    &cv_grmodelinterpolation,      20},
 	{IT_STRING|IT_CVAR,         NULL, "Ambient lighting",    &cv_grmodellighting,      30},
-	{IT_STRING|IT_CVAR,         NULL, "Shaders",    &cv_grshaders,      40},
-	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective",    &cv_grshearing,      50},
-	{IT_STRING|IT_CVAR,         NULL, "Field of view",   &cv_grfov,            60},
-	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        70},
-	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     80},
-	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,90},
-	{IT_STRING|IT_CVAR,         NULL, "Sky Dome",    &cv_grskydome,      100},
-	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen",    &cv_glloadingscreen,      110},
-#ifdef _WINDOWS
-	{IT_STRING|IT_CVAR,         NULL, "Fullscreen",      &cv_fullscreen,       120},
-#endif
+
+	{IT_STRING|IT_CVAR,         NULL, "Shaders",	     &cv_grshaders,        50},
+	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective", &cv_grshearing,   60},
+	{IT_STRING|IT_CVAR,         NULL, "Field of view",   &cv_grfov,            80},
+	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        90},
+	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     100},
+	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,110},
+	{IT_STRING|IT_CVAR,         NULL, "Sky Dome",    &cv_grskydome,            130},
+	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", &cv_glloadingscreen, 140},
 
 #ifdef ALAM_LIGHTING
-	{IT_SUBMENU|IT_STRING,      NULL, "Lighting...",     &OP_OpenGLLightingDef,     130},
+	{IT_SUBMENU|IT_STRING,      NULL, "Lighting...",     &OP_OpenGLLightingDef,     160},
 #endif
-	{IT_SUBMENU|IT_STRING,      NULL, "Gamma...",        &OP_OpenGLColorDef,        140},
+	{IT_SUBMENU|IT_STRING,      NULL, "Gamma...",        &OP_OpenGLColorDef,        170},
 };
 
 #ifdef ALAM_LIGHTING
