@@ -89,12 +89,10 @@ typedef enum
 	HUD_RINGS,
 	HUD_RINGSSPLIT,
 	HUD_RINGSNUM,
-	HUD_RINGSNUMTICS,
 	HUD_RINGSNUMSPLIT,
 
 	HUD_SCORE,
 	HUD_SCORENUM,
-	HUD_SCORENUMMODERN,
 
 	HUD_TIME,
 	HUD_TIMESPLIT,
@@ -119,6 +117,10 @@ typedef enum
 	HUD_GRAVBOOTSICO,
 	HUD_LAP,
 
+	// Do not modify above this line.
+	HUD_RINGSNUMTICS,
+	HUD_SCORENUMMODERN,
+
 	NUMHUDITEMS
 } hudnum_t;
 
@@ -127,4 +129,3 @@ extern hudinfo_t hudinfo[NUMHUDITEMS];
 extern UINT16 objectsdrawn;
 
 #endif
-

@@ -1224,7 +1224,10 @@ static boolean CL_SendJoin(void)
 		localplayers++;
 	netbuffer->u.clientcfg.localplayers = localplayers;
 	netbuffer->u.clientcfg.version = VERSION;
-	netbuffer->u.clientcfg.subversion = SUBVERSION;
+	if (cv_netcompat.value)
+		netbuffer->u.clientcfg.subversion = SUBVERSION_NETCOMPAT;
+	else
+		netbuffer->u.clientcfg.subversion = SUBVERSION;
 
 	return HSendPacket(servernode, true, 0, sizeof (clientconfig_pak));
 }
@@ -1247,7 +1250,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.cheatsenabled = CV_CheatsEnabled();
 	netbuffer->u.serverinfo.isdedicated = (UINT8)dedicated;
 	strncpy(netbuffer->u.serverinfo.servername, cv_servername.string,
-		MAXSERVERNAME);
+		sizeof(netbuffer->u.serverinfo.servername)-1);
 	strncpy(netbuffer->u.serverinfo.mapname, G_BuildMapName(gamemap), 7);
 
 	M_Memcpy(netbuffer->u.serverinfo.mapmd5, mapmd5, 16);
@@ -1285,8 +1288,8 @@ static void SV_SendPlayerInfo(INT32 node)
 		}
 
 		netbuffer->u.playerinfo[i].node = (UINT8)playernode[i];
-		strncpy(netbuffer->u.playerinfo[i].name, (const char *)&player_names[i], MAXPLAYERNAME+1);
-		netbuffer->u.playerinfo[i].name[MAXPLAYERNAME] = '\0';
+		memset(netbuffer->u.playerinfo[i].name, 0x00, sizeof(netbuffer->u.playerinfo[i].name));
+		memcpy(netbuffer->u.playerinfo[i].name, player_names[i], sizeof(player_names[i]));
 
 		//fetch IP address
 		{
@@ -1674,7 +1677,7 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 		if (info->version != VERSION)
 			return; // Not same version.
 
-		if (info->subversion != SUBVERSION)
+		if (info->subversion != SUBVERSION && info->subversion != SUBVERSION_NETCOMPAT)
 			return; // Close, but no cigar.
 
 		i = serverlistcount++;
@@ -3445,7 +3448,8 @@ static void HandleConnect(SINT8 node)
 	if (bannednode && bannednode[node])
 		SV_SendRefuse(node, M_GetText("You have been banned\nfrom the server"));
 	else if (netbuffer->u.clientcfg.version != VERSION
-		|| netbuffer->u.clientcfg.subversion != SUBVERSION)
+		|| (netbuffer->u.clientcfg.subversion != SUBVERSION
+		&& netbuffer->u.clientcfg.subversion != SUBVERSION_NETCOMPAT))
 		SV_SendRefuse(node, va(M_GetText("Different SRB2 versions cannot\nplay a netgame!\n(server version %d.%d.%d)"), VERSION/100, VERSION%100, SUBVERSION));
 	else if (!cv_allownewplayer.value && node)
 		SV_SendRefuse(node, M_GetText("The server is not accepting\njoins for the moment"));

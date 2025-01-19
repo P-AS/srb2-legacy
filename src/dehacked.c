@@ -551,7 +551,7 @@ static void readPlayer(MYFILE *f, INT32 num)
 					goto done;
 				DEH_WriteUndoline(word, &description[num].picname[0], UNDO_NONE);
 				PlayerMenu[num].status = IT_CALL;
-				strncpy(description[num].picname, word2, 8);
+				strncpy(description[num].picname, word2, sizeof(description[num].picname)-1);
 			}
 			else if (fastcmp(word, "STATUS"))
 			{
@@ -1188,7 +1188,7 @@ static void readlevelheader(MYFILE *f, INT32 num)
 				if (i && i <= 1035)
 					snprintf(mapheaderinfo[num-1]->musname, 7, "%sM", G_BuildMapName(i));
 				else if (i && i <= 1050)
-					strncpy(mapheaderinfo[num-1]->musname, compat_special_music_slots[i - 1036], 7);
+					strlcpy(mapheaderinfo[num-1]->musname, compat_special_music_slots[i - 1036], 7);
 				else
 					mapheaderinfo[num-1]->musname[0] = 0; // becomes empty string
 				mapheaderinfo[num-1]->musname[6] = 0;
@@ -1213,7 +1213,7 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "SKYNUM"))
 				mapheaderinfo[num-1]->skynum = (INT16)i;
 			else if (fastcmp(word, "INTERSCREEN"))
-				strncpy(mapheaderinfo[num-1]->interscreen, word2, 8);
+				strncpy(mapheaderinfo[num-1]->interscreen, word2, sizeof(mapheaderinfo[num-1]->interscreen)-1);
 			else if (fastcmp(word, "PRECUTSCENENUM"))
 				mapheaderinfo[num-1]->precutscenenum = (UINT8)i;
 			else if (fastcmp(word, "CUTSCENENUM"))
@@ -3100,8 +3100,13 @@ static void readmaincfg(MYFILE *f)
 				savemoddata = true;
 
 				// Also save a time attack folder
-				filenamelen = strlen(gamedatafilename)-4;  // Strip off the extension
-				strncpy(timeattackfolder, gamedatafilename, min(filenamelen, sizeof (timeattackfolder)));
+
+				filenamelen = strlen(gamedatafilename);  // Strip off the extension
+				if (filenamelen >= 4)
+					filenamelen -= 4;
+				if (filenamelen >= sizeof(timeattackfolder))
+					filenamelen = sizeof(timeattackfolder)-1;
+				strncpy(timeattackfolder, gamedatafilename, filenamelen);
 				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
 
 				strcpy(savegamename, timeattackfolder);
