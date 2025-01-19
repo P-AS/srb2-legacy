@@ -2029,18 +2029,26 @@ precise_t I_GetPreciseTime(void)
 
 int I_PreciseToMicros(precise_t d)
 {
-	return (int)(d / (timer_frequency / 1000000.0));
+	// d is going to be converted into a double. So remove the highest bits
+	// to avoid loss of precision in the lower bits, for the (probably rare) case
+	// that the higher bits are actually used.
+	d &= ((precise_t)1 << 53) - 1; // The mantissa of a double can handle 53 bits at most.
+	// The resulting double from the calculation is converted first to UINT64 to avoid overflow,
+	// which is undefined behaviour when converting floating point values to integers.
+	return (int)(UINT64)(d / (timer_frequency / 1000000.0));
 }
+
 Uint64 I_GetPrecisePrecision(void)
 {
 	return SDL_GetPerformanceFrequency();
 }
 
-fixed_t I_GetTimeFrac(void)
+
+float I_GetTimeFrac(void)
 {
 	UpdateElapsedTics();
 	
-	return FLOAT_TO_FIXED((float) (elapsed_tics - floor(elapsed_tics)));
+	return elapsed_tics;
 }
 //
 //I_StartupTimer
@@ -2050,6 +2058,7 @@ void I_StartupTimer(void)
 	timer_frequency = SDL_GetPerformanceFrequency();
 	tic_epoch       = SDL_GetPerformanceCounter();
 	tic_frequency   = timer_frequency / (double)NEWTICRATE;
+	elapsed_tics    = 0.0;
 }
 
 

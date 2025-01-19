@@ -4627,8 +4627,10 @@ static void SV_Maketic(void)
 	maketic++;
 }
 
-void TryRunTics(tic_t realtics)
+boolean TryRunTics(tic_t realtics)
 {
+	boolean ticking;
+
 	// the machine has lagged but it is not so bad
 	if (realtics > TICRATE/7) // FIXME: consistency failure!!
 	{
@@ -4672,10 +4674,16 @@ void TryRunTics(tic_t realtics)
 	}
 #endif
 
-	if (player_joining)
-		return;
+	ticking = neededtic > gametic;
 
-	if (neededtic > gametic)
+
+	if (player_joining)
+	{
+		return false;
+	}
+
+
+	if (ticking)
 	{
 		if (advancedemo)
 			D_StartTitle();
@@ -4692,6 +4700,7 @@ void TryRunTics(tic_t realtics)
 				consistancy[gametic%BACKUPTICS] = Consistancy();
 			}
 	}
+	return ticking;
 }
 
 #ifdef NEWPING
