@@ -594,33 +594,33 @@ void D_SRB2Loop(void)
 		// process tics (but maybe not if realtic == 0)
 		ticked = TryRunTics(realtics);
 
-			if (cv_frameinterpolation.value == 1 && !(paused || P_AutoPause()))
-			{
-				
-				static float tictime;
-				float entertime = I_GetTimeFrac();
 
-				fixed_t entertimefrac;
+		if (cv_frameinterpolation.value == 1 && !(paused || P_AutoPause()))
+		{
+			static float tictime;
+			float entertime = I_GetTimeFrac();
 
-				if (ticked)
+			fixed_t entertimefrac;
+
+			if (ticked)
 				tictime = entertime;
 
-				entertimefrac = FLOAT_TO_FIXED(entertime - tictime);
+			entertimefrac = FLOAT_TO_FIXED(entertime - tictime);
 
-				// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
-				renderdeltatics = realtics * FRACUNIT;
-				if (entertimefrac > rendertimefrac)
-					renderdeltatics += entertimefrac - rendertimefrac;
-				else
-					renderdeltatics -= rendertimefrac - entertimefrac;
-
-				rendertimefrac = entertimefrac;
-			}
+			// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
+			renderdeltatics = realtics * FRACUNIT;
+			if (entertimefrac > rendertimefrac)
+				renderdeltatics += entertimefrac - rendertimefrac;
 			else
-			{
-				rendertimefrac = FRACUNIT;
-				renderdeltatics = realtics * FRACUNIT;
-			}
+				renderdeltatics -= rendertimefrac - entertimefrac;
+
+			rendertimefrac = entertimefrac;
+		}
+		else
+		{
+			rendertimefrac = FRACUNIT;
+			renderdeltatics = realtics * FRACUNIT;
+		}
 
 
         if (cv_frameinterpolation.value == 1)

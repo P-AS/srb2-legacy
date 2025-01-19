@@ -2050,6 +2050,23 @@ float I_GetTimeFrac(void)
 	
 	return elapsed_tics;
 }
+
+// hack alert: this is here because I_GetTimeFrac() makes console movement way too fast
+// TODO: remove
+fixed_t I_GetTimeFracOld(void) {
+	static Uint64 basetime = 0;
+	tic_t prev_tics = I_GetTime();
+	Uint64 ticks;
+	Uint64 prevticks;
+	fixed_t frac;
+
+	ticks = SDL_GetTicks() - basetime;
+	prevticks = prev_tics * 1000 / TICRATE;
+
+	frac = FixedDiv((ticks - prevticks) * FRACUNIT, (int)lroundf((1.f/TICRATE)*1000 * FRACUNIT));
+	return frac > FRACUNIT ? FRACUNIT : frac;
+}
+
 //
 //I_StartupTimer
 //

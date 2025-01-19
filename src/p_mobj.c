@@ -7665,8 +7665,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->x = x;
 	mobj->y = y;
 
-    
-	
 	
 	mobj->radius = info->radius;
 	mobj->height = info->height;
@@ -7722,6 +7720,8 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	// Tells MobjCheckWater that the water height was not set.
 	mobj->watertop = INT32_MAX;
 
+	mobj->resetinterp = true;
+	
 	if (z == ONFLOORZ)
 	{
 		mobj->z = mobj->floorz;

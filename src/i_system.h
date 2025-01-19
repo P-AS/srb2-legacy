@@ -50,6 +50,8 @@ tic_t I_GetTime(void);
 */
 float I_GetTimeFrac(void);
 
+fixed_t I_GetTimeFracOld(void);
+
 /**	\brief	Returns precise time value for performance measurement.
   */
 precise_t I_GetPreciseTime(void);
