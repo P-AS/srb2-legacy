@@ -128,7 +128,7 @@ consvar_t cv_grsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, 
 
 consvar_t cv_grmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_grshearing = {"gr_shearing", "Third-person", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grshearing = {"gr_shearing", "Off", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_glloadingscreen = {"glloadingscreen", "Off", CV_SAVE, glloadingscreen_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
