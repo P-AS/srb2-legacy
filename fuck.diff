@@ -1,0 +1,48 @@
+diff --git a/src/d_clisrv.c b/src/d_clisrv.c
+index 6292f376d..7df58c9aa 100644
+--- a/src/d_clisrv.c
++++ b/src/d_clisrv.c
+@@ -1237,7 +1237,10 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
+ 
+ 	netbuffer->packettype = PT_SERVERINFO;
+ 	netbuffer->u.serverinfo.version = VERSION;
+-	netbuffer->u.serverinfo.subversion = SUBVERSION;
++	if (cv_netcompatserver.value && !netbuffer->u.clientcfg.subversion == SUBVERSION)
++		netbuffer->u.serverinfo.subversion = SUBVERSION_NETCOMPAT;
++	else
++		netbuffer->u.serverinfo.subversion = SUBVERSION;
+ 	// return back the time value so client can compute their ping
+ 	netbuffer->u.serverinfo.time = (tic_t)LONG(servertime);
+ 	netbuffer->u.serverinfo.leveltime = (tic_t)LONG(leveltime);
+diff --git a/src/d_netcmd.c b/src/d_netcmd.c
+index 1412a490a..b1d6ec870 100644
+--- a/src/d_netcmd.c
++++ b/src/d_netcmd.c
+@@ -372,6 +372,7 @@ consvar_t cv_freedemocamera = {"freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL}
+ // Netplay Compatibility with 2.1.25
+ #ifndef NONET
+ consvar_t cv_netcompat = {"netcompat", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
++consvar_t cv_netcompatserver = {"netcompatserver", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+ #endif
+ 
+ 
+@@ -802,6 +803,7 @@ void D_RegisterClientCommands(void)
+ 
+ #ifndef NONET
+ 	CV_RegisterVar(&cv_netcompat);
++	CV_RegisterVar(&cv_netcompatserver);
+ #endif
+ 
+ 	// add cheat commands
+diff --git a/src/d_netcmd.h b/src/d_netcmd.h
+index 8fb400e07..d006acc72 100644
+--- a/src/d_netcmd.h
++++ b/src/d_netcmd.h
+@@ -115,6 +115,7 @@ extern consvar_t cv_freedemocamera;
+ 
+ #ifndef NONET
+ extern consvar_t cv_netcompat;
++extern consvar_t cv_netcompatserver;
+ #endif
+ 
+ typedef enum
