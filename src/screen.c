@@ -388,8 +388,12 @@ void SCR_DisplayTicRate(void)
 	if (aproxfps >= 100.0f)
 		formatstr = "%cFPS:%c%02.2f";
 
-	if (cv_ticrate.value == 2) // compact counter
+	if (cv_ticrate.value == 2 && aproxfps < 100.0f) // compact counter
 		V_DrawString(vid.width- (16 * vid.dupx), h, V_NOSCALESTART,
+			va("%c%02d", fpscntcolor, (UINT32)aproxfps));
+	
+	else if (cv_ticrate.value == 2 && aproxfps > 100.0f) // compact counter
+		V_DrawString(vid.width- (24* vid.dupx), h, V_NOSCALESTART,
 			va("%c%02d", fpscntcolor, (UINT32)aproxfps));
 
 	else if (cv_ticrate.value == 1) // full counter
