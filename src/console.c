@@ -533,7 +533,7 @@ static void CON_MoveConsole(void)
 	}
 
 	// Not instant - Increment fracmovement fractionally
-	if (cv_frameinterpolation.value == 1)
+	if (R_UsingFrameInterpolation())
 	fracmovement += FixedMul(cons_speed.value*vid.fdupy, I_GetTimeFracOld());
 	else 
 	fracmovement += FixedMul(cons_speed.value*vid.fdupy, FRACUNIT);

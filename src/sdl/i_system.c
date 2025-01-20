@@ -2118,6 +2118,69 @@ void I_Sleep(void)
 		SDL_Delay(cv_sleep.value);
 }
 
+
+boolean I_CheckFrameCap(precise_t start, precise_t end)
+{
+	const UINT32 capFrames = R_GetFramerateCap();
+	int capMicros = 0;
+
+	int elapsed;
+
+	if (capFrames == 0)
+	{
+		// We don't want to cap.
+		return false;
+	}
+
+	elapsed = I_PreciseToMicros(end - start);
+	capMicros = 1000000 / capFrames;
+
+	if (elapsed < capMicros)
+	{
+		// Experimental variable delay code.
+		if (cv_sleep.value > 0)
+		{
+			const INT64 delayGranularity = 2000; // 2ms, I picked this as it's what GZDoom uses before it stops trying to sleep.
+			INT64 wait = (capMicros - elapsed);
+
+			while (wait > 0)
+			{
+				precise_t sleepStart = I_GetPreciseTime();
+				precise_t sleepEnd = sleepStart;
+				int sleepElasped = 0;
+
+				if (wait > delayGranularity)
+				{
+					// Wait 1ms at a time (on default settings)
+					// until we're close enough.
+					SDL_Delay(cv_sleep.value);
+
+					sleepEnd = I_GetPreciseTime();
+					sleepElasped = I_PreciseToMicros(sleepEnd - sleepStart);
+				}
+				else
+				{
+					// When we have an extremely fine wait,
+					// we do this to spin-lock the remaining time.
+
+					while (sleepElasped < wait)
+					{
+						sleepEnd = I_GetPreciseTime();
+						sleepElasped = I_PreciseToMicros(sleepEnd - sleepStart);
+					}
+				}
+
+				wait -= sleepElasped;
+			}
+		}
+
+		return true;
+	}
+
+	// Waited enough to draw again.
+	return false;
+}
+
 INT32 I_StartupSystem(void)
 {
 	SDL_version SDLcompiled;

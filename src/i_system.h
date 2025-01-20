@@ -61,6 +61,8 @@ precise_t I_GetPreciseTime(void);
 int I_PreciseToMicros(precise_t);
 
 
+boolean I_CheckFrameCap(precise_t start, precise_t end);
+
 /**	\brief	The I_Sleep function
 
 	\return	void

@@ -915,7 +915,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 	if (spr->precip)
 		return;
 
-	if (cv_frameinterpolation.value == 1)
+	if (R_UsingFrameInterpolation())
 	{
 	  R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
 	}

@@ -91,7 +91,7 @@ extern consvar_t cv_skybox;
 extern consvar_t cv_tailspickup; 
 
 // Uncapped Framerate
-extern consvar_t cv_frameinterpolation;
+
 
 
 

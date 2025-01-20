@@ -24,6 +24,54 @@
 #endif 
 #include "z_zone.h"
 
+
+static CV_PossibleValue_t fpscap_cons_t[] = {
+	{-1, "Match refresh rate"},
+	{0, "Unlimited"},
+#ifdef DEVELOP
+	// Lower values are actually pretty useful for debugging interp problems!
+	{1, "One Singular Frame"},
+	{10, "10"},
+	{20, "20"},
+	{25, "25"},
+	{30, "30"},
+#endif
+	{35, "35"},
+	{50, "50"},
+	{60, "60"},
+	{70, "70"},
+	{75, "75"},
+	{90, "90"},
+	{100, "100"},
+	{120, "120"},
+	{144, "144"},
+	{200, "200"},
+	{240, "240"},
+	{0, NULL}
+};
+ // Sadly, I haven't been able to get individual cap values to work properly :(
+
+
+consvar_t cv_fpscap = {"fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+
+
+UINT32 R_GetFramerateCap(void)
+{
+	if (cv_fpscap.value < 0)
+	{
+		return I_GetRefreshRate();
+	}
+
+	return cv_fpscap.value;
+}
+
+
+boolean R_UsingFrameInterpolation(void)
+{
+	return (R_GetFramerateCap() != TICRATE); // maybe use ">" instead?
+}
+
 static viewvars_t p1view_old;
 static viewvars_t p1view_new;
 static viewvars_t p2view_old;

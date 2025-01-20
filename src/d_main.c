@@ -359,7 +359,7 @@ static void D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
-			R_ApplyLevelInterpolators(cv_frameinterpolation.value == 1 ? rendertimefrac : FRACUNIT);
+			R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 			if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 			{
 				topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
@@ -506,6 +506,30 @@ static void D_Display(void)
 	}
 }
 
+static boolean D_CheckFrameCap(void)
+{
+	static boolean init = false;
+	static precise_t startCap = 0;
+	precise_t endCap = 0;
+
+	endCap = I_GetPreciseTime();
+
+	if (init == false)
+	{
+		startCap = endCap;
+		init = true;
+	}
+	else if (I_CheckFrameCap(startCap, endCap))
+	{
+		// Framerate should be capped.
+		return true;
+	}
+
+	startCap = endCap;
+	return false;
+}
+
+
 // =========================================================================
 // D_SRB2Loop
 // =========================================================================
@@ -516,6 +540,10 @@ void D_SRB2Loop(void)
 {
 	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
 	boolean ticked;
+	boolean interp;
+	boolean doDisplay = false;
+	boolean frameCap = false;
+
 
 	if (dedicated)
 		server = true;
@@ -575,102 +603,154 @@ void D_SRB2Loop(void)
 
 		refreshdirmenu = 0; // not sure where to put this, here as good as any?
 
+
+
+		if (demoplayback && gamestate == GS_LEVEL)
+		{
+			// Nicer place to put this.
+			realtics = realtics * cv_playbackspeed.value;
+		}
+
+
 #ifdef DEBUGFILE
 		if (!realtics)
 			if (debugload)
 				debugload--;
 #endif
 
-		if (!realtics && !singletics  && cv_frameinterpolation.value != 1)
+		interp = R_UsingFrameInterpolation();
+		doDisplay = false;
+		ticked = false;
+		frameCap = D_CheckFrameCap();
+
+		// Moved to here from I_FinishUpdate.
+		// It doesn't track fades properly anymore by being here (might be easy fix),
+		// but it's a little more accurate for actual rendering when its here.
+		SCR_CalculateFPS();
+
+
+
+		if (!realtics && !singletics)
 		{
-			I_Sleep();
-			continue;
+			if (frameCap)
+				continue;
 		}
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
 #endif
 
-		// don't skip more than 10 frames at a time
-		// (fadein / fadeout cause massive frame skip!)
-		if (realtics > 8)
-			realtics = 1;
-
-		// process tics (but maybe not if realtic == 0)
-		ticked = TryRunTics(realtics); 
-
-
-		if (cv_frameinterpolation.value == 1 && !(paused || P_AutoPause()))
+		if (realtics > 0 || singletics)
 		{
-			static float tictime;
+			// don't skip more than 10 frames at a time
+			// (fadein / fadeout cause massive frame skip!)
+			if (realtics > 8)
+				realtics = 1;
+
+			// process tics (but maybe not if realtic == 0)
+			ticked = TryRunTics(realtics);
+
+			if (lastdraw || singletics || gametic > rendergametic)
+			{
+				rendergametic = gametic;
+				rendertimeout = entertic+TICRATE/17;
+
+				doDisplay = true;
+			}
+			else if (rendertimeout < entertic) // in case the server hang or netsplit
+			{
+				// Lagless camera! Yay!
+				if (gamestate == GS_LEVEL && netgame)
+				{
+					// Evaluate the chase cam once for every local realtic
+					// This might actually be better suited inside G_Ticker or TryRunTics
+					for (tic_t chasecamtics = 0; chasecamtics < realtics; chasecamtics++)
+					{
+						if (splitscreen && camera2.chase)
+							P_MoveChaseCamera(&players[secondarydisplayplayer], &camera2, false);
+						if (camera.chase)
+							P_MoveChaseCamera(&players[displayplayer], &camera, false);
+					}
+					R_UpdateViewInterpolation();
+				}
+
+				doDisplay = true;
+			}
+		}
+
+		if (interp)
+		{
+			static float tictime = 0.0f;
+			static float prevtime = 0.0f;
 			float entertime = I_GetTimeFrac();
 
-			fixed_t entertimefrac;
+			fixed_t entertimefrac = FRACUNIT;
 
 			if (ticked)
+			{
 				tictime = entertime;
+			}
 
-			entertimefrac = FLOAT_TO_FIXED(entertime - tictime);
+			// Handle interp sleep / framerate cap here.
+			// TryRunTics needs ran if possible to prevent lagged map changes,
+			// (and if that runs, the code above needs to also run)
+			// so this is done here after TryRunTics.
+			if (frameCap)
+			{
+				continue;
+			}
 
-			// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
-			renderdeltatics = realtics * FRACUNIT;
-			if (entertimefrac > rendertimefrac)
-				renderdeltatics += entertimefrac - rendertimefrac;
-			else
-				renderdeltatics -= rendertimefrac - entertimefrac;
+			if (!(paused || P_AutoPause()))
+			{
+#if 0
+				CONS_Printf("prevtime = %f\n", prevtime);
+				CONS_Printf("entertime = %f\n", entertime);
+				CONS_Printf("tictime = %f\n", tictime);
+				CONS_Printf("entertime - prevtime = %f\n", entertime - prevtime);
+				CONS_Printf("entertime - tictime = %f\n", entertime - tictime);
+				CONS_Printf("========\n");
+#endif
 
-			rendertimefrac = entertimefrac;
+				if (entertime - prevtime >= 1.0f)
+				{
+					// Lagged for more frames than a gametic...
+					// No need for interpolation.
+					entertimefrac = FRACUNIT;
+				}
+				else
+				{
+					entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
+				}
+
+		
+				renderdeltatics = (fixed_t)(entertime - prevtime);
+
+				rendertimefrac = entertimefrac;
+			}
+
+			prevtime = entertime;
 		}
 		else
 		{
-			rendertimefrac = FRACUNIT;
+		 if (frameCap)
+			{
+				continue;
+			}
+
+
 			renderdeltatics = realtics * FRACUNIT;
+			rendertimefrac = FRACUNIT;
 		}
 
-		
-
-
-        if (cv_frameinterpolation.value == 1)
+		if (interp || doDisplay)
 		{
 			D_Display();
 		}
-		
 
-		if (lastdraw || singletics || gametic > rendergametic)
-		{
-			rendergametic = gametic;
-			rendertimeout = entertic+TICRATE/17;
-
-			// Update display, next frame, with current state.
-			cv_frameinterpolation.value == 0 ? D_Display() : 0;
-
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
-		}
-		else if (rendertimeout < entertic) // in case the server hang or netsplit
-		{
-			// Lagless camera! Yay!
-			if (gamestate == GS_LEVEL && netgame)
-			{
-				// Evaluate the chase cam once for every local realtic
-				// This might actually be better suited inside G_Ticker or TryRunTics
-				for (tic_t chasecamtics = 0; chasecamtics < realtics; chasecamtics++)
-				{
-					if (splitscreen && camera2.chase)
-						P_MoveChaseCamera(&players[secondarydisplayplayer], &camera2, false);
-					if (camera.chase)
-						P_MoveChaseCamera(&players[displayplayer], &camera, false);
-				}
-				R_UpdateViewInterpolation();
-			}
-			cv_frameinterpolation.value == 0 ? D_Display() : 0;
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
-		}
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot) // Only take screenshots after drawing.
+			M_DoScreenShot();
 
 		// consoleplayer -> displayplayer (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
