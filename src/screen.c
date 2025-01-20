@@ -396,6 +396,11 @@ void SCR_DisplayTicRate(void)
 		V_DrawString(vid.width- (24* vid.dupx), h, V_NOSCALESTART,
 			va("%c%02d", fpscntcolor, (UINT32)aproxfps));
 
+	
+	else if (cv_ticrate.value == 2 && aproxfps > 100.0f)
+		V_DrawString(vid.width- (24 * vid.dupx), h, V_NOSCALESTART,
+			va("%c%02d", fpscntcolor, (UINT32)aproxfps));
+
 	else if (cv_ticrate.value == 1) // full counter
 		V_DrawString(vid.width- (80 * vid.dupx), h, V_NOSCALESTART|V_MONOSPACE,
 			va(formatstr, yellowchr, fpscntcolor, aproxfps));
