@@ -61,9 +61,13 @@ precise_t I_GetPreciseTime(void);
 int I_PreciseToMicros(precise_t);
 
 
-boolean I_CheckFrameCap(precise_t start, precise_t end);
+/**	\brief	Sleeps for a variable amount of time, depending on how much time the last frame took.
 
-/**	\brief	The I_Sleep function
+	\return	void
+*/
+boolean I_FrameCapSleep(const int elapsed);
+
+/**	\brief	Sleeps by the value of cv_sleep
 
 	\return	void
 */

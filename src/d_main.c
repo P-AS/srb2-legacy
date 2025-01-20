@@ -242,9 +242,6 @@ static void D_Display(void)
 		return; // for comparative timing/profiling 
 
 
-
-
-
 	// check for change of screen size (video mode)
 	if (setmodeneeded && !wipe)
 		SCR_SetMode(); // change video mode
@@ -506,29 +503,6 @@ static void D_Display(void)
 	}
 }
 
-static boolean D_CheckFrameCap(void)
-{
-	static boolean init = false;
-	static precise_t startCap = 0;
-	precise_t endCap = 0;
-
-	endCap = I_GetPreciseTime();
-
-	if (init == false)
-	{
-		startCap = endCap;
-		init = true;
-	}
-	else if (I_CheckFrameCap(startCap, endCap))
-	{
-		// Framerate should be capped.
-		return true;
-	}
-
-	startCap = endCap;
-	return false;
-}
-
 
 // =========================================================================
 // D_SRB2Loop
@@ -539,10 +513,12 @@ tic_t rendergametic;
 void D_SRB2Loop(void)
 {
 	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
-	boolean ticked;
-	boolean interp;
+	boolean ticked = false;
+	boolean interp = false;
 	boolean doDisplay = false;
-	boolean frameCap = false;
+	precise_t frameTime = 0;
+	int frameElapsed = 0;
+
 
 
 	if (dedicated)
@@ -590,6 +566,9 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
+		frameTime = I_GetPreciseTime();
+		frameElapsed = 0;
+
 		if (lastwipetic)
 		{
 			oldentertics = lastwipetic;
@@ -621,20 +600,6 @@ void D_SRB2Loop(void)
 		interp = R_UsingFrameInterpolation();
 		doDisplay = false;
 		ticked = false;
-		frameCap = D_CheckFrameCap();
-
-		// Moved to here from I_FinishUpdate.
-		// It doesn't track fades properly anymore by being here (might be easy fix),
-		// but it's a little more accurate for actual rendering when its here.
-		SCR_CalculateFPS();
-
-
-
-		if (!realtics && !singletics)
-		{
-			if (frameCap)
-				continue;
-		}
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -691,14 +656,6 @@ void D_SRB2Loop(void)
 				tictime = entertime;
 			}
 
-			// Handle interp sleep / framerate cap here.
-			// TryRunTics needs ran if possible to prevent lagged map changes,
-			// (and if that runs, the code above needs to also run)
-			// so this is done here after TryRunTics.
-			if (frameCap)
-			{
-				continue;
-			}
 
 			if (!(paused || P_AutoPause()))
 			{
@@ -732,11 +689,6 @@ void D_SRB2Loop(void)
 		}
 		else
 		{
-		 if (frameCap)
-			{
-				continue;
-			}
-
 
 			renderdeltatics = realtics * FRACUNIT;
 			rendertimefrac = FRACUNIT;
@@ -765,6 +717,19 @@ void D_SRB2Loop(void)
 #ifdef HAVE_BLUA
 		LUA_Step();
 #endif
+
+		// Moved to here from I_FinishUpdate.
+		// It doesn't track fades properly anymore by being here (might be easy fix),
+		// but it's a little more accurate for actual rendering when its here.
+		SCR_CalculateFPS();
+
+		// Fully completed frame made, handle frame cap delay.
+		frameElapsed = I_PreciseToMicros(I_GetPreciseTime() - frameTime);
+
+		if (!singletics)
+		{
+			I_FrameCapSleep(frameElapsed);
+		}
 	}
 }
 
