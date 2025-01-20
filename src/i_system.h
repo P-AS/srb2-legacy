@@ -42,11 +42,13 @@ extern UINT8 keyboard_started;
 */
 size_t I_GetFreeMem(size_t *total);
 
-/**	\brief  Called by D_SRB2Loop, returns current time in tics.
+
+/**	\brief  Called by D_SRB2Loop, returns current time in game tics.
 */
 tic_t I_GetTime(void); 
 
-/** \brief  Get the current time in tics including fractions.
+
+/** \brief  Get the current time in game tics, including fractions. 
 */
 float I_GetTimeFrac(void);
 
@@ -60,12 +62,16 @@ precise_t I_GetPreciseTime(void);
   */
 int I_PreciseToMicros(precise_t);
 
+/** \brief  Get the current time in rendering tics, including fractions.
+*/
+double I_GetFrameTime(void);
+
 
 /**	\brief	Sleeps for a variable amount of time, depending on how much time the last frame took.
 
 	\return	void
 */
-boolean I_FrameCapSleep(const int elapsed);
+boolean I_FrameCapSleep(const double frameStart);
 
 /**	\brief	Sleeps by the value of cv_sleep
 
