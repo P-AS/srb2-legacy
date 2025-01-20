@@ -4536,7 +4536,7 @@ void G_ReadMetalTic(mobj_t *metal)
 	// Read changes from the tic
 	if (ziptic & GZT_XYZ)
 	{
-		P_TeleportMove(metal, READFIXED(metal_p), READFIXED(metal_p), READFIXED(metal_p));
+		P_MoveOrigin(metal, READFIXED(metal_p), READFIXED(metal_p), READFIXED(metal_p));
 		oldmetal.x = metal->x;
 		oldmetal.y = metal->y;
 		oldmetal.z = metal->z;

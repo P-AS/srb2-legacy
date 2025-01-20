@@ -4471,7 +4471,7 @@ static void P_Boss4MoveSpikeballs(mobj_t *mobj, angle_t angle, fixed_t fz)
 	while ((base = base->tracer))
 	{
 		for (seg = base, dist = 172*FRACUNIT, s = 9; seg; seg = seg->hnext, dist += 124*FRACUNIT, --s)
-			P_TeleportMove(seg, mobj->x + P_ReturnThrustX(mobj, angle, dist), mobj->y + P_ReturnThrustY(mobj, angle, dist), bz + FixedMul(fz, FixedDiv(s<<FRACBITS, 9<<FRACBITS)));
+			P_MoveOrigin(seg, mobj->x + P_ReturnThrustX(mobj, angle, dist), mobj->y + P_ReturnThrustY(mobj, angle, dist), bz + FixedMul(fz, FixedDiv(s<<FRACBITS, 9<<FRACBITS)));
 		angle += ANGLE_MAX/3;
 	}
 }
@@ -5217,7 +5217,7 @@ static void P_Boss9Thinker(mobj_t *mobj)
 			if (mobj->health > 3) {
 				mobj->tracer->destscale = FRACUNIT + (4*TICRATE - mobj->fuse)*(FRACUNIT/2)/TICRATE + FixedMul(FINECOSINE(angle>>ANGLETOFINESHIFT),FRACUNIT/2);
 				P_SetScale(mobj->tracer, mobj->tracer->destscale);
-				P_TeleportMove(mobj->tracer, mobj->x, mobj->y, mobj->z + mobj->height/2 - mobj->tracer->height/2);
+				P_SetOrigin(mobj->tracer, mobj->x, mobj->y, mobj->z + mobj->height/2 - mobj->tracer->height/2);
 				mobj->tracer->momx = mobj->momx;
 				mobj->tracer->momy = mobj->momy;
 				mobj->tracer->momz = mobj->momz;
@@ -6815,7 +6815,7 @@ void P_MobjThinker(mobj_t *mobj)
 				P_RemoveMobj(mobj);
 				return;
 			}
-			P_TeleportMove(mobj, mobj->target->x, mobj->target->y, mobj->target->z - mobj->height);
+			P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z - mobj->height);
 			break;
 		case MT_HAMMER:
 			if (mobj->z <= mobj->floorz)
