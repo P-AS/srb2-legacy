@@ -597,7 +597,7 @@ void D_SRB2Loop(void)
 			realtics = 1;
 
 		// process tics (but maybe not if realtic == 0)
-		ticked = TryRunTics(realtics);
+		ticked = TryRunTics(realtics); 
 
 
 		if (cv_frameinterpolation.value == 1 && !(paused || P_AutoPause()))
@@ -626,6 +626,8 @@ void D_SRB2Loop(void)
 			rendertimefrac = FRACUNIT;
 			renderdeltatics = realtics * FRACUNIT;
 		}
+
+		
 
 
         if (cv_frameinterpolation.value == 1)

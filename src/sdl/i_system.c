@@ -2040,9 +2040,11 @@ ticcmd_t *I_BaseTiccmd2(void)
 static Uint64 timer_frequency;
 static Uint64 tic_epoch;
 static double tic_frequency;
+static Uint64 basetime = 0;
 static double elapsed_tics;
 static void UpdateElapsedTics(void)
 {
+
 	const Uint64 now = SDL_GetPerformanceCounter();
 	elapsed_tics += (now - tic_epoch) / tic_frequency;
 	tic_epoch = now; // moving epoch
@@ -2084,11 +2086,8 @@ float I_GetTimeFrac(void)
 	return elapsed_tics;
 }
 
-// hack alert: this is here because I_GetTimeFrac() makes console movement way too fast
-// TODO: remove
-fixed_t I_GetTimeFracOld(void) {
-	static Uint64 basetime = 0;
-	tic_t prev_tics = I_GetTime();
+fixed_t I_GetTimeFracOld(void) //hack for smooth console
+{
 	Uint64 ticks;
 	Uint64 prevticks;
 	fixed_t frac;

@@ -4676,7 +4676,6 @@ boolean TryRunTics(tic_t realtics)
 
 	ticking = neededtic > gametic;
 
-
 	if (player_joining)
 	{
 		return false;
