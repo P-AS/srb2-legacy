@@ -399,9 +399,9 @@ void SCR_DisplayTicRate(void)
 
 		if (cap > 0)
 		{
-			V_DrawString(vid.width-(104*vid.dupx), h,
+			V_DrawString(vid.width-(88*vid.dupx), h,
 				V_YELLOWMAP|V_NOSCALESTART, "FPS:");
-			V_DrawString(vid.width-(72*vid.dupx), h,
+			V_DrawString(vid.width-(56*vid.dupx), h,
 				ticcntcolor|V_NOSCALESTART, va("%4.0f/%4u", fps, cap));
 		}
 		else
