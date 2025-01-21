@@ -2042,6 +2042,16 @@ static Uint64 tic_epoch;
 static double tic_frequency;
 static Uint64 basetime = 0;
 static double elapsed_tics;
+
+
+static void UpdateTicFreq(void)
+{
+	tic_frequency = (timer_frequency / (double)NEWTICRATE) / (cv_timescale.value/(float)FRACUNIT);
+}
+
+static CV_PossibleValue_t timescale_cons_t[] = {{FRACUNIT/20, "MIN"}, {20*FRACUNIT, "MAX"}, {0, NULL}};
+consvar_t cv_timescale = {"timescale", "1.0", CV_NETVAR|CV_CHEAT|CV_FLOAT|CV_CALL, timescale_cons_t, UpdateTicFreq, FRACUNIT, NULL, NULL, 0, 0, NULL};
+
 static void UpdateElapsedTics(void)
 {
 
@@ -2167,6 +2177,7 @@ double I_GetFrameTime(void)
 //
 void I_StartupTimer(void)
 {
+	CV_RegisterVar(&cv_timescale);
 	timer_frequency = SDL_GetPerformanceFrequency();
 	tic_epoch       = SDL_GetPerformanceCounter();
 	tic_frequency   = timer_frequency / (double)NEWTICRATE;

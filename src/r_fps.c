@@ -58,6 +58,14 @@ consvar_t cv_fpscap = {"fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, N
 
 UINT32 R_GetFramerateCap(void)
 {
+
+	if (rendermode == render_none)
+	{
+		// If we're not rendering (dedicated server),
+		// we shouldn't be using any interpolation.
+		return TICRATE;
+	}
+
 	if (cv_fpscap.value < 0)
 	{
 		return I_GetRefreshRate();
@@ -69,7 +77,7 @@ UINT32 R_GetFramerateCap(void)
 
 boolean R_UsingFrameInterpolation(void)
 {
-	return (R_GetFramerateCap() != TICRATE); // maybe use ">" instead?
+	return (R_GetFramerateCap() != TICRATE || cv_timescale.value < FRACUNIT);
 }
 
 static viewvars_t p1view_old;
