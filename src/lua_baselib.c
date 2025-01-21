@@ -1062,8 +1062,8 @@ static int lib_pTeleportMove(lua_State *L)
 	NOHUD
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	//LUA_Deprecated(L, "P_TeleportMove", "P_SetOrigin or P_MoveOrigin"); Who the fuck is updating their 2.1 lua scripts to use P_SetOrigin/MoveOrigin
-	lua_pushboolean(L, P_SetOrigin(thing, x, y, z));
+	//LUA_Deprecated(L, "P_TeleportMove", "P_SetOrigin\" or \"P_MoveOrigin"); Who the fuck is updating their 2.1 lua scripts to use P_SetOrigin/MoveOrigin
+	lua_pushboolean(L, P_MoveOrigin(thing, x, y, z));
 	LUA_PushUserdata(L, tmthing, META_MOBJ);
 	P_SetTarget(&tmthing, ptmthing);
 	return 2;
