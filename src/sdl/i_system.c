@@ -2052,8 +2052,14 @@ static void UpdateElapsedTics(void)
 
 tic_t I_GetTime(void)
 {
+	float f = 0.0f;
+
 	UpdateElapsedTics();
-	return (tic_t) floor(elapsed_tics);
+
+	// This needs kept in a separate variable before converting
+	// to tic_t, due to stupid -Wbad-function-cast error.
+	f = floor(elapsed_tics);
+	return (tic_t)f;
 }
 
 
@@ -2219,7 +2225,7 @@ boolean I_FrameCapSleep(const double t)
 
 	while (curTime < destTime)
 	{
-		if (curTime < sleepTime && cv_sleep.value <= 0)
+		if (curTime < sleepTime && cv_sleep.value > 0)
 		{
 			// Wait 1ms at a time (on default settings)
 			// until we're close enough.
