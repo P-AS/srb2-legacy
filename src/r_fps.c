@@ -77,6 +77,14 @@ UINT32 R_GetFramerateCap(void)
 
 boolean R_UsingFrameInterpolation(void)
 {
+
+	if (rendermode == render_none)
+	{
+		// If we're not rendering (dedicated server),
+		// we shouldn't be using any interpolation.
+		return TICRATE;
+	}
+
 	return (R_GetFramerateCap() != TICRATE || cv_timescale.value < FRACUNIT);
 }
 

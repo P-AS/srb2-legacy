@@ -50,6 +50,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "hu_stuff.h"
 #include "i_sound.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "m_argv.h"
 #include "m_menu.h"
@@ -513,29 +514,25 @@ tic_t rendergametic;
 
 void D_SRB2Loop(void)
 {
-	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
-	boolean ticked = false;
+	tic_t realtics = 0, rendertimeout = INFTICS;
+
 	boolean interp = false;
 	boolean doDisplay = false;
-	double frameEnd = 0.0;	
 	boolean screenUpdate = false;
 
-
+	double frameEnd = 0.0;
 
 	if (dedicated)
 		server = true;
 
 	// Pushing of + parameters is now done back in D_SRB2Main, not here.
 
-	CONS_Printf("I_StartupKeyboard()...\n");
-	I_StartupKeyboard();
-
 #ifdef _WINDOWS
 	CONS_Printf("I_StartupMouse()...\n");
 	I_DoStartupMouse();
 #endif
 
-	oldentertics = I_GetTime();
+	I_UpdateTime(cv_timescale.value);
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
 	con_startup = false;
@@ -543,6 +540,7 @@ void D_SRB2Loop(void)
 	// make sure to do a d_display to init mode _before_ load a level
 	SCR_SetMode(); // change video mode
 	SCR_Recalc();
+
 
 	// Check and print which version is executed.
 	// Use this as the border between setup and the main game loop being entered.
@@ -569,18 +567,17 @@ void D_SRB2Loop(void)
 	{
 		frameEnd = I_GetFrameTime();
 
+		I_UpdateTime(cv_timescale.value);
+
+		// Can't guarantee that I_UpdateTime won't be called inside TryRunTics
+		// so capture the realtics for later use
+		realtics = g_time.realtics;
+
 		if (lastwipetic)
 		{
-			oldentertics = lastwipetic;
+			// oldentertics = lastwipetic;
 			lastwipetic = 0;
 		}
-
-		// get real tics
-		entertic = I_GetTime();
-		realtics = entertic - oldentertics;
-		oldentertics = entertic;
-
-
 
 		if (demoplayback && gamestate == GS_LEVEL)
 		{
@@ -588,16 +585,14 @@ void D_SRB2Loop(void)
 			realtics = realtics * cv_playbackspeed.value;
 		}
 
-
 #ifdef DEBUGFILE
 		if (!realtics)
 			if (debugload)
 				debugload--;
 #endif
 
-		interp = R_UsingFrameInterpolation();
+		interp = R_UsingFrameInterpolation() && !dedicated;
 		doDisplay = screenUpdate = false;
-		ticked = false;
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -613,16 +608,16 @@ void D_SRB2Loop(void)
 				realtics = 1;
 
 			// process tics (but maybe not if realtic == 0)
-			ticked = TryRunTics(realtics);
+			TryRunTics(realtics);
 
 			if (lastdraw || singletics || gametic > rendergametic)
 			{
 				rendergametic = gametic;
-				rendertimeout = entertic+TICRATE/17;
+				rendertimeout = g_time.time + TICRATE/17;
 
 				doDisplay = true;
 			}
-			else if (rendertimeout < entertic) // in case the server hang or netsplit
+			else if (rendertimeout < g_time.time) // in case the server hang or netsplit
 			{
 				// Lagless camera! Yay!
 				if (gamestate == GS_LEVEL && netgame)
@@ -645,51 +640,19 @@ void D_SRB2Loop(void)
 
 		if (interp)
 		{
-			static float tictime = 0.0f;
-			static float prevtime = 0.0f;
-			float entertime = I_GetTimeFrac();
-
-			fixed_t entertimefrac = FRACUNIT;
-
-			if (ticked)
-			{
-				tictime = entertime;
-			}
-
+			renderdeltatics = g_time.deltatics;
 
 			if (!(paused || P_AutoPause()))
 			{
-#if 0
-				CONS_Printf("prevtime = %f\n", prevtime);
-				CONS_Printf("entertime = %f\n", entertime);
-				CONS_Printf("tictime = %f\n", tictime);
-				CONS_Printf("entertime - prevtime = %f\n", entertime - prevtime);
-				CONS_Printf("entertime - tictime = %f\n", entertime - tictime);
-				CONS_Printf("========\n");
-#endif
-
-				if (entertime - prevtime >= 1.0f)
-				{
-					// Lagged for more frames than a gametic...
-					// No need for interpolation.
-					entertimefrac = FRACUNIT;
-				}
-				else
-				{
-					entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
-				}
-
-		
-				renderdeltatics = (fixed_t)(entertime - prevtime);
-
-				rendertimefrac = entertimefrac;
+				rendertimefrac = g_time.timefrac;
 			}
-
-			prevtime = entertime;
+			else
+			{
+				rendertimefrac = FRACUNIT;
+			}
 		}
 		else
 		{
-
 			renderdeltatics = realtics * FRACUNIT;
 			rendertimefrac = FRACUNIT;
 		}
@@ -699,26 +662,16 @@ void D_SRB2Loop(void)
 			screenUpdate = D_Display();
 		}
 
-
 		// consoleplayer -> displayplayer (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
-
-		// check for media change, loop music..
-		I_UpdateCD();
 
 #ifdef HW3SOUND
 		HW3S_EndFrameUpdate();
 #endif
 
-#ifdef HAVE_BLUA
 		LUA_Step();
-#endif
-
-
 
 		// Fully completed frame made.
-		
-
 		if (!singletics)
 		{
 			I_FrameCapSleep(frameEnd);
@@ -728,9 +681,7 @@ void D_SRB2Loop(void)
 		// because it synchronizes it more closely with the frame counter.
 		if (screenUpdate == true)
 		{
-			//PS_START_TIMING(ps_swaptime);
 			I_FinishUpdate(); // page flip or blit buffer
-			//PS_STOP_TIMING(ps_swaptime);
 		}
 
 		// Only take screenshots after drawing.
@@ -1208,8 +1159,8 @@ void D_SRB2Main(void)
 	//---------------------------------------------------- READY TIME
 	// we need to check for dedicated before initialization of some subsystems
 
-	CONS_Printf("I_StartupTimer()...\n");
-	I_StartupTimer();
+	CONS_Printf("I_InitializeTime()...\n");
+	I_InitializeTime();
 
 	// Make backups of some SOCcable tables.
 	P_BackupTables();

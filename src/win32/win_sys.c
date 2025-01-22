@@ -35,6 +35,7 @@
 #include <mmsystem.h>
 
 #include "../m_misc.h"
+#include "../i_time.h"
 #include "../i_video.h"
 #include "../i_sound.h"
 #include "../i_system.h"
@@ -295,6 +296,8 @@ void I_Sleep(void)
 {
 	if (cv_sleep.value != -1)
 		Sleep(cv_sleep.value);
+	
+	I_UpdateTime(cv_timescale.value);
 }
 
 // should move to i_video

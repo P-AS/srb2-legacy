@@ -19,6 +19,7 @@
 #include "hu_stuff.h"
 #include "r_local.h"
 #include "s_sound.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "v_video.h"
 #include "w_wad.h"

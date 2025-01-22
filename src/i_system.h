@@ -43,14 +43,9 @@ extern UINT8 keyboard_started;
 size_t I_GetFreeMem(size_t *total);
 
 
-/**	\brief  Called by D_SRB2Loop, returns current time in game tics.
-*/
-tic_t I_GetTime(void); 
-
-
-/** \brief  Get the current time in game tics, including fractions. 
-*/
-float I_GetTimeFrac(void);
+/** \brief  Calculates the elapsed microseconds between two precise_t.
+  */
+double I_PreciseElapsedSeconds(precise_t before, precise_t after);
 
 fixed_t I_GetTimeFracOld(void);
 

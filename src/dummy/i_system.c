@@ -11,18 +11,6 @@ size_t I_GetFreeMem(size_t *total)
 	return 0;
 }
 
-tic_t I_GetTime(void)
-{
-	return 0;
-} 
-
-fixed_t I_GetTimeFrac(void)
-{
-  
-  return 0;
-}
-
-
 void I_Sleep(void){}
 
 void I_GetEvent(void){}
