@@ -319,56 +319,69 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 // moved out of os-specific code for consistency
 double averageFPS = 0.0f;
 
-#define FPS_SAMPLE_RATE (50000) // How often to update FPS samples, in microseconds
-#define NUM_FPS_SAMPLES 16 // Number of samples to store
+#define USE_FPS_SAMPLES
+
+#ifdef USE_FPS_SAMPLES
+#define FPS_SAMPLE_RATE (0.05) // How often to update FPS samples, in seconds
+#define NUM_FPS_SAMPLES (16) // Number of samples to store
 
 static double fps_samples[NUM_FPS_SAMPLES];
+static double updateElapsed = 0.0;
+#endif
+
+static boolean fps_init = false;
+static precise_t fps_enter = 0;
 
 void SCR_CalculateFPS(void)
 {
-	static boolean init = false;
+	precise_t fps_finish = 0;
 
-	static precise_t startTime = 0;
-	precise_t endTime = 0;
+	double frameElapsed = 0.0;
 
-	static precise_t updateTime = 0;
-	int updateElapsed = 0;
-	int i;
-
-	endTime = I_GetPreciseTime();
-
-	if (init == false)
+	if (fps_init == false)
 	{
-		startTime = updateTime = endTime;
-		init = true;
-		return;
+		fps_enter = I_GetPreciseTime();
+		fps_init = true;
 	}
 
-	updateElapsed = (endTime - updateTime) / (I_GetPrecisePrecision() / 1000000);
+	fps_finish = I_GetPreciseTime();
+	frameElapsed = (double)((INT64)(fps_finish - fps_enter)) / I_GetPrecisePrecision();
+	fps_enter = fps_finish;
 
+#ifdef USE_FPS_SAMPLES
+	updateElapsed += frameElapsed;
 
 	if (updateElapsed >= FPS_SAMPLE_RATE)
 	{
 		static int sampleIndex = 0;
-		int frameElapsed = (endTime - startTime) / (I_GetPrecisePrecision() / 1000000);
+		int i;
 
-		fps_samples[sampleIndex] = frameElapsed / 1000.0f;
+		fps_samples[sampleIndex] = frameElapsed;
 
 		sampleIndex++;
 		if (sampleIndex >= NUM_FPS_SAMPLES)
 			sampleIndex = 0;
 
-		averageFPS = 0.0f;
+		averageFPS = 0.0;
 		for (i = 0; i < NUM_FPS_SAMPLES; i++)
 		{
 			averageFPS += fps_samples[i];
 		}
-		averageFPS = 1000.0f / (averageFPS / NUM_FPS_SAMPLES);
 
-		updateTime = endTime;
+		if (averageFPS > 0.0)
+		{
+			averageFPS = 1.0 / (averageFPS / NUM_FPS_SAMPLES);
+		}
 	}
 
-	startTime = endTime;
+	while (updateElapsed >= FPS_SAMPLE_RATE)
+	{
+		updateElapsed -= FPS_SAMPLE_RATE;
+	}
+#else
+	// Direct, unsampled counter.
+	averageFPS = 1.0 / frameElapsed;
+#endif
 }
 
 
@@ -396,24 +409,41 @@ void SCR_DisplayTicRate(void)
 
 	if (cv_ticrate.value == 2) // compact counter
 	{
-		V_DrawRightAlignedString(vid.width, h,
+		if (fps < 100.0f)
+		{
+		V_DrawString(vid.width-36*vid.dupx, h,
 			ticcntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
+		}
+		else if (fps > 100.0f)
+		{
+		V_DrawString(vid.width-44*vid.dupx, h,
+			ticcntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
+		}
 	}
 	else if (cv_ticrate.value == 1) // full counter
 	{
+		const char *drawnstr;
+		INT32 width;
+
+		// The highest assignable cap is < 1000, so 3 characters is fine.
 		if (cap > 0)
-		{
-			V_DrawString(vid.width-(104*vid.dupx), h,
-				V_YELLOWMAP|V_NOSCALESTART, "FPS:");
-			V_DrawString(vid.width-(72*vid.dupx), h,
-				ticcntcolor|V_NOSCALESTART, va("%4.0f/%4u", fps, cap));
-		}
+			drawnstr = va("%3.0f/%3u", fps, cap);
 		else
+			drawnstr = va("%4.2f", averageFPS);
+
+		width = V_StringWidth(drawnstr, V_NOSCALESTART);
+
+		V_DrawString((vid.width - 88 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
+			V_YELLOWMAP|V_NOSCALESTART, "FPS:");
+		if (fps < 100.0f) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
 		{
-			V_DrawString(vid.width-(88*vid.dupx), h,
-				V_YELLOWMAP|V_NOSCALESTART, "FPS:");
-			V_DrawString(vid.width-(56*vid.dupx), h,
-				ticcntcolor|V_NOSCALESTART, va("%4.0f", fps));
+		V_DrawString(vid.width - 36*vid.dupx, h,
+			ticcntcolor|V_NOSCALESTART, drawnstr);
+		}
+	else if (fps > 100.0f)
+		{
+		V_DrawString(vid.width - 44*vid.dupx, h,
+			ticcntcolor|V_NOSCALESTART, drawnstr);
 		}
 	}
 }
