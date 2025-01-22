@@ -514,13 +514,13 @@ tic_t rendergametic;
 
 void D_SRB2Loop(void)
 {
-	tic_t realtics = 0, rendertimeout = INFTICS;
+	tic_t entertic = 0, oldentertics = 0, realtics = 0, rendertimeout = INFTICS;
+	double deltatics = 0.0;
+	double deltasecs = 0.0;
 
 	boolean interp = false;
 	boolean doDisplay = false;
 	boolean screenUpdate = false;
-
-	double frameEnd = 0.0;
 
 	if (dedicated)
 		server = true;
@@ -533,6 +533,8 @@ void D_SRB2Loop(void)
 #endif
 
 	I_UpdateTime(cv_timescale.value);
+	oldentertics = I_GetTime();
+
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
 	con_startup = false;
@@ -565,19 +567,32 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
-		frameEnd = I_GetFrameTime();
+		// capbudget is the minimum precise_t duration of a single loop iteration
+		precise_t capbudget;
+		precise_t enterprecise = I_GetPreciseTime();
+		precise_t finishprecise = enterprecise;
+
+		{
+			// Casting the return value of a function is bad practice (apparently)
+			double budget = round((1.0 / R_GetFramerateCap()) * I_GetPrecisePrecision());
+			capbudget = (precise_t) budget;
+		}
+
 
 		I_UpdateTime(cv_timescale.value);
 
-		// Can't guarantee that I_UpdateTime won't be called inside TryRunTics
-		// so capture the realtics for later use
-		realtics = g_time.realtics;
 
 		if (lastwipetic)
 		{
-			// oldentertics = lastwipetic;
+			oldentertics = lastwipetic;
 			lastwipetic = 0;
 		}
+
+		// get real tics
+		entertic = I_GetTime();
+		realtics = entertic - oldentertics;
+		oldentertics = entertic;
+
 
 		if (demoplayback && gamestate == GS_LEVEL)
 		{
@@ -613,11 +628,11 @@ void D_SRB2Loop(void)
 			if (lastdraw || singletics || gametic > rendergametic)
 			{
 				rendergametic = gametic;
-				rendertimeout = g_time.time + TICRATE/17;
+				rendertimeout = entertic + TICRATE/17;
 
 				doDisplay = true;
 			}
-			else if (rendertimeout < g_time.time) // in case the server hang or netsplit
+			else if (rendertimeout < entertic) // in case the server hang or netsplit
 			{
 				// Lagless camera! Yay!
 				if (gamestate == GS_LEVEL && netgame)
@@ -640,7 +655,7 @@ void D_SRB2Loop(void)
 
 		if (interp)
 		{
-			renderdeltatics = g_time.deltatics;
+			renderdeltatics = FLOAT_TO_FIXED(deltatics);
 
 			if (!(paused || P_AutoPause()))
 			{
@@ -671,11 +686,6 @@ void D_SRB2Loop(void)
 
 		LUA_Step();
 
-		// Fully completed frame made.
-		if (!singletics)
-		{
-			I_FrameCapSleep(frameEnd);
-		}
 
 		// I_FinishUpdate is now here instead of D_Display,
 		// because it synchronizes it more closely with the frame counter.
@@ -683,6 +693,21 @@ void D_SRB2Loop(void)
 		{
 			I_FinishUpdate(); // page flip or blit buffer
 		}
+
+		// Fully completed frame made.
+		finishprecise = I_GetPreciseTime();
+		if (!singletics)
+		{
+			INT64 elapsed = (INT64)(finishprecise - enterprecise);
+			if (elapsed > 0 && (INT64)capbudget > elapsed)
+			{
+				I_SleepDuration(capbudget - (finishprecise - enterprecise));
+			}
+		}
+		// Capture the time once more to get the real delta time.
+		finishprecise = I_GetPreciseTime();
+		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
+		deltatics = deltasecs * NEWTICRATE;
 
 		// Only take screenshots after drawing.
 		if (moviemode)

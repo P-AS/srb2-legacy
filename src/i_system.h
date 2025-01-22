@@ -43,15 +43,19 @@ extern UINT8 keyboard_started;
 size_t I_GetFreeMem(size_t *total);
 
 
-/** \brief  Calculates the elapsed microseconds between two precise_t.
-  */
-double I_PreciseElapsedSeconds(precise_t before, precise_t after);
-
-fixed_t I_GetTimeFracOld(void);
-
-/**	\brief	Returns precise time value for performance measurement.
-  */
+/**	\brief	Returns precise time value for performance measurement. The precise
+            time should be a monotonically increasing counter, and will wrap.
+			precise_t is internally represented as an unsigned integer and
+			integer arithmetic may be used directly between values of precise_t.
+*/
 precise_t I_GetPreciseTime(void);
+
+
+/** \brief  Get the precision of precise_t in units per second. Invocations of
+            this function for the program's duration MUST return the same value.
+  */
+UINT64 I_GetPrecisePrecision(void);
+
 
 /**	\brief	Returns the difference between precise times as microseconds.
   */
@@ -62,17 +66,15 @@ int I_PreciseToMicros(precise_t);
 double I_GetFrameTime(void);
 
 
-/**	\brief	Sleeps for a variable amount of time, depending on how much time the last frame took.
-
-	\return	void
+/**	\brief	Sleeps for the given duration in milliseconds. Depending on the
+            operating system's scheduler, the calling thread may give up its
+			time slice for a longer duration. The implementation should give a
+			best effort to sleep for the given duration, without spin-locking.
+			Calling code should check the current precise time after sleeping
+			and not assume the thread has slept for the expected duration.
 */
-boolean I_FrameCapSleep(const double frameStart);
+void I_Sleep(UINT32 ms);
 
-/**	\brief	Sleeps by the value of cv_sleep
-
-	\return	void
-*/
-void I_Sleep(void);
 
 /**	\brief Get events
 

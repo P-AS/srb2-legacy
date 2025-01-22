@@ -2006,7 +2006,10 @@ static boolean CL_ServerConnectionTicker(boolean viams, const char *tmpsave, tic
 #endif
 	}
 	else
-		I_Sleep();
+	{
+		I_Sleep(cv_sleep.value);
+		I_UpdateTime(cv_timescale.value);
+	}
 
 	return true;
 }

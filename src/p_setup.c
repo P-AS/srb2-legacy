@@ -2770,7 +2770,11 @@ boolean P_SetupLevel(boolean skipprecip)
 		{
 			// wait loop
 			while (!((nowtime = I_GetTime()) - lastwipetic))
-				I_Sleep();
+			{
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+			}
+
 			lastwipetic = nowtime;
 			if (moviemode) // make sure we save frames for the white hold too
 				M_SaveFrame();
