@@ -7739,7 +7739,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->watertop = INT32_MAX;
 
 	mobj->resetinterp = true;
-	
+
 	if (z == ONFLOORZ)
 	{
 		mobj->z = mobj->floorz;
