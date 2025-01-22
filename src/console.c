@@ -533,10 +533,7 @@ static void CON_MoveConsole(void)
 	}
 
 	// Not instant - Increment fracmovement fractionally
-	if (R_UsingFrameInterpolation())
-	fracmovement += FixedMul(cons_speed.value*vid.fdupy, I_GetTimeFracOld());
-	else 
-	fracmovement += FixedMul(cons_speed.value*vid.fdupy, FRACUNIT);
+	fracmovement += FixedMul(cons_speed.value*vid.fdupy, renderdeltatics);
 
 	if (con_curlines < con_destlines) // Move the console downwards
 	{
