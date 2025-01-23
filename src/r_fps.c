@@ -45,12 +45,12 @@ static CV_PossibleValue_t fpscap_cons_t[] = {
 	{100, "100"},
 	{120, "120"},
 	{144, "144"},
+	{165, "165"},
 	{200, "200"},
 	{240, "240"},
 	{0, NULL}
 };
  // Sadly, I haven't been able to get individual cap values to work properly :(
-
 
 consvar_t cv_fpscap = {"fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
