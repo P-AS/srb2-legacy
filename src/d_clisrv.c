@@ -119,6 +119,12 @@ static UINT8 resynch_local_inprogress = false; // WE are desynched and getting p
 static UINT8 player_joining = false;
 UINT8 hu_resynching = 0;
 
+
+
+
+// true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
+boolean hu_stopped = false;
+
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
 
@@ -4683,8 +4689,16 @@ boolean TryRunTics(tic_t realtics)
 
 	ticking = neededtic > gametic;
 
+	if (ticking)
+	{
+		if (realtics)
+			hu_stopped = false;
+	}
+
 	if (player_joining)
 	{
+		if (realtics)
+			hu_stopped = true;
 		return false;
 	}
 
@@ -4704,6 +4718,11 @@ boolean TryRunTics(tic_t realtics)
 				gametic++;
 				consistancy[gametic%BACKUPTICS] = Consistancy();
 			}
+	}
+	else
+	{
+		if (realtics)
+			hu_stopped = true;
 	}
 	return ticking;
 }
