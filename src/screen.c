@@ -438,7 +438,7 @@ void SCR_DisplayTicRate(void)
 		V_DrawString(vid.width - 36*vid.dupx, h,
 			ticcntcolor|V_NOSCALESTART, drawnstr);
 		}
-	else if (fps > 100.0f)
+	else if (fps >= 100.0f)
 		{
 		V_DrawString(vid.width - 44*vid.dupx, h,
 			ticcntcolor|V_NOSCALESTART, drawnstr);
