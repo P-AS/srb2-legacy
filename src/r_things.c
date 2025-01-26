@@ -1140,7 +1140,6 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 //
 static void R_ProjectSprite(mobj_t *thing)
 {
-	mobj_t *oldthing = thing;
 	fixed_t tr_x, tr_y;
 	fixed_t gxt, gyt;
 	fixed_t tx, tz;
@@ -1306,12 +1305,12 @@ static void R_ProjectSprite(mobj_t *thing)
 		// When vertical flipped, draw sprites from the top down, at least as far as offsets are concerned.
 		// sprite height - sprite topoffset is the proper inverse of the vertical offset, of course.
 		// remember gz and gzt should be seperated by sprite height, not thing height - thing height can be shorter than the sprite itself sometimes!
-		gz = interp.z + oldthing->height - FixedMul(spritecachedinfo[lump].topoffset, this_scale);
+		gz = interp.z + thing->height - FixedMul(spritecachedinfo[lump].topoffset, this_scale);
 		gzt = gz + FixedMul(spritecachedinfo[lump].height, this_scale);
 	}
 	else
 	{
-		gzt = interp.z + spritecachedinfo[lump].topoffset;
+		gzt = interp.z + FixedMul(spritecachedinfo[lump].topoffset, this_scale);
 		gz = gzt - FixedMul(spritecachedinfo[lump].height, this_scale);
 	}
 
