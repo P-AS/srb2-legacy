@@ -423,7 +423,6 @@ void SCR_DisplayTicRate(void)
 	else if (cv_ticrate.value == 1) // full counter
 	{
 		const char *drawnstr;
-		INT32 width;
 
 		// The highest assignable cap is < 1000, so 3 characters is fine.
 		if (cap > 0)
@@ -431,11 +430,31 @@ void SCR_DisplayTicRate(void)
 		else
 			drawnstr = va("%4.2f", averageFPS);
 
-		width = V_StringWidth(drawnstr, V_NOSCALESTART);
-
-		V_DrawString((vid.width - 88 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
+		V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
 			V_YELLOWMAP|V_NOSCALESTART, "FPS:");
-		if (fps < 100.0f) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
+
+		if (cap > 0) // there has to be a better way to do this :sob:
+		{	
+		if (cap < 100) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
+		{
+			V_DrawString(vid.width - 48*vid.dupx, h,
+			ticcntcolor|V_NOSCALESTART, drawnstr);
+		}
+		else if (cap >= 100 && !(fps >= 100.0f))
+		{
+		V_DrawString(vid.width - 52*vid.dupx, h,
+			ticcntcolor|V_NOSCALESTART, drawnstr);
+		}
+		else if (cap >= 100 && fps >= 100.0f) // ok, this is actually painful...
+		{
+		V_DrawString(vid.width - 56*vid.dupx, h,
+			ticcntcolor|V_NOSCALESTART, drawnstr);
+		}
+		}
+
+		else
+		{
+	if (fps < 100.0f) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
 		{
 		V_DrawString(vid.width - 36*vid.dupx, h,
 			ticcntcolor|V_NOSCALESTART, drawnstr);
@@ -444,6 +463,7 @@ void SCR_DisplayTicRate(void)
 		{
 		V_DrawString(vid.width - 44*vid.dupx, h,
 			ticcntcolor|V_NOSCALESTART, drawnstr);
+		}
 		}
 	}
 }
