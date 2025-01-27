@@ -419,9 +419,19 @@ void SCR_DisplayTicRate(void)
 			V_DrawString(vid.width - 48*vid.dupx, h,
 			ticcntcolor|V_NOSCALESTART, drawnstr);
 		}
+		if (fps < 10.0f) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
+		{
+			V_DrawString(vid.width - 44*vid.dupx, h,
+			ticcntcolor|V_NOSCALESTART, drawnstr);
+		}
 		else if (cap >= 100 && !(fps >= 100.0f))
 		{
 		V_DrawString(vid.width - 52*vid.dupx, h,
+			ticcntcolor|V_NOSCALESTART, drawnstr);
+		}
+		else if (cap >= 100 && (fps <= 100.0f))
+		{
+		V_DrawString(vid.width - 56*vid.dupx, h,
 			ticcntcolor|V_NOSCALESTART, drawnstr);
 		}
 		else if (cap >= 100 && fps >= 100.0f) // ok, this is actually painful...
