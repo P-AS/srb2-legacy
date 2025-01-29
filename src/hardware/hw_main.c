@@ -6236,6 +6236,7 @@ static inline void HWR_AddEngineCommands(void)
 // --------------------------------------------------------------------------
 void HWR_Startup(void)
 {
+	INT32 i;
 	static boolean startupdone = false;
 
 
@@ -6265,8 +6266,10 @@ void HWR_Startup(void)
 
 	startupdone = true;
 
-	HWD.pfnKillShaders();
-	HWD.pfnLoadShaders();
+
+	for (i = 0; i < numwadfiles; i++)
+		HWR_LoadShaders(i, (wadfiles[i]->type == RET_PK3));
+	HWD.pfnInitCustomShaders();
 }
 
 
@@ -6678,8 +6681,6 @@ skip_field:
 			linenum++;
 		}
 	}
-
-	HWD.pfnInitCustomShaders();
 
 	Z_Free(line);
 	return;
