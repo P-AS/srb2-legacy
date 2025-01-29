@@ -1043,7 +1043,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		frame = (spr->mobj->frame & FF_FRAMEMASK) % md2->model->meshes[0].numFrames;
 
 #ifdef USE_MODEL_NEXTFRAME
-		if (cv_grmd2interpolation.value && tics <= durs)
+		if ((cv_grmodelinterpolation.value == 1 && tics <= durs) || cv_grmodelinterpolation.value == 2 )
 		{
 			// frames are handled differently for states with FF_ANIMATE, so get the next frame differently for the interpolation
 			if (spr->mobj->frame & FF_ANIMATE)
