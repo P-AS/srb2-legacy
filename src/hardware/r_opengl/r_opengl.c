@@ -547,6 +547,7 @@ static char *gl_customfragmentshaders[MAXSHADERS];
 static boolean gl_allowshaders = false;
 static boolean gl_shadersenabled = false;
 static GLuint gl_currentshaderprogram = 0;
+static boolean gl_shaderprogramchanged = true;
 
 // 13062019
 typedef enum
@@ -1073,9 +1074,14 @@ EXPORT void HWRAPI(SetShader) (int shader)
 		// Should use an enum or something...
 		if (shader == 4 && model_lighting && !gl_shaderprograms[4].custom)
 			shader = 8;
-		
+
+		if ((GLuint)shader != gl_currentshaderprogram)
+		{
+			gl_currentshaderprogram = shader;
+			gl_shaderprogramchanged = true;
+		}
+
 		gl_shadersenabled = true;
-		gl_currentshaderprogram = shader;
 		return;
 	}
 #else
@@ -1089,6 +1095,7 @@ EXPORT void HWRAPI(UnSetShader) (void)
 #ifdef GL_SHADERS
 	gl_shadersenabled = false;
 	gl_currentshaderprogram = 0;
+	pglUseProgram(0);
 #endif
 }
 
@@ -1890,7 +1897,11 @@ static void *Shader_Load(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *
 		gl_shaderprogram_t *shader = &gl_shaderprograms[gl_currentshaderprogram];
 		if (shader->program)
 		{
-			pglUseProgram(gl_shaderprograms[gl_currentshaderprogram].program);
+			if (gl_shaderprogramchanged)
+			{
+				pglUseProgram(gl_shaderprograms[gl_currentshaderprogram].program);
+				gl_shaderprogramchanged = false;
+			}
 			Shader_SetUniforms(Surface, poly, tint, fade);
 			return shader;
 		}
@@ -2078,10 +2089,6 @@ EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUI
 
 	if (PolyFlags & PF_ForceWrapY)
 		Clamp2D(GL_TEXTURE_WRAP_T);
-
-	#ifdef GL_SHADERS
-	pglUseProgram(0);
-	#endif
 }
 
 // PRBoom sky dome
@@ -2890,9 +2897,6 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, INT32 duration, INT32 
 		pglShadeModel(GL_FLAT);
 	}
 #endif
-	#ifdef GL_SHADERS
-	pglUseProgram(0);
-	#endif
 }
 
 // -----------------+
