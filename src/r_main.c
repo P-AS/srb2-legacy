@@ -1876,27 +1876,4 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_viewheight);
 	// Uncapped
 	CV_RegisterVar(&cv_fpscap);
-
-#ifdef HWRENDER
-	// GL-specific Commands
-	CV_RegisterVar(&cv_grgammablue);
-	CV_RegisterVar(&cv_grgammagreen);
-	CV_RegisterVar(&cv_grgammared);
-	CV_RegisterVar(&cv_grfovchange);
-#ifdef ALAM_LIGHTING
-	CV_RegisterVar(&cv_grstaticlighting);
-	CV_RegisterVar(&cv_grdynamiclighting);
-	CV_RegisterVar(&cv_grcoronas);
-	CV_RegisterVar(&cv_grcoronasize);
-#endif
-	CV_RegisterVar(&cv_grmd2);
-	CV_RegisterVar(&cv_grmodelinterpolation);
-	CV_RegisterVar(&cv_grspritebillboarding);
-	CV_RegisterVar(&cv_grskydome);
-#endif
-
-#ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
-		HWR_AddCommands();
-#endif
 }
