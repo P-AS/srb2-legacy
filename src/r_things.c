@@ -742,7 +742,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 #endif
 	fixed_t frac;
 	patch_t *patch = W_CacheLumpNum(vis->patch, PU_CACHE);
-	fixed_t this_scale = vis->mobj->scale;
+	fixed_t this_scale = vis->thingscale;
 	INT32 x1, x2;
 	INT64 overflow_test;
 
@@ -1165,8 +1165,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t gz, gzt;
 	INT32 heightsec, phs;
 	INT32 light = 0;
-	fixed_t this_scale = thing->scale; 
-
+	fixed_t this_scale;
 
     interpmobjstate_t interp = {0};
 	
@@ -1182,6 +1181,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 
 
+	this_scale = interp.scale;
 
 	// transform the origin point
 	tr_x = interp.x - viewx;
@@ -1420,6 +1420,8 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (vis->x1 > x1)
 		vis->startfrac += FixedDiv(vis->xiscale, this_scale)*(vis->x1-x1);
 
+
+	vis->thingscale = interp.scale;
 	//Fab: lumppat is the lump number of the patch to use, this is different
 	//     than lumpid for sprites-in-pwad : the graphics are patched
 	vis->patch = sprframe->lumppat[rot];

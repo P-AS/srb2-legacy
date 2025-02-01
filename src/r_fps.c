@@ -252,6 +252,14 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 	out->y =  R_LerpFixed(mobj->old_y, mobj->y, frac);
 	out->z =  R_LerpFixed(mobj->old_z, mobj->z, frac);
 	out->angle = mobj->resetinterp ? mobj->angle : R_LerpAngle(mobj->old_angle, mobj->angle, frac);
+	if (mobj->scale == mobj->old_scale) // Tiny optimisation - scale is usually unchanging, so let's skip a lerp, two FixedMuls, and two FixedDivs
+	{
+		out->scale = mobj->scale;
+	}
+	else
+	{
+		out->scale = R_LerpFixed(mobj->old_scale, mobj->scale, frac);
+	}
 }
 
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
@@ -342,10 +350,12 @@ void R_ResetMobjInterpolationState(mobj_t *mobj)
 	mobj->old_y2 = mobj->old_y;
 	mobj->old_z2 = mobj->old_z;
 	mobj->old_angle2 = mobj->old_angle;
+	mobj->old_scale2 = mobj->old_scale;
 	mobj->old_x = mobj->x;
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
 	mobj->old_angle = mobj->angle;
+	mobj->old_scale = mobj->scale;
 	mobj->resetinterp = false;
 }
 

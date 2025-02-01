@@ -5547,7 +5547,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 
 
-		this_scale = FIXED_TO_FLOAT(thing->scale);
+	this_scale = FIXED_TO_FLOAT(interp.scale);
 
 	// transform the origin point
 	tr_x = FIXED_TO_FLOAT(interp.x) - gr_viewx;

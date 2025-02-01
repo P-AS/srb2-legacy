@@ -1130,7 +1130,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		color[3] = Surf.FlatColor.s.alpha;
 
 		// SRB2CBTODO: MD2 scaling support
-		finalscale *= FIXED_TO_FLOAT(spr->mobj->scale);
+		finalscale *= FIXED_TO_FLOAT(interp.scale);
 
 		p.flip = atransform.flip;
 #ifdef USE_FTRANSFORM_MIRROR
