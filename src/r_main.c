@@ -775,12 +775,22 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		R_SetViewContext(VIEWCONTEXT_PLAYER2);
 		thiscam = &camera2;
 		chasecam = (cv_chasecam2.value != 0);
+		if (thiscam->reset)
+		{
+			R_ResetViewInterpolation(2);
+			thiscam->reset = false;
+		}
 	}
 	else
 	{
 		R_SetViewContext(VIEWCONTEXT_PLAYER1);
 		thiscam = &camera;
 		chasecam = (cv_chasecam.value != 0);
+		if (thiscam->reset)
+		{
+			R_ResetViewInterpolation(1);
+			thiscam->reset = false;
+		}
 	}
 
 	if (player->climbing || (player->pflags & PF_NIGHTSMODE) || player->playerstate == PST_DEAD)

@@ -107,7 +107,7 @@ extern viewvars_t *newview;
 void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac);
 void R_UpdateViewInterpolation(void);
 void R_SetViewContext(enum viewcontext_e _viewcontext);
-void R_ResetViewInterpolation(void);
+void R_ResetViewInterpolation(UINT8 p);
 void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out);
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out);
 

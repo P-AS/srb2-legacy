@@ -3185,7 +3185,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	
 	if (rendermode != render_none)
 	{
-		R_ResetViewInterpolation();
+		R_ResetViewInterpolation(0);
 		R_UpdateMobjInterpolators();
 		R_UpdateMobjInterpolators();
 	}

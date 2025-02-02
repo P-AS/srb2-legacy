@@ -23,6 +23,7 @@
 #include "p_polyobj.h"
 #endif 
 #include "z_zone.h"
+#include "d_net.h" //MAXSPLITSCREENPLAYERS
 
 
 static CV_PossibleValue_t fpscap_cons_t[] = {
@@ -109,7 +110,7 @@ static size_t levelinterpolators_len;
 static size_t levelinterpolators_size;
 
 
-static boolean oldview_valid = false;
+static int oldview_invalid[MAXSPLITSCREENPLAYERS] = {0, 0};
 
 static mobj_t **interpolated_mobjs = NULL;
 static size_t interpolated_mobjs_len = 0;
@@ -151,6 +152,7 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 {
 	viewvars_t* prevview = oldview;
 	INT32 dy = 0;
+	UINT8 i;
 
 	if (FIXED_TO_FLOAT(frac) < 0)
 		frac = 0;
@@ -159,7 +161,17 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 
 
     
-    if (oldview_valid == false)
+   
+	if (viewcontext == VIEWCONTEXT_SKY1 || viewcontext == VIEWCONTEXT_PLAYER1)
+	{
+		i = 0;
+	}
+	else
+	{
+		i = 1;
+	}
+
+	if (oldview_invalid[i] != 0)
 	{
 		// interpolate from newview to newview
 		prevview = newview;
@@ -205,12 +217,25 @@ void R_UpdateViewInterpolation(void)
 	p2view_old = p2view_new;
 	sky1view_old = sky1view_new;
 	sky2view_old = sky2view_new;
-	oldview_valid = true;
+	if (oldview_invalid[0] > 0) oldview_invalid[0]--;
+	if (oldview_invalid[1] > 0) oldview_invalid[1]--;
 }
 
-void R_ResetViewInterpolation(void)
+
+void R_ResetViewInterpolation(UINT8 p)
 {
-	oldview_valid = false;
+	if (p == 0)
+	{
+		UINT8 i;
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			oldview_invalid[i]++;
+		}
+	}
+	else
+	{
+		oldview_invalid[p - 1]++;
+	}
 }
 
 

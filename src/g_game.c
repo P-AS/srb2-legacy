@@ -2020,7 +2020,10 @@ void G_Ticker(boolean run)
 		case GS_LEVEL:
 			if (titledemo)
 				F_TitleDemoTicker();
+			if (run)
+			{
 				R_UpdateViewInterpolation();
+			}
 			P_Ticker(run); // tic the game
 			ST_Ticker();
 			AM_Ticker();

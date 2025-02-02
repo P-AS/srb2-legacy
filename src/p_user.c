@@ -7839,6 +7839,7 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	thiscam->x = x;
 	thiscam->y = y;
 	thiscam->z = z;
+	thiscam->reset = true;
 
 	if (!(thiscam == &camera && (cv_cam_still.value || cv_analog.value))
 	&& !(thiscam == &camera2 && (cv_cam2_still.value || cv_analog2.value)))
