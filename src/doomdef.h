@@ -15,7 +15,9 @@
 #ifndef __DOOMDEF__
 #define __DOOMDEF__
 
-#define ALAM_LIGHTING
+
+// OpenGL Lighting Features:
+//#define ALAM_LIGHTING // TODO make it work properly with shaders
 
 // Sound system select
 // This should actually be in the makefile,
