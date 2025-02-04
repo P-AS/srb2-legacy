@@ -1970,10 +1970,9 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 }
 
 
-// -----------------+
-// DrawPolygon      : Render a polygon, set the texture, set render mode
-// -----------------+
-EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags)
+// code that is common between DrawPolygon and DrawIndexedTriangles
+// the corona thing is there too, i have no idea if that stuff works with DrawIndexedTriangles and batching
+static void PreparePolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FBITFIELD PolyFlags)
 {
 	static GLRGBAFloat poly = {0,0,0,0};
 	static GLRGBAFloat tint = {0,0,0,0};
@@ -2012,7 +2011,6 @@ EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUI
 		fade.alpha = byte2float[pSurf->FadeColor.s.alpha];
 	}
 
-
 	// this test is added for new coronas' code (without depth buffer)
 	// I think I should do a separate function for drawing coronas, so it will be a little faster
 	if (PolyFlags & PF_Corona) // check to see if we need to draw the corona
@@ -2039,10 +2037,10 @@ EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUI
 		//GL_DBG_Printf("Projection: (%f, %f, %f)\n", px, py, pz);
 
 		if ((pz <  0.0l) ||
-		    (px < -8.0l) ||
-		    (py < viewport[1]-8.0l) ||
-		    (px > viewport[2]+8.0l) ||
-		    (py > viewport[1]+viewport[3]+8.0l))
+			(px < -8.0l) ||
+			(py < viewport[1]-8.0l) ||
+			(px > viewport[2]+8.0l) ||
+			(py > viewport[1]+viewport[3]+8.0l))
 			return;
 
 		// the damned slow glReadPixels functions :(
@@ -2077,6 +2075,16 @@ EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUI
 	}
 
 	Shader_Load(pSurf, &poly, &tint, &fade);
+}
+
+
+// -----------------+
+// DrawPolygon      : Render a polygon, set the texture, set render mode
+// -----------------+
+EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags)
+{
+	PreparePolygon(pSurf, pOutVerts, PolyFlags);
+
 	pglVertexPointer(3, GL_FLOAT, sizeof(FOutVector), &pOutVerts[0].x);
 	pglTexCoordPointer(2, GL_FLOAT, sizeof(FOutVector), &pOutVerts[0].s);
 	pglDrawArrays(GL_TRIANGLE_FAN, 0, iNumPts);
@@ -2090,6 +2098,18 @@ EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUI
 	if (PolyFlags & PF_ForceWrapY)
 		Clamp2D(GL_TEXTURE_WRAP_T);
 }
+
+EXPORT void HWRAPI(DrawIndexedTriangles) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, unsigned int *IndexArray)
+{
+	PreparePolygon(pSurf, pOutVerts, PolyFlags);
+
+	pglVertexPointer(3, GL_FLOAT, sizeof(FOutVector), &pOutVerts[0].x);
+	pglTexCoordPointer(2, GL_FLOAT, sizeof(FOutVector), &pOutVerts[0].s);
+	pglDrawElements(GL_TRIANGLES, iNumPts, GL_UNSIGNED_INT, IndexArray);
+
+	// the DrawPolygon variant of this has some code about polyflags and wrapping here but havent noticed any problems from omitting it?
+}
+
 
 // PRBoom sky dome
 typedef struct vbo_vertex_s
