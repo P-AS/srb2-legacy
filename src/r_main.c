@@ -249,9 +249,9 @@ INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *node)
 	y -= node->y;
 
 	// Try to quickly decide by looking at sign bits.
-	if ((node->dy ^ node->dx ^ x ^ y) < 0)
-		return (node->dy ^ x) < 0;  // (left is negative)
-	return FixedMul(y, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, x);
+	INT32 mask = (node->dy ^ node->dx ^ x ^ y) >> 31;
+	return (mask & ((node->dy ^ x) < 0)) |	// (left is negative)
+		(~mask & (FixedMul(y, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, x)));
 }
 
 // killough 5/2/98: reformatted
@@ -272,9 +272,9 @@ INT32 R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line)
 	y -= ly;
 
 	// Try to quickly decide by looking at sign bits.
-	if ((ldy ^ ldx ^ x ^ y) < 0)
-		return (ldy ^ x) < 0;          // (left is negative)
-	return FixedMul(y, ldx>>FRACBITS) >= FixedMul(ldy>>FRACBITS, x);
+	INT32 mask = (ldy ^ ldx ^ x ^ y) >> 31;
+	return (mask & ((ldy ^ x) < 0)) |	// (left is negative)
+		(~mask & (FixedMul(y, ldx>>FRACBITS) >= FixedMul(ldy>>FRACBITS, x)));
 }
 
 //
