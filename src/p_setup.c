@@ -2831,6 +2831,8 @@ boolean P_SetupLevel(boolean skipprecip)
 	R_ClearLevelSplats();
 #endif
 
+	mobjcache = NULL;
+
 	P_InitThinkers();
 	P_InitCachedActions();
 
