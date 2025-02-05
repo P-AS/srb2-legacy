@@ -2,7 +2,11 @@
 # Makefile options for unices (linux, bsd...)
 #
 
+ifeq (${DEDICATED},1)
+EXENAME?=lsrb2dlegacy
+else
 EXENAME?=lsdl2srb2legacy
+endif
 
 opts+=-DUNIXCOMMON -DLUA_USE_POSIX
 libs+=-lm

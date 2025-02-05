@@ -21,6 +21,14 @@ set(SRB2_CONFIG_HWRENDER ON CACHE BOOL
 	"Enable hardware rendering through OpenGL.")
 set(SRB2_CONFIG_STATIC_OPENGL OFF CACHE BOOL
 	"Use statically linked OpenGL. NOT RECOMMENDED.")
+set(SRB2_CONFIG_DEDICATED OFF CACHE BOOL
+	"Build a dedicated server.")
+
+if(${SRB2_CONFIG_DEDICATED})
+	set(SRB2_CONFIG_HAVE_GME NO)
+	set(SRB2_CONFIG_HAVE_OPENMPT NO)
+	set(SRB2_CONFIG_HWRENDER NO)
+endif()
 
 ### use internal libraries?
 if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
@@ -180,7 +188,11 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
 #	${SRB2_BLUA_HEADERS}
 #)
 
-add_subdirectory(sdl)
+if(${SRB2_CONFIG_DEDICATED})
+	add_subdirectory(dedicated)
+else()
+	add_subdirectory(sdl)
+endif()
 
 if(${CMAKE_SYSTEM} MATCHES Windows)
 	add_subdirectory(win32)

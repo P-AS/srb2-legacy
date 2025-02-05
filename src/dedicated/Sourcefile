@@ -1,0 +1,6 @@
+i_system.c
+i_main.c
+i_video.c
+i_sound.c
+dosstr.c
+endtxt.c
