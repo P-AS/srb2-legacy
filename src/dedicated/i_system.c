@@ -110,7 +110,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 
 #ifdef __APPLE__
-#include "macosx/mac_resources.h"
+#include "mac_resources.h"
 #endif
 
 #ifndef errno
@@ -155,10 +155,6 @@ static char returnWadPath[256];
 #include "../i_joy.h"
 
 #include "../m_argv.h"
-
-#ifdef MAC_ALERT
-#include "macosx/mac_alert.h"
-#endif
 
 #include "../d_main.h"
 
@@ -1123,7 +1119,7 @@ void I_SleepToTic(tic_t tic)
 	ts.tv_sec = (targettime - curtime) / 1000000000;
 	ts.tv_nsec = (targettime - curtime) % 1000000000;
 
-	do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+	do status = nanosleep(&ts, &ts);
 	while (status == EINTR);
 	I_Assert(status == 0);
 }
@@ -1165,7 +1161,7 @@ static void I_SleepMillis(INT32 millis)
 		.tv_nsec = (millis % 1000) * 1000000,
 	};
 
-	do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+	do status = nanosleep(&ts, &ts);
 	while (status == EINTR);
 #endif
 }
@@ -1877,3 +1873,42 @@ boolean I_InitNetwork(void)
 	// this must exist, but this is actually handled in i_tcp.c
 	return false;
 }
+
+#ifdef __APPLE__
+// from src/sdl/macosx/mac_resources.c
+#include <string.h>
+#include <CoreFoundation/CoreFoundation.h>
+
+void OSX_GetResourcesPath(char * buffer)
+{
+    CFBundleRef mainBundle;
+    mainBundle = CFBundleGetMainBundle();
+    if (mainBundle)
+    {
+        const int BUF_SIZE = 256; // because we somehow always know that
+
+        CFURLRef appUrlRef = CFBundleCopyBundleURL(mainBundle);
+        CFStringRef macPath;
+        if (appUrlRef != NULL)
+            macPath = CFURLCopyFileSystemPath(appUrlRef, kCFURLPOSIXPathStyle);
+        else
+            macPath = NULL;
+
+        const char* rawPath;
+
+        if (macPath != NULL)
+            rawPath = CFStringGetCStringPtr(macPath, kCFStringEncodingASCII);
+        else
+            rawPath = NULL;
+
+        if (rawPath != NULL && (CFStringGetLength(macPath) + strlen("/Contents/Resources") < BUF_SIZE))
+        {
+            strcpy(buffer, rawPath);
+            strcat(buffer, "/Contents/Resources");
+        }
+
+        CFRelease(macPath);
+        CFRelease(appUrlRef);
+    }
+}
+#endif
