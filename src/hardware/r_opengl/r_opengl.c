@@ -106,7 +106,7 @@ static GLuint finalScreenTexture = 0;
 static void *Shader_Load(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade);
 static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade);
 
-
+static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 
 // shortcut for ((float)1/i)
 static const GLfloat byte2float[256] = {
@@ -740,6 +740,18 @@ static INT32 shader_leveltime = 0;
 		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st) * poly_color;\n" \
 	"}\0"
 
+//
+// Sky fragment shader
+// Modulates poly_color with gl_Color
+//
+
+#define GLSL_SKY_FRAGMENT_SHADER \
+	"uniform sampler2D tex;\n" \
+	"uniform vec4 poly_color;\n" \
+	"void main(void) {\n" \
+		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st) * gl_Color * poly_color;\n" \
+	"}\0"
+
 static const char *fragment_shaders[] = {
 	// Default fragment shader
 	GLSL_DEFAULT_FRAGMENT_SHADER,
@@ -763,10 +775,7 @@ static const char *fragment_shaders[] = {
 	GLSL_FOG_FRAGMENT_SHADER,
 
 	// Sky fragment shader
-	"uniform sampler2D tex;\n"
-	"void main(void) {\n"
-		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st);\n"
-	"}\0",
+	GLSL_SKY_FRAGMENT_SHADER,
 
 	// Model fragment shader + diffuse lighting from above
 	GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER,
@@ -1931,6 +1940,14 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 		if (!shader->program)
 			return;
 
+			// Color uniforms can be left NULL and will be set to white (1.0f, 1.0f, 1.0f, 1.0f)
+				if (poly == NULL)
+				poly = &shader_defaultcolor;
+			if (tint == NULL)
+				tint = &shader_defaultcolor;
+			if (fade == NULL)
+				fade = &shader_defaultcolor;	
+
 		#define UNIFORM_1(uniform, a, function) \
 			if (uniform != -1) \
 				function (uniform, a);
@@ -2113,231 +2130,84 @@ EXPORT void HWRAPI(DrawIndexedTriangles) (FSurfaceInfo *pSurf, FOutVector *pOutV
 	// the DrawPolygon variant of this has some code about polyflags and wrapping here but havent noticed any problems from omitting it?
 }
 
+static const boolean gl_ext_arb_vertex_buffer_object = true;
 
-// PRBoom sky dome
-typedef struct vbo_vertex_s
-{
-	float x, y, z;
-	float u, v;
-	unsigned char r, g, b, a;
-} vbo_vertex_t;
 
-typedef struct
-{
-	int mode;
-	int vertexcount;
-	int vertexindex;
-	int use_texture;
-} GLSkyLoopDef;
+#define NULL_VBO_VERTEX ((gl_skyvertex_t*)NULL)
+#define sky_vbo_x (gl_ext_arb_vertex_buffer_object ? &NULL_VBO_VERTEX->x : &sky->data[0].x)
+#define sky_vbo_u (gl_ext_arb_vertex_buffer_object ? &NULL_VBO_VERTEX->u : &sky->data[0].u)
+#define sky_vbo_r (gl_ext_arb_vertex_buffer_object ? &NULL_VBO_VERTEX->r : &sky->data[0].r)
 
-typedef struct
-{
-	unsigned int id;
-	int rows, columns;
-	int loopcount;
-	GLSkyLoopDef *loops;
-	vbo_vertex_t *data;
-} GLSkyVBO;
-
-#define sky_vbo_x (&vbo->data[0].x)
-#define sky_vbo_u (&vbo->data[0].u)
-#define sky_vbo_r (&vbo->data[0].r)
-
-// The texture offset to be applied to the texture coordinates in SkyVertex().
-static int rows, columns;
-static boolean yflip;
-static int texw, texh;
-static float yMult, yAdd;
-static boolean foglayer;
-static float delta = 0.0f;
-static int gl_sky_detail = 16;
-
-static boolean vbo_init = false;
-static INT32 lasttex = -1;
-
-static RGBA_t SkyColor;
-
-#define MAP_COEFF 128.0f
-#define MAP_SCALE (MAP_COEFF*(float)FRACUNIT)
-
-static void SkyVertex(vbo_vertex_t *vbo, int r, int c)
-{
-	static fixed_t scale = 10000 << FRACBITS;
-	static angle_t maxSideAngle = ANGLE_180 / 3;
-
-	angle_t topAngle = (angle_t)(c / (float)columns * ANGLE_MAX);
-	angle_t sideAngle = maxSideAngle * (rows - r) / rows;
-	fixed_t height = FINESINE(sideAngle>>ANGLETOFINESHIFT);
-	fixed_t realRadius = FixedMul(scale, FINECOSINE(sideAngle>>ANGLETOFINESHIFT));
-	fixed_t x = FixedMul(realRadius, FINECOSINE(topAngle>>ANGLETOFINESHIFT));
-	fixed_t y = (!yflip) ? FixedMul(scale, height) : FixedMul(scale, height) * -1;
-	fixed_t z = FixedMul(realRadius, FINESINE(topAngle>>ANGLETOFINESHIFT));
-	float timesRepeat;
-
-	timesRepeat = (short)(4 * (256.0f / texw));
-	if (timesRepeat == 0.0f)
-		timesRepeat = 1.0f;
-
-	if (!foglayer)
-	{
-		boolean flip = yflip;
-		vbo->r = 255;
-		vbo->g = 255;
-		vbo->b = 255;
-		vbo->a = (r == 0 ? 0 : 255);
-
-		// Flip Y coordinate anyway for the top part of the hemisphere
-		if (r <= 1)
-			flip = !flip;
-
-		// And the texture coordinates.
-		vbo->u = (-timesRepeat * c / (float)columns);
-		if (!flip)	// Flipped Y is for the lower hemisphere.
-			vbo->v = (r / (float)rows) * 1.f * yMult + yAdd;
-		else
-			vbo->v = ((rows-r)/(float)rows) * 1.f * yMult + yAdd;
-	}
-
-	// And finally the vertex.
-	vbo->x = (float)x/(float)MAP_SCALE;
-	vbo->y = (float)y/(float)MAP_SCALE + delta;
-	vbo->z = (float)z/(float)MAP_SCALE;
-}
-
-GLSkyVBO sky_vbo;
-
-static void gld_BuildSky(int row_count, int col_count)
-{
-	int c, r;
-	vbo_vertex_t *vertex_p;
-	int vertex_count = 2 * row_count * (col_count * 2 + 2) + col_count * 2;
-
-	GLSkyVBO *vbo = &sky_vbo;
-
-	if ((vbo->columns != col_count) || (vbo->rows != row_count))
-	{
-		free(vbo->loops);
-		free(vbo->data);
-		memset(vbo, 0, sizeof(&vbo));
-	}
-
-	if (!vbo->data)
-	{
-		memset(vbo, 0, sizeof(&vbo));
-		vbo->loops = malloc((row_count * 2 + 2) * sizeof(vbo->loops[0]));
-		// create vertex array
-		vbo->data = malloc(vertex_count * sizeof(vbo->data[0]));
-	}
-
-	vbo->columns = col_count;
-	vbo->rows = row_count;
-
-	vertex_p = &vbo->data[0];
-	vbo->loopcount = 0;
-
-	memset(&SkyColor, 0xFF, sizeof(SkyColor));
-
-	// Why not?
-	for (yflip = false; yflip <= true; yflip++)
-	{
-		vbo->loops[vbo->loopcount].mode = GL_TRIANGLE_FAN;
-		vbo->loops[vbo->loopcount].vertexindex = vertex_p - &vbo->data[0];
-		vbo->loops[vbo->loopcount].vertexcount = col_count;
-		vbo->loops[vbo->loopcount].use_texture = false;
-		vbo->loopcount++;
-
-		yAdd = 0.5f;
-		yMult = 1.0f;
-		/*if (yflip == 0)
-			SkyColor = &sky->CeilingSkyColor[vbo_idx];
-		else
-			SkyColor = &sky->FloorSkyColor[vbo_idx];*/
-
-		delta = 0.0f;
-		foglayer = true;
-		for (c = 0; c < col_count; c++)
-		{
-			SkyVertex(vertex_p, 1, c);
-			vertex_p->r = SkyColor.s.red;
-			vertex_p->g = SkyColor.s.green;
-			vertex_p->b = SkyColor.s.blue;
-			vertex_p->a = 255;
-			vertex_p++;
-		}
-		foglayer = false;
-
-		delta = (yflip ? 5.0f : -5.0f) / MAP_COEFF;
-
-		for (r = 0; r < row_count; r++)
-		{
-			vbo->loops[vbo->loopcount].mode = GL_TRIANGLE_STRIP;
-			vbo->loops[vbo->loopcount].vertexindex = vertex_p - &vbo->data[0];
-			vbo->loops[vbo->loopcount].vertexcount = 2 * col_count + 2;
-			vbo->loops[vbo->loopcount].use_texture = true; //(r > 1) ? true : false;
-			vbo->loopcount++;
-
-			for (c = 0; c <= col_count; c++)
-			{
-				SkyVertex(vertex_p++, r + (yflip ? 1 : 0), (c ? c : 0));
-				SkyVertex(vertex_p++, r + (yflip ? 0 : 1), (c ? c : 0));
-			}
-		}
-	}
-}
-
-static void RenderDomeForReal(INT32 skytexture)
+EXPORT void HWRAPI(RenderSkyDome) (gl_sky_t *sky)
 {
 	int i, j;
-	int vbosize;
-	GLSkyVBO *vbo = &sky_vbo;
 
-	rows = 4;
-	columns = 4 * gl_sky_detail;
-	vbosize = 2 * rows * (columns * 2 + 2) + columns * 2;
-
-	// generate a new VBO and get the associated ID
-	if (!vbo_init)
-	{
-		pglGenBuffers(1, &vbo->id);
-		vbo_init = true;
-	}
+	Shader_Load(NULL, NULL, NULL, NULL); 
 
 	// Build the sky dome! Yes!
-	if (lasttex != skytexture)
+	if (sky->rebuild)
 	{
-		lasttex = skytexture;
-		gld_BuildSky(rows, columns);
+		// delete VBO when already exists
+		if (gl_ext_arb_vertex_buffer_object)
+		{
+			if (sky->vbo)
+				pglDeleteBuffers(1, &sky->vbo);
+		}
 
-		// bind VBO in order to use
-		pglBindBuffer(GL_ARRAY_BUFFER, vbo->id);
+		if (gl_ext_arb_vertex_buffer_object)
+		{
+			// generate a new VBO and get the associated ID
+			pglGenBuffers(1, &sky->vbo);
 
-		// upload data to VBO
-		pglBufferData(GL_ARRAY_BUFFER, vbosize * sizeof(vbo->data[0]), vbo->data, GL_STATIC_DRAW);
+			// bind VBO in order to use
+			pglBindBuffer(GL_ARRAY_BUFFER, sky->vbo);
+
+			// upload data to VBO
+			pglBufferData(GL_ARRAY_BUFFER, sky->vertex_count * sizeof(sky->data[0]), sky->data, GL_STATIC_DRAW);
+		}
+
+		sky->rebuild = false;
 	}
 
+	// bind VBO in order to use
+	if (gl_ext_arb_vertex_buffer_object)
+		pglBindBuffer(GL_ARRAY_BUFFER, sky->vbo);
+
 	// activate and specify pointers to arrays
-	pglBindBuffer(GL_ARRAY_BUFFER, vbo->id);
-	pglVertexPointer(3, GL_FLOAT, sizeof(vbo->data[0]), sky_vbo_x);
-	pglTexCoordPointer(2, GL_FLOAT, sizeof(vbo->data[0]), sky_vbo_u);
-	pglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vbo->data[0]), sky_vbo_r);
+	pglVertexPointer(3, GL_FLOAT, sizeof(sky->data[0]), sky_vbo_x);
+	pglTexCoordPointer(2, GL_FLOAT, sizeof(sky->data[0]), sky_vbo_u);
+	pglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(sky->data[0]), sky_vbo_r);
 
 	// activate color arrays
 	pglEnableClientState(GL_COLOR_ARRAY);
 
 	// set transforms
-	pglScalef(1.0f, (float)texh / 230.0f, 1.0f);
+	pglScalef(1.0f, (float)sky->height / 200.0f, 1.0f);
 	pglRotatef(270.0f, 0.0f, 1.0f, 0.0f);
 
 	for (j = 0; j < 2; j++)
 	{
-		for (i = 0; i < vbo->loopcount; i++)
+		for (i = 0; i < sky->loopcount; i++)
 		{
-			GLSkyLoopDef *loop = &vbo->loops[i];
+			gl_skyloopdef_t *loop = &sky->loops[i];
+			unsigned int mode = 0;
 
 			if (j == 0 ? loop->use_texture : !loop->use_texture)
 				continue;
 
-			pglDrawArrays(loop->mode, loop->vertexindex, loop->vertexcount);
+			switch (loop->mode)
+			{
+				case HWD_SKYLOOP_FAN:
+					mode = GL_TRIANGLE_FAN;
+					break;
+				case HWD_SKYLOOP_STRIP:
+					mode = GL_TRIANGLE_STRIP;
+					break;
+				default:
+					continue;
+			}
+
+			pglDrawArrays(mode, loop->vertexindex, loop->vertexcount);
 		}
 	}
 
@@ -2345,39 +2215,15 @@ static void RenderDomeForReal(INT32 skytexture)
 	pglColor4ubv(white);
 
 	// bind with 0, so, switch back to normal pointer operation
-	pglBindBuffer(GL_ARRAY_BUFFER, 0);
+	if (gl_ext_arb_vertex_buffer_object)
+		pglBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// deactivate color array
 	pglDisableClientState(GL_COLOR_ARRAY);
 }
 
-EXPORT void HWRAPI(RenderSkyDome) (INT32 tex, INT32 texture_width, INT32 texture_height, FTransform transform)
-{
-	GLint shading_mode = GL_FLAT;
-	pglGetIntegerv(GL_SHADE_MODEL, &shading_mode);
-	pglShadeModel(GL_SMOOTH);
 
-	pglDepthMask(false);
-	pglDisable(GL_DEPTH_TEST);
-	pglDisable(GL_ALPHA_TEST);
 
-	SetBlend(PF_Translucent|PF_Clip|PF_NoZClip|PF_NoDepthTest|PF_Modulated);
-
-	texw = texture_width;
-	texh = texture_height;
-	SetTransform(&transform);
-	RenderDomeForReal(tex);
-
-	pglEnable(GL_ALPHA_TEST);
-	pglEnable(GL_DEPTH_TEST);
-	pglDepthMask(true);
-
-	pglShadeModel(shading_mode);
-}
-
-// ==========================================================================
-//
-// ==========================================================================
 EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
 {
 	switch (IdState)
