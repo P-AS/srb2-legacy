@@ -317,6 +317,9 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 
 // XMOD FPS display
 // moved out of os-specific code for consistency
+static boolean ticsgraph[TICRATE];
+static tic_t lasttic;
+
 double averageFPS = 0.0f;
 
 #define USE_FPS_SAMPLES
@@ -367,36 +370,52 @@ void SCR_CalculateFPS(void)
 
 void SCR_DisplayTicRate(void)
 {
-	INT32 ticcntcolor = 0;
+	INT32 fpscntcolor = 0;
 	const INT32 h = vid.height-(8*vid.dupy);
 	UINT32 cap = R_GetFramerateCap();
 	double fps = round(averageFPS);
+	tic_t i;
+	tic_t ontic = I_GetTime();
+	tic_t totaltics = 0;
+	INT32 ticcntcolor = 0;
 
 	if (gamestate == GS_NULL)
 		return;
 
 	if (cap > 0)
 	{
-		if (fps <= cap / 2.0) ticcntcolor = V_REDMAP;
-		else if (fps <= cap * 0.90) ticcntcolor = V_YELLOWMAP;
-		else ticcntcolor = V_GREENMAP;
+		if (fps <= cap / 2.0) fpscntcolor = V_REDMAP;
+		else if (fps <= cap * 0.90) fpscntcolor = V_YELLOWMAP;
+		else fpscntcolor = V_GREENMAP;
 	}
 	else
 	{
-		ticcntcolor = V_GREENMAP;
+		fpscntcolor = V_GREENMAP;
 	}
+
+	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
+	ticsgraph[i % TICRATE] = false;
+
+	ticsgraph[ontic % TICRATE] = true;
+
+	for (i = 0;i < TICRATE;++i)
+		if (ticsgraph[i])
+			++totaltics;
+
+	if (totaltics <= TICRATE/2) ticcntcolor = V_REDMAP;
+	else if (totaltics == TICRATE) ticcntcolor = V_SKYMAP;
 
 	if (cv_ticrate.value == 2) // compact counter
 	{
 		if (fps < 100.0f)
 		{
 		V_DrawString(vid.width-36*vid.dupx, h,
-			ticcntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
+			fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
 		}
 		else if (fps >= 100.0f)
 		{
 		V_DrawString(vid.width-44*vid.dupx, h,
-			ticcntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
+			fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
 		}
 	}
 	else if (cv_ticrate.value == 1) // full counter
@@ -417,27 +436,27 @@ void SCR_DisplayTicRate(void)
 		if (cap < 100) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
 		{
 			V_DrawString(vid.width - 48*vid.dupx, h,
-			ticcntcolor|V_NOSCALESTART, drawnstr);
+			fpscntcolor|V_NOSCALESTART, drawnstr);
 		}
 		if (fps < 10.0f) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
 		{
 			V_DrawString(vid.width - 44*vid.dupx, h,
-			ticcntcolor|V_NOSCALESTART, drawnstr);
+			fpscntcolor|V_NOSCALESTART, drawnstr);
 		}
 		else if (cap >= 100 && !(fps >= 100.0f))
 		{
 		V_DrawString(vid.width - 52*vid.dupx, h,
-			ticcntcolor|V_NOSCALESTART, drawnstr);
+			fpscntcolor|V_NOSCALESTART, drawnstr);
 		}
 		else if (cap >= 100 && (fps <= 100.0f))
 		{
 		V_DrawString(vid.width - 56*vid.dupx, h,
-			ticcntcolor|V_NOSCALESTART, drawnstr);
+			fpscntcolor|V_NOSCALESTART, drawnstr);
 		}
 		else if (cap >= 100 && fps >= 100.0f) // ok, this is actually painful...
 		{
 		V_DrawString(vid.width - 56*vid.dupx, h,
-			ticcntcolor|V_NOSCALESTART, drawnstr);
+			fpscntcolor|V_NOSCALESTART, drawnstr);
 		}
 		}
 
@@ -446,15 +465,27 @@ void SCR_DisplayTicRate(void)
 	if (fps < 100.0f) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
 		{
 		V_DrawString(vid.width - 36*vid.dupx, h,
-			ticcntcolor|V_NOSCALESTART, drawnstr);
+			fpscntcolor|V_NOSCALESTART, drawnstr);
 		}
 	else if (fps >= 100.0f)
 		{
 		V_DrawString(vid.width - 44*vid.dupx, h,
-			ticcntcolor|V_NOSCALESTART, drawnstr);
+			fpscntcolor|V_NOSCALESTART, drawnstr);
 		}
 		}
 	}
+
+	if (cv_tpscounter.value == 2) // compact counter
+		V_DrawString(vid.width-(16*vid.dupx), h-(8*vid.dupy),
+			ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
+	else if (cv_tpscounter.value == 1) // full counter
+	{
+		V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("TPS: ", V_NOSCALESTART)), h-(8*vid.dupy),
+			V_YELLOWMAP|V_NOSCALESTART, "TPS:");
+		V_DrawString(vid.width-(40*vid.dupx), h-(8*vid.dupy),
+			ticcntcolor|V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));
+	}
+		lasttic = ontic;
 }
 
 
