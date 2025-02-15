@@ -783,6 +783,112 @@ static void ST_drawInput(void)
 	INT32 col;
 	UINT8 offs;
 
+	switch(stplyr->skincolor) //stupid switch
+	{
+		case SKINCOLOR_WHITE:
+			accent |= 0x00;
+		break;
+
+		case SKINCOLOR_SILVER:
+			accent |= 0x03;
+		break;
+
+		case SKINCOLOR_GREY:
+			accent |= 0x08;
+		break;
+
+		case SKINCOLOR_BLACK:
+			accent |= 0x18;
+		break;
+
+		case SKINCOLOR_CYAN:
+			accent |= 0xd0;
+		break;
+
+		case SKINCOLOR_TEAL:
+			accent |= 0xdc;
+		break;
+
+		case SKINCOLOR_STEELBLUE:
+			accent |= 0xc8;
+		break;
+
+		case SKINCOLOR_BLUE:
+			accent |= 0xe2;
+		break;
+
+		case SKINCOLOR_PEACH:
+			accent |= 0x40;
+		break;
+
+		case SKINCOLOR_TAN:
+			accent |= 0x48;
+		break;
+
+		case SKINCOLOR_PINK:
+			accent |= 0x90;
+		break;
+
+		case SKINCOLOR_LAVENDER:
+			accent |= 0xf8;
+		break;
+
+		case SKINCOLOR_ORANGE:
+			accent |= 0x52;
+		break;
+
+		case SKINCOLOR_PURPLE:
+			accent |= 0xc0;
+		break;
+
+		case SKINCOLOR_ROSEWOOD:
+			accent |= 0x5c;
+		break;
+
+		case SKINCOLOR_BEIGE:
+			accent |= 0x20;
+		break;
+
+		case SKINCOLOR_BROWN:
+			accent |= 0x30;
+		break;
+
+		case SKINCOLOR_RED:
+			accent |= 0x7d;
+		break;
+
+		case SKINCOLOR_DARKRED:
+			accent |= 0x85;
+		break;
+
+		case SKINCOLOR_NEONGREEN:
+			accent |= 0xb8;
+		break;
+
+		case SKINCOLOR_GREEN:
+			accent |= 0xa0;
+		break;
+
+		case SKINCOLOR_ZIM:
+			accent |= 0xb0;
+		break;
+
+		case SKINCOLOR_OLIVE:
+			accent |= 0x69;
+		break;
+
+		case SKINCOLOR_YELLOW:
+			accent |= 0x67;
+		break;
+
+		case SKINCOLOR_GOLD:
+			accent |= 0x70;
+		break;
+
+		default:
+			break;
+	}
+
 
 	INT32 x = hudinfo[HUD_LIVESPIC].x, y = hudinfo[HUD_LIVESPIC].y;
 
