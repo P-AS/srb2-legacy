@@ -120,6 +120,7 @@ typedef enum
 	// Do not modify above this line.
 	HUD_RINGSNUMTICS,
 	HUD_SCORENUMMODERN,
+	HUD_INPUT,
 
 	NUMHUDITEMS
 } hudnum_t;
