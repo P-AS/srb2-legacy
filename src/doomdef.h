@@ -173,11 +173,15 @@ extern FILE *logstream;
 // Comment out this line to completely disable update alerts (recommended for testing, but not for release)
 #define UPDATE_ALERT
 
+// If you maintain a fork of srb2-legacy, change this.
+#define RELEASES "github.com/P-AS/srb2-legacy/releases\n"
+
 // The string used in the alert that pops up in the event of an update being available.
 // Please change to apply to your modification (we don't want everyone asking where your mod is on SRB2.org!).
 #define UPDATE_ALERT_STRING \
-"A new update is available for SRB2.\n"\
-"Please visit SRB2.org to download it.\n"\
+"A new update is available for SRB2 Legacy.\n"\
+"You can grab the latest release from:\n"\
+RELEASES \
 "\n"\
 "You are using version: %s\n"\
 "The newest version is: %s\n"\
@@ -193,8 +197,9 @@ extern FILE *logstream;
 // The string used in the I_Error alert upon trying to host through command line parameters.
 // Generally less filled with newlines, since Windows gives you lots more room to work with.
 #define UPDATE_ALERT_STRING_CONSOLE \
-"A new update is available for SRB2.\n"\
-"Please visit SRB2.org to download it.\n"\
+"A new update is available for SRB2 Legacy.\n"\
+"You can grab the latest release from:\n"\
+RELEASES \
 "\n"\
 "You are using version: %s\n"\
 "The newest version is: %s\n"\
