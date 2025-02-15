@@ -42,6 +42,7 @@ extern tic_t demostarttime;
 // Quit after playing a demo from cmdline.
 extern boolean singledemo;
 extern boolean demo_start;
+extern boolean demosynced;
 extern UINT16 demoversion;
 
 extern mobj_t *metalplayback;
