@@ -166,6 +166,7 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	// Do not modify above this line.
 	{ 136,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUMTICS
 	{ 136,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORENUMMODERN
+	{ 16, 152, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_INPUT
 };
 
 //
@@ -890,10 +891,22 @@ static void ST_drawInput(void)
 	}
 
 
-	INT32 x = hudinfo[HUD_LIVESPIC].x, y = hudinfo[HUD_LIVESPIC].y;
+	INT32 x = hudinfo[HUD_INPUT].x, y = hudinfo[HUD_INPUT].y;
 
 	if(stplyr->pflags & PF_NIGHTSMODE)
-		y -= 16;
+	y += 8;
+	else if (modeattacking
+		#ifdef HAVE_BLUA
+		|| !LUA_HudEnabled(hud_lives)
+		#endif
+	    )
+		y += 24;
+	else if (G_RingSlingerGametype()
+	#ifdef HAVE_BLUA
+	&& LUA_HudEnabled(hud_powerstones)
+	#endif
+		)
+		y -= 5;
 
 	// O backing
 	V_DrawFill(x, y-1, 16, 16, V_SNAPTOLEFT|V_SNAPTOBOTTOM|20);
@@ -2249,7 +2262,7 @@ static void ST_overlayDrawer(void)
 		}
 	}
 
-	if (modeattacking)
+	if ((cv_showinput.value && !players[displayplayer].spectator) || modeattacking)
 		ST_drawInput();
 
 	ST_drawDebugInfo();
