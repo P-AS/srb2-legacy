@@ -127,45 +127,45 @@ static boolean facefreed[MAXPLAYERS];
 
 hudinfo_t hudinfo[NUMHUDITEMS] =
 {
-	{  34, 176}, // HUD_LIVESNAME
-	{  16, 176}, // HUD_LIVESPIC
-	{  74, 184}, // HUD_LIVESNUM
-	{  38, 186}, // HUD_LIVESX
+	{  34, 176, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_LIVESNAME
+	{  16, 176, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_LIVESPIC
+	{  74, 184, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_LIVESNUM
+	{  38, 186, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_LIVESX
 
-	{  16,  42}, // HUD_RINGS
-	{ 220,  10}, // HUD_RINGSSPLIT
-	{ 112,  42}, // HUD_RINGSNUM
-	{ 288,  10}, // HUD_RINGSNUMSPLIT
+	{  16,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGS
+	{ 220,  10, V_SNAPTOTOP}, // HUD_RINGSSPLIT
+	{ 112,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUM
+	{ 288,  10, V_SNAPTOTOP}, // HUD_RINGSNUMSPLIT
 
-	{  16,  10}, // HUD_SCORE
-	{ 128,  10}, // HUD_SCORENUM
+	{  16,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORE
+	{ 128,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORENUM
 
-	{  17,  26}, // HUD_TIME
-	{ 136,  10}, // HUD_TIMESPLIT
-	{  88,  26}, // HUD_MINUTES
-	{ 188,  10}, // HUD_MINUTESSPLIT
-	{  88,  26}, // HUD_TIMECOLON
-	{ 188,  10}, // HUD_TIMECOLONSPLIT
-	{ 112,  26}, // HUD_SECONDS
-	{ 212,  10}, // HUD_SECONDSSPLIT
-	{ 112,  26}, // HUD_TIMETICCOLON
-	{ 136,  26}, // HUD_TICS
+	{  17,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TIME
+	{ 136,  10, V_SNAPTOTOP}, // HUD_TIMESPLIT
+	{  88,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_MINUTES
+	{ 188,  10, V_SNAPTOTOP}, // HUD_MINUTESSPLIT
+	{  88,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TIMECOLON
+	{ 188,  10, V_SNAPTOTOP}, // HUD_TIMECOLONSPLIT
+	{ 112,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SECONDS
+	{ 212,  10, V_SNAPTOTOP}, // HUD_SECONDSSPLIT
+	{ 112,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TIMETICCOLON
+	{ 136,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TICS
 
-	{ 112,  56}, // HUD_SS_TOTALRINGS
-	{ 288,  40}, // HUD_SS_TOTALRINGS_SPLIT
+	{ 112,  56, 0}, // HUD_SS_TOTALRINGS
+	{ 288,  40, 0}, // HUD_SS_TOTALRINGS_SPLIT
 
-	{ 110,  93}, // HUD_GETRINGS
-	{ 160,  93}, // HUD_GETRINGSNUM
-	{ 124, 160}, // HUD_TIMELEFT
-	{ 168, 176}, // HUD_TIMELEFTNUM
-	{ 130,  93}, // HUD_TIMEUP
-	{ 152, 168}, // HUD_HUNTPICS
-	{ 152,  24}, // HUD_GRAVBOOTSICO
-	{ 240, 160}, // HUD_LAP
+	{ 110,  93, 0}, // HUD_GETRINGS
+	{ 160,  93, 0}, // HUD_GETRINGSNUM
+	{ 124, 160, 0}, // HUD_TIMELEFT
+	{ 168, 176, 0}, // HUD_TIMELEFTNUM
+	{ 130,  93, 0}, // HUD_TIMEUP
+	{ 152, 168, 0}, // HUD_HUNTPICS
+	{ 152,  24, 0}, // HUD_GRAVBOOTSICO
+	{ 240, 160, 0}, // HUD_LAP
 
 	// Do not modify above this line.
-	{ 136,  42}, // HUD_RINGSNUMTICS
-	{ 136,  10}, // HUD_SCORENUMMODERN
+	{ 136,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUMTICS
+	{ 136,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORENUMMODERN
 };
 
 //
@@ -615,65 +615,111 @@ static void ST_drawDebugInfo(void)
 
 static void ST_drawScore(void)
 {
-	// SCORE:
-	ST_DrawPatchFromHud(HUD_SCORE, sboscore);
+	const INT32 v_splitflag = (splitscreen && stplyr == &players[displayplayer] ? V_SPLITSCREEN : 0);
+	const INT32 v_splitoffset = splitscreen ? (v_splitflag ? 0 : BASEVIDHEIGHT/2) : 0;
+
+	INT32 scoreflags = hudinfo[HUD_SCORE].flags|v_splitflag;
+	if (splitscreen && stplyr == &players[secondarydisplayplayer])
+		scoreflags &= ~(V_SNAPTOTOP);
+
+	V_DrawScaledPatch(hudinfo[HUD_SCORE].x, hudinfo[HUD_SCORE].y + v_splitoffset, scoreflags, sboscore);
+
+	//ST_DrawPatchFromHud(HUD_SCORE, sboscore);
 	if (objectplacing)
 	{
 		if (op_displayflags > UINT16_MAX)
-			ST_DrawOverlayPatch(SCX(hudinfo[HUD_SCORENUM].x-tallminus->width), SCY(hudinfo[HUD_SCORENUM].y), tallminus);
+			V_DrawFixedPatch((hudinfo[HUD_SCORENUM].x-tallminus->width) * FRACUNIT, (hudinfo[HUD_SCORENUM].y) * FRACUNIT, FRACUNIT, hudinfo[HUD_SCORENUM].flags, tallminus, (void *) 0);
+			//ST_DrawOverlayPatch(SCX(hudinfo[HUD_SCORENUM].x-tallminus->width), SCY(hudinfo[HUD_SCORENUM].y), tallminus);
 		else
-			ST_DrawNumFromHud(HUD_SCORENUM, op_displayflags);
+			V_DrawTallNum(hudinfo[HUD_SCORENUM].x, hudinfo[HUD_SCORENUM].y, hudinfo[HUD_SCORENUM].flags, op_displayflags);
+			//ST_DrawNumFromHud(HUD_SCORENUM, op_displayflags);
 	}
 
+	INT32 scorenumflags = hudinfo[HUD_SCORENUM].flags|v_splitflag;
+	if (splitscreen && stplyr == &players[secondarydisplayplayer])
+		scorenumflags &= ~(V_SNAPTOTOP);
+
 	if (!splitscreen && (cv_scorepos.value == 1))
-		ST_DrawNumFromHud(HUD_SCORENUMMODERN, stplyr->score);
+		V_DrawTallNum(hudinfo[HUD_SCORENUMMODERN].x, hudinfo[HUD_SCORENUMMODERN].y, hudinfo[HUD_SCORENUMMODERN].flags, stplyr->score);
+		//ST_DrawNumFromHud(HUD_SCORENUMMODERN, stplyr->score);
 	else
-		ST_DrawNumFromHud(HUD_SCORENUM, stplyr->score);
+		V_DrawTallNum(hudinfo[HUD_SCORENUM].x, hudinfo[HUD_SCORENUM].y + v_splitoffset, scorenumflags, stplyr->score);
+		//ST_DrawNumFromHud(HUD_SCORENUM, stplyr->score);
 }
 
 static void ST_drawTime(void)
 {
-	INT32 seconds, minutes, tictrn, tics;
+	const INT32 v_splitflag = (splitscreen && stplyr == &players[displayplayer] ? V_SPLITSCREEN : 0);
+	const INT32 v_splitoffset = splitscreen ? (v_splitflag ? 0 : BASEVIDHEIGHT/2) : 0;
+	INT32 centiseconds, seconds, minutes, tics;
 
 	// TIME:
-	ST_DrawPatchFromHudWS(HUD_TIME, sbotime);
+	INT32 timepos = splitscreen ? HUD_TIMESPLIT : HUD_TIME;
+	INT32 timeflags = hudinfo[timepos].flags|v_splitflag;
+	if (splitscreen && stplyr == &players[secondarydisplayplayer])
+		timeflags &= ~(V_SNAPTOTOP);
+
+	V_DrawScaledPatch(hudinfo[timepos].x, hudinfo[timepos].y + v_splitoffset, timeflags, sbotime);
 
 	if (objectplacing)
 	{
 		tics    = objectsdrawn;
 		seconds = objectsdrawn%100;
 		minutes = objectsdrawn/100;
-		tictrn  = 0;
+		centiseconds  = 0;
 	}
 	else
 	{
 		tics = stplyr->realtime;
 		seconds = G_TicsToSeconds(tics);
 		minutes = G_TicsToMinutes(tics, true);
-		tictrn  = G_TicsToCentiseconds(tics);
+		centiseconds  = G_TicsToCentiseconds(tics);
 	}
 
+	INT32 minutespos = splitscreen ? HUD_MINUTESSPLIT : HUD_MINUTES;
+	INT32 colonspos = splitscreen ? HUD_TIMECOLONSPLIT : HUD_TIMECOLON;
+	INT32 secondspos = splitscreen ? HUD_SECONDSSPLIT : HUD_SECONDS;
+
+	INT32 minutesflags = hudinfo[minutespos].flags|v_splitflag;
+	if (splitscreen && stplyr == &players[secondarydisplayplayer])
+		minutesflags &= ~(V_SNAPTOTOP);
+
+	INT32 colonflags = hudinfo[colonspos].flags|v_splitflag;
+	if (splitscreen && stplyr == &players[secondarydisplayplayer])
+		colonflags &= ~(V_SNAPTOTOP);
+
+	INT32 secondsflags = hudinfo[secondspos].flags|v_splitflag;
+	if (splitscreen && stplyr == &players[secondarydisplayplayer])
+		secondsflags &= ~(V_SNAPTOTOP);
+
 	if (cv_timetic.value == 3) // Tics only -- how simple is this?
-		ST_DrawNumFromHudWS(HUD_SECONDS, tics);
+		V_DrawTallNum(hudinfo[secondspos].x, hudinfo[secondspos].y + v_splitoffset, secondsflags, tics);
 	else
 	{
-		ST_DrawNumFromHudWS(HUD_MINUTES, minutes); // Minutes
-		ST_DrawPatchFromHudWS(HUD_TIMECOLON, sbocolon); // Colon
-		ST_DrawPadNumFromHudWS(HUD_SECONDS, seconds, 2); // Seconds
+		V_DrawTallNum(hudinfo[minutespos].x, hudinfo[minutespos].y + v_splitoffset, minutesflags, minutes); // Minutes
+		V_DrawScaledPatch(hudinfo[colonspos].x, hudinfo[colonspos].y + v_splitoffset, colonflags, sbocolon); // Colon
+		V_DrawPaddedTallNum(hudinfo[secondspos].x, hudinfo[secondspos].y + v_splitoffset, secondsflags, seconds, 2); // Seconds
 
 		if (!splitscreen && (cv_timetic.value == 1 || cv_timetic.value == 2 || modeattacking)) // there's not enough room for tics in splitscreen, don't even bother trying!
 		{
-			ST_DrawPatchFromHud(HUD_TIMETICCOLON, sboperiod); // Period
-			ST_DrawPadNumFromHud(HUD_TICS, tictrn, 2); // Tics
+			V_DrawScaledPatch(hudinfo[HUD_TIMETICCOLON].x, hudinfo[HUD_TIMETICCOLON].y, hudinfo[HUD_TIMETICCOLON].flags, sbocolon); // Period
+			V_DrawPaddedTallNum(hudinfo[HUD_TICS].x, hudinfo[HUD_TICS].y, hudinfo[HUD_TICS].flags, centiseconds, 2); // Centiseconds
 		}
 	}
 }
 
 static inline void ST_drawRings(void)
 {
+	const INT32 v_splitflag = (splitscreen && stplyr == &players[displayplayer] ? V_SPLITSCREEN : 0);
+	const INT32 v_splitoffset = splitscreen ? (v_splitflag ? 0 : BASEVIDHEIGHT/2) : 0;
 	INT32 ringnum = max(stplyr->health-1, 0);
 
-	ST_DrawPatchFromHudWS(HUD_RINGS, ((stplyr->health <= 1 && leveltime/5 & 1) ? rrings : sborings));
+	INT32 ringspos = splitscreen ? HUD_RINGSSPLIT : HUD_RINGS;
+	INT32 ringsflags = hudinfo[ringspos].flags|v_splitflag;
+	if (splitscreen && stplyr == &players[secondarydisplayplayer])
+		ringsflags &= ~(V_SNAPTOTOP);
+
+	V_DrawScaledPatch(hudinfo[ringspos].x, hudinfo[ringspos].y + v_splitoffset, ringsflags, ((stplyr->health <= 1 && leveltime/5 & 1) ? rrings : sborings));
 
 	if (objectplacing)
 		ringnum = op_currentdoomednum;
@@ -686,10 +732,15 @@ static inline void ST_drawRings(void)
 				ringnum += players[i].mo->health - 1;
 	}
 
+	INT32 ringsnumpos = splitscreen ? HUD_RINGSNUMSPLIT : HUD_RINGSNUM;
+	INT32 ringsnumflags = hudinfo[ringsnumpos].flags|v_splitflag;
+	if (splitscreen && stplyr == &players[secondarydisplayplayer])
+		ringsnumflags &= ~(V_SNAPTOTOP);
+
 	if (cv_timetic.value != 2 || splitscreen)
-		ST_DrawNumFromHudWS(HUD_RINGSNUM, ringnum);
+		V_DrawTallNum(hudinfo[ringsnumpos].x, hudinfo[ringsnumpos].y + v_splitoffset, ringsnumflags, ringnum);
 	else
-		ST_DrawNumFromHudWS(HUD_RINGSNUMTICS, ringnum);
+		V_DrawTallNum(hudinfo[HUD_RINGSNUMTICS].x, hudinfo[HUD_RINGSNUMTICS].y, hudinfo[HUD_RINGSNUMTICS].flags, ringnum);
 }
 
 static void ST_drawLives(void)
@@ -700,8 +751,7 @@ static void ST_drawLives(void)
 		return; // Just joined a server, skin isn't loaded yet!
 
 	// face background
-	V_DrawSmallScaledPatch(hudinfo[HUD_LIVESPIC].x, hudinfo[HUD_LIVESPIC].y + (v_splitflag ? -12 : 0),
-		V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_HUDTRANS|v_splitflag, livesback);
+	V_DrawSmallScaledPatch(hudinfo[HUD_LIVESPIC].x, hudinfo[HUD_LIVESPIC].y + (v_splitflag ? -12 : 0), hudinfo[HUD_LIVESPIC].flags|V_HUDTRANS|v_splitflag, livesback);
 
 	// face
 	if (stplyr->mo && stplyr->mo->color)
@@ -711,30 +761,24 @@ static void ST_drawLives(void)
 		patch_t *face = faceprefix[stplyr->skin];
 		if (stplyr->powers[pw_super] || stplyr->pflags & PF_NIGHTSMODE)
 			face = superprefix[stplyr->skin];
-		V_DrawSmallMappedPatch(hudinfo[HUD_LIVESPIC].x, hudinfo[HUD_LIVESPIC].y + (v_splitflag ? -12 : 0),
-			V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_HUDTRANS|v_splitflag,face, colormap);
+		V_DrawSmallMappedPatch(hudinfo[HUD_LIVESPIC].x, hudinfo[HUD_LIVESPIC].y + (v_splitflag ? -12 : 0), hudinfo[HUD_LIVESPIC].flags|V_HUDTRANS|v_splitflag,face, colormap);
 	}
 	else if (stplyr->skincolor)
 	{
 		// skincolor face
 		UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
-		V_DrawSmallMappedPatch(hudinfo[HUD_LIVESPIC].x, hudinfo[HUD_LIVESPIC].y + (v_splitflag ? -12 : 0),
-			V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_HUDTRANS|v_splitflag,faceprefix[stplyr->skin], colormap);
+		V_DrawSmallMappedPatch(hudinfo[HUD_LIVESPIC].x, hudinfo[HUD_LIVESPIC].y + (v_splitflag ? -12 : 0), hudinfo[HUD_LIVESPIC].flags|V_HUDTRANS|v_splitflag,faceprefix[stplyr->skin], colormap);
 	}
 
 	// name
 	if (strlen(skins[stplyr->skin].hudname) > 8)
-		V_DrawThinString(hudinfo[HUD_LIVESNAME].x, hudinfo[HUD_LIVESNAME].y + (v_splitflag ? -12 : 0),
-			V_HUDTRANS|V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_MONOSPACE|V_YELLOWMAP|v_splitflag, skins[stplyr->skin].hudname);
+		V_DrawThinString(hudinfo[HUD_LIVESNAME].x, hudinfo[HUD_LIVESNAME].y + (v_splitflag ? -12 : 0), hudinfo[HUD_LIVESNAME].flags|V_HUDTRANS|V_MONOSPACE|V_YELLOWMAP|v_splitflag, skins[stplyr->skin].hudname);
 	else
-		V_DrawString(hudinfo[HUD_LIVESNAME].x, hudinfo[HUD_LIVESNAME].y + (v_splitflag ? -12 : 0),
-			V_HUDTRANS|V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_MONOSPACE|V_YELLOWMAP|v_splitflag, skins[stplyr->skin].hudname);
+		V_DrawString(hudinfo[HUD_LIVESNAME].x, hudinfo[HUD_LIVESNAME].y + (v_splitflag ? -12 : 0), hudinfo[HUD_LIVESNAME].flags|V_HUDTRANS|V_MONOSPACE|V_YELLOWMAP|v_splitflag, skins[stplyr->skin].hudname);
 	// x
-	V_DrawScaledPatch(hudinfo[HUD_LIVESX].x, hudinfo[HUD_LIVESX].y + (v_splitflag ? -4 : 0),
-		V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_HUDTRANS|v_splitflag, stlivex);
+	V_DrawScaledPatch(hudinfo[HUD_LIVESX].x, hudinfo[HUD_LIVESX].y + (v_splitflag ? -4 : 0), hudinfo[HUD_LIVESX].flags|V_HUDTRANS|v_splitflag, stlivex);
 	// lives
-	V_DrawRightAlignedString(hudinfo[HUD_LIVESNUM].x, hudinfo[HUD_LIVESNUM].y + (v_splitflag ? -4 : 0),
-		V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_HUDTRANS|v_splitflag, va("%d",stplyr->lives));
+	V_DrawRightAlignedString(hudinfo[HUD_LIVESNUM].x, hudinfo[HUD_LIVESNUM].y + (v_splitflag ? -4 : 0), hudinfo[HUD_LIVESNUM].flags|V_HUDTRANS|v_splitflag, va("%d",stplyr->lives));
 }
 
 static void ST_drawLevelTitle(void)
@@ -823,10 +867,12 @@ static void ST_drawFirstPersonHUD(void)
 	default: break;
 	}
 
+	INT32 snapflags = (splitscreen && stplyr == &players[displayplayer]) ? V_SNAPTOTOP : 0;
+
 	if (p)
 	{
 		if (splitscreen)
-			V_DrawSmallScaledPatch(312, STRINGY(24), V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, p);
+			V_DrawSmallScaledPatch(312, STRINGY(24), V_SNAPTORIGHT|snapflags|V_HUDTRANS, p);
 		else
 			V_DrawScaledPatch(304, 24, V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, p);
 	}
@@ -836,7 +882,7 @@ static void ST_drawFirstPersonHUD(void)
 	if (invulntime > 3*TICRATE || (invulntime && leveltime & 1))
 	{
 		if (splitscreen)
-			V_DrawSmallScaledPatch(312, STRINGY(24) + 14, V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, invincibility);
+			V_DrawSmallScaledPatch(312, STRINGY(24) + 14, V_SNAPTORIGHT|snapflags|V_HUDTRANS, invincibility);
 		else
 			V_DrawScaledPatch(304, 24 + 28, V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, invincibility);
 	}
@@ -844,7 +890,7 @@ static void ST_drawFirstPersonHUD(void)
 	if (player->powers[pw_sneakers] > 3*TICRATE || (player->powers[pw_sneakers] && leveltime & 1))
 	{
 		if (splitscreen)
-			V_DrawSmallScaledPatch(312, STRINGY(24) + 28, V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, sneakers);
+			V_DrawSmallScaledPatch(312, STRINGY(24) + 28, V_SNAPTORIGHT|snapflags|V_HUDTRANS, sneakers);
 		else
 			V_DrawScaledPatch(304, 24 + 56, V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, sneakers);
 	}
@@ -1356,6 +1402,7 @@ static void ST_drawNiGHTSHUD(void)
 static void ST_drawWeaponRing(powertype_t weapon, INT32 rwflag, INT32 wepflag, INT32 xoffs, patch_t *pat)
 {
 	INT32 txtflags = 0, patflags = 0;
+	INT32 snapflags = (splitscreen && stplyr == &players[displayplayer]) ? 0 : V_SNAPTOBOTTOM;
 
 	if (stplyr->powers[weapon])
 	{
@@ -1371,23 +1418,24 @@ static void ST_drawWeaponRing(powertype_t weapon, INT32 rwflag, INT32 wepflag, I
 			patflags =  V_80TRANS;
 		}
 
-		V_DrawScaledPatch(8 + xoffs, STRINGY(162), V_SNAPTOLEFT|patflags, pat);
+		V_DrawScaledPatch(8 + xoffs, STRINGY(162), snapflags|patflags, pat);
 
 		if (stplyr->powers[weapon] > 99)
-			V_DrawThinString(8 + xoffs + 1, STRINGY(162), V_SNAPTOLEFT|txtflags, va("%d", stplyr->powers[weapon]));
+			V_DrawThinString(8 + xoffs + 1, STRINGY(162), snapflags|txtflags, va("%d", stplyr->powers[weapon]));
 		else
-			V_DrawString(8 + xoffs, STRINGY(162), V_SNAPTOLEFT|txtflags, va("%d", stplyr->powers[weapon]));
+			V_DrawString(8 + xoffs, STRINGY(162), snapflags|txtflags, va("%d", stplyr->powers[weapon]));
 
 		if (stplyr->currentweapon == wepflag)
-			V_DrawScaledPatch(6 + xoffs, STRINGY(162 - (splitscreen ? 4 : 2)), V_SNAPTOLEFT, curweapon);
+			V_DrawScaledPatch(6 + xoffs, STRINGY(162 - (splitscreen ? 4 : 2)), snapflags, curweapon);
 	}
 	else if (stplyr->ringweapons & rwflag)
-		V_DrawScaledPatch(8 + xoffs, STRINGY(162), V_SNAPTOLEFT|V_TRANSLUCENT, pat);
+		V_DrawScaledPatch(8 + xoffs, STRINGY(162), snapflags|V_TRANSLUCENT, pat);
 }
 
 static void ST_drawMatchHUD(void)
 {
 	INT32 offset = (BASEVIDWIDTH / 2) - (NUM_WEAPONS * 10);
+	INT32 snapflags = (splitscreen && stplyr == &players[displayplayer]) ? 0 : V_SNAPTOBOTTOM;
 
 	if (!G_RingSlingerGametype())
 		return;
@@ -1402,12 +1450,12 @@ static void ST_drawMatchHUD(void)
 	if (stplyr->powers[pw_infinityring])
 		ST_drawWeaponRing(pw_infinityring, 0, 0, offset, infinityring);
 	else if (stplyr->health > 1)
-		V_DrawScaledPatch(8 + offset, STRINGY(162), V_SNAPTOLEFT, normring);
+		V_DrawScaledPatch(8 + offset, STRINGY(162), snapflags, normring);
 	else
-		V_DrawTranslucentPatch(8 + offset, STRINGY(162), V_SNAPTOLEFT|V_80TRANS, normring);
+		V_DrawTranslucentPatch(8 + offset, STRINGY(162), snapflags|V_80TRANS, normring);
 
 	if (!stplyr->currentweapon)
-		V_DrawScaledPatch(6 + offset, STRINGY(162 - (splitscreen ? 4 : 2)), V_SNAPTOLEFT, curweapon);
+		V_DrawScaledPatch(6 + offset, STRINGY(162 - (splitscreen ? 4 : 2)), snapflags, curweapon);
 
 	offset += 20;
 	ST_drawWeaponRing(pw_automaticring, RW_AUTO, WEP_AUTO, offset, autoring);
@@ -1468,13 +1516,13 @@ static void ST_drawMatchHUD(void)
 static inline void ST_drawRaceHUD(void)
 {
 	if (leveltime > TICRATE && leveltime <= 2*TICRATE)
-		V_DrawScaledPatch(SCX((BASEVIDWIDTH - SHORT(race3->width))/2), (INT32)(SCY(BASEVIDHEIGHT/2)), V_NOSCALESTART, race3);
+		V_DrawScaledPatch((BASEVIDWIDTH/2) - (race3->width/2), (BASEVIDHEIGHT/2) - (race3->height/2), 0, race3);
 	else if (leveltime > 2*TICRATE && leveltime <= 3*TICRATE)
-		V_DrawScaledPatch(SCX((BASEVIDWIDTH - SHORT(race2->width))/2), (INT32)(SCY(BASEVIDHEIGHT/2)), V_NOSCALESTART, race2);
+		V_DrawScaledPatch((BASEVIDWIDTH/2) - (race2->width/2), (BASEVIDHEIGHT/2) - (race2->height/2), 0, race2);
 	else if (leveltime > 3*TICRATE && leveltime <= 4*TICRATE)
-		V_DrawScaledPatch(SCX((BASEVIDWIDTH - SHORT(race1->width))/2), (INT32)(SCY(BASEVIDHEIGHT/2)), V_NOSCALESTART, race1);
+		V_DrawScaledPatch((BASEVIDWIDTH/2) - (race1->width/2), (BASEVIDHEIGHT/2) - (race1->height/2), 0, race1);
 	else if (leveltime > 4*TICRATE && leveltime <= 5*TICRATE)
-		V_DrawScaledPatch(SCX((BASEVIDWIDTH - SHORT(racego->width))/2), (INT32)(SCY(BASEVIDHEIGHT/2)), V_NOSCALESTART, racego);
+		V_DrawScaledPatch((BASEVIDWIDTH/2) - (racego->width/2), (BASEVIDHEIGHT/2) - (racego->height/2), 0, racego);
 
 	if (circuitmap)
 	{
@@ -1528,19 +1576,20 @@ static void ST_drawTagHUD(void)
 	}
 
 	// Print the stuff.
+	INT32 snapflags = (splitscreen && stplyr == &players[displayplayer]) ? 0 : V_SNAPTOBOTTOM;
 	if (pstext[0])
 	{
 		if (splitscreen)
-			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(168), 0, pstext);
+			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(120), snapflags, pstext);
 		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(184), 0, pstext);
+			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(184), V_SNAPTOBOTTOM, pstext);
 	}
 	if (pstime[0])
 	{
 		if (splitscreen)
-			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(184), 0, pstime);
+			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(136), snapflags, pstime);
 		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(192), 0, pstime);
+			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(192), V_SNAPTOBOTTOM, pstime);
 	}
 }
 
@@ -1548,17 +1597,18 @@ static void ST_drawCTFHUD(void)
 {
 	INT32 i;
 	UINT16 whichflag = 0;
+	INT32 snapflags = (splitscreen && stplyr == &players[displayplayer]) ? 0 : V_SNAPTOBOTTOM;
 
 	// Draw the flags
-	V_DrawSmallScaledPatch(256, (splitscreen) ? STRINGY(160) : STRINGY(176), V_HUDTRANS, rflagico);
-	V_DrawSmallScaledPatch(288, (splitscreen) ? STRINGY(160) : STRINGY(176), V_HUDTRANS, bflagico);
+	V_DrawSmallScaledPatch(256, (splitscreen) ? STRINGY(160) : STRINGY(176), V_HUDTRANS|snapflags|V_SNAPTORIGHT, rflagico);
+	V_DrawSmallScaledPatch(288, (splitscreen) ? STRINGY(160) : STRINGY(176), V_HUDTRANS|snapflags|V_SNAPTORIGHT, bflagico);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (players[i].gotflag & GF_REDFLAG) // Red flag isn't at base
-			V_DrawScaledPatch(256, (splitscreen) ? STRINGY(156) : STRINGY(174), V_HUDTRANS, nonicon);
+			V_DrawScaledPatch(256, (splitscreen) ? STRINGY(156) : STRINGY(174), V_HUDTRANS|snapflags|V_SNAPTORIGHT, nonicon);
 		else if (players[i].gotflag & GF_BLUEFLAG) // Blue flag isn't at base
-			V_DrawScaledPatch(288, (splitscreen) ? STRINGY(156) : STRINGY(174), V_HUDTRANS, nonicon);
+			V_DrawScaledPatch(288, (splitscreen) ? STRINGY(156) : STRINGY(174), V_HUDTRANS|snapflags|V_SNAPTORIGHT, nonicon);
 
 		whichflag |= players[i].gotflag;
 		if ((whichflag & (GF_REDFLAG|GF_BLUEFLAG)) == (GF_REDFLAG|GF_BLUEFLAG))
@@ -1569,9 +1619,10 @@ static void ST_drawCTFHUD(void)
 	if (stplyr->gotflag)
 	{
 		patch_t *p = (stplyr->gotflag & GF_REDFLAG) ? gotrflag : gotbflag;
+		INT32 snapflags = (splitscreen && stplyr == &players[displayplayer]) ? V_SNAPTOTOP : 0;
 
 		if (splitscreen)
-			V_DrawSmallScaledPatch(312, STRINGY(24) + 42, V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, p);
+			V_DrawSmallScaledPatch(312, STRINGY(24) + 42, V_SNAPTORIGHT|snapflags|V_HUDTRANS, p);
 		else
 			V_DrawScaledPatch(304, 24 + 84, V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, p);
 	}
@@ -1582,13 +1633,13 @@ static void ST_drawCTFHUD(void)
 		if (redflag && redflag->fuse > 1)
 		{
 			sprintf(timeleft, "%u", (redflag->fuse / TICRATE));
-			V_DrawCenteredString(268, STRINGY(184), V_YELLOWMAP|V_HUDTRANS, timeleft);
+			V_DrawCenteredString(268, STRINGY(184), V_YELLOWMAP|V_HUDTRANS|snapflags|V_SNAPTORIGHT, timeleft);
 		}
 
 		if (blueflag && blueflag->fuse > 1)
 		{
 			sprintf(timeleft, "%u", (blueflag->fuse / TICRATE));
-			V_DrawCenteredString(300, STRINGY(184), V_YELLOWMAP|V_HUDTRANS, timeleft);
+			V_DrawCenteredString(300, STRINGY(184), V_YELLOWMAP|V_HUDTRANS|snapflags|V_SNAPTORIGHT, timeleft);
 		}
 	}
 }
@@ -1596,12 +1647,13 @@ static void ST_drawCTFHUD(void)
 // Draws "Red Team", "Blue Team", or "Spectator" for team gametypes.
 static inline void ST_drawTeamName(void)
 {
+	INT32 snapflags = (splitscreen && stplyr == &players[displayplayer]) ? 0 : V_SNAPTOBOTTOM;
 	if (stplyr->ctfteam == 1)
-		V_DrawString(256, (splitscreen) ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF, "RED TEAM");
+		V_DrawString(256, (splitscreen) ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF|snapflags|V_SNAPTORIGHT, "RED TEAM");
 	else if (stplyr->ctfteam == 2)
-		V_DrawString(248, (splitscreen) ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF, "BLUE TEAM");
+		V_DrawString(248, (splitscreen) ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF|snapflags|V_SNAPTORIGHT, "BLUE TEAM");
 	else
-		V_DrawString(244, (splitscreen) ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF, "SPECTATOR");
+		V_DrawString(244, (splitscreen) ? STRINGY(184) : STRINGY(192), V_HUDTRANSHALF|snapflags|V_SNAPTORIGHT, "SPECTATOR");
 }
 
 static void ST_drawSpecialStageHUD(void)
