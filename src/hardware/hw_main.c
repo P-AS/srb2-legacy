@@ -83,6 +83,7 @@ static void HWR_RenderTransparentWalls(void);
 static void HWR_FoggingOn(void);
 static UINT32 atohex(const char *s);
 
+static void CV_grmodellighting_OnChange(void);
 static void CV_filtermode_ONChange(void);
 static void CV_anisotropic_ONChange(void);
 static void CV_FogDensity_ONChange(void);
@@ -99,6 +100,8 @@ static CV_PossibleValue_t grfiltermode_cons_t[]= {{HWD_SET_TEXTUREFILTER_POINTSA
 	{HWD_SET_TEXTUREFILTER_MIXED3, "Nearest_Mipmap"},
 	{0, NULL}};
 CV_PossibleValue_t granisotropicmode_cons_t[] = {{1, "MIN"}, {16, "MAX"}, {0, NULL}};
+
+CV_PossibleValue_t glloadingscreen_cons_t[] = {{0, "OFF"}, {1, "2.1.0-2.1.4"}, {2, "Pre 2.1"},  {0, NULL}};
 
 boolean drawsky = true;
 
@@ -125,6 +128,10 @@ consvar_t cv_granisotropicmode = {"gr_anisotropicmode", "1", CV_CALL|CV_SAVE, gr
 consvar_t cv_grcorrecttricks = {"gr_correcttricks", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_grmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_glloadingscreen = {"glloadingscreen", "Off", CV_SAVE, glloadingscreen_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 static void CV_FogDensity_ONChange(void)
 {
 	HWD.pfnSetSpecialState(HWD_SET_FOG_DENSITY, cv_grfogdensity.value);
@@ -138,6 +145,12 @@ static void CV_filtermode_ONChange(void)
 static void CV_anisotropic_ONChange(void)
 {
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_granisotropicmode.value);
+}
+
+static void CV_grmodellighting_OnChange(void)
+{
+	if (rendermode == render_opengl)
+		HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
 }
 
 /*
@@ -5754,84 +5767,122 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 // ==========================================================================
 //
 // ==========================================================================
-static void HWR_DrawSkyBackground(void)
+static void HWR_DrawSkyBackground(player_t *player)
 {
-	FOutVector v[4];
-	angle_t angle;
-	float dimensionmultiply;
-	float aspectratio;
-	float angleturn;
-
-	HWR_GetTexture(skytexture);
-	aspectratio = (float)vid.width/(float)vid.height;
-
-	//Hurdler: the sky is the only texture who need 4.0f instead of 1.0
-	//         because it's called just after clearing the screen
-	//         and thus, the near clipping plane is set to 3.99
-	// Sryder: Just use the near clipping plane value then
-
-	//  3--2
-	//  | /|
-	//  |/ |
-	//  0--1
-	v[0].x = v[3].x = -ZCLIP_PLANE-1;
-	v[1].x = v[2].x =  ZCLIP_PLANE+1;
-	v[0].y = v[1].y = -ZCLIP_PLANE-1;
-	v[2].y = v[3].y =  ZCLIP_PLANE+1;
-
-	v[0].z = v[1].z = v[2].z = v[3].z = ZCLIP_PLANE+1;
-
-	// X
-
-	// NOTE: This doesn't work right with texture widths greater than 1024
-	// software doesn't draw any further than 1024 for skies anyway, but this doesn't overlap properly
-	// The only time this will probably be an issue is when a sky wider than 1024 is used as a sky AND a regular wall texture
-
-	angle = (dup_viewangle + gr_xtoviewangle[0]);
-	dimensionmultiply = ((float)textures[skytexture]->width/256.0f);
-
-	v[0].sow = v[3].sow = ((float) angle / ((ANGLE_90-1)*dimensionmultiply));
-	v[2].sow = v[1].sow = (-1.0f/dimensionmultiply)+((float) angle / ((ANGLE_90-1)*dimensionmultiply));
-
-	// Y
-	angle = aimingangle;
-	dimensionmultiply = ((float)textures[skytexture]->height/(128.0f*aspectratio));
-
-	if (splitscreen)
+	if (cv_grskydome.value)
 	{
-		dimensionmultiply *= 2;
-		angle *= 2;
-	}
+		FTransform transform;
+		const float fpov = FIXED_TO_FLOAT(cv_grfov.value+player->fovadd);
+		postimg_t *type;
 
-	// Middle of the sky should always be at angle 0
-	// need to keep correct aspect ratio with X
-	if (atransform.flip)
-	{
-		// During vertical flip the sky should be flipped and it's y movement should also be flipped obviously
-		v[3].tow = v[2].tow = -(0.5f-(0.5f/dimensionmultiply));
-		v[0].tow = v[1].tow = (-1.0f/dimensionmultiply)-(0.5f-(0.5f/dimensionmultiply));
+		if (splitscreen && player == &players[secondarydisplayplayer])
+			type = &postimgtype2;
+		else
+			type = &postimgtype;
+
+		memset(&transform, 0x00, sizeof(FTransform));
+
+		//04/01/2000: Hurdler: added for T&L
+		//                     It should replace all other gr_viewxxx when finished
+		transform.anglex = (float)(aimingangle>>ANGLETOFINESHIFT)*(360.0f/(float)FINEANGLES);
+		transform.angley = (float)((viewangle-ANGLE_270)>>ANGLETOFINESHIFT)*(360.0f/(float)FINEANGLES);
+
+		if (*type == postimg_flip)
+			transform.flip = true;
+		else
+			transform.flip = false;
+
+		transform.scalex = 1;
+		transform.scaley = (float)vid.width/vid.height;
+		transform.scalez = 1;
+		transform.fovxangle = fpov; // Tails
+		transform.fovyangle = fpov; // Tails
+		transform.splitscreen = splitscreen;
+
+		HWR_GetTexture(texturetranslation[skytexture]);
+		HWD.pfnRenderSkyDome(skytexture, textures[skytexture]->width, textures[skytexture]->height, transform);
 	}
 	else
 	{
-		v[3].tow = v[2].tow = (-1.0f/dimensionmultiply)-(0.5f-(0.5f/dimensionmultiply));
-		v[0].tow = v[1].tow = -(0.5f-(0.5f/dimensionmultiply));
-	}
+		FOutVector v[4];
+		angle_t angle;
+		float dimensionmultiply;
+		float aspectratio;
+		float angleturn;
 
-	angleturn = (((float)ANGLE_45-1.0f)*aspectratio)*dimensionmultiply;
+		HWR_GetTexture(texturetranslation[skytexture]);
+		aspectratio = (float)vid.width/(float)vid.height;
 
-	if (angle > ANGLE_180) // Do this because we don't want the sky to suddenly teleport when crossing over 0 to 360 and vice versa
-	{
-		angle = InvAngle(angle);
-		v[3].tow = v[2].tow += ((float) angle / angleturn);
-		v[0].tow = v[1].tow += ((float) angle / angleturn);
-	}
-	else
-	{
-		v[3].tow = v[2].tow -= ((float) angle / angleturn);
-		v[0].tow = v[1].tow -= ((float) angle / angleturn);
-	}
+		//Hurdler: the sky is the only texture who need 4.0f instead of 1.0
+		//         because it's called just after clearing the screen
+		//         and thus, the near clipping plane is set to 3.99
+		// Sryder: Just use the near clipping plane value then
 
-	HWD.pfnDrawPolygon(NULL, v, 4, 0);
+		//  3--2
+		//  | /|
+		//  |/ |
+		//  0--1
+		v[0].x = v[3].x = -ZCLIP_PLANE-1;
+		v[1].x = v[2].x =  ZCLIP_PLANE+1;
+		v[0].y = v[1].y = -ZCLIP_PLANE-1;
+		v[2].y = v[3].y =  ZCLIP_PLANE+1;
+
+		v[0].z = v[1].z = v[2].z = v[3].z = ZCLIP_PLANE+1;
+
+		// X
+
+		// NOTE: This doesn't work right with texture widths greater than 1024
+		// software doesn't draw any further than 1024 for skies anyway, but this doesn't overlap properly
+		// The only time this will probably be an issue is when a sky wider than 1024 is used as a sky AND a regular wall texture
+
+		angle = (dup_viewangle + gr_xtoviewangle[0]);
+
+		dimensionmultiply = ((float)textures[texturetranslation[skytexture]]->width/256.0f);
+
+		v[0].sow = v[3].sow = (-1.0f * angle) / ((ANGLE_90-1)*dimensionmultiply); // left
+		v[2].sow = v[1].sow = v[0].sow + (1.0f/dimensionmultiply); // right (or left + 1.0f)
+		// use +angle and -1.0f above instead if you wanted old backwards behavior
+
+		// Y
+		angle = aimingangle;
+		dimensionmultiply = ((float)textures[texturetranslation[skytexture]]->height/(128.0f*aspectratio));
+
+		if (splitscreen)
+		{
+			dimensionmultiply *= 2;
+			angle *= 2;
+		}
+
+		// Middle of the sky should always be at angle 0
+		// need to keep correct aspect ratio with X
+		if (atransform.flip)
+		{
+			// During vertical flip the sky should be flipped and it's y movement should also be flipped obviously
+			v[3].tow = v[2].tow = -(0.5f-(0.5f/dimensionmultiply)); // top
+			v[0].tow = v[1].tow = v[3].tow - (1.0f/dimensionmultiply); // bottom (or top - 1.0f)
+		}
+		else
+		{
+			v[0].tow = v[1].tow = -(0.5f-(0.5f/dimensionmultiply)); // bottom
+			v[3].tow = v[2].tow = v[0].tow - (1.0f/dimensionmultiply); // top (or bottom - 1.0f)
+		}
+
+		angleturn = (((float)ANGLE_45-1.0f)*aspectratio)*dimensionmultiply;
+
+		if (angle > ANGLE_180) // Do this because we don't want the sky to suddenly teleport when crossing over 0 to 360 and vice versa
+		{
+			angle = InvAngle(angle);
+			v[3].tow = v[2].tow += ((float) angle / angleturn);
+			v[0].tow = v[1].tow += ((float) angle / angleturn);
+		}
+		else
+		{
+			v[3].tow = v[2].tow -= ((float) angle / angleturn);
+			v[0].tow = v[1].tow -= ((float) angle / angleturn);
+		}
+
+		HWD.pfnDrawPolygon(NULL, v, 4, 0);
+	}
 }
 
 
@@ -5983,7 +6034,7 @@ if (0)
 }
 
 	if (drawsky)
-		HWR_DrawSkyBackground();
+		HWR_DrawSkyBackground(player);
 
 	//Hurdler: it doesn't work in splitscreen mode
 	drawsky = splitscreen;
@@ -6200,7 +6251,7 @@ if (0)
 }
 
 	if (!skybox && drawsky) // Don't draw the regular sky if there's a skybox
-		HWR_DrawSkyBackground();
+		HWR_DrawSkyBackground(player);
 
 	//Hurdler: it doesn't work in splitscreen mode
 	drawsky = splitscreen;
@@ -6396,6 +6447,8 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_granisotropicmode);
 	CV_RegisterVar(&cv_grcorrecttricks);
 	CV_RegisterVar(&cv_grsolvetjoin);
+	CV_RegisterVar(&cv_grmodellighting);
+	CV_RegisterVar(&cv_glloadingscreen);
 }
 
 static inline void HWR_AddEngineCommands(void)
@@ -6711,11 +6764,6 @@ static void HWR_RenderWall(wallVert3D   *wallVerts, FSurfaceInfo *pSurf, FBITFIE
 #endif
 }
 
-void HWR_SetPaletteColor(INT32 palcolor)
-{
-	HWD.pfnSetSpecialState(HWD_SET_PALETTECOLOR, palcolor);
-}
-
 INT32 HWR_GetTextureUsed(void)
 {
 	return HWD.pfnGetTextureUsed();
@@ -6762,7 +6810,6 @@ void HWR_DoPostProcessor(player_t *player)
 	if (splitscreen) // Not supported in splitscreen - someone want to add support?
 		return;
 
-#ifdef SHUFFLE
 	// Drunken vision! WooOOooo~
 	if (*type == postimg_water || *type == postimg_heat)
 	{
@@ -6805,7 +6852,6 @@ void HWR_DoPostProcessor(player_t *player)
 			HWD.pfnMakeScreenTexture();
 	}
 	// Flipping of the screen isn't done here anymore
-#endif // SHUFFLE
 }
 
 void HWR_StartScreenWipe(void)
@@ -6852,7 +6898,7 @@ void HWR_DoWipe(UINT8 wipenum, UINT8 scrnnum)
 
 	HWR_GetFadeMask(lumpnum);
 
-	HWD.pfnDoScreenWipe(HWRWipeCounter); // Still send in wipecounter since old stuff might not support multitexturing
+	HWD.pfnDoScreenWipe();
 
 	HWRWipeCounter += 0.05f; // increase opacity of end screen
 

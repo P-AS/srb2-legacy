@@ -99,7 +99,7 @@ UINT32 demoIdleTime  = 3*TICRATE;
 boolean timingdemo; // if true, exit with report on completion
 boolean nodrawers; // for comparative timing purposes
 boolean noblit; // for comparative timing purposes
-static tic_t demostarttime; // for comparative timing purposes
+tic_t demostarttime; // for comparative timing purposes
 
 boolean netgame; // only true if packets are broadcast
 boolean multiplayer;
@@ -5709,7 +5709,7 @@ boolean G_CheckDemoStatus(void)
 		timingdemo = false;
 		f1 = (double)demotime;
 		f2 = (double)framecount*TICRATE;
-		CONS_Printf(M_GetText("timed %u gametics in %d realtics\n%f seconds, %f avg fps\n"), leveltime,demotime,f1/TICRATE,f2/f1);
+		CONS_Printf(M_GetText("timed %u gametics in %d realtics - %u frames\n%f seconds, %f avg fps\n"), leveltime,demotime,(UINT32)framecount,f1/TICRATE,f2/f1);
 		if (restorecv_vidwait != cv_vidwait.value)
 			CV_SetValue(&cv_vidwait, restorecv_vidwait);
 		D_AdvanceDemo();
