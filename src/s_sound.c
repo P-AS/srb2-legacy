@@ -1875,6 +1875,11 @@ void GameMIDIMusic_OnChange(void)
 
 void MusicPref_OnChange(void)
 {
+	// Ensure sound is started.
+	// This gets called on startup, before Mix_OpenAudio has been called, marking native MIDI as broken.
+	if(!sound_started)
+		return;
+
 	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio") ||
 		M_CheckParm("-nomidimusic") || M_CheckParm("-nodigmusic"))
 		return;
