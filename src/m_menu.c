@@ -1267,23 +1267,25 @@ static menuitem_t OP_DataOptionsMenu[] =
 
 static menuitem_t OP_ScreenshotOptionsMenu[] =
 {
-	{IT_HEADER, NULL, "Screenshots (F8)", NULL, 16},
-	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_screenshot_option,          22},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_screenshot_folder, 27},
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memory,                42},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_level,                 47},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategy,              52},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bits,           57},
-	{IT_HEADER, NULL, "Movie Mode (F9)", NULL, 64},
-	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_movie_option,              70},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_movie_folder, 	  75},
-	{IT_STRING|IT_CVAR, NULL, "Capture Mode",      &cv_moviemode,                 90},
-	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", &cv_gif_optimize,              95},
-	{IT_STRING|IT_CVAR, NULL, "Downscaling",       &cv_gif_downscale,             100},
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memorya,              95},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_levela,               100},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategya,            105},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bitsa,         110},
+	{IT_HEADER, NULL, "Screenshots (F8)", NULL, 0},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_screenshot_option,          5},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_screenshot_folder, 10},
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memory,                25},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_level,                 30},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategy,              35},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bits,           40},
+	{IT_HEADER, NULL, "Movie Mode (F9)", NULL, 50},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_movie_option,              55},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_movie_folder,     60},
+	{IT_STRING|IT_CVAR, NULL, "Capture Mode",      &cv_moviemode,                 75},
+	// Shows when GIF is selected
+	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", &cv_gif_optimize,              80},
+	{IT_STRING|IT_CVAR, NULL, "Downscaling",       &cv_gif_downscale,             85},
+	// Shows when APNG is selected
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memorya,              80},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_levela,               85},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategya,            90},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bitsa,         95},
 };
 
 enum
