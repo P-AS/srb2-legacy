@@ -7805,9 +7805,11 @@ static void M_DrawGenericScrollMenu(void)
 	}
 
 	if (i)
-		V_DrawString(currentMenu->x - 20, currentMenu->y, V_YELLOWMAP, "\x1A"); // up arrow
+		V_DrawCharacter(currentMenu->x - 16, y - (skullAnimCounter / 5),
+			'\x1A' |V_YELLOWMAP, false); // up arrow
 	if (max != currentMenu->numitems)
-		V_DrawString(currentMenu->x - 20, currentMenu->y + 2*scrollareaheight, V_YELLOWMAP, "\x1B"); // down arrow
+		V_DrawCharacter(currentMenu->x - 16, y + (SMALLLINEHEIGHT * (controlheight - 1)) + (skullAnimCounter / 5) + (skullAnimCounter / 5),
+			'\x1B' |V_YELLOWMAP, false); // down arrow
 
 	// draw title (or big pic)
 	M_DrawMenuTitle();
