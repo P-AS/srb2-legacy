@@ -253,6 +253,18 @@ void Moviemode_option_Onchange(void);
 	NULL\
 }
 
+#define DEFAULTSCROLLMENUSTYLE(header, source, prev, x, y)\
+{\
+	header,\
+	sizeof(source)/sizeof(menuitem_t),\
+	prev,\
+	source,\
+	M_DrawGenericScrollMenu,\
+	x, y,\
+	0,\
+	NULL\
+}
+
 #define PAUSEMENUSTYLE(source, x, y)\
 {\
 	NULL,\
