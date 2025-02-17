@@ -72,7 +72,6 @@ void M_QuitResponse(INT32 ch);
 // Determines whether to show a level in the list
 boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
 
-
 // flags for items in the menu
 // menu handle (what we do when key is pressed
 #define IT_TYPE             14     // (2+4+8)
@@ -171,10 +170,17 @@ typedef struct menu_s
 void M_SetupNextMenu(menu_t *menudef);
 void M_ClearMenus(boolean callexitmenufunc);
 
+// Maybe this goes here????? Who knows.
+boolean M_MouseNeeded(void);
+
 extern menu_t *currentMenu;
 
 extern menu_t MainDef;
 extern menu_t SP_LoadDef;
+
+// Call upon joystick hotplug
+void M_SetupJoystickMenu(INT32 choice);
+extern menu_t OP_JoystickSetDef;
 
 // Stuff for customizing the player select screen
 typedef struct
@@ -231,6 +237,9 @@ void Screenshot_option_Onchange(void);
 // Addons menu updating
 void Addons_option_Onchange(void);
 
+// Moviemode menu updating
+void Moviemode_option_Onchange(void);
+
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(header, source, prev, x, y)\
 {\
@@ -239,6 +248,18 @@ void Addons_option_Onchange(void);
 	prev,\
 	source,\
 	M_DrawGenericMenu,\
+	x, y,\
+	0,\
+	NULL\
+}
+
+#define DEFAULTSCROLLMENUSTYLE(header, source, prev, x, y)\
+{\
+	header,\
+	sizeof(source)/sizeof(menuitem_t),\
+	prev,\
+	source,\
+	M_DrawGenericScrollMenu,\
 	x, y,\
 	0,\
 	NULL\

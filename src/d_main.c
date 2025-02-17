@@ -151,6 +151,7 @@ char srb2path[256] = ".";
 #endif
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
+static char addonsdir[MAX_WADPATH];
 
 //
 // EVENT HANDLING
@@ -461,6 +462,13 @@ static void D_Display(void)
 			F_WipeEndScreen();
 			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK);
 		}
+
+		// reset counters so timedemo doesn't count the wipe duration
+		if (timingdemo)
+		{
+			framecount = 0;
+			demostarttime = I_GetTime();
+		}
 	}
 
 	NetUpdate(); // send out any new accumulation
@@ -511,9 +519,6 @@ void D_SRB2Loop(void)
 
 	if (dedicated)
 		server = true;
-
-	if (M_CheckParm("-voodoo")) // 256x256 Texture Limiter
-		COM_BufAddText("gr_voodoocompatibility on\n");
 
 	// Pushing of + parameters is now done back in D_SRB2Main, not here.
 
@@ -1002,7 +1007,7 @@ void D_SRB2Main(void)
 #endif
 
 	// for dedicated server
-#if !defined (_WINDOWS) //already check in win_main.c
+#if !defined (_WINDOWS) && !defined(DEDICATED) //already check in win_main.c
 	dedicated = M_CheckParm("-dedicated") != 0;
 #endif
 
@@ -1061,7 +1066,6 @@ void D_SRB2Main(void)
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, srb2home, PATHSEP);
 
-			I_mkdir(srb2home, 0700);
 #else
 			snprintf(srb2home, sizeof srb2home, "%s", userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
@@ -1081,6 +1085,11 @@ void D_SRB2Main(void)
 	strcpy(downloaddir, "/ram"); // the dreamcast's TMP
 #endif
 	}
+
+
+	// Create addons dir
+	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
+	I_mkdir(addonsdir, 0755);
 
 	// rand() needs seeded regardless of password
 	srand((unsigned int)time(NULL));

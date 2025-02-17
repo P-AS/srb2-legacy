@@ -134,18 +134,6 @@ if(${SDL2_FOUND})
 		-DHAVE_SDL
 	)
 
-	## strip debug symbols into separate file when using gcc
-	if(CMAKE_COMPILER_IS_GNUCC)
-		if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-			message(STATUS "Will make separate debug symbols in *.debug")
-			add_custom_command(TARGET SRB2SDL2 POST_BUILD
-				COMMAND ${OBJCOPY} --only-keep-debug $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
-				COMMAND ${OBJCOPY} --strip-debug $<TARGET_FILE:SRB2SDL2>
-				COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_NAME:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
-			)
-		endif()
-	endif()
-
 	#### Installation ####
 	if(${CMAKE_SYSTEM} MATCHES Darwin)
 		install(TARGETS SRB2SDL2
@@ -155,6 +143,15 @@ if(${SDL2_FOUND})
 		install(TARGETS SRB2SDL2 SRB2SDL2
 			RUNTIME DESTINATION .
 		)
+		if ((${CMAKE_BUILD_TYPE} MATCHES Debug) OR (${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo))
+			set(SRB2_DEBUG_INSTALL OFF CACHE BOOL "Insert *.debug file into the install directory or package.")
+			if (${SRB2_DEBUG_INSTALL})
+				install(FILES $<TARGET_FILE:SRB2SDL2>.debug
+					DESTINATION .
+					OPTIONAL
+				)
+			endif()
+		endif()
 	endif()
 
 	if(${CMAKE_SYSTEM} MATCHES Windows)

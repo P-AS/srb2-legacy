@@ -65,6 +65,13 @@
 // And just some randomness for the exits.
 #include "m_random.h"
 
+#if defined(HAVE_SDL)
+#include "SDL.h"
+#if SDL_VERSION_ATLEAST(2,0,0)
+#include "sdl/sdlmain.h" // JOYSTICK_HOTPLUG
+#endif
+#endif
+
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
 int	snprintf(char *str, size_t n, const char *fmt, ...);
@@ -279,6 +286,7 @@ static patch_t *addonsp[NUM_EXT+5];
 
 // Drawing functions
 static void M_DrawGenericMenu(void);
+static void M_DrawGenericScrollMenu(void);
 static void M_DrawCenteredMenu(void);
 static void M_DrawAddons(void);
 static void M_DrawSkyRoom(void);
@@ -1164,18 +1172,24 @@ static menuitem_t OP_VideoModeMenu[] =
 #ifdef HWRENDER
 static menuitem_t OP_OpenGLOptionsMenu[] =
 {
-	{IT_STRING|IT_CVAR,         NULL, "Field of view",   &cv_grfov,            10},
-	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        20},
-	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     30},
-	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,40},
+	{IT_STRING|IT_CVAR,         NULL, "3D Models",    &cv_grmd2,      10},
+	{IT_STRING|IT_CVAR,         NULL, "Model Interpolation",    &cv_grmodelinterpolation,      20},
+	{IT_STRING|IT_CVAR,         NULL, "Ambient lighting",    &cv_grmodellighting,      30},
+	{IT_STRING|IT_CVAR,         NULL, "Field of view",   &cv_grfov,            40},
+	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        50},
+	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     60},
+	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,70},
+	{IT_STRING|IT_CVAR,         NULL, "Sky Dome",    &cv_grskydome,      80},
+	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen",    &cv_glloadingscreen,      90},
 #ifdef _WINDOWS
-	{IT_STRING|IT_CVAR,         NULL, "Fullscreen",      &cv_fullscreen,       50},
+	{IT_STRING|IT_CVAR,         NULL, "Fullscreen",      &cv_fullscreen,       100},
 #endif
+
 #ifdef ALAM_LIGHTING
-	{IT_SUBMENU|IT_STRING,      NULL, "Lighting...",     &OP_OpenGLLightingDef,     70},
+	{IT_SUBMENU|IT_STRING,      NULL, "Lighting...",     &OP_OpenGLLightingDef,     110},
 #endif
-	{IT_SUBMENU|IT_STRING,      NULL, "Fog...",          &OP_OpenGLFogDef,          80},
-	{IT_SUBMENU|IT_STRING,      NULL, "Gamma...",        &OP_OpenGLColorDef,        90},
+	{IT_SUBMENU|IT_STRING,      NULL, "Fog...",          &OP_OpenGLFogDef,          120},
+	{IT_SUBMENU|IT_STRING,      NULL, "Gamma...",        &OP_OpenGLColorDef,        130},
 };
 
 #ifdef ALAM_LIGHTING
@@ -1255,35 +1269,36 @@ static menuitem_t OP_DataOptionsMenu[] =
 
 static menuitem_t OP_ScreenshotOptionsMenu[] =
 {
-	{IT_STRING|IT_CVAR, NULL, "Storage Location", &cv_screenshot_option, 10},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_screenshot_folder, 20},
-
-	{IT_HEADER, NULL, "Screenshots (F8)", NULL, 50},
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memory,      60},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_level,       70},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategy,    80},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bits, 90},
-
-	{IT_HEADER, NULL, "Movie Mode (F9)", NULL, 105},
-	{IT_STRING|IT_CVAR, NULL, "Capture Mode", &cv_moviemode, 115},
-
-	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", &cv_gif_optimize,  125},
-	{IT_STRING|IT_CVAR, NULL, "Downscaling",       &cv_gif_downscale, 135},
-
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memorya,      125},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_levela,       135},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategya,    145},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bitsa, 155},
+	{IT_HEADER, NULL, "Screenshots (F8)", NULL, 0},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_screenshot_option,          5},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_screenshot_folder, 10},
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memory,                25},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_level,                 30},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategy,              35},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bits,           40},
+	{IT_HEADER, NULL, "Movie Mode (F9)", NULL, 50},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_movie_option,              55},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_movie_folder,     60},
+	{IT_STRING|IT_CVAR, NULL, "Capture Mode",      &cv_moviemode,                 75},
+	// Shows when GIF is selected
+	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", &cv_gif_optimize,              80},
+	{IT_STRING|IT_CVAR, NULL, "Downscaling",       &cv_gif_downscale,             85},
+	// Shows when APNG is selected
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memorya,              80},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_levela,               85},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategya,            90},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bitsa,         95},
 };
 
 enum
 {
-	op_screenshot_folder = 1,
-	op_screenshot_capture = 8,
-	op_screenshot_gif_start = 9,
-	op_screenshot_gif_end = 10,
-	op_screenshot_apng_start = 11,
-	op_screenshot_apng_end = 14,
+	op_screenshot_folder = 2,
+	op_movie_folder = 9,
+	op_screenshot_capture = 10,
+	op_screenshot_gif_start = 11,
+	op_screenshot_gif_end = 12,
+	op_screenshot_apng_start = 13,
+	op_screenshot_apng_end = 16,
 };
 
 static menuitem_t OP_EraseDataMenu[] =
@@ -1799,7 +1814,7 @@ menu_t OP_OpenGLColorDef =
 };
 #endif
 menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE("M_DATA", OP_DataOptionsMenu, &OP_MainDef, 60, 30);
-menu_t OP_ScreenshotOptionsDef = DEFAULTMENUSTYLE("M_DATA", OP_ScreenshotOptionsMenu, &OP_DataOptionsDef, 30, 30);
+menu_t OP_ScreenshotOptionsDef = DEFAULTSCROLLMENUSTYLE("M_DATA", OP_ScreenshotOptionsMenu, &OP_DataOptionsDef, 30, 30);
 menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE("M_ADDONS", OP_AddonsOptionsMenu, &OP_MainDef, 30, 30);
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE("M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
 
@@ -2031,6 +2046,12 @@ void Addons_option_Onchange(void)
 {
 	OP_AddonsOptionsMenu[op_addons_folder].status =
 		(cv_addons_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+}
+
+void Moviemode_option_Onchange(void)
+{
+	OP_ScreenshotOptionsMenu[op_movie_folder].status =
+		(cv_movie_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 }
 
 // ==========================================================================
@@ -2371,7 +2392,7 @@ boolean M_Responder(event_t *ev)
 		// ignore ev_keydown events if the key maps to a character, since
 		// the ev_text event will follow immediately after in that case.
 		if (ev->type == ev_keydown && ch >= 32 && ch <= 127)
-			return false;
+			return true;
 		routine(ch);
 		return true;
 	}
@@ -2792,6 +2813,12 @@ void M_SetupNextMenu(menu_t *menudef)
 			}
 		}
 	}
+}
+
+// Guess I'll put this here, idk
+boolean M_MouseNeeded(void)
+{
+	return (currentMenu == &MessageDef && currentMenu->prevMenu == &OP_AllControlsDef);
 }
 
 //
@@ -7455,7 +7482,7 @@ static void M_ScreenshotOptions(INT32 choice)
 
 static void M_DrawJoystick(void)
 {
-	INT32 i;
+	INT32 i, compareval2, compareval;
 
 	M_DrawGenericMenu();
 
@@ -7464,15 +7491,30 @@ static void M_DrawJoystick(void)
 		M_DrawTextBox(OP_JoystickSetDef.x-8, OP_JoystickSetDef.y+LINEHEIGHT*i-12, 28, 1);
 		//M_DrawSaveLoadBorder(OP_JoystickSetDef.x, OP_JoystickSetDef.y+LINEHEIGHT*i);
 
-		if ((setupcontrols_secondaryplayer && (i == cv_usejoystick2.value))
-			|| (!setupcontrols_secondaryplayer && (i == cv_usejoystick.value)))
+#ifdef JOYSTICK_HOTPLUG
+		if (atoi(cv_usejoystick2.string) > I_NumJoys())
+			compareval2 = atoi(cv_usejoystick2.string);
+		else
+			compareval2 = cv_usejoystick2.value;
+
+		if (atoi(cv_usejoystick.string) > I_NumJoys())
+			compareval = atoi(cv_usejoystick.string);
+		else
+			compareval = cv_usejoystick.value;
+#else
+		compareval2 = cv_usejoystick2.value;
+		compareval = cv_usejoystick.value;
+#endif
+
+		if ((setupcontrols_secondaryplayer && (i == compareval2))
+			|| (!setupcontrols_secondaryplayer && (i == compareval)))
 			V_DrawString(OP_JoystickSetDef.x, OP_JoystickSetDef.y+LINEHEIGHT*i-4,V_GREENMAP,joystickInfo[i]);
 		else
 			V_DrawString(OP_JoystickSetDef.x, OP_JoystickSetDef.y+LINEHEIGHT*i-4,0,joystickInfo[i]);
 	}
 }
 
-static void M_SetupJoystickMenu(INT32 choice)
+void M_SetupJoystickMenu(INT32 choice)
 {
 	INT32 i = 0;
 	const char *joyNA = "Unavailable";
@@ -7487,6 +7529,21 @@ static void M_SetupJoystickMenu(INT32 choice)
 			strncpy(joystickInfo[i], I_GetJoyName(i), 28);
 		else
 			strcpy(joystickInfo[i], joyNA);
+
+#ifdef JOYSTICK_HOTPLUG
+		// We use cv_usejoystick.string as the USER-SET var
+		// and cv_usejoystick.value as the INTERNAL var
+		//
+		// In practice, if cv_usejoystick.string == 0, this overrides
+		// cv_usejoystick.value and always disables
+		//
+		// Update cv_usejoystick.string here so that the user can
+		// properly change this value.
+		if (i == cv_usejoystick.value)
+			CV_SetValue(&cv_usejoystick, i);
+		if (i == cv_usejoystick2.value)
+			CV_SetValue(&cv_usejoystick2, i);
+#endif
 	}
 
 	M_SetupNextMenu(&OP_JoystickSetDef);
@@ -7508,10 +7565,76 @@ static void M_Setup2PJoystickMenu(INT32 choice)
 
 static void M_AssignJoystick(INT32 choice)
 {
+#ifdef JOYSTICK_HOTPLUG
+	INT32 oldchoice, oldstringchoice;
+	INT32 numjoys = I_NumJoys();
+
+	if (setupcontrols_secondaryplayer)
+	{
+		oldchoice = oldstringchoice = atoi(cv_usejoystick2.string) > numjoys ? atoi(cv_usejoystick2.string) : cv_usejoystick2.value;
+		CV_SetValue(&cv_usejoystick2, choice);
+
+		// Just in case last-minute changes were made to cv_usejoystick.value,
+		// update the string too
+		// But don't do this if we're intentionally setting higher than numjoys
+		if (choice <= numjoys)
+		{
+			CV_SetValue(&cv_usejoystick2, cv_usejoystick2.value);
+
+			// reset this so the comparison is valid
+			if (oldchoice > numjoys)
+				oldchoice = cv_usejoystick2.value;
+
+			if (oldchoice != choice)
+			{
+				if (choice && oldstringchoice > numjoys) // if we did not select "None", we likely selected a used device
+					CV_SetValue(&cv_usejoystick2, (oldstringchoice > numjoys ? oldstringchoice : oldchoice));
+
+				if (oldstringchoice ==
+					(atoi(cv_usejoystick2.string) > numjoys ? atoi(cv_usejoystick2.string) : cv_usejoystick2.value))
+					M_StartMessage("This joystick is used by another\n"
+					               "player. Reset the joystick\n"
+					               "for that player first.\n\n"
+					               "(Press a key)\n", NULL, MM_NOTHING);
+			}
+		}
+	}
+	else
+	{
+		oldchoice = oldstringchoice = atoi(cv_usejoystick.string) > numjoys ? atoi(cv_usejoystick.string) : cv_usejoystick.value;
+		CV_SetValue(&cv_usejoystick, choice);
+
+		// Just in case last-minute changes were made to cv_usejoystick.value,
+		// update the string too
+		// But don't do this if we're intentionally setting higher than numjoys
+		if (choice <= numjoys)
+		{
+			CV_SetValue(&cv_usejoystick, cv_usejoystick.value);
+
+			// reset this so the comparison is valid
+			if (oldchoice > numjoys)
+				oldchoice = cv_usejoystick.value;
+
+			if (oldchoice != choice)
+			{
+				if (choice && oldstringchoice > numjoys) // if we did not select "None", we likely selected a used device
+					CV_SetValue(&cv_usejoystick, (oldstringchoice > numjoys ? oldstringchoice : oldchoice));
+
+				if (oldstringchoice ==
+					(atoi(cv_usejoystick.string) > numjoys ? atoi(cv_usejoystick.string) : cv_usejoystick.value))
+					M_StartMessage("This joystick is used by another\n"
+					               "player. Reset the joystick\n"
+					               "for that player first.\n\n"
+					               "(Press a key)\n", NULL, MM_NOTHING);
+			}
+		}
+	}
+#else
 	if (setupcontrols_secondaryplayer)
 		CV_SetValue(&cv_usejoystick2, choice);
 	else
 		CV_SetValue(&cv_usejoystick, choice);
+#endif
 }
 
 // =============
@@ -7654,6 +7777,120 @@ static void M_DrawControl(void)
 	V_DrawScaledPatch(currentMenu->x - 20, cursory, 0,
 		W_CachePatchName("M_CURSOR", PU_CACHE));
 }
+
+#define scrollareaheight 72
+
+// note that alphakey is multiplied by 2 for scrolling menus to allow greater usage in UINT8 range.
+static void M_DrawGenericScrollMenu(void)
+{
+	INT32 x, y, i, max, tempcentery, cursory = 0;
+
+	// DRAW MENU
+	x = currentMenu->x;
+	y = currentMenu->y;
+
+	if ((currentMenu->menuitems[itemOn].alphaKey*2 - currentMenu->menuitems[0].alphaKey*2) <= scrollareaheight)
+		tempcentery = currentMenu->y - currentMenu->menuitems[0].alphaKey*2;
+	else if ((currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 - currentMenu->menuitems[itemOn].alphaKey*2) <= scrollareaheight)
+		tempcentery = currentMenu->y - currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 + 2*scrollareaheight;
+	else
+		tempcentery = currentMenu->y - currentMenu->menuitems[itemOn].alphaKey*2 + scrollareaheight;
+
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+		if (currentMenu->menuitems[i].alphaKey*2 + tempcentery >= currentMenu->y)
+			break;
+	}
+
+	for (max = currentMenu->numitems; max > 0; max--)
+	{
+		if (currentMenu->menuitems[max-1].alphaKey*2 + tempcentery <= (currentMenu->y + 2*scrollareaheight))
+			break;
+	}
+
+	if (i)
+		V_DrawCharacter(currentMenu->x - 16, y - (skullAnimCounter / 5),
+			'\x1A' |V_YELLOWMAP, false); // up arrow
+	if (max != currentMenu->numitems)
+		V_DrawCharacter(currentMenu->x - 16, y + (SMALLLINEHEIGHT * (controlheight - 1)) + (skullAnimCounter / 5) + (skullAnimCounter / 5),
+			'\x1B' |V_YELLOWMAP, false); // down arrow
+
+	// draw title (or big pic)
+	M_DrawMenuTitle();
+
+	for (; i < max; i++)
+	{
+		y = currentMenu->menuitems[i].alphaKey*2 + tempcentery;
+		if (i == itemOn)
+			cursory = y;
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		{
+			case IT_PATCH:
+			case IT_DYBIGSPACE:
+			case IT_BIGSLIDER:
+			case IT_STRING2:
+			case IT_DYLITLSPACE:
+			case IT_GRAYPATCH:
+			case IT_TRANSTEXT2:
+				// unsupported
+				break;
+			case IT_NOTHING:
+				break;
+			case IT_STRING:
+			case IT_WHITESTRING:
+				if (i == itemOn || (currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
+					V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
+				else
+					V_DrawString(x, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
+
+				// Cvar specific handling
+				switch (currentMenu->menuitems[i].status & IT_TYPE)
+					case IT_CVAR:
+					{
+						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
+						{
+							case IT_CV_SLIDER:
+								M_DrawSlider(x, y, cv);
+							case IT_CV_NOPRINT: // color use this
+							case IT_CV_INVISSLIDER: // monitor toggles use this
+								break;
+							case IT_CV_STRING:
+								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+								if (skullAnimCounter < 4 && i == itemOn)
+									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
+										'_' | 0x80, false);
+								y += 16;
+								break;
+							default:
+								V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0), y,
+									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
+								break;
+						}
+						break;
+					}
+					break;
+			case IT_TRANSTEXT:
+				V_DrawString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
+				break;
+			case IT_QUESTIONMARKS:
+				V_DrawString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
+				break;
+			case IT_HEADERTEXT: // draws 16 pixels to the left, in yellow text
+				V_DrawString(x-16, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
+				//M_DrawLevelPlatterHeader(y - (lsheadingheight - 12),currentMenu->menuitems[i].text, true);
+				break;
+		}
+	}
+
+	// DRAW THE SKULL CURSOR
+	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
+		W_CachePatchName("M_CURSOR", PU_CACHE));
+}
+
+#undef scrollareaheight
+
 
 #undef controlheight
 

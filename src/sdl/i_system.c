@@ -51,6 +51,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <direct.h>
 #endif
 #if defined (__unix__) || defined (UNIXCOMMON)
+#include <poll.h>
 #include <fcntl.h>
 #endif
 
@@ -453,49 +454,58 @@ void I_GetConsoleEvents(void)
 	// we use this when sending back commands
 	event_t ev = {0,0,0,0};
 	char key = 0;
-	ssize_t d;
+	struct pollfd pfd = {
+		.fd = STDIN_FILENO,
+		.events = POLLIN,
+		.revents = 0,
+	};
 
 	if (!consolevent)
 		return;
 
-	ev.type = ev_console;
-	if (read(STDIN_FILENO, &key, 1) == -1 || !key)
-		return;
+	for (;;)
+	{
+		if (poll(&pfd, 1, 0) < 1 || !(pfd.revents & POLLIN))
+			return;
 
-	// we have something
-	// backspace?
-	// NOTE TTimo testing a lot of values .. seems it's the only way to get it to work everywhere
-	if ((key == tty_erase) || (key == 127) || (key == 8))
-	{
-		if (tty_con.cursor > 0)
+		ev.type = ev_console;
+		if (read(STDIN_FILENO, &key, 1) == -1 || !key)
+			return;
+
+		// we have something
+		// backspace?
+		// NOTE TTimo testing a lot of values .. seems it's the only way to get it to work everywhere
+		if ((key == tty_erase) || (key == 127) || (key == 8))
 		{
-			tty_con.cursor--;
-			tty_con.buffer[tty_con.cursor] = '\0';
-			tty_Back();
+			if (tty_con.cursor > 0)
+			{
+				tty_con.cursor--;
+				tty_con.buffer[tty_con.cursor] = '\0';
+				tty_Back();
+			}
+			ev.data1 = KEY_BACKSPACE;
 		}
-		ev.data1 = KEY_BACKSPACE;
-	}
-	else if (key < ' ') // check if this is a control char
-	{
-		if (key == '\n')
+		else if (key < ' ') // check if this is a control char
 		{
-			tty_Clear();
-			tty_con.cursor = 0;
-			ev.data1 = KEY_ENTER;
+			if (key == '\n')
+			{
+				tty_Clear();
+				tty_con.cursor = 0;
+				ev.data1 = KEY_ENTER;
+			}
+			else continue;
 		}
-		else return;
+		else
+		{
+			// push regular character
+			ev.data1 = tty_con.buffer[tty_con.cursor] = key;
+			tty_con.cursor++;
+			// print the current line (this is differential)
+			write(STDOUT_FILENO, &key, 1);
+		}
+		if (ev.data1) D_PostEvent(&ev);
+		//tty_FlushIn();
 	}
-	else
-	{
-		// push regular character
-		ev.data1 = tty_con.buffer[tty_con.cursor] = key;
-		tty_con.cursor++;
-		// print the current line (this is differential)
-		d = write(STDOUT_FILENO, &key, 1);
-	}
-	if (ev.data1) D_PostEvent(&ev);
-	//tty_FlushIn();
-	(void)d;
 }
 
 #elif defined (_WIN32)
@@ -831,6 +841,23 @@ void I_JoyScale2(void)
 	JoyInfo2.scale = Joystick2.bGamepadStyle?1:cv_joyscale2.value;
 }
 
+// Cheat to get the device index for a joystick handle
+INT32 I_GetJoystickDeviceIndex(SDL_Joystick *dev)
+{
+	INT32 i, count = SDL_NumJoysticks();
+
+	for (i = 0; dev && i < count; i++)
+	{
+		SDL_Joystick *test = SDL_JoystickOpen(i);
+		if (test && test == dev)
+			return i;
+		else if (JoyInfo.dev != test && JoyInfo2.dev != test)
+			SDL_JoystickClose(test);
+	}
+
+	return -1;
+}
+
 /**	\brief Joystick 1 buttons states
 */
 static UINT64 lastjoybuttons = 0;
@@ -846,7 +873,7 @@ static UINT64 lastjoyhats = 0;
 
 
 */
-static void I_ShutdownJoystick(void)
+void I_ShutdownJoystick(void)
 {
 	INT32 i;
 	event_t event;
@@ -880,14 +907,8 @@ static void I_ShutdownJoystick(void)
 
 	joystick_started = 0;
 	JoyReset(&JoyInfo);
-	if (!joystick_started && !joystick2_started && SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
-	{
-		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
-		if (cv_usejoystick.value == 0)
-		{
-			I_OutputMsg("I_Joystick: SDL's Joystick system has been shutdown\n");
-		}
-	}
+
+	// don't shut down the subsystem here, because hotplugging
 }
 
 void I_GetJoystickEvents(void)
@@ -1028,74 +1049,66 @@ void I_GetJoystickEvents(void)
 
 
 */
-static int joy_open(const char *fname)
+static int joy_open(int joyindex)
 {
-	int joyindex = atoi(fname);
+	SDL_Joystick *newdev = NULL;
 	int num_joy = 0;
-	int i;
 
-	if (joystick_started == 0 && joystick2_started == 0)
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
 	{
-		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) == -1)
-		{
-			CONS_Printf(M_GetText("Couldn't initialize joystick: %s\n"), SDL_GetError());
-			return -1;
-		}
-		else
-		{
-			num_joy = SDL_NumJoysticks();
-		}
+		CONS_Printf(M_GetText("Joystick subsystem not started\n"));
+		return -1;
+	}
 
-		if (num_joy < joyindex)
-		{
-			CONS_Printf(M_GetText("Cannot use joystick #%d/(%s), it doesn't exist\n"),joyindex,fname);
-			for (i = 0; i < num_joy; i++)
-				CONS_Printf("#%d/(%s)\n", i+1, SDL_JoystickNameForIndex(i));
-			I_ShutdownJoystick();
-			return -1;
-		}
-	}
-	else
-	{
-		JoyReset(&JoyInfo);
-		//I_ShutdownJoystick();
-		//joy_open(fname);
-	}
+	if (joyindex <= 0)
+		return -1;
 
 	num_joy = SDL_NumJoysticks();
 
-	if (joyindex <= 0 || num_joy == 0 || JoyInfo.oldjoy == joyindex)
+	if (num_joy == 0)
 	{
-//		I_OutputMsg("Unable to use that joystick #(%s), non-number\n",fname);
-		if (num_joy != 0)
-		{
-			CONS_Printf(M_GetText("Found %d joysticks on this system\n"), num_joy);
-			for (i = 0; i < num_joy; i++)
-				CONS_Printf("#%d/(%s)\n", i+1, SDL_JoystickNameForIndex(i));
-		}
-		else
-			CONS_Printf("%s", M_GetText("Found no joysticks on this system\n"));
-		if (joyindex <= 0 || num_joy == 0) return 0;
+		CONS_Printf("%s", M_GetText("Found no joysticks on this system\n"));
+		return -1;
 	}
 
-	JoyInfo.dev = SDL_JoystickOpen(joyindex-1);
+	newdev = SDL_JoystickOpen(joyindex-1);
+
+	// Handle the edge case where the device <-> joystick index assignment can change due to hotplugging
+	// This indexing is SDL's responsibility and there's not much we can do about it.
+	//
+	// Example:
+	// 1. Plug Controller A   -> Index 0 opened
+	// 2. Plug Controller B   -> Index 1 opened
+	// 3. Unplug Controller A -> Index 0 closed, Index 1 active
+	// 4. Unplug Controller B -> Index 0 inactive, Index 1 closed
+	// 5. Plug Controller B   -> Index 0 opened
+	// 6. Plug Controller A   -> Index 0 REPLACED, opened as Controller A; Index 1 is now Controller B
+	if (JoyInfo.dev)
+	{
+		if (JoyInfo.dev == newdev // same device, nothing to do
+			|| (newdev == NULL && SDL_JoystickGetAttached(JoyInfo.dev))) // we failed, but already have a working device
+			return JoyInfo.axises;
+		// Else, we're changing devices, so send neutral joy events
+		CONS_Debug(DBG_GAMELOGIC, "Joystick1 device is changing; resetting events...\n");
+		I_ShutdownJoystick();
+	}
+
+	JoyInfo.dev = newdev;
 
 	if (JoyInfo.dev == NULL)
 	{
-		CONS_Printf(M_GetText("Couldn't open joystick: %s\n"), SDL_GetError());
-		I_ShutdownJoystick();
+		CONS_Debug(DBG_GAMELOGIC, M_GetText("Joystick1: Couldn't open device - %s\n"), SDL_GetError());
 		return -1;
 	}
 	else
 	{
-		CONS_Printf(M_GetText("Joystick: %s\n"), SDL_JoystickName(JoyInfo.dev));
+		CONS_Debug(DBG_GAMELOGIC, M_GetText("Joystick1: %s\n"), SDL_JoystickName(JoyInfo.dev));
 		JoyInfo.axises = SDL_JoystickNumAxes(JoyInfo.dev);
 		if (JoyInfo.axises > JOYAXISSET*2)
 			JoyInfo.axises = JOYAXISSET*2;
-/*		if (joyaxes<2)
+	/*		if (joyaxes<2)
 		{
 			I_OutputMsg("Not enought axes?\n");
-			I_ShutdownJoystick();
 			return 0;
 		}*/
 
@@ -1130,7 +1143,7 @@ static UINT64 lastjoy2hats = 0;
 
 	\return	void
 */
-static void I_ShutdownJoystick2(void)
+void I_ShutdownJoystick2(void)
 {
 	INT32 i;
 	event_t event;
@@ -1164,14 +1177,8 @@ static void I_ShutdownJoystick2(void)
 
 	joystick2_started = 0;
 	JoyReset(&JoyInfo2);
-	if (!joystick_started && !joystick2_started && SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
-	{
-		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
-		if (cv_usejoystick2.value == 0)
-		{
-			DEBFILE("I_Joystick2: SDL's Joystick system has been shutdown\n");
-		}
-	}
+
+	// don't shut down the subsystem here, because hotplugging
 }
 
 void I_GetJoystick2Events(void)
@@ -1314,72 +1321,66 @@ void I_GetJoystick2Events(void)
 
 
 */
-static int joy_open2(const char *fname)
+static int joy_open2(int joyindex)
 {
-	int joyindex = atoi(fname);
+	SDL_Joystick *newdev = NULL;
 	int num_joy = 0;
-	int i;
 
-	if (joystick_started == 0 && joystick2_started == 0)
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
 	{
-		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) == -1)
-		{
-			CONS_Printf(M_GetText("Couldn't initialize joystick: %s\n"), SDL_GetError());
-			return -1;
-		}
-		else
-			num_joy = SDL_NumJoysticks();
+		CONS_Printf(M_GetText("Joystick subsystem not started\n"));
+		return -1;
+	}
 
-		if (num_joy < joyindex)
-		{
-			CONS_Printf(M_GetText("Cannot use joystick #%d/(%s), it doesn't exist\n"),joyindex,fname);
-			for (i = 0; i < num_joy; i++)
-				CONS_Printf("#%d/(%s)\n", i+1, SDL_JoystickNameForIndex(i));
-			I_ShutdownJoystick2();
-			return -1;
-		}
-	}
-	else
-	{
-		JoyReset(&JoyInfo2);
-		//I_ShutdownJoystick();
-		//joy_open(fname);
-	}
+	if (joyindex <= 0)
+		return -1;
 
 	num_joy = SDL_NumJoysticks();
 
-	if (joyindex <= 0 || num_joy == 0 || JoyInfo2.oldjoy == joyindex)
+	if (num_joy == 0)
 	{
-//		I_OutputMsg("Unable to use that joystick #(%s), non-number\n",fname);
-		if (num_joy != 0)
-		{
-			CONS_Printf(M_GetText("Found %d joysticks on this system\n"), num_joy);
-			for (i = 0; i < num_joy; i++)
-				CONS_Printf("#%d/(%s)\n", i+1, SDL_JoystickNameForIndex(i));
-		}
-		else
-			CONS_Printf("%s", M_GetText("Found no joysticks on this system\n"));
-		if (joyindex <= 0 || num_joy == 0) return 0;
+		CONS_Printf("%s", M_GetText("Found no joysticks on this system\n"));
+		return -1;
 	}
 
-	JoyInfo2.dev = SDL_JoystickOpen(joyindex-1);
+	newdev = SDL_JoystickOpen(joyindex-1);
 
-	if (!JoyInfo2.dev)
+	// Handle the edge case where the device <-> joystick index assignment can change due to hotplugging
+	// This indexing is SDL's responsibility and there's not much we can do about it.
+	//
+	// Example:
+	// 1. Plug Controller A   -> Index 0 opened
+	// 2. Plug Controller B   -> Index 1 opened
+	// 3. Unplug Controller A -> Index 0 closed, Index 1 active
+	// 4. Unplug Controller B -> Index 0 inactive, Index 1 closed
+	// 5. Plug Controller B   -> Index 0 opened
+	// 6. Plug Controller A   -> Index 0 REPLACED, opened as Controller A; Index 1 is now Controller B
+	if (JoyInfo2.dev)
 	{
-		CONS_Printf(M_GetText("Couldn't open joystick2: %s\n"), SDL_GetError());
+		if (JoyInfo2.dev == newdev // same device, nothing to do
+			|| (newdev == NULL && SDL_JoystickGetAttached(JoyInfo2.dev))) // we failed, but already have a working device
+			return JoyInfo.axises;
+		// Else, we're changing devices, so send neutral joy events
+		CONS_Debug(DBG_GAMELOGIC, "Joystick2 device is changing; resetting events...\n");
 		I_ShutdownJoystick2();
+	}
+
+	JoyInfo2.dev = newdev;
+
+	if (JoyInfo2.dev == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, M_GetText("Joystick2: couldn't open device - %s\n"), SDL_GetError());
 		return -1;
 	}
 	else
 	{
-		CONS_Printf(M_GetText("Joystick2: %s\n"), SDL_JoystickName(JoyInfo2.dev));
+		CONS_Debug(DBG_GAMELOGIC, M_GetText("Joystick2: %s\n"), SDL_JoystickName(JoyInfo2.dev));
 		JoyInfo2.axises = SDL_JoystickNumAxes(JoyInfo2.dev);
 		if (JoyInfo2.axises > JOYAXISSET*2)
 			JoyInfo2.axises = JOYAXISSET*2;
-/*		if (joyaxes < 2)
+/*		if (joyaxes<2)
 		{
 			I_OutputMsg("Not enought axes?\n");
-			I_ShutdownJoystick2();
 			return 0;
 		}*/
 
@@ -1404,69 +1405,110 @@ static int joy_open2(const char *fname)
 //
 void I_InitJoystick(void)
 {
-	I_ShutdownJoystick();
+	SDL_Joystick *newjoy = NULL;
 
-	if (M_CheckParm("-noxinput"))
-		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
-
-	if (M_CheckParm("-nohidapi"))
-		SDL_SetHintWithPriority("SDL_JOYSTICK_HIDAPI", "0", SDL_HINT_OVERRIDE);
-
-	if (!strcmp(cv_usejoystick.string, "0") || M_CheckParm("-nojoy"))
+	//I_ShutdownJoystick();
+	if (M_CheckParm("-nojoy"))
 		return;
-	if (joy_open(cv_usejoystick.string) != -1)
-		JoyInfo.oldjoy = atoi(cv_usejoystick.string);
+
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
+	{
+		CONS_Printf("I_InitJoystick()...\n");
+		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
+		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) == -1)
+		{
+			CONS_Printf(M_GetText("Couldn't initialize joystick: %s\n"), SDL_GetError());
+			return;
+		}
+	}
+
+	if (cv_usejoystick.value)
+		newjoy = SDL_JoystickOpen(cv_usejoystick.value-1);
+
+	if (newjoy && JoyInfo2.dev == newjoy) // don't override an active device
+		cv_usejoystick.value = I_GetJoystickDeviceIndex(JoyInfo.dev) + 1;
+	else if (newjoy && joy_open(cv_usejoystick.value) != -1)
+	{
+		// SDL's device indexes are unstable, so cv_usejoystick may not match
+		// the actual device index. So let's cheat a bit and find the device's current index.
+		JoyInfo.oldjoy = I_GetJoystickDeviceIndex(JoyInfo.dev) + 1;
+		joystick_started = 1;
+	}
 	else
 	{
+		if (JoyInfo.oldjoy)
+			I_ShutdownJoystick();
 		cv_usejoystick.value = 0;
-		return;
+		joystick_started = 0;
 	}
-	joystick_started = 1;
+
+	if (JoyInfo.dev != newjoy && JoyInfo2.dev != newjoy)
+		SDL_JoystickClose(newjoy);
 }
 
 void I_InitJoystick2(void)
 {
-	I_ShutdownJoystick2();
+	SDL_Joystick *newjoy = NULL;
 
-	if (M_CheckParm("-noxinput"))
-		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
-
-	if (M_CheckParm("-nohidapi"))
-		SDL_SetHintWithPriority("SDL_JOYSTICK_HIDAPI", "0", SDL_HINT_OVERRIDE);
-
-	if (!strcmp(cv_usejoystick2.string, "0") || M_CheckParm("-nojoy"))
+	//I_ShutdownJoystick2();
+	if (M_CheckParm("-nojoy"))
 		return;
-	if (joy_open2(cv_usejoystick2.string) != -1)
-		JoyInfo2.oldjoy = atoi(cv_usejoystick2.string);
+
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
+	{
+		CONS_Printf("I_InitJoystick2()...\n");
+		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
+		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) == -1)
+		{
+			CONS_Printf(M_GetText("Couldn't initialize joystick: %s\n"), SDL_GetError());
+			return;
+		}
+	}
+
+	if (cv_usejoystick2.value)
+		newjoy = SDL_JoystickOpen(cv_usejoystick2.value-1);
+
+	if (newjoy && JoyInfo.dev == newjoy) // don't override an active device
+		cv_usejoystick2.value = I_GetJoystickDeviceIndex(JoyInfo2.dev) + 1;
+	else if (newjoy && joy_open2(cv_usejoystick2.value) != -1)
+	{
+		// SDL's device indexes are unstable, so cv_usejoystick may not match
+		// the actual device index. So let's cheat a bit and find the device's current index.
+		JoyInfo2.oldjoy = I_GetJoystickDeviceIndex(JoyInfo2.dev) + 1;
+		joystick2_started = 1;
+	}
 	else
 	{
+		if (JoyInfo2.oldjoy)
+			I_ShutdownJoystick2();
 		cv_usejoystick2.value = 0;
-		return;
+		joystick2_started = 0;
 	}
-	joystick2_started = 1;
+
+	if (JoyInfo.dev != newjoy && JoyInfo2.dev != newjoy)
+		SDL_JoystickClose(newjoy);
 }
 
 static void I_ShutdownInput(void)
 {
+	// Yes, the name is misleading: these send neutral events to
+	// clean up the unplugged joystick's input
+	// Note these methods are internal to this file, not called elsewhere.
+	I_ShutdownJoystick();
+	I_ShutdownJoystick2();
+
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
 	{
-		JoyReset(&JoyInfo);
-		JoyReset(&JoyInfo2);
+		CONS_Printf("Shutting down joy system\n");
 		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+		I_OutputMsg("I_Joystick: SDL's Joystick system has been shutdown\n");
 	}
-
 }
 
 INT32 I_NumJoys(void)
 {
 	INT32 numjoy = 0;
-	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
-	{
-		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) != -1)
-			numjoy = SDL_NumJoysticks();
-		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
-	}
-	else
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
 		numjoy = SDL_NumJoysticks();
 	return numjoy;
 }
@@ -1476,18 +1518,9 @@ static char joyname[255]; // MAX_PATH; joystick name is straight from the driver
 const char *I_GetJoyName(INT32 joyindex)
 {
 	const char *tempname = NULL;
+	joyname[0] = 0;
 	joyindex--; //SDL's Joystick System starts at 0, not 1
-	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
-	{
-		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) != -1)
-		{
-			tempname = SDL_JoystickNameForIndex(joyindex);
-			if (tempname)
-				strncpy(joyname, tempname, sizeof(joyname)-1);
-		}
-		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
-	}
-	else
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
 	{
 		tempname = SDL_JoystickNameForIndex(joyindex);
 		if (tempname)
@@ -2673,10 +2706,15 @@ static const char *locateWad(void)
 #endif
 #ifndef NOHOME
 	// find in $HOME
-	I_OutputMsg(",HOME");
+	I_OutputMsg(",HOME/" DEFAULTDIR);
 	if ((envstr = I_GetEnv("HOME")) != NULL)
 	{
-		WadPath = searchWad(envstr);
+		char *tmp = malloc(strlen(envstr) + 1 + sizeof(DEFAULTDIR));
+		strcpy(tmp, envstr);
+		strcat(tmp, "/");
+		strcat(tmp, DEFAULTDIR);
+		WadPath = searchWad(tmp);
+		free(tmp);
 		if (WadPath)
 			return WadPath;
 	}

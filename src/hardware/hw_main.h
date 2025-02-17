@@ -59,7 +59,6 @@ void HWR_AddCommands(void);
 void HWR_CorrectSWTricks(void);
 void transform(float *cx, float *cy, float *cz);
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
-void HWR_SetPaletteColor(INT32 palcolor);
 INT32 HWR_GetTextureUsed(void);
 void HWR_DoPostProcessor(player_t *player);
 void HWR_StartScreenWipe(void);
@@ -83,6 +82,7 @@ extern consvar_t cv_grcoronasize;
 #endif
 extern consvar_t cv_grfov;
 extern consvar_t cv_grmd2;
+extern consvar_t cv_grmodelinterpolation;
 extern consvar_t cv_grfog;
 extern consvar_t cv_grfogcolor;
 extern consvar_t cv_grfogdensity;
@@ -93,10 +93,12 @@ extern consvar_t cv_grgammablue;
 extern consvar_t cv_grfiltermode;
 extern consvar_t cv_granisotropicmode;
 extern consvar_t cv_grcorrecttricks;
-extern consvar_t cv_voodoocompatibility;
 extern consvar_t cv_grfovchange;
 extern consvar_t cv_grsolvetjoin;
 extern consvar_t cv_grspritebillboarding;
+extern consvar_t cv_grmodellighting;
+extern consvar_t cv_grskydome;
+extern consvar_t cv_glloadingscreen;
 
 extern float gr_viewwidth, gr_viewheight, gr_baseviewwindowy;
 
