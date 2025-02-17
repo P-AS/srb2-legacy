@@ -7149,7 +7149,7 @@ static void M_HandleConnectIP(INT32 choice)
 #define PLBOXW    8
 #define PLBOXH    9
 
-static INT32      multi_tics;
+static fixed_t    multi_tics;
 static state_t   *multi_state;
 
 // this is set before entering the MultiPlayer setup menu,
@@ -7193,16 +7193,22 @@ static void M_DrawSetupMultiPlayerMenu(void)
 	if (!itemOn && skullAnimCounter < 4) // blink cursor
 		V_DrawCharacter(mx + 98 + V_StringWidth(setupm_name, 0), my, '_', false);
 
+
+
 	// anim the player in the box
-	if (--multi_tics <= 0)
+	multi_tics -= renderdeltatics;
+	while (multi_tics <= 0)
 	{
 		st = multi_state->nextstate;
 		if (st != S_NULL)
 			multi_state = &states[st];
-		multi_tics = multi_state->tics;
-		if (multi_tics == -1)
-			multi_tics = 15;
+
+		if (multi_state->tics <= -1)
+			multi_tics += 15*FRACUNIT;
+		else
+			multi_tics += multi_state->tics * FRACUNIT;
 	}
+
 
 	// skin 0 is default player sprite
 	if (R_SkinAvailable(skins[setupm_fakeskin].name) != -1)
@@ -7352,7 +7358,7 @@ static void M_SetupMultiPlayer(INT32 choice)
 	(void)choice;
 
 	multi_state = &states[mobjinfo[MT_PLAYER].seestate];
-	multi_tics = multi_state->tics;
+	multi_tics = multi_state->tics*FRACUNIT;
 	strcpy(setupm_name, cv_playername.string);
 
 	// set for player 1
@@ -7383,7 +7389,7 @@ static void M_SetupMultiPlayer2(INT32 choice)
 	(void)choice;
 
 	multi_state = &states[mobjinfo[MT_PLAYER].seestate];
-	multi_tics = multi_state->tics;
+	multi_tics = multi_state->tics*FRACUNIT;
 	strcpy (setupm_name, cv_playername2.string);
 
 	// set for splitscreen secondary player
