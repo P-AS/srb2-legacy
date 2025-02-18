@@ -382,6 +382,7 @@ static INT32 MS_Connect(const char *ip_addr, const char *str_port, INT32 async)
 
 	while (runp != NULL)
 	{
+		CloseConnection();
 		socket_fd = socket(runp->ai_family, runp->ai_socktype, runp->ai_protocol);
 		if (socket_fd != (SOCKET_TYPE)ERRSOCKET)
 		{
