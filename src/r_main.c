@@ -1011,9 +1011,9 @@ void R_SkyboxFrame(player_t *player)
 				}
 			}
 			if (mh->skybox_scalez > 0)
-				newview->z += player->awayviewmobj->z / mh->skybox_scalez;
+				newview->z += (player->awayviewmobj->z + 20*FRACUNIT) / mh->skybox_scalez;
 			else if (mh->skybox_scalez < 0)
-				newview->z += player->awayviewmobj->z * -mh->skybox_scalez;
+				newview->z += (player->awayviewmobj->z + 20*FRACUNIT) * -mh->skybox_scalez;
 		}
 		else if (thiscam->chase)
 		{
@@ -1063,9 +1063,9 @@ void R_SkyboxFrame(player_t *player)
 				}
 			}
 			if (mh->skybox_scalez > 0)
-				newview->z += thiscam->z / mh->skybox_scalez;
+				newview->z += (thiscam->z + (thiscam->height>>1)) / mh->skybox_scalez;
 			else if (mh->skybox_scalez < 0)
-				newview->z += thiscam->z * -mh->skybox_scalez;
+				newview->z += (thiscam->z + (thiscam->height>>1)) * -mh->skybox_scalez;
 		}
 		else
 		{
@@ -1073,33 +1073,32 @@ void R_SkyboxFrame(player_t *player)
 			{
 				fixed_t x = 0, y = 0;
 				if (mh->skybox_scalex > 0)
-					x += (player->mo->x - skyboxmo[1]->x) / mh->skybox_scalex;
+					x = (player->mo->x - skyboxmo[1]->x) / mh->skybox_scalex;
 				else if (mh->skybox_scalex < 0)
-					x += (player->mo->x - skyboxmo[1]->x) * -mh->skybox_scalex;
+					x = (player->mo->x - skyboxmo[1]->x) * -mh->skybox_scalex;
 				if (mh->skybox_scaley > 0)
-					y += (player->mo->y - skyboxmo[1]->y) / mh->skybox_scaley;
+					y = (player->mo->y - skyboxmo[1]->y) / mh->skybox_scaley;
 				else if (mh->skybox_scaley < 0)
-					y += (player->mo->y - skyboxmo[1]->y) * -mh->skybox_scaley;
+					y = (player->mo->y - skyboxmo[1]->y) * -mh->skybox_scaley;
 
 				if (viewmobj->angle == 0)
 				{
-					newview->x -= y;
-					newview->y += x;
-
+					newview->x  += x;
+					newview->y += y;
 				}
 				else if (viewmobj->angle == ANGLE_90)
 				{
-					newview->x += y;
-					newview->y -= x;
+					newview->x  -= y;
+					newview->y += x;
 				}
 				else if (viewmobj->angle == ANGLE_180)
 				{
-					newview->x += y;
-					newview->y -= x;
+					newview->x  -= x;
+					newview->y -= y;
 				}
 				else if (viewmobj->angle == ANGLE_270)
 				{
-					newview->x += y;
+					newview->x  += y;
 					newview->y -= x;
 				}
 				else
