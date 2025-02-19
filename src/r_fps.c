@@ -49,6 +49,7 @@ static CV_PossibleValue_t fpscap_cons_t[] = {
 	{165, "165"},
 	{200, "200"},
 	{240, "240"},
+	{300, "300"},
 	{0, NULL}
 };
  // Sadly, I haven't been able to get individual cap values to work properly :(
