@@ -24,6 +24,8 @@
 #include "r_fps.h"
 // Object place
 #include "m_cheat.h"
+#include "r_main.h"
+#include "i_video.h" // rendermode
 
 tic_t leveltime;
 
@@ -726,6 +728,36 @@ void P_Ticker(boolean run)
 	{
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();
+
+		// Hack: ensure newview is assigned every tic.
+		// Ensures view interpolation is T-1 to T in poor network conditions
+		// We need a better way to assign view state decoupled from game logic
+		if (rendermode != render_none)
+		{
+			player_t *player1 = &players[displayplayer];
+			if (player1->mo && skyboxmo[0] && cv_skybox.value)
+			{
+				R_SkyboxFrame(player1);
+			}
+
+			if (player1->mo)
+			{
+				R_SetupFrame(player1, (skyboxmo[0] && cv_skybox.value));
+			}
+
+			if (splitscreen)
+			{
+				player_t *player2 = &players[secondarydisplayplayer];
+				if (player2->mo && skyboxmo[0] && cv_skybox.value)
+				{
+					R_SkyboxFrame(player2);
+				}
+				if (player2->mo)
+				{
+					R_SetupFrame(player2, (skyboxmo[0] && cv_skybox.value));
+				}
+			}
+		}
 	}
 
 	P_MapEnd(); 
