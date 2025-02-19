@@ -36,11 +36,6 @@ if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
 	"Use SRB2's internal copies of required dependencies (SDL2, PNG, zlib, GME, OpenMPT).")
 endif()
 
-if(${CMAKE_SYSTEM} MATCHES "Haiku")
-	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
-	target_link_libraries(SRB2SDL2 PRIVATE network)
-endif()
-
 add_definitions(-DHAVE_BLUA)
 add_subdirectory(blua)
 
