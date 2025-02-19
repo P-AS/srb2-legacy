@@ -3182,14 +3182,11 @@ boolean P_SetupLevel(boolean skipprecip)
 		LUAh_MapLoad();
 #endif
 	}
-	
-	if (rendermode != render_none)
-	{
-		R_ResetViewInterpolation(0);
-		R_UpdateMobjInterpolators();
-		R_UpdateMobjInterpolators();
-	}
 
+	R_ResetViewInterpolation(0);
+	R_ResetViewInterpolation(0);
+	R_UpdateMobjInterpolators();
+	
 	return true;
 }
 
