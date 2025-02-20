@@ -702,7 +702,7 @@ static void ST_drawTime(void)
 
 		if (!splitscreen && (cv_timetic.value == 1 || cv_timetic.value == 2 || modeattacking)) // there's not enough room for tics in splitscreen, don't even bother trying!
 		{
-			V_DrawScaledPatch(hudinfo[HUD_TIMETICCOLON].x, hudinfo[HUD_TIMETICCOLON].y, hudinfo[HUD_TIMETICCOLON].flags, sbocolon); // Period
+			V_DrawScaledPatch(hudinfo[HUD_TIMETICCOLON].x, hudinfo[HUD_TIMETICCOLON].y, hudinfo[HUD_TIMETICCOLON].flags, sboperiod); // Period
 			V_DrawPaddedTallNum(hudinfo[HUD_TICS].x, hudinfo[HUD_TICS].y, hudinfo[HUD_TICS].flags, centiseconds, 2); // Centiseconds
 		}
 	}
