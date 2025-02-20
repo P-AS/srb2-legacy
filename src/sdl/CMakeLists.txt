@@ -41,7 +41,8 @@ if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 		set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib -lSDL2")
 	endif()
 else()
-	find_package(SDL2)
+	find_package(SDL2 CONFIG REQUIRED)
+	find_package(SDL2 REQUIRED)
 endif()
 
 if(${SDL2_FOUND})
@@ -114,6 +115,10 @@ if(${SDL2_FOUND})
 		target_compile_options(SRB2SDL2 PRIVATE
 			-U_WINDOWS
 		)
+	endif()
+
+	if(${CMAKE_SYSTEM} MATCHES "Haiku")
+		target_link_libraries(SRB2SDL2 PRIVATE network)
 	endif()
 
 	target_include_directories(SRB2SDL2 PRIVATE
