@@ -551,7 +551,7 @@ static void readPlayer(MYFILE *f, INT32 num)
 					goto done;
 				DEH_WriteUndoline(word, &description[num].picname[0], UNDO_NONE);
 				PlayerMenu[num].status = IT_CALL;
-				strncpy(description[num].picname, word2, sizeof(description[num].picname)-1);
+				strncpy(description[num].picname, word2, sizeof(description[num].picname));
 			}
 			else if (fastcmp(word, "STATUS"))
 			{
