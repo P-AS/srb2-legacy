@@ -1,0 +1,54 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 30
+    namespace 'org.kartkrew.ringracers'
+    lintOptions {
+        abortOnError false
+    }
+    defaultConfig {
+        applicationId "org.kartkrew.ringracers"
+
+        minSdkVersion  28
+        targetSdkVersion 30
+        versionCode 230
+        versionName "2.3"
+        ndkVersion "26.1.10909125"
+        externalNativeBuild {
+            cmake {
+                abiFilters 'arm64-v8a'
+            }
+        }
+        ext {
+            useBuildDate = false
+        }
+
+        // This generates the APK filename
+        def srb2PackageName = "ringracers-android"
+
+        // Game version string
+        srb2PackageName += "-v" + (defaultConfig.versionName).replace(".", "")
+
+        // Build date
+        if (defaultConfig.ext.useBuildDate)
+            srb2PackageName += "-" + (new Date()).format('yyyyMMdd')
+
+        setProperty("archivesBaseName", srb2PackageName)
+    }
+    sourceSets.main {
+        jniLibs.srcDir 'libs'
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "../../CMakeLists.txt"
+
+            // Using one top level build dir for all build related files to reduce clutter.
+            buildStagingDirectory file("${buildDir}/../.externalNativeBuild/${project.name}")
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+}
