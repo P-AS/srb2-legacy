@@ -14,6 +14,7 @@ am_map.c
 command.c
 console.c
 hu_stuff.c
+i_time.c
 y_inter.c
 st_stuff.c
 m_aatree.c
@@ -50,6 +51,7 @@ r_bsp.c
 r_data.c
 r_draw.c
 r_main.c
+r_fps.c
 r_plane.c
 r_segs.c
 r_sky.c

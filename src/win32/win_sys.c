@@ -35,6 +35,7 @@
 #include <mmsystem.h>
 
 #include "../m_misc.h"
+#include "../i_time.h"
 #include "../i_video.h"
 #include "../i_sound.h"
 #include "../i_system.h"
@@ -291,11 +292,29 @@ void I_SleepToTic(tic_t tic)
 	while (tic > I_GetTime());
 }
 
-void I_Sleep(void)
+precise_t I_GetPreciseTime(void)
 {
-	if (cv_sleep.value != -1)
-		Sleep(cv_sleep.value);
+	LARGE_INTEGER time;
+	BOOL res = QueryPerformanceCounter(&time);
+	if (!res) I_Error("QueryPerformanceCounter error"); // if this happens, you've gone back to the 90s
+	return (precise_t) time.QuadPart;
 }
+
+UINT64 I_GetPrecisePrecision(void)
+{
+	LARGE_INTEGER time;
+	BOOL res = QueryPerformanceFrequency(&time);
+	if (!res) I_Error("QueryPerformanceFrequency error"); // if this happens, you've gone back to the 90s
+	return (precise_t) time.QuadPart;
+}
+
+
+void I_Sleep(UINT32 ms)
+{
+	Sleep(ms);
+}
+
+
 
 // should move to i_video
 void I_WaitVBL(INT32 count)

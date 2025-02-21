@@ -270,7 +270,7 @@ void B_RespawnBot(INT32 playernum)
 	player->powers[pw_gravityboots] = sonic->player->powers[pw_gravityboots];
 	player->powers[pw_nocontrol] = sonic->player->powers[pw_nocontrol];
 
-	P_TeleportMove(tails, x, y, z);
+	P_SetOrigin(tails, x, y, z);
 	if (player->charability == CA_FLY)
 	{
 		P_SetPlayerMobjState(tails, S_PLAY_ABL1);

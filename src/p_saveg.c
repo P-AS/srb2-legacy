@@ -2161,6 +2161,8 @@ static void LoadMobjThinker(actionf_p1 thinker)
 	P_AddThinker(&mobj->thinker);
 
 	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
+	R_AddMobjInterpolator(mobj);
+
 }
 
 //
@@ -2658,6 +2660,7 @@ static void P_NetUnArchiveThinkers(void)
 		if (currentthinker->function.acp1 == (actionf_p1)P_MobjThinker)
 			P_RemoveSavegameMobj((mobj_t *)currentthinker); // item isn't saved, don't remove it
 		else
+		    R_DestroyLevelInterpolators(currentthinker);
 			Z_Free(currentthinker);
 	}
 

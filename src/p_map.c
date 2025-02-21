@@ -75,7 +75,7 @@ camera_t *mapcampointer;
 //
 // P_TeleportMove
 //
-boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
+static boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 {
 	// the move is ok,
 	// so link the thing into its new position
@@ -103,6 +103,30 @@ boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 	thing->ceilingz = tmceilingz;
 
 	return true;
+}
+
+// P_SetOrigin - P_TeleportMove which RESETS interpolation values.
+//
+boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
+{
+	boolean result = P_TeleportMove(thing, x, y, z);
+
+	if (result == true)
+	{
+		thing->old_x = thing->x;
+		thing->old_y = thing->y;
+		thing->old_z = thing->z;
+	}
+
+	return result;
+}
+
+//
+// P_MoveOrigin - P_TeleportMove which KEEPS interpolation values.
+//
+boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
+{
+	return P_TeleportMove(thing, x, y, z);
 }
 
 // =========================================================================

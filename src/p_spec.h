@@ -14,6 +14,9 @@
 ///        according to adjacent sectors, respective
 ///        utility functions, etc.
 
+#include "m_fixed.h"
+#include "d_player.h"
+#include "r_defs.h"
 #ifndef __P_SPEC__
 #define __P_SPEC__
 
@@ -76,7 +79,7 @@ typedef struct
 	INT32 count;
 	INT32 resetcount;
 	INT32 maxlight;    ///< The brightest light level to use.
-	INT32 minlight;    ///< The darkest light level to use.
+	INT32 minlight;    ///< The darkest light level to use. 
 } fireflicker_t;
 
 typedef struct

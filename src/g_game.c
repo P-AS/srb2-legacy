@@ -19,6 +19,7 @@
 #include "f_finale.h"
 #include "p_setup.h"
 #include "p_saveg.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "am_map.h"
 #include "m_random.h"
@@ -45,7 +46,9 @@
 #include "lua_hook.h"
 #include "b_bot.h"
 #include "m_cond.h" // condition sets
-#include "md5.h" // demo checksums
+#include "md5.h" // demo checksums 
+#include "r_fps.h" // Uncapped
+
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -4533,7 +4536,7 @@ void G_ReadMetalTic(mobj_t *metal)
 	// Read changes from the tic
 	if (ziptic & GZT_XYZ)
 	{
-		P_TeleportMove(metal, READFIXED(metal_p), READFIXED(metal_p), READFIXED(metal_p));
+		P_MoveOrigin(metal, READFIXED(metal_p), READFIXED(metal_p), READFIXED(metal_p));
 		oldmetal.x = metal->x;
 		oldmetal.y = metal->y;
 		oldmetal.z = metal->z;

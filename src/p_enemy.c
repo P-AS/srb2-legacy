@@ -9622,7 +9622,7 @@ void A_VileAttack(mobj_t *actor)
 		// move the fire between the vile and the player
 		//fire->x = actor->target->x - FixedMul (24*FRACUNIT, finecosine[an]);
 		//fire->y = actor->target->y - FixedMul (24*FRACUNIT, finesine[an]);
-		P_TeleportMove(fire,
+		P_MoveOrigin(fire,
 						actor->target->x - P_ReturnThrustX(fire, actor->angle, FixedMul(24*FRACUNIT, fire->scale)),
 						actor->target->y - P_ReturnThrustY(fire, actor->angle, FixedMul(24*FRACUNIT, fire->scale)),
 						fire->z);
@@ -9667,7 +9667,7 @@ void A_VileAttack(mobj_t *actor)
 			// move the fire between the vile and the player
 			//fire->x = actor->target->x - FixedMul (24*FRACUNIT, finecosine[an]);
 			//fire->y = actor->target->y - FixedMul (24*FRACUNIT, finesine[an]);
-			P_TeleportMove(fire,
+			P_MoveOrigin(fire,
 							actor->target->x - P_ReturnThrustX(fire, actor->angle, FixedMul(24*FRACUNIT, fire->scale)),
 							actor->target->y - P_ReturnThrustY(fire, actor->angle, FixedMul(24*FRACUNIT, fire->scale)),
 							fire->z);

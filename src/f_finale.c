@@ -19,6 +19,7 @@
 #include "hu_stuff.h"
 #include "r_local.h"
 #include "s_sound.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "v_video.h"
 #include "w_wad.h"
@@ -1720,11 +1721,28 @@ boolean F_ContinueResponder(event_t *event)
 static INT32 scenenum, cutnum;
 static INT32 picxpos, picypos, picnum, pictime;
 static INT32 textxpos, textypos;
-static boolean dofadenow = false, cutsceneover = false;
+static boolean cutsceneover = false;
 static boolean runningprecutscene = false, precutresetplayer = false;
 
 static void F_AdvanceToNextScene(void)
 {
+
+	if (rendermode != render_none)
+	{
+		F_WipeStartScreen();
+
+		// Fade to any palette color you want.
+		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
+		{
+			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
+
+			F_WipeEndScreen();
+			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
+
+			F_WipeStartScreen();
+		}
+	}
+
 	// Don't increment until after endcutscene check
 	// (possible overflow / bad patch names from the one tic drawn before the fade)
 	if (scenenum+1 >= cutscenes[cutnum]->numscenes)
@@ -1747,7 +1765,6 @@ static void F_AdvanceToNextScene(void)
 			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 
 	// Fade to the next
-	dofadenow = true;
 	F_NewCutscene(cutscenes[cutnum]->scene[scenenum].text);
 
 	picnum = 0;
@@ -1757,6 +1774,14 @@ static void F_AdvanceToNextScene(void)
 	textypos = cutscenes[cutnum]->scene[scenenum].textypos;
 
 	animtimer = pictime = cutscenes[cutnum]->scene[scenenum].picduration[picnum];
+
+	if (rendermode != render_none)
+	{
+		F_CutsceneDrawer();
+
+		F_WipeEndScreen();
+		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
+	}
 }
 
 void F_EndCutScene(void)
@@ -1826,21 +1851,6 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 //
 void F_CutsceneDrawer(void)
 {
-	if (dofadenow && rendermode != render_none)
-	{
-		F_WipeStartScreen();
-
-		// Fade to any palette color you want.
-		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
-		{
-			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
-
-			F_WipeEndScreen();
-			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
-
-			F_WipeStartScreen();
-		}
-	}
 	V_DrawFill(0,0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	if (cutscenes[cutnum]->scene[scenenum].picname[picnum][0] != '\0')
@@ -1853,11 +1863,6 @@ void F_CutsceneDrawer(void)
 				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_CACHE));
 	}
 
-	if (dofadenow && rendermode != render_none)
-	{
-		F_WipeEndScreen();
-		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
-	}
 
 	V_DrawString(textxpos, textypos, 0, cutscene_disptext);
 }
@@ -1875,7 +1880,6 @@ void F_CutsceneTicker(void)
 	finalecount++;
 	cutscene_boostspeed = 0;
 
-	dofadenow = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

@@ -109,6 +109,8 @@ const char *VID_GetModeName(INT32 modeNum)
 	return NULL;
 }
 
+UINT32 I_GetRefreshRate(void) { return 35; }
+
 INT32 VID_GetModeForSize(INT32 w, INT32 h)
 {
 	(void)w;
