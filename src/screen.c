@@ -378,6 +378,7 @@ void SCR_DisplayTicRate(void)
 	tic_t ontic = I_GetTime();
 	tic_t totaltics = 0;
 	INT32 ticcntcolor = 0;
+	INT32 width;
 
 	if (gamestate == GS_NULL)
 		return;
@@ -407,16 +408,10 @@ void SCR_DisplayTicRate(void)
 
 	if (cv_ticrate.value == 2) // compact counter
 	{
-		if (fps < 100.0f)
-		{
-		V_DrawString(vid.width-36*vid.dupx, h,
+		width = vid.dupx*V_StringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
+
+		V_DrawString(vid.width-width, h,
 			fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
-		}
-		else if (fps >= 100.0f)
-		{
-		V_DrawString(vid.width-44*vid.dupx, h,
-			fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
-		}
 	}
 	else if (cv_ticrate.value == 1) // full counter
 	{
@@ -427,52 +422,14 @@ void SCR_DisplayTicRate(void)
 			drawnstr = va("%3.0f/%3u", fps, cap);
 		else
 			drawnstr = va("%4.2f", averageFPS);
+		
+		width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
 
 		V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
 			V_YELLOWMAP|V_NOSCALESTART, "FPS:");
-
-		if (cap > 0) // there has to be a better way to do this :sob:
-		{	
-		if (cap < 100) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
-		{
-			V_DrawString(vid.width - 48*vid.dupx, h,
-			fpscntcolor|V_NOSCALESTART, drawnstr);
-		}
-		if (fps < 10.0f) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
-		{
-			V_DrawString(vid.width - 44*vid.dupx, h,
-			fpscntcolor|V_NOSCALESTART, drawnstr);
-		}
-		else if (cap >= 100 && !(fps >= 100.0f))
-		{
-		V_DrawString(vid.width - 52*vid.dupx, h,
-			fpscntcolor|V_NOSCALESTART, drawnstr);
-		}
-		else if (cap >= 100 && (fps <= 100.0f))
-		{
-		V_DrawString(vid.width - 56*vid.dupx, h,
-			fpscntcolor|V_NOSCALESTART, drawnstr);
-		}
-		else if (cap >= 100 && fps >= 100.0f) // ok, this is actually painful...
-		{
-		V_DrawString(vid.width - 56*vid.dupx, h,
-			fpscntcolor|V_NOSCALESTART, drawnstr);
-		}
-		}
-
-		else
-		{
-	if (fps < 100.0f) // hacks hacks! free hacks available! 2.1's string drawing functions just don't want to cooperate...
-		{
-		V_DrawString(vid.width - 36*vid.dupx, h,
-			fpscntcolor|V_NOSCALESTART, drawnstr);
-		}
-	else if (fps >= 100.0f)
-		{
-		V_DrawString(vid.width - 44*vid.dupx, h,
-			fpscntcolor|V_NOSCALESTART, drawnstr);
-		}
-		}
+		V_DrawString(vid.width - width, h,
+				fpscntcolor|V_NOSCALESTART, drawnstr);	
+		
 	}
 
 	if (cv_tpscounter.value == 2) // compact counter
@@ -487,5 +444,3 @@ void SCR_DisplayTicRate(void)
 	}
 		lasttic = ontic;
 }
-
-
