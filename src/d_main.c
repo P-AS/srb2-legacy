@@ -51,6 +51,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "i_sound.h"
 #include "i_system.h"
 #include "i_video.h"
+#include "i_threads.h"
 #include "m_argv.h"
 #include "m_menu.h"
 #include "m_misc.h"
@@ -931,6 +932,11 @@ void D_SRB2Main(void)
 #if !defined (PC_DOS) && !defined (_WIN32_WCE) && !defined(NOTERMIOS)
 	if (setvbuf(stderr, NULL, _IOFBF, 1000))
 		I_OutputMsg("setvbuf didnt work\n");
+#endif
+
+#ifdef HAVE_THREADS
+	I_StartThreads();
+	I_AddExitFunc(I_StopThreads);
 #endif
 
 #ifdef GETTEXT
