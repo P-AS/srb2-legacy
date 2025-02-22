@@ -39,6 +39,9 @@ endif()
 add_definitions(-DHAVE_BLUA)
 add_subdirectory(blua)
 
+set(SRB2_HAVE_THREADS ON)
+target_compile_definitions(SRB2SDL2, -DHAVE_THREADS)
+
 if(${SRB2_CONFIG_HAVE_GME})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 		set(GME_FOUND ON)
