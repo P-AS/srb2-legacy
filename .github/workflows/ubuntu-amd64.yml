@@ -1,0 +1,34 @@
+name: Ubuntu AMD64
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CC: gcc
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4.2.2
+
+    - name: Update package list
+      run: sudo apt-get update
+
+    - name: Install Dependencies
+      run: sudo apt-get install -y libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libminiupnpc-dev libopenmpt-dev
+
+    - name: Build SRB2 Legacy
+      run: make -C src/ --keep-going -j$(nproc) LINUX64=1
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4.6.1
+      with:
+        name: srb2legacy-linux-x86_64
+        path: |
+          bin/
+          src/comptime.h
