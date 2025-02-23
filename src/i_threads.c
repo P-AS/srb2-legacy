@@ -313,6 +313,8 @@ void I_WakeAllCond(cond_t *anchor)
 	WakeAllConditionVariable(*anchor);
 }
 #else
+#include "i_threads.h"
+
 void I_SpawnThread(const char *name, thread_fn_t entry, void *userdata)
 {
 	(void)name;

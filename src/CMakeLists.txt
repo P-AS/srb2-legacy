@@ -17,6 +17,8 @@ set(SRB2_CONFIG_HAVE_GME ON CACHE BOOL
 	"Enable GME support.")
 set(SRB2_CONFIG_HAVE_OPENMPT ON CACHE BOOL
 	"Enable OpenMPT support.")
+set(SRB2_CONFIG_HAVE_THREADS ON CACHE BOOL
+	"Enable multithreading support.")
 set(SRB2_CONFIG_HWRENDER ON CACHE BOOL
 	"Enable hardware rendering through OpenGL.")
 set(SRB2_CONFIG_STATIC_OPENGL OFF CACHE BOOL
@@ -38,9 +40,6 @@ endif()
 
 add_definitions(-DHAVE_BLUA)
 add_subdirectory(blua)
-
-set(SRB2_HAVE_THREADS ON)
-target_compile_definitions(SRB2SDL2, -DHAVE_THREADS)
 
 if(${SRB2_CONFIG_HAVE_GME})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
@@ -80,6 +79,12 @@ if(${SRB2_CONFIG_HAVE_OPENMPT})
 	else()
 		message(WARNING "You have specified that OpenMPT is available but it was not found.")
 	endif()
+endif()
+
+if(${SRB2_CONFIG_HAVE_THREADS})
+	set(SRB2_HAVE_THREADS ON)
+	target_sources(SRB2SDL2 PRIVATE i_threads.c)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
 endif()
 
 if(${SRB2_CONFIG_HAVE_ZLIB})
