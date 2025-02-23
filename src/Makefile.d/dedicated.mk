@@ -13,6 +13,11 @@ ifdef MINGW
 libs+=-mconsole
 endif
 
+ifndef NOTHREADS
+opts+=-DHAVE_THREADS
+sources+=i_threads.c
+endif
+
 NOOPENMPT=1
 NOGME=1
 NOHW=1

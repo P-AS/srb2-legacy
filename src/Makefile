@@ -53,6 +53,7 @@
 # NOGME=1 - Disable game music emu, retro VGM support.
 # NOOPENMPT=1 - Disable module (tracker) music support.
 # NOMIXER=1 - Disable SDL Mixer (audio playback).
+# NOTHREADS=1 - Disable multithreading.
 #
 # Netplay incompatible
 # --------------------

@@ -90,6 +90,7 @@
 #include "m_menu.h"
 #include "m_argv.h" // Alam is going to kill me <3
 #include "m_misc.h" //  GetRevisionString()
+#include "i_threads.h"
 
 #ifdef _WIN32_WCE
 #include "sdl12/SRB2CE/cehelp.h"
@@ -232,9 +233,6 @@ typedef int socklen_t;
 #endif
 
 #ifndef NONET
-static SOCKET_TYPE socket_fd = ERRSOCKET; // WINSOCK socket
-static struct timeval select_timeout;
-static fd_set wset;
 static size_t recvfull(SOCKET_TYPE s, char *buf, size_t len, int flags);
 #endif
 
@@ -260,19 +258,17 @@ void AddMServCommands(void)
   *
   * \todo Fix for Windows?
   */
-static void CloseConnection(void)
+static void CloseConnection(SOCKET_TYPE fd)
 {
 #ifndef NONET
-	if (socket_fd != (SOCKET_TYPE)ERRSOCKET)
-		close(socket_fd);
-	socket_fd = ERRSOCKET;
+	close(fd);
 #endif
 }
 
 //
 // MS_Write():
 //
-static INT32 MS_Write(msg_t *msg)
+static INT32 MS_Write(SOCKET_TYPE fd, msg_t *msg)
 {
 #ifdef NONET
 	(void)msg;
@@ -280,15 +276,13 @@ static INT32 MS_Write(msg_t *msg)
 #else
 	size_t len;
 
-	if (msg->length == 0)
-		msg->length = (INT32)strlen(msg->buffer);
 	len = msg->length + HEADER_SIZE;
 
 	msg->type = htonl(msg->type);
 	msg->length = htonl(msg->length);
 	msg->room = htonl(msg->room);
 
-	if ((size_t)send(socket_fd, (char *)msg, (int)len, 0) != len)
+	if ((size_t)send(fd, (char *)msg, (int)len, 0) != len)
 		return MS_WRITE_ERROR;
 	return 0;
 #endif
@@ -297,13 +291,13 @@ static INT32 MS_Write(msg_t *msg)
 //
 // MS_Read():
 //
-static INT32 MS_Read(msg_t *msg)
+static INT32 MS_Read(SOCKET_TYPE fd, msg_t *msg)
 {
 #ifdef NONET
 	(void)msg;
 	return MS_READ_ERROR;
 #else
-	if (recvfull(socket_fd, (char *)msg, HEADER_SIZE, 0) != HEADER_SIZE)
+	if (recvfull(fd, (char *)msg, HEADER_SIZE, 0) != HEADER_SIZE)
 		return MS_READ_ERROR;
 
 	msg->type = ntohl(msg->type);
@@ -313,7 +307,7 @@ static INT32 MS_Read(msg_t *msg)
 	if (!msg->length) // fix a bug in Windows 2000
 		return 0;
 
-	if (recvfull(socket_fd, (char *)msg->buffer, msg->length, 0) != msg->length)
+	if (recvfull(fd, (char *)msg->buffer, msg->length, 0) != msg->length)
 		return MS_READ_ERROR;
 	return 0;
 #endif
@@ -322,7 +316,7 @@ static INT32 MS_Read(msg_t *msg)
 #ifndef NONET
 /** Gets a list of game servers from the master server.
   */
-static INT32 GetServersList(void)
+static INT32 GetServersList(SOCKET_TYPE fd)
 {
 	msg_t msg;
 	INT32 count = 0;
@@ -330,10 +324,10 @@ static INT32 GetServersList(void)
 	msg.type = GET_SERVER_MSG;
 	msg.length = 0;
 	msg.room = 0;
-	if (MS_Write(&msg) < 0)
+	if (MS_Write(fd, &msg) < 0)
 		return MS_WRITE_ERROR;
 
-	while (MS_Read(&msg) >= 0)
+	while (MS_Read(fd, &msg) >= 0)
 	{
 		if (!msg.length)
 		{
@@ -352,12 +346,11 @@ static INT32 GetServersList(void)
 //
 // MS_Connect()
 //
-static INT32 MS_Connect(const char *ip_addr, const char *str_port, INT32 async)
+static INT32 MS_Connect(const char *ip_addr, const char *str_port)
 {
 #ifdef NONET
 	(void)ip_addr;
 	(void)str_port;
-	(void)async;
 #else
 	struct my_addrinfo *ai, *runp, hints;
 	int gaie;
@@ -372,64 +365,32 @@ static INT32 MS_Connect(const char *ip_addr, const char *str_port, INT32 async)
 
 	//I_InitTcpNetwork(); this is already done on startup in D_SRB2Main()
 	if (!I_InitTcpDriver()) // this is done only if not already done
-		return MS_SOCKET_ERROR;
+		return ERRSOCKET;
 
 	gaie = I_getaddrinfo(ip_addr, str_port, &hints, &ai);
 	if (gaie != 0)
-		return MS_GETHOSTBYNAME_ERROR;
+		return ERRSOCKET;
 	else
 		runp = ai;
 
 	while (runp != NULL)
 	{
-		CloseConnection();
-		socket_fd = socket(runp->ai_family, runp->ai_socktype, runp->ai_protocol);
-		if (socket_fd != (SOCKET_TYPE)ERRSOCKET)
+		SOCKET_TYPE fd = socket(runp->ai_family, runp->ai_socktype, runp->ai_protocol);
+		if (fd != (SOCKET_TYPE)ERRSOCKET)
 		{
-			if (async) // do asynchronous connection
-			{
-#ifdef FIONBIO
-#ifdef WATTCP
-				char res = 1;
-#else
-				unsigned long res = 1;
-#endif
-
-				ioctl(socket_fd, FIONBIO, &res);
-#endif
-
-				if (connect(socket_fd, runp->ai_addr, (socklen_t)runp->ai_addrlen) == ERRSOCKET)
-				{
-#ifdef _WIN32 // humm, on win32/win64 it doesn't work with EINPROGRESS (stupid windows)
-					if (WSAGetLastError() != WSAEWOULDBLOCK)
-#else
-					if (errno != EINPROGRESS)
-#endif
-					{
-						con_state = MSCS_FAILED;
-						CloseConnection();
-						I_freeaddrinfo(ai);
-						return MS_CONNECT_ERROR;
-					}
-				}
-				con_state = MSCS_WAITING;
-				FD_ZERO(&wset);
-				FD_SET(socket_fd, &wset);
-				select_timeout.tv_sec = 0, select_timeout.tv_usec = 0;
-				I_freeaddrinfo(ai);
-				return 0;
-			}
-			else if (connect(socket_fd, runp->ai_addr, (socklen_t)runp->ai_addrlen) != ERRSOCKET)
+			if (connect(fd, runp->ai_addr, (socklen_t)runp->ai_addrlen) != ERRSOCKET)
 			{
 				I_freeaddrinfo(ai);
-				return 0;
+				return fd;
 			}
+
+			CloseConnection(fd);
 		}
 		runp = runp->ai_next;
 	}
 	I_freeaddrinfo(ai);
 #endif
-	return MS_CONNECT_ERROR;
+	return ERRSOCKET;
 }
 
 #define NUM_LIST_SERVER MAXSERVERLIST
@@ -440,7 +401,8 @@ const msg_server_t *GetShortServersList(INT32 room)
 	INT32 i;
 
 	// we must be connected to the master server before writing to it
-	if (MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0))
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
 		M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n"), NULL, MM_NOTHING);
@@ -450,21 +412,24 @@ const msg_server_t *GetShortServersList(INT32 room)
 	msg.type = GET_SHORT_SERVER_MSG;
 	msg.length = 0;
 	msg.room = room;
-	if (MS_Write(&msg) < 0)
+	if (MS_Write(fd, &msg) < 0)
+	{
+		CloseConnection(fd);
 		return NULL;
+	}
 
-	for (i = 0; i < NUM_LIST_SERVER && MS_Read(&msg) >= 0; i++)
+	for (i = 0; i < NUM_LIST_SERVER && MS_Read(fd, &msg) >= 0; i++)
 	{
 		if (!msg.length)
 		{
 			server_list[i].header.buffer[0] = 0;
-			CloseConnection();
+			CloseConnection(fd);
 			return server_list;
 		}
 		M_Memcpy(&server_list[i], msg.buffer, sizeof (msg_server_t));
 		server_list[i].header.buffer[0] = 1;
 	}
-	CloseConnection();
+	CloseConnection(fd);
 	if (i == NUM_LIST_SERVER)
 	{
 		server_list[i].header.buffer[0] = 0;
@@ -481,7 +446,8 @@ INT32 GetRoomsList(boolean hosting)
 	INT32 i;
 
 	// we must be connected to the master server before writing to it
-	if (MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0))
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
 		M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n"), NULL, MM_NOTHING);
@@ -494,15 +460,16 @@ INT32 GetRoomsList(boolean hosting)
 		msg.type = GET_ROOMS_MSG;
 	msg.length = 0;
 	msg.room = 0;
-	if (MS_Write(&msg) < 0)
+	if (MS_Write(fd, &msg) < 0)
 	{
 		room_list[0].id = 1;
 		strcpy(room_list[0].motd,"Master Server Offline.");
 		strcpy(room_list[0].name,"Offline");
+		CloseConnection(fd);
 		return -1;
 	}
 
-	for (i = 0; i < NUM_LIST_ROOMS && MS_Read(&msg) >= 0; i++)
+	for (i = 0; i < NUM_LIST_ROOMS && MS_Read(fd, &msg) >= 0; i++)
 	{
 		if(msg.type == GET_BANNED_MSG)
 		{
@@ -513,19 +480,21 @@ INT32 GetRoomsList(boolean hosting)
 			else
 				sprintf(banmsg, M_GetText("You have been banned from\njoining netgames.\n\nUnder the following IP Range:\n%s - %s\n\nFor the following reason:\n%s\n\nYour ban will expire on:\n%s"),banned_info[0].ipstart,banned_info[0].ipend,banned_info[0].reason,banned_info[0].endstamp);
 			M_StartMessage(banmsg, NULL, MM_NOTHING);
+			CloseConnection(fd);
 			ms_RoomId = -1;
 			return -2;
 		}
 		if (!msg.length)
 		{
 			room_list[i].header.buffer[0] = 0;
-			CloseConnection();
+			CloseConnection(fd);
 			return 1;
 		}
 		M_Memcpy(&room_list[i], msg.buffer, sizeof (msg_rooms_t));
 		room_list[i].header.buffer[0] = 1;
 	}
-	CloseConnection();
+
+	CloseConnection(fd);
 	if (i == NUM_LIST_ROOMS)
 	{
 		room_list[i].header.buffer[0] = 0;
@@ -546,7 +515,8 @@ const char *GetMODVersion(void)
 	static msg_t msg;
 
 	// we must be connected to the master server before writing to it
-	if (MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0))
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
 		M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n"), NULL, MM_NOTHING);
@@ -556,23 +526,23 @@ const char *GetMODVersion(void)
 	msg.type = GET_VERSION_MSG;
 	msg.room = MODID; // Might as well use it for something.
 	msg.length = sprintf(msg.buffer,"%d",MODVERSION);
-	if (MS_Write(&msg) < 0)
+	if (MS_Write(fd, &msg) < 0)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Could not send to the Master Server\n"));
 		M_StartMessage(M_GetText("Could not send to the Master Server\n"), NULL, MM_NOTHING);
-		CloseConnection();
+		CloseConnection(fd);
 		return NULL;
 	}
 
-	if (MS_Read(&msg) < 0)
+	if (MS_Read(fd, &msg) < 0)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No reply from the Master Server\n"));
 		M_StartMessage(M_GetText("No reply from the Master Server\n"), NULL, MM_NOTHING);
-		CloseConnection();
+		CloseConnection(fd);
 		return NULL;
 	}
 
-	CloseConnection();
+	CloseConnection(fd);
 
 	if(strcmp(msg.buffer,"NULL") != 0)
 	{
@@ -588,33 +558,33 @@ void GetMODVersion_Console(void)
 	static msg_t msg;
 
 	// we must be connected to the master server before writing to it
-	if (MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0))
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
 		return;
 	}
 
 	msg.type = GET_VERSION_MSG;
-	msg.length = sizeof MODVERSION;
 	msg.room = MODID; // Might as well use it for something.
-	sprintf(msg.buffer,"%d",MODVERSION);
-	if (MS_Write(&msg) < 0)
+	msg.length = sprintf(msg.buffer,"%d",MODVERSION);
+	if (MS_Write(fd, &msg) < 0)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Could not send to the Master Server\n"));
-		CloseConnection();
+		CloseConnection(fd);
 		return;
 	}
 
-	if (MS_Read(&msg) < 0)
+	if (MS_Read(fd, &msg) < 0)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No reply from the Master Server\n"));
-		CloseConnection();
+		CloseConnection(fd);
 		return;
 	}
 
-	CloseConnection();
+	CloseConnection(fd);
 
-	if(strcmp(msg.buffer,"NULL") != 0)
+	if (strcmp(msg.buffer,"NULL") != 0)
 		I_Error(UPDATE_ALERT_STRING_CONSOLE, VERSIONSTRING, msg.buffer);
 }
 #endif
@@ -624,6 +594,7 @@ void GetMODVersion_Console(void)
   */
 static void Command_Listserv_f(void)
 {
+	SOCKET_TYPE fd;
 	if (con_state == MSCS_WAITING)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Not yet connected to the Master Server.\n"));
@@ -632,16 +603,17 @@ static void Command_Listserv_f(void)
 
 	CONS_Printf(M_GetText("Retrieving server list...\n"));
 
-	if (MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0))
+	fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
 		return;
 	}
 
-	if (GetServersList())
+	if (GetServersList(fd))
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot get server list\n"));
 
-	CloseConnection();
+	CloseConnection(fd);
 }
 #endif
 
@@ -659,66 +631,48 @@ FUNCMATH static const char *int2str(INT32 n)
 }
 
 #ifndef NONET
-static INT32 ConnectionFailed(void)
+static void ConnectionFailed(void)
 {
 	con_state = MSCS_FAILED;
 	CONS_Alert(CONS_ERROR, M_GetText("Connection to Master Server failed\n"));
-	CloseConnection();
-	return MS_CONNECT_ERROR;
 }
 #endif
 
 /** Tries to register the local game server on the master server.
   */
-static INT32 AddToMasterServer(boolean firstadd)
+static void AddToMasterServer(void *userdata)
 {
-#ifdef NONET
-	(void)firstadd;
-#else
-	static INT32 retry = 0;
-	int i, res;
+	(void)userdata;
+#ifndef NONET
+	int i;
 	socklen_t j;
 	msg_t msg;
 	msg_server_t *info = (msg_server_t *)msg.buffer;
 	INT32 room = -1;
-	fd_set tset;
 	time_t timestamp = time(NULL);
 	UINT32 signature, tmp;
 	const char *insname;
 
-	M_Memcpy(&tset, &wset, sizeof (tset));
-	res = select(255, NULL, &tset, NULL, &select_timeout);
-	if (res != ERRSOCKET && !res)
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	if (fd == ERRSOCKET)
 	{
-		if (retry++ > 30) // an about 30 second timeout
-		{
-			retry = 0;
-			CONS_Alert(CONS_ERROR, M_GetText("Master Server timed out\n"));
-			MSLastPing = timestamp;
-			return ConnectionFailed();
-		}
-		return MS_CONNECT_ERROR;
-	}
-	retry = 0;
-	if (res == ERRSOCKET)
-	{
-		if (MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0))
-		{
-			CONS_Alert(CONS_ERROR, M_GetText("Master Server socket error #%u: %s\n"), errno, strerror(errno));
-			MSLastPing = timestamp;
-			return ConnectionFailed();
-		}
+		CONS_Alert(CONS_ERROR, M_GetText("Master Server socket error #%u: %s\n"), errno, strerror(errno));
+		MSLastPing = timestamp;
+		ConnectionFailed();
+		return;
 	}
 
 	// so, the socket is writable, but what does that mean, that the connection is
 	// ok, or bad... let see that!
 	j = (socklen_t)sizeof (i);
-	getsockopt(socket_fd, SOL_SOCKET, SO_ERROR, (char *)&i, &j);
+	getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *)&i, &j);
 	if (i) // it was bad
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Master Server socket error #%u: %s\n"), errno, strerror(errno));
 		MSLastPing = timestamp;
-		return ConnectionFailed();
+		CloseConnection(fd);
+		ConnectionFailed();
+		return;
 	}
 
 #ifdef PARANOIA
@@ -744,17 +698,19 @@ static INT32 AddToMasterServer(boolean firstadd)
 #endif
 	strcpy(registered_server.name, cv_servername.string);
 
-	if(firstadd)
+	if(con_state != MSCS_REGISTERED)
 		msg.type = ADD_SERVER_MSG;
 	else
 		msg.type = PING_SERVER_MSG;
 
 	msg.length = (UINT32)sizeof (msg_server_t);
 	msg.room = 0;
-	if (MS_Write(&msg) < 0)
+	if (MS_Write(fd, &msg) < 0)
 	{
 		MSLastPing = timestamp;
-		return ConnectionFailed();
+		CloseConnection(fd);
+		ConnectionFailed();
+		return;
 	}
 
 	if(con_state != MSCS_REGISTERED)
@@ -762,12 +718,11 @@ static INT32 AddToMasterServer(boolean firstadd)
 
 	MSLastPing = timestamp;
 	con_state = MSCS_REGISTERED;
-	CloseConnection();
+	CloseConnection(fd);
 #endif
-	return MS_NO_ERROR;
 }
 
-static INT32 RemoveFromMasterSever(void)
+static INT32 RemoveFromMasterServer(SOCKET_TYPE fd)
 {
 	msg_t msg;
 	msg_server_t *info = (msg_server_t *)msg.buffer;
@@ -781,7 +736,7 @@ static INT32 RemoveFromMasterSever(void)
 	msg.type = REMOVE_SERVER_MSG;
 	msg.length = (UINT32)sizeof (msg_server_t);
 	msg.room = 0;
-	if (MS_Write(&msg) < 0)
+	if (MS_Write(fd, &msg) < 0)
 		return MS_WRITE_ERROR;
 
 	return MS_NO_ERROR;
@@ -850,61 +805,16 @@ void MSCloseUDPSocket(void)
 	msnode = -1;
 }
 
-void RegisterServer(void)
-{
-	if (con_state == MSCS_REGISTERED || con_state == MSCS_WAITING)
-			return;
-
-	CONS_Printf(M_GetText("Registering this server on the Master Server...\n"));
-
-	strcpy(registered_server.ip, GetMasterServerIP());
-	strcpy(registered_server.port, GetMasterServerPort());
-
-	if (MS_Connect(registered_server.ip, registered_server.port, 1))
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
-		return;
-	}
-	MSOpenUDPSocket();
-
-	// keep the TCP connection open until AddToMasterServer() is completed;
-}
-
 static inline void SendPingToMasterServer(void)
 {
-/*	static tic_t next_time = 0;
-	tic_t cur_time;
-	char *inbuffer = (char*)netbuffer;
-
-	cur_time = I_GetTime();
-	if (!netgame)
-		UnregisterServer();
-	else if (cur_time > next_time) // ping every 2 second if possible
-	{
-		next_time = cur_time+2*TICRATE;
-
-		if (con_state == MSCS_WAITING)
-			AddToMasterServer();
-
-		if (con_state != MSCS_REGISTERED)
-			return;
-
-		// cur_time is just a dummy data to send
-		WRITEUINT32(inbuffer, cur_time);
-		doomcom->datalength = sizeof (cur_time);
-		doomcom->remotenode = (INT16)msnode;
-		I_NetSend();
-	}
-*/
-
-// Here, have a simpler MS Ping... - Cue
+	// Here, have a simpler MS Ping... - Cue
 	if(time(NULL) > (MSLastPing+(60*2)) && con_state != MSCS_NONE)
 	{
-		//CONS_Debug(DBG_NETPLAY, "%ld (current time) is greater than %d (Last Ping Time)\n", time(NULL), MSLastPing);
-		if(MSLastPing < 1)
-			AddToMasterServer(true);
-		else
-			AddToMasterServer(false);
+#ifdef HAVE_THREADS
+		I_SpawnThread("ms_register", AddToMasterServer, NULL);
+#else
+		AddToMasterServer(NULL);
+#endif
 	}
 }
 
@@ -944,12 +854,26 @@ void SendAskInfoViaMS(INT32 node, tic_t asktime)
 	I_NetSend();
 }
 
+void RegisterServer(void)
+{
+	CONS_Printf(M_GetText("Registering this server on the Master Server...\n"));
+
+	strcpy(registered_server.ip, GetMasterServerIP());
+	strcpy(registered_server.port, GetMasterServerPort());
+
+#ifdef HAVE_THREADS
+	I_SpawnThread("ms_register", AddToMasterServer, NULL);
+#else
+	AddToMasterServer(NULL);
+#endif
+}
+
 void UnregisterServer(void)
 {
+	SOCKET_TYPE fd;
 	if (con_state != MSCS_REGISTERED)
 	{
 		con_state = MSCS_NONE;
-		CloseConnection();
 		return;
 	}
 
@@ -957,16 +881,17 @@ void UnregisterServer(void)
 
 	CONS_Printf(M_GetText("Removing this server from the Master Server...\n"));
 
-	if (MS_Connect(registered_server.ip, registered_server.port, 0))
+	fd = MS_Connect(registered_server.ip, registered_server.port);
+	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
 		return;
 	}
 
-	if (RemoveFromMasterSever() < 0)
+	if (RemoveFromMasterServer(fd) < 0)
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot remove this server from the Master Server\n"));
 
-	CloseConnection();
+	CloseConnection(fd);
 	MSCloseUDPSocket();
 	MSLastPing = 0;
 }
