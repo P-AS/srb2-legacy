@@ -140,6 +140,9 @@
 #define PORT_MSG_POS     32
 #define HOSTNAME_MSG_POS 40
 
+#define CONNECT_IPV4 1
+#define CONNECT_IPV6 2
+
 
 #if defined(_MSC_VER)
 #pragma pack(1)
@@ -211,7 +214,9 @@ consvar_t cv_servername = {"servername", "SRB2 server", CV_SAVE|CV_CALL|CV_NOINI
 
 INT16 ms_RoomId = -1;
 
-static enum { MSCS_NONE, MSCS_WAITING, MSCS_REGISTERED, MSCS_FAILED } con_state = MSCS_NONE;
+enum { MSCS_NONE, MSCS_REGISTERED, MSCS_FAILED };
+static int con_state = MSCS_NONE;
+static int con6_state = MSCS_NONE;
 
 static INT32 msnode = -1;
 UINT16 current_port = 0;
@@ -346,7 +351,7 @@ static INT32 GetServersList(SOCKET_TYPE fd)
 //
 // MS_Connect()
 //
-static INT32 MS_Connect(const char *ip_addr, const char *str_port)
+static INT32 MS_Connect(const char *ip_addr, const char *str_port, int flags)
 {
 #ifdef NONET
 	(void)ip_addr;
@@ -359,7 +364,16 @@ static INT32 MS_Connect(const char *ip_addr, const char *str_port)
 #ifdef AI_ADDRCONFIG
 	hints.ai_flags = AI_ADDRCONFIG;
 #endif
+#ifdef HAVE_IPV6
+	if (flags & CONNECT_IPV4)
+		hints.ai_family = AF_INET;
+	else if (flags & CONNECT_IPV6)
+		hints.ai_family = AF_INET6;
+	else
+		hints.ai_family = AF_UNSPEC;
+#else
 	hints.ai_family = AF_INET;
+#endif
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
 
@@ -401,7 +415,7 @@ const msg_server_t *GetShortServersList(INT32 room)
 	INT32 i;
 
 	// we must be connected to the master server before writing to it
-	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0);
 	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
@@ -446,7 +460,7 @@ INT32 GetRoomsList(boolean hosting)
 	INT32 i;
 
 	// we must be connected to the master server before writing to it
-	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0);
 	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
@@ -515,7 +529,7 @@ const char *GetMODVersion(void)
 	static msg_t msg;
 
 	// we must be connected to the master server before writing to it
-	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0);
 	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
@@ -558,7 +572,7 @@ void GetMODVersion_Console(void)
 	static msg_t msg;
 
 	// we must be connected to the master server before writing to it
-	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0);
 	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
@@ -595,15 +609,9 @@ void GetMODVersion_Console(void)
 static void Command_Listserv_f(void)
 {
 	SOCKET_TYPE fd;
-	if (con_state == MSCS_WAITING)
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Not yet connected to the Master Server.\n"));
-		return;
-	}
-
 	CONS_Printf(M_GetText("Retrieving server list...\n"));
 
-	fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort(), 0);
 	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
@@ -642,8 +650,10 @@ static void ConnectionFailed(void)
   */
 static void AddToMasterServer(void *userdata)
 {
+#ifdef NONET
 	(void)userdata;
-#ifndef NONET
+#else
+	int *state = userdata != NULL ? &con6_state : &con_state;
 	int i;
 	socklen_t j;
 	msg_t msg;
@@ -653,7 +663,7 @@ static void AddToMasterServer(void *userdata)
 	UINT32 signature, tmp;
 	const char *insname;
 
-	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort());
+	SOCKET_TYPE fd = MS_Connect(GetMasterServerIP(), GetMasterServerPort(), userdata != NULL ? CONNECT_IPV6 : CONNECT_IPV4);
 	if (fd == ERRSOCKET)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Master Server socket error #%u: %s\n"), errno, strerror(errno));
@@ -698,7 +708,7 @@ static void AddToMasterServer(void *userdata)
 #endif
 	strcpy(registered_server.name, cv_servername.string);
 
-	if(con_state != MSCS_REGISTERED)
+	if(*state != MSCS_REGISTERED)
 		msg.type = ADD_SERVER_MSG;
 	else
 		msg.type = PING_SERVER_MSG;
@@ -713,19 +723,31 @@ static void AddToMasterServer(void *userdata)
 		return;
 	}
 
-	if(con_state != MSCS_REGISTERED)
+	if(*state != MSCS_REGISTERED)
 		CONS_Printf(M_GetText("Master Server update successful.\n"));
 
 	MSLastPing = timestamp;
-	con_state = MSCS_REGISTERED;
+	*state = MSCS_REGISTERED;
 	CloseConnection(fd);
+#ifdef HAVE_IPV6
+	// just pass something to it to indicate it's ipv6's turn to register
+	if (userdata == NULL)
+		AddToMasterServer(&msg);
+#endif
 #endif
 }
 
-static INT32 RemoveFromMasterServer(SOCKET_TYPE fd)
+static void RemoveFromMasterServer(void *userdata)
 {
 	msg_t msg;
 	msg_server_t *info = (msg_server_t *)msg.buffer;
+
+	SOCKET_TYPE fd = MS_Connect(registered_server.ip, registered_server.port, userdata != NULL ? CONNECT_IPV6 : CONNECT_IPV4);
+	if (fd == ERRSOCKET)
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
+		return;
+	}
 
 	strcpy(info->header.buffer, "");
 	strcpy(info->ip, "");
@@ -737,9 +759,18 @@ static INT32 RemoveFromMasterServer(SOCKET_TYPE fd)
 	msg.length = (UINT32)sizeof (msg_server_t);
 	msg.room = 0;
 	if (MS_Write(fd, &msg) < 0)
-		return MS_WRITE_ERROR;
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Cannot remove this server from the Master Server\n"));
+		return;
+	}
 
-	return MS_NO_ERROR;
+	CloseConnection(fd);
+
+#ifdef HAVE_IPV6
+	// just pass something to it to indicate it's ipv6's turn to deregister
+	if (userdata == NULL)
+		RemoveFromMasterServer(&msg);
+#endif
 }
 
 const char *GetMasterServerPort(void)
@@ -870,28 +901,18 @@ void RegisterServer(void)
 
 void UnregisterServer(void)
 {
-	SOCKET_TYPE fd;
-	if (con_state != MSCS_REGISTERED)
-	{
-		con_state = MSCS_NONE;
-		return;
-	}
-
-	con_state = MSCS_NONE;
-
 	CONS_Printf(M_GetText("Removing this server from the Master Server...\n"));
-
-	fd = MS_Connect(registered_server.ip, registered_server.port);
-	if (fd == ERRSOCKET)
+	if (con_state == MSCS_REGISTERED)
 	{
-		CONS_Alert(CONS_ERROR, M_GetText("Cannot connect to the Master Server\n"));
-		return;
+#ifdef HAVE_THREADS
+		I_SpawnThread("ms_unregister", RemoveFromMasterServer, NULL);
+#else
+		RemoveFromMasterServer(NULL);
+#endif
 	}
+	con_state = MSCS_NONE;
+	con6_state = MSCS_NONE;
 
-	if (RemoveFromMasterServer(fd) < 0)
-		CONS_Alert(CONS_ERROR, M_GetText("Cannot remove this server from the Master Server\n"));
-
-	CloseConnection(fd);
 	MSCloseUDPSocket();
 	MSLastPing = 0;
 }
@@ -905,7 +926,11 @@ void MasterClient_Ticker(void)
 static void ServerName_OnChange(void)
 {
 	if (con_state == MSCS_REGISTERED)
-		AddToMasterServer(false);
+#ifdef HAVE_THREADS
+		I_SpawnThread("ms_register", AddToMasterServer, NULL);
+#else
+		AddToMasterServer(NULL);
+#endif
 }
 
 static void MasterServer_OnChange(void)
