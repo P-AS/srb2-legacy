@@ -2315,6 +2315,7 @@ EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2])
 
 	pglDisable(GL_DEPTH_TEST);
 	pglDisable(GL_BLEND);
+	pglDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	// const float blackBack[16]
 
@@ -2324,6 +2325,8 @@ EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2])
 
 	pglVertexPointer(3, GL_FLOAT, 0, blackBack);
 	pglDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+	pglEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	for(x=0;x<SCREENVERTS-1;x++)
 	{

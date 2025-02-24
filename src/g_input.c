@@ -1056,7 +1056,7 @@ INT32 G_KeyStringtoNum(const char *keystr)
 {
 	UINT32 j;
 
-	if (!keystr[1] && keystr[0] > ' ' && keystr[0] <= 'z')
+	if (keystr[0] > ' ' && keystr[0] <= 'z' && !keystr[1])
 		return keystr[0];
 
 	if (!strncmp(keystr, "KEY", 3) && keystr[3] >= '0' && keystr[3] <= '9')
