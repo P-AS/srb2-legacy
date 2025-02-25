@@ -17,6 +17,7 @@
 #include <unistd.h> //for unlink
 #endif
 
+#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "i_video.h"
@@ -44,7 +45,8 @@
 #include "lzf.h"
 #include "lua_script.h"
 #include "lua_hook.h"
-#include "md5.h"
+#include "md5.h" 
+#include "r_fps.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -1604,7 +1606,6 @@ static void CL_LoadReceivedSavegame(void)
 		Z_Free(tmpsave);
 		return;
 	}
-
 	// done
 	Z_Free(savebuffer);
 	save_p = NULL;
@@ -2005,7 +2006,10 @@ static boolean CL_ServerConnectionTicker(boolean viams, const char *tmpsave, tic
 #endif
 	}
 	else
-		I_Sleep();
+	{
+		I_Sleep(cv_sleep.value);
+		I_UpdateTime(cv_timescale.value);
+	}
 
 	return true;
 }
@@ -4627,8 +4631,10 @@ static void SV_Maketic(void)
 	maketic++;
 }
 
-void TryRunTics(tic_t realtics)
+boolean TryRunTics(tic_t realtics)
 {
+	boolean ticking;
+
 	// the machine has lagged but it is not so bad
 	if (realtics > TICRATE/7) // FIXME: consistency failure!!
 	{
@@ -4652,7 +4658,7 @@ void TryRunTics(tic_t realtics)
 
 	if (demoplayback)
 	{
-		neededtic = gametic + (realtics * cv_playbackspeed.value);
+		neededtic = gametic + realtics;
 		// start a game after a demo
 		maketic += realtics;
 		firstticstosend = maketic;
@@ -4672,10 +4678,15 @@ void TryRunTics(tic_t realtics)
 	}
 #endif
 
-	if (player_joining)
-		return;
+	ticking = neededtic > gametic;
 
-	if (neededtic > gametic)
+	if (player_joining)
+	{
+		return false;
+	}
+
+
+	if (ticking)
 	{
 		if (advancedemo)
 			D_StartTitle();
@@ -4683,7 +4694,7 @@ void TryRunTics(tic_t realtics)
 			// run the count * tics
 			while (neededtic > gametic)
 			{
-				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
+				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic)); 
 
 				G_Ticker((gametic % NEWTICRATERATIO) == 0);
 				ExtraDataTicker();
@@ -4691,6 +4702,7 @@ void TryRunTics(tic_t realtics)
 				consistancy[gametic%BACKUPTICS] = Consistancy();
 			}
 	}
+	return ticking;
 }
 
 #ifdef NEWPING

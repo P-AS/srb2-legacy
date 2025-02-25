@@ -475,7 +475,7 @@ void Command_RTeleport_f(void)
 	CONS_Printf(M_GetText("Teleporting by %d, %d, %d...\n"), intx, inty, FixedInt((intz-p->mo->z)));
 
 	P_MapStart();
-	if (!P_TeleportMove(p->mo, p->mo->x+intx*FRACUNIT, p->mo->y+inty*FRACUNIT, intz))
+	if (!P_SetOrigin(p->mo, p->mo->x+intx*FRACUNIT, p->mo->y+inty*FRACUNIT, intz))
 		CONS_Alert(CONS_WARNING, M_GetText("Unable to teleport to that spot!\n"));
 	else
 		S_StartSound(p->mo, sfx_mixup);
@@ -542,7 +542,7 @@ void Command_Teleport_f(void)
 	CONS_Printf(M_GetText("Teleporting to %d, %d, %d...\n"), intx, inty, FixedInt(intz));
 
 	P_MapStart();
-	if (!P_TeleportMove(p->mo, intx*FRACUNIT, inty*FRACUNIT, intz))
+	if (!P_SetOrigin(p->mo, p->mo->x+intx*FRACUNIT, p->mo->y+inty*FRACUNIT, intz))
 		CONS_Alert(CONS_WARNING, M_GetText("Unable to teleport to that spot!\n"));
 	else
 		S_StartSound(p->mo, sfx_mixup);
@@ -1099,6 +1099,11 @@ void OP_ObjectplaceMovement(player_t *player)
 	if (!(cmd->angleturn & TICCMD_RECEIVED))
 		ticmiss++;
 
+	player->mo->old_x = player->mo->x;
+	player->mo->old_y = player->mo->y;
+	player->mo->old_z = player->mo->z;
+
+
 	if (cmd->buttons & BT_JUMP)
 		player->mo->z += FRACUNIT*cv_speed.value;
 	else if (cmd->buttons & BT_USE)
@@ -1107,13 +1112,13 @@ void OP_ObjectplaceMovement(player_t *player)
 	if (cmd->forwardmove != 0)
 	{
 		P_Thrust(player->mo, player->mo->angle, (cmd->forwardmove*FRACUNIT/MAXPLMOVE)*cv_speed.value);
-		P_TeleportMove(player->mo, player->mo->x+player->mo->momx, player->mo->y+player->mo->momy, player->mo->z);
+		P_MoveOrigin(player->mo, player->mo->x+player->mo->momx, player->mo->y+player->mo->momy, player->mo->z);
 		player->mo->momx = player->mo->momy = 0;
 	}
 	if (cmd->sidemove != 0)
 	{
 		P_Thrust(player->mo, player->mo->angle-ANGLE_90, (cmd->sidemove*FRACUNIT/MAXPLMOVE)*cv_speed.value);
-		P_TeleportMove(player->mo, player->mo->x+player->mo->momx, player->mo->y+player->mo->momy, player->mo->z);
+		P_MoveOrigin(player->mo, player->mo->x+player->mo->momx, player->mo->y+player->mo->momy, player->mo->z);
 		player->mo->momx = player->mo->momy = 0;
 	}
 
@@ -1121,6 +1126,13 @@ void OP_ObjectplaceMovement(player_t *player)
 		player->mo->z = player->mo->ceilingz - player->mo->height;
 	if (player->mo->z < player->mo->floorz)
 		player->mo->z = player->mo->floorz;
+
+
+	player->mo->new_x = player->mo->x;
+	player->mo->new_y = player->mo->y;
+	player->mo->new_z = player->mo->z;
+
+
 
 	if (cv_opflags.value & MTF_OBJECTFLIP)
 		player->mo->eflags |= MFE_VERTICALFLIP;

@@ -11,12 +11,13 @@ size_t I_GetFreeMem(size_t *total)
 	return 0;
 }
 
-tic_t I_GetTime(void)
-{
+precise_t I_GetPreciseTime(void) {
 	return 0;
 }
 
-void I_Sleep(void){}
+UINT64 I_GetPrecisePrecision(void) {
+	return 1000000;
+}
 
 void I_GetEvent(void){}
 

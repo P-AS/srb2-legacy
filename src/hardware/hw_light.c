@@ -1037,6 +1037,19 @@ void HWR_DL_AddLight(gr_vissprite_t *spr, GLPatch_t *patch)
 {
 	light_t   *p_lspr;
 
+
+	// uncapped/interpolation
+	interpmobjstate_t interp = {0};
+
+	if (R_UsingFrameInterpolation())
+	{
+		R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
+	}
+	else
+	{
+		R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
+	}
+
 	//Hurdler: moved here because it's better;-)
 	(void)patch;
 	if (!cv_grdynamiclighting.value)

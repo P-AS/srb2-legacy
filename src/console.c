@@ -23,6 +23,7 @@
 #include "g_input.h"
 #include "hu_stuff.h"
 #include "keys.h"
+#include "r_main.h"
 #include "r_defs.h"
 #include "sounds.h"
 #include "st_stuff.h"
@@ -521,7 +522,8 @@ static void CON_ChangeHeight(void)
 //
 static void CON_MoveConsole(void)
 {
-	const fixed_t conspeed = FixedDiv(cons_speed.value*vid.fdupy, FRACUNIT);
+	static fixed_t fracmovement = 0;
+
 
 	// instant
 	if (!cons_speed.value)
@@ -530,19 +532,26 @@ static void CON_MoveConsole(void)
 		return;
 	}
 
-	// up/down move to dest
-	if (con_curlines < con_destlines)
+	// Not instant - Increment fracmovement fractionally
+	fracmovement += FixedMul(cons_speed.value*vid.fdupy, renderdeltatics);
+
+	if (con_curlines < con_destlines) // Move the console downwards
 	{
-		con_curlines += FixedInt(conspeed);
-		if (con_curlines > con_destlines)
-			con_curlines = con_destlines;
+		con_curlines += FixedInt(fracmovement); // Move by fracmovement's integer value
+		if (con_curlines > con_destlines) // If we surpassed the destination...
+			con_curlines = con_destlines; // ...clamp to it!
 	}
-	else if (con_curlines > con_destlines)
+	else // Move the console upwards
 	{
-		con_curlines -= FixedInt(conspeed);
+		con_curlines -= FixedInt(fracmovement);
 		if (con_curlines < con_destlines)
 			con_curlines = con_destlines;
+		
+		if (con_destlines == 0) // If the console is being closed, not just moved up...
+			con_tick = 0; // ...don't show the blinking cursor
 	}
+	
+	fracmovement %= FRACUNIT; // Reset fracmovement's integer value, but keep the fraction
 }
 
 // Clear time of console heads up messages
@@ -603,9 +612,6 @@ void CON_Ticker(void)
 			CON_ChangeHeight();
 	}
 
-	// console movement
-	if (con_destlines != con_curlines)
-		CON_MoveConsole();
 
 	// clip the view, so that the part under the console is not drawn
 	con_clipviewtop = -1;
@@ -1571,6 +1577,10 @@ void CON_Drawer(void)
 
 	if (con_recalc)
 		CON_RecalcSize();
+	
+		// console movement
+	if (con_curlines != con_destlines)
+		CON_MoveConsole();
 
 	if (con_curlines > 0)
 		CON_DrawConsole();

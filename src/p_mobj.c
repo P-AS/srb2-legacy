@@ -3851,16 +3851,24 @@ void P_NullPrecipThinker(precipmobj_t *mobj)
 }
 
 void P_SnowThinker(precipmobj_t *mobj)
-{
+{ 
+
+    R_ResetPrecipitationMobjInterpolationState(mobj);
+
 	P_CycleStateAnimation((mobj_t *)mobj);
 
 	// adjust height
 	if ((mobj->z += mobj->momz) <= mobj->floorz)
+	{
 		mobj->z = mobj->ceilingz;
+		R_ResetPrecipitationMobjInterpolationState(mobj);
+	}
 }
 
 void P_RainThinker(precipmobj_t *mobj)
-{
+{ 
+	R_ResetPrecipitationMobjInterpolationState(mobj);
+
 	P_CycleStateAnimation((mobj_t *)mobj);
 
 	if (mobj->state != &states[S_RAIN1])
@@ -3880,6 +3888,7 @@ void P_RainThinker(precipmobj_t *mobj)
 			return;
 
 		mobj->z = mobj->ceilingz;
+		R_ResetPrecipitationMobjInterpolationState(mobj);
 		P_SetPrecipMobjState(mobj, S_RAIN1);
 
 		return;
@@ -4462,7 +4471,7 @@ static void P_Boss4MoveSpikeballs(mobj_t *mobj, angle_t angle, fixed_t fz)
 	while ((base = base->tracer))
 	{
 		for (seg = base, dist = 172*FRACUNIT, s = 9; seg; seg = seg->hnext, dist += 124*FRACUNIT, --s)
-			P_TeleportMove(seg, mobj->x + P_ReturnThrustX(mobj, angle, dist), mobj->y + P_ReturnThrustY(mobj, angle, dist), bz + FixedMul(fz, FixedDiv(s<<FRACBITS, 9<<FRACBITS)));
+			P_MoveOrigin(seg, mobj->x + P_ReturnThrustX(mobj, angle, dist), mobj->y + P_ReturnThrustY(mobj, angle, dist), bz + FixedMul(fz, FixedDiv(s<<FRACBITS, 9<<FRACBITS)));
 		angle += ANGLE_MAX/3;
 	}
 }
@@ -5208,7 +5217,7 @@ static void P_Boss9Thinker(mobj_t *mobj)
 			if (mobj->health > 3) {
 				mobj->tracer->destscale = FRACUNIT + (4*TICRATE - mobj->fuse)*(FRACUNIT/2)/TICRATE + FixedMul(FINECOSINE(angle>>ANGLETOFINESHIFT),FRACUNIT/2);
 				P_SetScale(mobj->tracer, mobj->tracer->destscale);
-				P_TeleportMove(mobj->tracer, mobj->x, mobj->y, mobj->z + mobj->height/2 - mobj->tracer->height/2);
+				P_SetOrigin(mobj->tracer, mobj->x, mobj->y, mobj->z + mobj->height/2 - mobj->tracer->height/2);
 				mobj->tracer->momx = mobj->momx;
 				mobj->tracer->momy = mobj->momy;
 				mobj->tracer->momz = mobj->momz;
@@ -6189,7 +6198,12 @@ static void P_KoopaThinker(mobj_t *koopa)
 void P_MobjThinker(mobj_t *mobj)
 {
 	I_Assert(mobj != NULL);
-	I_Assert(!P_MobjWasRemoved(mobj));
+	I_Assert(!P_MobjWasRemoved(mobj)); 
+
+
+
+
+
 
 	if (mobj->flags & MF_NOTHINK)
 		return;
@@ -6801,7 +6815,7 @@ void P_MobjThinker(mobj_t *mobj)
 				P_RemoveMobj(mobj);
 				return;
 			}
-			P_TeleportMove(mobj, mobj->target->x, mobj->target->y, mobj->target->z - mobj->height);
+			P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z - mobj->height);
 			break;
 		case MT_HAMMER:
 			if (mobj->z <= mobj->floorz)
@@ -7669,6 +7683,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->x = x;
 	mobj->y = y;
 
+	
 	mobj->radius = info->radius;
 	mobj->height = info->height;
 	mobj->flags = info->flags;
@@ -7722,6 +7737,8 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 	// Tells MobjCheckWater that the water height was not set.
 	mobj->watertop = INT32_MAX;
+
+	mobj->resetinterp = true;
 
 	if (z == ONFLOORZ)
 	{
@@ -7895,7 +7912,12 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	}
 
 	if (CheckForReverseGravity && !(mobj->flags & MF_NOBLOCKMAP))
-		P_CheckGravity(mobj, false);
+		P_CheckGravity(mobj, false); 
+    	
+	R_AddMobjInterpolator(mobj);
+
+
+
 
 	return mobj;
 }
@@ -7948,6 +7970,8 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 	 || GETSECSPECIAL(mobj->subsector->sector->special, 1) == 6
 	 || mobj->subsector->sector->floorpic == skyflatnum)
 		mobj->precipflags |= PCF_PIT;
+
+    R_ResetPrecipitationMobjInterpolationState(mobj);
 
 	return mobj;
 }
@@ -8033,6 +8057,7 @@ void P_RemoveMobj(mobj_t *mobj)
 	//
 	// Remove any references to other mobjs.
 	P_SetTarget(&mobj->target, P_SetTarget(&mobj->tracer, NULL));
+    R_RemoveMobjInterpolator(mobj);
 
 	// free block
 	// DBG: set everything in mobj_t to 0xFF instead of leaving it. debug memory error.

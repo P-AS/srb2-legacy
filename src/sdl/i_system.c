@@ -161,6 +161,7 @@ static char returnWadPath[256];
 
 #include "../doomdef.h"
 #include "../m_misc.h"
+#include "../i_time.h"
 #include "../i_video.h"
 #include "../i_sound.h"
 #include "../i_system.h"
@@ -173,7 +174,8 @@ static char returnWadPath[256];
 
 #include "../i_joy.h"
 
-#include "../m_argv.h"
+#include "../m_argv.h" 
+#include "../r_main.h" // Uncapped
 
 #ifdef MAC_ALERT
 #include "macosx/mac_alert.h"
@@ -186,6 +188,13 @@ static char returnWadPath[256];
 #include "../d_clisrv.h"
 #include "../byteptr.h"
 #endif
+
+// A little more than the minimum sleep duration on Windows.
+// May be incorrect for other platforms, but we don't currently have a way to
+// query the scheduler granularity. SDL will do what's needed to make this as
+// low as possible though.
+#define MIN_SLEEP_DURATION_MS 2.1
+
 
 /**	\brief	The JoyReset function
 
@@ -2035,190 +2044,143 @@ ticcmd_t *I_BaseTiccmd2(void)
 	return &emptycmd2;
 }
 
-#if defined (_WIN32)
-static HMODULE winmm = NULL;
-static DWORD starttickcount = 0; // hack for win2k time bug
-static p_timeGetTime pfntimeGetTime = NULL;
 
-static LARGE_INTEGER basetime = {{0, 0}};
+static Uint64 timer_frequency;
 
-// use this if High Resolution timer is found
-static LARGE_INTEGER frequency;
-
-// ---------
-// I_GetTime
-// Use the High Resolution Timer if available,
-// else use the multimedia timer which has 1 millisecond precision on Windowz 95,
-// but lower precision on Windows NT
-// ---------
-
-tic_t I_GetTime(void)
+precise_t I_GetPreciseTime(void)
 {
-	tic_t newtics = 0;
-
-	if (!starttickcount) // high precision timer
-	{
-		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-
-		if (!basetime.LowPart)
-		{
-			if (!QueryPerformanceFrequency(&frequency))
-				frequency.QuadPart = 0;
-			else
-				QueryPerformanceCounter(&basetime);
-		}
-
-		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
-		{
-			newtics = (INT32)((currtime.QuadPart - basetime.QuadPart) * NEWTICRATE
-				/ frequency.QuadPart);
-		}
-		else if (pfntimeGetTime)
-		{
-			currtime.LowPart = pfntimeGetTime();
-			if (!basetime.LowPart)
-				basetime.LowPart = currtime.LowPart;
-			newtics = ((currtime.LowPart - basetime.LowPart)/(1000/NEWTICRATE));
-		}
-	}
-	else
-		newtics = (GetTickCount() - starttickcount)/(1000/NEWTICRATE);
-
-	return newtics;
+	return SDL_GetPerformanceCounter();
 }
 
-void I_SleepToTic(tic_t tic)
+
+
+UINT64 I_GetPrecisePrecision(void)
 {
-	tic_t untilnexttic = 0;
-
-	if (!starttickcount) // high precision timer
-	{
-		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
-		{
-			untilnexttic = (INT32)((currtime.QuadPart - basetime.QuadPart) * 1000
-				/ frequency.QuadPart % NEWTICRATE);
-		}
-		else if (pfntimeGetTime)
-		{
-			currtime.LowPart = pfntimeGetTime();
-			if (!basetime.LowPart)
-				basetime.LowPart = currtime.LowPart;
-			untilnexttic = ((currtime.LowPart - basetime.LowPart)%(1000/NEWTICRATE));
-		}
-	}
-	else
-	{
-		untilnexttic = (GetTickCount() - starttickcount)%(1000/NEWTICRATE);
-		untilnexttic = (1000/NEWTICRATE) - untilnexttic;
-	}
-
-	// give some extra slack then busy-wait on windows, since windows' sleep is garbage
-	if (untilnexttic > 2)
-		SDL_Delay(untilnexttic - 2);
-	while (tic > I_GetTime());
+	return SDL_GetPerformanceFrequency();
 }
 
-static void I_ShutdownTimer(void)
+
+
+static UINT32 frame_rate;
+
+static double frame_frequency;
+static UINT64 frame_epoch;
+static double elapsed_frames;
+
+static void I_InitFrameTime(const UINT64 now, const UINT32 cap)
 {
-	pfntimeGetTime = NULL;
-	if (winmm)
+	frame_rate = cap;
+	frame_epoch = now;
+
+	//elapsed_frames = 0.0;
+
+	if (frame_rate == 0)
 	{
-		p_timeEndPeriod pfntimeEndPeriod = (p_timeEndPeriod)(LPVOID)GetProcAddress(winmm, "timeEndPeriod");
-		if (pfntimeEndPeriod)
-			pfntimeEndPeriod(1);
-		FreeLibrary(winmm);
-		winmm = NULL;
-	}
-}
-#else
-static struct timespec basetime;
-
-//
-// I_GetTime
-// returns time in 1/TICRATE second tics
-//
-tic_t I_GetTime (void)
-{
-	struct timespec ts;
-	uint64_t ticks;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-
-	if (basetime.tv_sec == 0)
-		basetime = ts;
-
-	ts.tv_sec -= basetime.tv_sec;
-	ts.tv_nsec -= basetime.tv_nsec;
-	if (ts.tv_nsec < 0)
-	{
-		ts.tv_sec--;
-		ts.tv_nsec += 1000000000;
-	}
-	ticks = ((uint64_t)ts.tv_sec * 1000000000) + ts.tv_nsec;
-	ticks = ticks * TICRATE / 1000000000;
-
-	return (tic_t)ticks;
-}
-
-void I_SleepToTic(tic_t tic)
-{
-	struct timespec ts;
-	uint64_t curtime, targettime;
-	int status;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-
-	ts.tv_sec -= basetime.tv_sec;
-	ts.tv_nsec -= basetime.tv_nsec;
-	if (ts.tv_nsec < 0)
-	{
-		ts.tv_sec--;
-		ts.tv_nsec += 1000000000;
-	}
-	curtime = ((uint64_t)ts.tv_sec * 1000000000) + ts.tv_nsec;
-	targettime = ((uint64_t)tic * 1000000000) / TICRATE;
-	if (targettime < curtime)
+		// Shouldn't be used, but just in case...?
+		frame_frequency = 1.0;
 		return;
+	}
 
-	ts.tv_sec = (targettime - curtime) / 1000000000;
-	ts.tv_nsec = (targettime - curtime) % 1000000000;
-
-	do status = nanosleep(&ts, &ts);
-	while (status == EINTR);
-	I_Assert(status == 0);
+	frame_frequency = timer_frequency / (double)frame_rate;
 }
-#endif
+
+double I_GetFrameTime(void)
+{
+	const UINT64 now = SDL_GetPerformanceCounter();
+	const UINT32 cap = R_GetFramerateCap();
+
+	if (cap != frame_rate)
+	{
+		I_InitFrameTime(now, cap);
+	}
+
+	if (frame_rate == 0)
+	{
+		// Always advance a frame.
+		elapsed_frames += 1.0;
+	}
+	else
+	{
+		elapsed_frames += (now - frame_epoch) / frame_frequency;
+	}
+
+	frame_epoch = now; // moving epoch
+	return elapsed_frames;
+}
 
 //
 //I_StartupTimer
 //
 void I_StartupTimer(void)
 {
-#ifdef _WIN32
-	// for win2k time bug
-	if (M_CheckParm("-gettickcount"))
+	timer_frequency = SDL_GetPerformanceFrequency();
+
+	I_InitFrameTime(0, R_GetFramerateCap());
+	elapsed_frames  = 0.0;
+}
+
+void I_Sleep(UINT32 ms)
+{
+	SDL_Delay(ms);
+}
+
+
+void I_SleepDuration(precise_t duration)
+{
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__)
+	UINT64 precision = I_GetPrecisePrecision();
+	precise_t dest = I_GetPreciseTime() + duration;
+	precise_t slack = (precision / 5000); // 0.2 ms slack
+	if (duration > slack)
 	{
-		starttickcount = GetTickCount();
-		CONS_Printf("%s", M_GetText("Using GetTickCount()\n"));
+		duration -= slack;
+		struct timespec ts = {
+			.tv_sec = duration / precision,
+			.tv_nsec = duration * 1000000000 / precision % 1000000000,
+		};
+		int status;
+		do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+		while (status == EINTR);
 	}
-	winmm = LoadLibraryA("winmm.dll");
-	if (winmm)
+
+	// busy-wait the rest
+	while (((INT64)dest - (INT64)I_GetPreciseTime()) > 0);
+#elif defined (MIN_SLEEP_DURATION_MS)
+	UINT64 precision = I_GetPrecisePrecision();
+	INT32 sleepvalue = cv_sleep.value;
+	UINT64 delaygranularity;
+	precise_t cur;
+	precise_t dest;
+
 	{
-		p_timeEndPeriod pfntimeBeginPeriod = (p_timeEndPeriod)(LPVOID)GetProcAddress(winmm, "timeBeginPeriod");
-		if (pfntimeBeginPeriod)
-			pfntimeBeginPeriod(1);
-		pfntimeGetTime = (p_timeGetTime)(LPVOID)GetProcAddress(winmm, "timeGetTime");
+		double gran = round(((double)(precision / 1000) * sleepvalue * MIN_SLEEP_DURATION_MS));
+		delaygranularity = (UINT64)gran;
 	}
-	I_AddExitFunc(I_ShutdownTimer);
+
+	cur = I_GetPreciseTime();
+	dest = cur + duration;
+
+	// the reason this is not dest > cur is because the precise counter may wrap
+	// two's complement arithmetic is our friend here, though!
+	// e.g. cur 0xFFFFFFFFFFFFFFFE = -2, dest 0x0000000000000001 = 1
+	// 0x0000000000000001 - 0xFFFFFFFFFFFFFFFE = 3
+	while ((INT64)(dest - cur) > 0)
+	{
+		// If our cv_sleep value exceeds the remaining sleep duration, use the
+		// hard sleep function.
+		if (sleepvalue > 0 && (dest - cur) > delaygranularity)
+		{
+			I_Sleep(sleepvalue);
+		}
+
+		// Otherwise, this is a spinloop.
+
+		cur = I_GetPreciseTime();
+	}
 #endif
 }
 
 
-
-void I_Sleep(void)
-{
-	if (cv_sleep.value != -1)
-		SDL_Delay(cv_sleep.value);
-}
 
 INT32 I_StartupSystem(void)
 {

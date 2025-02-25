@@ -982,7 +982,7 @@ ticcmd_t *I_BaseTiccmd2(void)
 	return &emptycmd2;
 }
 
-#if defined (_WIN32)
+#if 0
 static HMODULE winmm = NULL;
 static DWORD starttickcount = 0; // hack for win2k time bug
 static p_timeGetTime pfntimeGetTime = NULL;
@@ -1078,7 +1078,6 @@ static void I_ShutdownTimer(void)
 		winmm = NULL;
 	}
 }
-#else
 static struct timespec basetime;
 
 //
@@ -1138,29 +1137,10 @@ void I_SleepToTic(tic_t tic)
 //
 //I_StartupTimer
 //
-void I_StartupTimer(void)
-{
-#ifdef _WIN32
-	// for win2k time bug
-	if (M_CheckParm("-gettickcount"))
-	{
-		starttickcount = GetTickCount();
-		CONS_Printf("%s", M_GetText("Using GetTickCount()\n"));
-	}
-	winmm = LoadLibraryA("winmm.dll");
-	if (winmm)
-	{
-		p_timeEndPeriod pfntimeBeginPeriod = (p_timeEndPeriod)(LPVOID)GetProcAddress(winmm, "timeBeginPeriod");
-		if (pfntimeBeginPeriod)
-			pfntimeBeginPeriod(1);
-		pfntimeGetTime = (p_timeGetTime)(LPVOID)GetProcAddress(winmm, "timeGetTime");
-	}
-	I_AddExitFunc(I_ShutdownTimer);
-#endif
-}
+void I_StartupTimer(void){}
 
 
-static void I_SleepMillis(INT32 millis)
+/*static void I_SleepMillis(INT32 millis)
 {
 #if _WIN32
 	Sleep(millis);
@@ -1174,14 +1154,112 @@ static void I_SleepMillis(INT32 millis)
 	do status = nanosleep(&ts, &ts);
 	while (status == EINTR);
 #endif
-}
+}*/
 
 
-void I_Sleep(void)
+
+void I_Sleep(UINT32 ms)
 {
-	if (cv_sleep.value != -1)
-		I_SleepMillis(cv_sleep.value);
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+	struct timespec ts = {
+		.tv_sec = ms / 1000,
+		.tv_nsec = ms % 1000 * 1000000,
+	};
+	int status;
+	do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+	while (status == EINTR);
+#elif defined (_WIN32)
+	Sleep(ms);
+#else
+	(void)ms;
+#warning No sleep function for this system!
+#endif
 }
+
+void I_SleepDuration(precise_t duration)
+{
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__)
+	UINT64 precision = I_GetPrecisePrecision();
+	precise_t dest = I_GetPreciseTime() + duration;
+	precise_t slack = (precision / 5000); // 0.2 ms slack
+	if (duration > slack)
+	{
+		duration -= slack;
+		struct timespec ts = {
+			.tv_sec = duration / precision,
+			.tv_nsec = duration * 1000000000 / precision % 1000000000,
+		};
+		int status;
+		do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+		while (status == EINTR);
+	}
+
+	// busy-wait the rest
+	while (((INT64)dest - (INT64)I_GetPreciseTime()) > 0);
+#else
+	UINT64 precision = I_GetPrecisePrecision();
+	INT32 sleepvalue = cv_sleep.value;
+	UINT64 delaygranularity;
+	precise_t cur;
+	precise_t dest;
+
+	{
+		double gran = round(((double)(precision / 1000) * sleepvalue * 2.1));
+		delaygranularity = (UINT64)gran;
+	}
+
+	cur = I_GetPreciseTime();
+	dest = cur + duration;
+
+	// the reason this is not dest > cur is because the precise counter may wrap
+	// two's complement arithmetic is our friend here, though!
+	// e.g. cur 0xFFFFFFFFFFFFFFFE = -2, dest 0x0000000000000001 = 1
+	// 0x0000000000000001 - 0xFFFFFFFFFFFFFFFE = 3
+	while ((INT64)(dest - cur) > 0)
+	{
+		// If our cv_sleep value exceeds the remaining sleep duration, use the
+		// hard sleep function.
+		if (sleepvalue > 0 && (dest - cur) > delaygranularity)
+		{
+			I_Sleep(sleepvalue);
+		}
+
+		// Otherwise, this is a spinloop.
+
+		cur = I_GetPreciseTime();
+	}
+#endif
+}
+
+precise_t I_GetPreciseTime(void)
+{
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (precise_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
+#elif defined (_WIN32)
+	LARGE_INTEGER counter;
+	QueryPerformanceCounter(&counter);
+	return (precise_t)counter.QuadPart;
+#else
+	return 0;
+#endif
+}
+
+UINT64 I_GetPrecisePrecision(void)
+{
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+	return 1000000000;
+#elif defined (_WIN32)
+	LARGE_INTEGER frequency;
+	QueryPerformanceFrequency(&frequency);
+	return (UINT64)frequency.QuadPart;
+#else
+	return 1000000;
+#endif
+}
+
+
 
 
 INT32 I_StartupSystem(void)

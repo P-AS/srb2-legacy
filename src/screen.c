@@ -15,6 +15,7 @@
 #include "screen.h"
 #include "console.h"
 #include "am_map.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "i_video.h"
 #include "r_local.h"
@@ -176,6 +177,7 @@ void SCR_Startup(void)
 
 	V_Init();
 	CV_RegisterVar(&cv_ticrate);
+	CV_RegisterVar(&cv_tpscounter);
 	CV_RegisterVar(&cv_constextsize);
 
 	V_SetPalette(0);
@@ -315,38 +317,130 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 
 // XMOD FPS display
 // moved out of os-specific code for consistency
-static boolean fpsgraph[TICRATE];
+static boolean ticsgraph[TICRATE];
 static tic_t lasttic;
+
+double averageFPS = 0.0f;
+
+#define USE_FPS_SAMPLES
+
+#ifdef USE_FPS_SAMPLES
+#define MAX_FRAME_TIME 0.05
+#define NUM_FPS_SAMPLES (16) // Number of samples to store
+
+static double total_frame_time = 0.0;
+static int frame_index;
+#endif
+
+static boolean fps_init = false;
+static precise_t fps_enter = 0;
+
+void SCR_CalculateFPS(void)
+{
+	precise_t fps_finish = 0;
+
+	double frameElapsed = 0.0;
+
+	if (fps_init == false)
+	{
+		fps_enter = I_GetPreciseTime();
+		fps_init = true;
+	}
+
+	fps_finish = I_GetPreciseTime();
+	frameElapsed = (double)((INT64)(fps_finish - fps_enter)) / I_GetPrecisePrecision();
+	fps_enter = fps_finish;
+
+#ifdef USE_FPS_SAMPLES
+	total_frame_time += frameElapsed;
+	if (frame_index++ >= NUM_FPS_SAMPLES || total_frame_time >= MAX_FRAME_TIME)
+	{
+		averageFPS = 1.0 / (total_frame_time / frame_index);
+		total_frame_time = 0.0;
+		frame_index = 0;
+	}
+#else
+	// Direct, unsampled counter.
+	averageFPS = 1.0 / frameElapsed;
+#endif
+}
+
+
+
 
 void SCR_DisplayTicRate(void)
 {
+	INT32 fpscntcolor = 0;
+	const INT32 h = vid.height-(8*vid.dupy);
+	UINT32 cap = R_GetFramerateCap();
+	double fps = round(averageFPS);
 	tic_t i;
 	tic_t ontic = I_GetTime();
 	tic_t totaltics = 0;
 	INT32 ticcntcolor = 0;
+	INT32 width;
+
+	if (gamestate == GS_NULL)
+		return;
+
+	if (cap > 0)
+	{
+		if (fps <= cap / 2.0) fpscntcolor = V_REDMAP;
+		else if (fps <= cap * 0.90) fpscntcolor = V_YELLOWMAP;
+		else fpscntcolor = V_GREENMAP;
+	}
+	else
+	{
+		fpscntcolor = V_GREENMAP;
+	}
 
 	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
-		fpsgraph[i % TICRATE] = false;
+	ticsgraph[i % TICRATE] = false;
 
-	fpsgraph[ontic % TICRATE] = true;
+	ticsgraph[ontic % TICRATE] = true;
 
 	for (i = 0;i < TICRATE;++i)
-		if (fpsgraph[i])
+		if (ticsgraph[i])
 			++totaltics;
 
 	if (totaltics <= TICRATE/2) ticcntcolor = V_REDMAP;
-	else if (totaltics == TICRATE) ticcntcolor = V_GREENMAP;
+	else if (totaltics == TICRATE) ticcntcolor = V_BLUEMAP;
 
 	if (cv_ticrate.value == 2) // compact counter
-	V_DrawString(vid.width - (16 * vid.dupx), vid.height-(8*vid.dupy),
-		ticcntcolor| V_NOSCALESTART, va("%02d", totaltics));
+	{
+		width = vid.dupx*V_StringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
+
+		V_DrawString(vid.width-width, h,
+			fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
+	}
 	else if (cv_ticrate.value == 1) // full counter
 	{
- 		V_DrawString(vid.width - (24 * vid.dupx), vid.height - (16 * vid.dupy),
-			V_YELLOWMAP | V_NOSCALESTART, "FPS");
- 		V_DrawString(vid.width - (40 * vid.dupx), vid.height - (8 * vid.dupy),
-		 	ticcntcolor | V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));
+		const char *drawnstr;
+
+		// The highest assignable cap is < 1000, so 3 characters is fine.
+		if (cap > 0)
+			drawnstr = va("%3.0f/%3u", fps, cap);
+		else
+			drawnstr = va("%4.2f", averageFPS);
+		
+		width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
+
+		V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
+			V_YELLOWMAP|V_NOSCALESTART, "FPS:");
+		V_DrawString(vid.width - width, h,
+				fpscntcolor|V_NOSCALESTART, drawnstr);	
+		
+	}
+
+	if (cv_tpscounter.value == 2) // compact counter
+		V_DrawString(vid.width-(16*vid.dupx), h-(8*vid.dupy),
+			ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
+	else if (cv_tpscounter.value == 1) // full counter
+	{
+		V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("TPS: ", V_NOSCALESTART)), h-(8*vid.dupy),
+			V_YELLOWMAP|V_NOSCALESTART, "TPS:");
+		V_DrawString(vid.width-(40*vid.dupx), h-(8*vid.dupy),
+			ticcntcolor|V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));
 	}
 		lasttic = ontic;
-
 }

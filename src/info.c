@@ -142,9 +142,9 @@ state_t states[NUMSTATES] =
 
 	// 1-Up Box Sprites (uses player sprite)
 	{SPR_PLAY, 35,  2, {NULL}, 0, 16, S_PLAY_BOX2},  // S_PLAY_BOX1
-	{SPR_NULL,  0,  1, {NULL}, 0,  0, S_PLAY_BOX1},  // S_PLAY_BOX2
+	{SPR_NULL,  0,  1, {NULL}, 0, 16, S_PLAY_BOX1},  // S_PLAY_BOX2
 	{SPR_PLAY, 35,  4, {NULL}, 0,  4, S_PLAY_ICON2}, // S_PLAY_ICON1
-	{SPR_NULL,  0, 12, {NULL}, 0,  0, S_PLAY_ICON3}, // S_PLAY_ICON2
+	{SPR_NULL,  0, 12, {NULL}, 0,  4, S_PLAY_ICON3}, // S_PLAY_ICON2
 	{SPR_PLAY, 35, 18, {NULL}, 0,  4, S_NULL},       // S_PLAY_ICON3
 
 	// Level end sign (uses player sprite)
