@@ -1217,6 +1217,9 @@ void I_FinishUpdate(void)
 
 	SCR_DisplayTicRate();
 
+	if (cv_showping.value && netgame && consoleplayer != serverplayer)
+		SCR_DisplayLocalPing();
+
 	if (rendermode == render_soft && screens[0])
 	{
 
@@ -1227,7 +1230,7 @@ void I_FinishUpdate(void)
 		}
 		if (bufSurface)
 		{
-			
+
 			SDL_BlitSurface(bufSurface, &src_rect, vidSurface, &src_rect);
 			// Fury -- there's no way around UpdateTexture, the GL backend uses it anyway
 			SDL_LockSurface(vidSurface);

@@ -1341,16 +1341,17 @@ static menuitem_t OP_GameOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Timer/Rings Display",    &cv_timetic,     70},
 	{IT_STRING | IT_CVAR, NULL, "Score Display",          &cv_scorepos,     80},
 	{IT_STRING | IT_CVAR, NULL, "Always Compact Rankings",          &cv_compactscoreboard,     90},
+	{IT_STRING | IT_CVAR, NULL, "Local ping display",		&cv_showping,			100}, // shows ping next to framerate if we want to.
 #ifdef SEENAMES
-	{IT_STRING | IT_CVAR, NULL, "HUD Player Names",       &cv_seenames,    100},
+	{IT_STRING | IT_CVAR, NULL, "HUD Player Names",       &cv_seenames,    110},
 #endif
-	{IT_STRING | IT_CVAR, NULL, "Log Hazard Damage",      &cv_hazardlog,   110},
+	{IT_STRING | IT_CVAR, NULL, "Log Hazard Damage",      &cv_hazardlog,   120},
 
-	{IT_STRING | IT_CVAR, NULL, "Console Back Color",     &cons_backcolor, 120},
-	{IT_STRING | IT_CVAR, NULL, "Console Text Size",      &cv_constextsize,130},
-	{IT_STRING | IT_CVAR, NULL, "Uppercase Console",      &cv_allcaps,     140},
+	{IT_STRING | IT_CVAR, NULL, "Console Back Color",     &cons_backcolor, 130},
+	{IT_STRING | IT_CVAR, NULL, "Console Text Size",      &cv_constextsize,140},
+	{IT_STRING | IT_CVAR, NULL, "Uppercase Console",      &cv_allcaps,     150},
 
-	{IT_STRING | IT_CVAR, NULL, "Title Screen Demos",     &cv_rollingdemos, 150},
+	{IT_STRING | IT_CVAR, NULL, "Title Screen Demos",     &cv_rollingdemos, 160},
 };
 
 static menuitem_t OP_ChatOptionsMenu[] =

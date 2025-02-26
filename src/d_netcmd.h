@@ -109,6 +109,8 @@ extern consvar_t cv_maxping;
 
 extern consvar_t cv_skipmapcheck;
 
+extern consvar_t cv_showping;
+
 extern consvar_t cv_sleep;
 
 extern consvar_t cv_freedemocamera;

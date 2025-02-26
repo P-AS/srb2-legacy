@@ -422,14 +422,14 @@ void SCR_DisplayTicRate(void)
 			drawnstr = va("%3.0f/%3u", fps, cap);
 		else
 			drawnstr = va("%4.2f", averageFPS);
-		
+
 		width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
 
 		V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
 			V_YELLOWMAP|V_NOSCALESTART, "FPS:");
 		V_DrawString(vid.width - width, h,
-				fpscntcolor|V_NOSCALESTART, drawnstr);	
-		
+				fpscntcolor|V_NOSCALESTART, drawnstr);
+
 	}
 
 	if (cv_tpscounter.value == 2) // compact counter
@@ -443,4 +443,14 @@ void SCR_DisplayTicRate(void)
 			ticcntcolor|V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));
 	}
 		lasttic = ontic;
+}
+
+void SCR_DisplayLocalPing(void)
+{
+	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
+	if (cv_showping.value)	// only show 2 (warning) if our ping is at a bad level
+	{
+		INT32 dispy = cv_ticrate.value ? 180 : 189;
+		HU_drawPing(307, dispy, ping, true, V_SNAPTORIGHT|V_SNAPTOBOTTOM);
+	}
 }
