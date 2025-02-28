@@ -132,6 +132,7 @@
 #define SEND_VERSION_MSG        	214
 #define GET_BANNED_MSG          	215 // Someone's been baaaaaad!
 #define PING_SERVER_MSG         	216
+#define GET_EXT_SERVER_MSG      	217
 
 #define HEADER_SIZE (sizeof (INT32)*4)
 
@@ -423,7 +424,7 @@ const msg_server_t *GetShortServersList(INT32 room)
 		return NULL;
 	}
 
-	msg.type = GET_SHORT_SERVER_MSG;
+	msg.type = GET_EXT_SERVER_MSG;
 	msg.length = 0;
 	msg.room = room;
 	if (MS_Write(fd, &msg) < 0)
