@@ -776,6 +776,7 @@ FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf)
 		case tr_trans60 : pSurf->PolyColor.s.alpha = 0x66;return  PF_Translucent;
 		case tr_trans70 : pSurf->PolyColor.s.alpha = 0x4c;return  PF_Translucent;
 		case tr_trans80 : pSurf->PolyColor.s.alpha = 0x33;return  PF_Translucent;
+		case tr_trans90 : pSurf->PolyColor.s.alpha = 0x19;return  PF_Translucent;
 	}
 	return PF_Translucent;
 }
