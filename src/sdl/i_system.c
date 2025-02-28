@@ -2581,9 +2581,8 @@ const char *I_ClipboardPaste(void)
 	if (!SDL_HasClipboardText())
 		return NULL;
 	clipboard_contents = SDL_GetClipboardText();
-	memcpy(clipboard_modified, clipboard_contents, 255);
+	snprintf(clipboard_modified, sizeof(clipboard_modified), "%s", clipboard_contents);
 	SDL_free(clipboard_contents);
-	clipboard_modified[255] = 0;
 
 	while (*i)
 	{
