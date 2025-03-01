@@ -5238,33 +5238,27 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	angle_t ang;
 	INT32 heightsec, phs;
 
-   // uncapped/interpolation
-   interpmobjstate_t interp = {0};
-
-
+	// uncapped/interpolation
+	interpmobjstate_t interp = {0};
 
 	if (!thing)
 		return;
 	else
 
-
 	if (R_UsingFrameInterpolation())
 	{
-      R_InterpolateMobjState(thing, rendertimefrac, &interp);
+		R_InterpolateMobjState(thing, rendertimefrac, &interp);
 	}
-		else
+	else
 	{
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
 	}
-
-
 
 	this_scale = FIXED_TO_FLOAT(interp.scale);
 
 	// transform the origin point
 	tr_x = FIXED_TO_FLOAT(interp.x) - gr_viewx;
 	tr_y = FIXED_TO_FLOAT(interp.y) - gr_viewy;
-
 
 	// rotation around vertical axis
 	tz = (tr_x * gr_viewcos) + (tr_y * gr_viewsin);
@@ -5276,7 +5270,6 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	// The above can stay as it works for cutting sprites that are too close
 	tr_x = FIXED_TO_FLOAT(interp.x);
 	tr_y = FIXED_TO_FLOAT(interp.y);
-
 
 	// decide which patch to use for sprite relative to player
 #ifdef RANGECHECK
