@@ -101,18 +101,18 @@ static float recalc_pitch(INT32 doom_pitch)
 
 /***************************************************************
  *
- * DBG_Printf
+ * GL_DBG_Printf
  * Output error messages to debug log if DEBUG_TO_FILE is defined,
  * else do nothing
  *
  **************************************************************
  */
 // -----------------+
-// DBG_Printf       : Output error messages to debug log if DEBUG_TO_FILE is defined,
+// GL_DBG_Printf       : Output error messages to debug log if DEBUG_TO_FILE is defined,
 //                  : else do nothing
 // Returns          :
 // -----------------+
-FUNCPRINTF void DBG_Printf(const char *lpFmt, ...)
+FUNCPRINTF void GL_DBG_Printf(const char *lpFmt, ...)
 {
 #ifdef DEBUG_TO_FILE
 	char str[4096] = "";
@@ -252,9 +252,9 @@ static void relvol(INT32 chan)
 		return;
 
 	if (!vol && error)
-		DBG_Printf("FMOD(relvol, FSOUND_GetVolume, Channel # %i): %s\n",chan,FMOD_ErrorString(error));
+		GL_DBG_Printf("FMOD(relvol, FSOUND_GetVolume, Channel # %i): %s\n",chan,FMOD_ErrorString(error));
 	else if (!FSOUND_SetVolume(relcheckup(chan), vol))
-		DBG_Printf("FMOD(relvol, FSOUND_SetVolume, Channel # %i): %s\n",chan,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(relvol, FSOUND_SetVolume, Channel # %i): %s\n",chan,FMOD_ErrorString(FSOUND_GetError()));
 }
 
 //Copy rel chan
@@ -266,7 +266,7 @@ static INT32 relcopy(INT32 handle)
 	float vel[3];
 
 	if (!FSOUND_3D_GetAttributes(handle,&pos[0],&vel[0]))
-		if (FSOUND_GetError() != FMOD_ERR_NONE) DBG_Printf("FMOD(relcopy, FSOUND_3D_GetAttributes, Channel # %i): %s\n",handle,FMOD_ErrorString(FSOUND_GetError()));
+		if (FSOUND_GetError() != FMOD_ERR_NONE) GL_DBG_Printf("FMOD(relcopy, FSOUND_3D_GetAttributes, Channel # %i): %s\n",handle,FMOD_ErrorString(FSOUND_GetError()));
 
 	fmsample = FSOUND_GetCurrentSample(handle);
 
@@ -274,24 +274,24 @@ static INT32 relcopy(INT32 handle)
 	{
 #ifdef REL2D
 		if (!FSOUND_Sample_SetMode(fmsample, FSOUND_2D))
-			DBG_Printf("FMOD(relcopy, FSOUND_Sample_SetMode, handle# %i): %s\n",handle,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(relcopy, FSOUND_Sample_SetMode, handle# %i): %s\n",handle,FMOD_ErrorString(FSOUND_GetError()));
 #endif
 		chan = FSOUND_PlaySoundEx(FSOUND_FREE,fmsample,NULL,true);
 
 		if (chan == -1)
 		{
-			if (FSOUND_GetError() != FMOD_ERR_NONE) DBG_Printf("FMOD(relcopy, FSOUND_PlaySoundEx, handle# %i): %s\n",handle,FMOD_ErrorString(FSOUND_GetError()));
+			if (FSOUND_GetError() != FMOD_ERR_NONE) GL_DBG_Printf("FMOD(relcopy, FSOUND_PlaySoundEx, handle# %i): %s\n",handle,FMOD_ErrorString(FSOUND_GetError()));
 			return FSOUND_FREE;
 		}
 #ifdef MORESTUFF
 		else
-			DBG_Printf("FMOD(relcopy, Main): Copy Handle#%i to channel#%i\n",handle,chan);
+			GL_DBG_Printf("FMOD(relcopy, Main): Copy Handle#%i to channel#%i\n",handle,chan);
 #endif
 	}
 	else
 	{
 		if (FSOUND_GetError() != FMOD_ERR_NONE)
-			DBG_Printf("FMOD(relcopy, FSOUND_GetCurrentSample, handle# %i): %s\n",handle,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(relcopy, FSOUND_GetCurrentSample, handle# %i): %s\n",handle,FMOD_ErrorString(FSOUND_GetError()));
 		chan = FSOUND_PlaySoundEx(FSOUND_FREE,blankfmsample,NULL,true);
 		//return FSOUND_FREE;
 	}
@@ -300,14 +300,14 @@ static INT32 relcopy(INT32 handle)
 	{
 
 		if (!FSOUND_SetCurrentPosition(chan, 0))
-			DBG_Printf("FMOD(relcopy, FSOUND_SetCurrentPosition, handle#%i, channel# %i): %s\n",handle,chan,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(relcopy, FSOUND_SetCurrentPosition, handle#%i, channel# %i): %s\n",handle,chan,FMOD_ErrorString(FSOUND_GetError()));
 #ifndef REL2D
 		if (!FSOUND_3D_SetAttributes(chan,pos,vel))
-			DBG_Printf("FMOD(relcopy, FSOUND_3D_SetAttributes, handle#%i, channel#%i): %s\n",handle,chan,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(relcopy, FSOUND_3D_SetAttributes, handle#%i, channel#%i): %s\n",handle,chan,FMOD_ErrorString(FSOUND_GetError()));
 #endif
 /*
 		if (!FSOUND_SetReserved(chan, TURE))
-			DBG_Printf("FMOD(relcopy, FSOUND_SetReserved, handle#%i, channel# %i): %s\n",handle,chan,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(relcopy, FSOUND_SetReserved, handle#%i, channel# %i): %s\n",handle,chan,FMOD_ErrorString(FSOUND_GetError()));
 */
 		return chan;
 	}
@@ -354,7 +354,7 @@ static void relupdate(INT32 handle)
 		vel[2] = relarray[stack].pos.vel[2] + rellistener[which].vel[2];
 
 		if (!FSOUND_3D_SetAttributes(chan,pos,vel))
-			DBG_Printf("FMOD(relupdate, FSOUND_3D_SetAttributes, Handle #%i,Channel #%i): %s\n",handle, chan,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(relupdate, FSOUND_3D_SetAttributes, Handle #%i,Channel #%i): %s\n",handle, chan,FMOD_ErrorString(FSOUND_GetError()));
 	}
 #endif
 }
@@ -369,7 +369,7 @@ static void relplace(INT32 chan)
 
 	if (!FSOUND_3D_GetAttributes(chan,&pos[0],&vel[0]))
 	{
-		if (FSOUND_GetError() != FMOD_ERR_NONE) DBG_Printf("FMOD(relplace, FSOUND_3D_GetAttributes, Channel # %i): %s\n",chan,FMOD_ErrorString(FSOUND_GetError()));
+		if (FSOUND_GetError() != FMOD_ERR_NONE) GL_DBG_Printf("FMOD(relplace, FSOUND_3D_GetAttributes, Channel # %i): %s\n",chan,FMOD_ErrorString(FSOUND_GetError()));
 	}
 	else
 	{
@@ -406,7 +406,7 @@ static void reladd(INT32 chan)
 			else if (relarray[5].handle == FSOUND_FREE)
 				stack = 5;
 			else
-				DBG_Printf("No more room in relarray\n");
+				GL_DBG_Printf("No more room in relarray\n");
 		}
 
 		relarray[stack].handle = chan;
@@ -439,79 +439,79 @@ EXPORT INT32 HWRAPI(Startup) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 
 	if (FSOUND_GetVersion() < FMOD_VERSION)
 	{
-		DBG_Printf("Error : You are using the wrong DLL version!\nYou should be using FMOD %.02f\n", FMOD_VERSION);
+		GL_DBG_Printf("Error : You are using the wrong DLL version!\nYou should be using FMOD %.02f\n", FMOD_VERSION);
 		return inited;
 	}
 	else
-		DBG_Printf("S_FMOD Init(): FMOD_SOUND driver for SRB2 %s\n",VERSIONSTRING);
+		GL_DBG_Printf("S_FMOD Init(): FMOD_SOUND driver for SRB2 %s\n",VERSIONSTRING);
 
 	if (!FSOUND_SetMinHardwareChannels(STATIC_SOURCES_NUM*4))
-		DBG_Printf("FMOD(Startup,FSOUND_SetMinHardwareChannels,# of Channels Min: %i): %s\n",STATIC_SOURCES_NUM*4, FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Startup,FSOUND_SetMinHardwareChannels,# of Channels Min: %i): %s\n",STATIC_SOURCES_NUM*4, FMOD_ErrorString(FSOUND_GetError()));
 
 	if (!FSOUND_SetMaxHardwareChannels(0))
-		DBG_Printf("FMOD(Startup,FSOUND_SetMaxHardwareChannels,# of Channels Min: %i): %s\n",0, FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Startup,FSOUND_SetMaxHardwareChannels,# of Channels Min: %i): %s\n",0, FMOD_ErrorString(FSOUND_GetError()));
 
 	for (i = 0; i < FSOUND_GetNumDrivers(); i++)
 	{
 		UINT32 caps = 0;
-		DBG_Printf("Driver Caps, if any\n");
+		GL_DBG_Printf("Driver Caps, if any\n");
 
 		if (FSOUND_GetDriverCaps(i, &caps))
 		{
-			DBG_Printf("FMOD: Driver# %d - %s\n", i+1, FSOUND_GetDriverName(i));    // print driver names
+			GL_DBG_Printf("FMOD: Driver# %d - %s\n", i+1, FSOUND_GetDriverName(i));    // print driver names
 			if (caps & FSOUND_CAPS_HARDWARE)
-				DBG_Printf("This sound hardware supports hardware accelerated 3d sound.\n");
+				GL_DBG_Printf("This sound hardware supports hardware accelerated 3d sound.\n");
 
 			if (caps & FSOUND_CAPS_EAX2)
-				DBG_Printf("This sound hardware supports hardware accelerated 3d sound with EAX 2 reverb.\n");
+				GL_DBG_Printf("This sound hardware supports hardware accelerated 3d sound with EAX 2 reverb.\n");
 
 			if (caps & FSOUND_CAPS_EAX3)
-				DBG_Printf("This sound hardware supports hardware accelerated 3d sound with EAX 3 reverb.\n");
+				GL_DBG_Printf("This sound hardware supports hardware accelerated 3d sound with EAX 3 reverb.\n");
 		}
 		else
-			DBG_Printf("FMOD(Startup,FSOUND_GetDriverCaps,%s): %s\n",FSOUND_GetDriverName(i), FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Startup,FSOUND_GetDriverCaps,%s): %s\n",FSOUND_GetDriverName(i), FMOD_ErrorString(FSOUND_GetError()));
 	}
 #if defined (_WIN32) || defined (_WIN64)
 	if (!FSOUND_SetHWND(snd_dev->hWnd))
 	{
-		DBG_Printf("FMOD(Startup,FSOUND_SetHWND): %s\n", FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Startup,FSOUND_SetHWND): %s\n", FMOD_ErrorString(FSOUND_GetError()));
 		return inited;
 	}
 	else
 #endif
 	{
-		DBG_Printf("Initialising FMOD %.02f\n",FMOD_VERSION);
+		GL_DBG_Printf("Initialising FMOD %.02f\n",FMOD_VERSION);
 		inited = FSOUND_Init(snd_dev->sample_rate,MAXCHANNEL,0);
 	}
 
 	if (!inited)
 	{
-		DBG_Printf("FMOD(Startup,Main): %s\n", FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Startup,Main): %s\n", FMOD_ErrorString(FSOUND_GetError()));
 	}
 	else
 	{
 #ifdef OLDFMOD
-		DBG_Printf("   Maximum hardware mixing buffers %d\n", FSOUND_GetNumHardwareChannels());
+		GL_DBG_Printf("   Maximum hardware mixing buffers %d\n", FSOUND_GetNumHardwareChannels());
 #else
 		INT32 num2DC, num3DC, numDC;
 
 		if (FSOUND_GetNumHWChannels(&num2DC,&num3DC,&numDC))
 		{
-			DBG_Printf("   Maximum hardware 2D buffers %d\n", num2DC);
-			DBG_Printf("   Maximum hardware 3D buffers %d\n", num3DC);
-			DBG_Printf("   Maximum hardware mixing buffers %d\n", numDC);
+			GL_DBG_Printf("   Maximum hardware 2D buffers %d\n", num2DC);
+			GL_DBG_Printf("   Maximum hardware 3D buffers %d\n", num3DC);
+			GL_DBG_Printf("   Maximum hardware mixing buffers %d\n", numDC);
 		}
 		else
-			DBG_Printf("FMOD(Startup,FSOUND_GetNumHWChannels): %s\n", FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Startup,FSOUND_GetNumHWChannels): %s\n", FMOD_ErrorString(FSOUND_GetError()));
 #endif
 
-		DBG_Printf("FMOD is up and running at %i KHZ\n",FSOUND_GetOutputRate());
-		DBG_Printf("Sound hardware capabilities:\n");
+		GL_DBG_Printf("FMOD is up and running at %i KHZ\n",FSOUND_GetOutputRate());
+		GL_DBG_Printf("Sound hardware capabilities:\n");
 
 		if (FSOUND_GetDriverName(FSOUND_GetDriver()))
-			DBG_Printf("   Driver is %s\n",FSOUND_GetDriverName(FSOUND_GetDriver()));
+			GL_DBG_Printf("   Driver is %s\n",FSOUND_GetDriverName(FSOUND_GetDriver()));
 		else
-			DBG_Printf("FMOD(Startup,FSOUND_GetDriverName): %s\n", FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Startup,FSOUND_GetDriverName): %s\n", FMOD_ErrorString(FSOUND_GetError()));
 
 		FSOUND_3D_SetDistanceFactor(1.0f/72.0f);
 		FSOUND_3D_SetRolloffFactor(0);
@@ -523,46 +523,46 @@ EXPORT INT32 HWRAPI(Startup) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 		switch (FSOUND_GetOutput())
 		{
 			case FSOUND_OUTPUT_NOSOUND:
-				DBG_Printf("FMOD driver: NoSound driver, all calls to this succeed but do nothing.\n");
+				GL_DBG_Printf("FMOD driver: NoSound driver, all calls to this succeed but do nothing.\n");
 				break;
 			case FSOUND_OUTPUT_WINMM:
-				DBG_Printf("FMOD driver: Windows Multimedia driver.\n");
+				GL_DBG_Printf("FMOD driver: Windows Multimedia driver.\n");
 				break;
 			case FSOUND_OUTPUT_DSOUND:
-				DBG_Printf("FMOD driver: DirectSound driver. You need this to get EAX2 or EAX3 support, or FX api support.\n");
+				GL_DBG_Printf("FMOD driver: DirectSound driver. You need this to get EAX2 or EAX3 support, or FX api support.\n");
 				break;
 			case FSOUND_OUTPUT_A3D:
-				DBG_Printf("FMOD driver: A3D driver.\n");
+				GL_DBG_Printf("FMOD driver: A3D driver.\n");
 				break;
 			case FSOUND_OUTPUT_XBOX:
-				DBG_Printf("FMOD driver: Xbox driver\n");
+				GL_DBG_Printf("FMOD driver: Xbox driver\n");
 				break;
 			case FSOUND_OUTPUT_OSS:
-				DBG_Printf("FMOD driver: Linux/Unix OSS (Open Sound System) driver, i.e. the kernel sound drivers.\n");
+				GL_DBG_Printf("FMOD driver: Linux/Unix OSS (Open Sound System) driver, i.e. the kernel sound drivers.\n");
 				break;
 			case FSOUND_OUTPUT_ESD:
-				DBG_Printf("FMOD driver: Linux/Unix ESD (Enlightment Sound Daemon) driver.\n");
+				GL_DBG_Printf("FMOD driver: Linux/Unix ESD (Enlightment Sound Daemon) driver.\n");
 				break;
 			case FSOUND_OUTPUT_ALSA:
-				DBG_Printf("FMOD driver: Linux Alsa driver.\n");
+				GL_DBG_Printf("FMOD driver: Linux Alsa driver.\n");
 				break;
 			case FSOUND_OUTPUT_MAC:
-				DBG_Printf("FMOD driver: Mac SoundManager driver\n");
+				GL_DBG_Printf("FMOD driver: Mac SoundManager driver\n");
 				break;
 			case FSOUND_OUTPUT_PS2:
-				DBG_Printf("FMOD driver: PlayStation 2 driver\n");
+				GL_DBG_Printf("FMOD driver: PlayStation 2 driver\n");
 				break;
 			case FSOUND_OUTPUT_GC:
-				DBG_Printf("FMOD driver: Gamecube driver\n");
+				GL_DBG_Printf("FMOD driver: Gamecube driver\n");
 				break;
 			case FSOUND_OUTPUT_NOSOUND_NONREALTIME:
-				DBG_Printf("FMOD driver: This is the same as nosound, but the sound generation is driven by FSOUND_Update\n");
+				GL_DBG_Printf("FMOD driver: This is the same as nosound, but the sound generation is driven by FSOUND_Update\n");
 				break;
 			case FSOUND_OUTPUT_ASIO:
-				DBG_Printf("FMOD driver: Low latency ASIO driver\n");
+				GL_DBG_Printf("FMOD driver: Low latency ASIO driver\n");
 				break;
 			default:
-				DBG_Printf("FMOD driver: Unknown Sound Driver\n");
+				GL_DBG_Printf("FMOD driver: Unknown Sound Driver\n");
 				break;
 		}
 
@@ -571,18 +571,18 @@ EXPORT INT32 HWRAPI(Startup) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 		blankfmsample = FSOUND_Sample_Alloc(FSOUND_UNMANAGED,1,FSOUND_UNORMAL,11025,127,FSOUND_STEREOPAN,127);
 
 		if (!blankfmsample)
-			DBG_Printf("FMOD(Startup,FSOUND_Sample_Alloc): %s\n", FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Startup,FSOUND_Sample_Alloc): %s\n", FMOD_ErrorString(FSOUND_GetError()));
 		else if (!FSOUND_Sample_SetMaxPlaybacks(blankfmsample,STATIC_SOURCES_NUM*2))
-			DBG_Printf("FMOD(Startup,FSOUND_Sample_SetMaxPlaybacks): %s\n", FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Startup,FSOUND_Sample_SetMaxPlaybacks): %s\n", FMOD_ErrorString(FSOUND_GetError()));
 	}
 	return inited;
 }
 
 EXPORT void HWRAPI(Shutdown) (void)
 {
-	DBG_Printf("Shuting down FMOD\n");
+	GL_DBG_Printf("Shuting down FMOD\n");
 	FSOUND_Sample_Free(blankfmsample);
-	DBG_Printf("Shutdown of FMOD done\n");
+	GL_DBG_Printf("Shutdown of FMOD done\n");
 	FSOUND_Close();
 }
 
@@ -623,33 +623,33 @@ EXPORT INT32 HWRAPI (Add3DSource) (source3D_data_t *src, sfx_data_t *sfx)
 				(sfx->priority)
 				)
 			)
-			DBG_Printf("FMOD(Add3DSource, FSOUND_Sample_SetDefaults, SFX's ID# %i): %s\n",  sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add3DSource, FSOUND_Sample_SetDefaults, SFX's ID# %i): %s\n",  sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
 #if 0
 		if (!FSOUND_Sample_SetMinMaxDistance(fmsample, src->min_distance, src->max_distance))
-			DBG_Printf("FMOD(Add3DSource, FSOUND_Sample_SetMinMaxDistance, SFX's ID# %i): %s\n", sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add3DSource, FSOUND_Sample_SetMinMaxDistance, SFX's ID# %i): %s\n", sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
 #endif
 		chan = FSOUND_PlaySoundEx(FSOUND_FREE,fmsample,NULL,true);
 
 		if (chan == -1)
 		{
-			DBG_Printf("FMOD(Add3DSource, FSOUND_PlaySoundEx, SFX's ID# %i): %s\n",sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add3DSource, FSOUND_PlaySoundEx, SFX's ID# %i): %s\n",sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
 			return chan;
 		}
 		else
 		{
 			if (!sfx)
-				DBG_Printf("FMOD(Add3DSource, Main): Added blank-sound added to channel %i\n",chan);
+				GL_DBG_Printf("FMOD(Add3DSource, Main): Added blank-sound added to channel %i\n",chan);
 #ifdef MORESTUFF
-			else DBG_Printf("FMOD(Add3DSource, Main): Added sfxid# %i added to channel %i\n",sfx->id,chan);
+			else GL_DBG_Printf("FMOD(Add3DSource, Main): Added sfxid# %i added to channel %i\n",sfx->id,chan);
 #endif
 		}
 	}
 	else
 	{
 		if (sfx)
-			DBG_Printf("FMOD(Add3DSource, FSOUND_Sample_Load, sfxid# %i): %s\n",sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add3DSource, FSOUND_Sample_Load, sfxid# %i): %s\n",sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 		else
-			DBG_Printf("FMOD(Add3DSource, FSOUND_Sample_Alloc): %s\n", FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add3DSource, FSOUND_Sample_Alloc): %s\n", FMOD_ErrorString(FSOUND_GetError()));
 
 		return chan;
 	}
@@ -657,13 +657,13 @@ EXPORT INT32 HWRAPI (Add3DSource) (source3D_data_t *src, sfx_data_t *sfx)
 	if (FSOUND_GetCurrentSample(chan))
 	{
 		if (!FSOUND_SetCurrentPosition(chan, 0))
-			DBG_Printf("FMOD(Add3DSource, FSOUND_SetCurrentPosition, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add3DSource, FSOUND_SetCurrentPosition, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
 
 		if (!FSOUND_3D_SetAttributes(chan,pos,vel))
-			DBG_Printf("FMOD(Add3DSource, FSOUND_3D_SetAttributes, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add3DSource, FSOUND_3D_SetAttributes, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
 
 		if (!FSOUND_SetReserved(chan, (signed char)src->permanent))
-			DBG_Printf("FMOD(Add3DSource, FSOUND_SetReserved, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add3DSource, FSOUND_SetReserved, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
 
 		if (src->head_relative) reladd(chan);
 	}
@@ -693,32 +693,32 @@ EXPORT INT32 HWRAPI (Add2DSource) (sfx_data_t *sfx)
 		 sfx->volume == -1 ? 255 : sfx->volume,
 		 sfx->sep == NORMAL_SEP ? FSOUND_STEREOPAN : sfx->sep,
 		 sfx->priority))
-			DBG_Printf("FMOD(Add2DSource, FSOUND_Sample_SetDefaults, sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add2DSource, FSOUND_Sample_SetDefaults, sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 
 		if (!FSOUND_Sample_SetMode(fmsample,FSOUND_2D))
-			DBG_Printf("FMOD(Add2DSource, FSOUND_Sample_SetMode, sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add2DSource, FSOUND_Sample_SetMode, sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 
 		chan = FSOUND_PlaySoundEx(FSOUND_FREE,fmsample,NULL,true);
 
 		if (chan == -1)
 		{
-			DBG_Printf("FMOD(Add2DSource, FSOUND_PlaySoundEx, sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add2DSource, FSOUND_PlaySoundEx, sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 			return chan;
 		}
 #ifdef MORESTUFF
-		else DBG_Printf("FMOD(Add2DSource, FSOUND_PlaySoundEx): sfxid# %i is playing on channel %i\n", sfx->id,chan);
+		else GL_DBG_Printf("FMOD(Add2DSource, FSOUND_PlaySoundEx): sfxid# %i is playing on channel %i\n", sfx->id,chan);
 #endif
 	}
 	else
 	{
-		DBG_Printf("FMOD(Add2DSource,FSOUND_Sample_Load, sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Add2DSource,FSOUND_Sample_Load, sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 		return chan;
 	}
 
 	if (FSOUND_GetCurrentSample(chan))
 	{
 		if (!FSOUND_SetCurrentPosition(chan, 0))
-			DBG_Printf("FMOD(Add2DSource, FSOUND_SetCurrentPosition, channel %i, sfxid# %i): %s\n", chan,sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Add2DSource, FSOUND_SetCurrentPosition, channel %i, sfxid# %i): %s\n", chan,sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 	}
 
 	return chan;
@@ -738,12 +738,12 @@ EXPORT INT32 HWRAPI (StartSource) (INT32 chan)
 #ifdef MORESTUFF
 	if (FSOUND_Sample_GetMode(fmsample) & FSOUND_2D)
 	{
-		DBG_Printf("FMOD(StartSource,Main): Starting 2D channel %i?\n",chan);
+		GL_DBG_Printf("FMOD(StartSource,Main): Starting 2D channel %i?\n",chan);
 		//return -1;
 	}
 	else
 	{
-		DBG_Printf("FMOD(StartSource,Main): Starting 3D Channel %i?\n",chan);
+		GL_DBG_Printf("FMOD(StartSource,Main): Starting 3D Channel %i?\n",chan);
 		//return -1;
 	}
 #endif
@@ -751,12 +751,12 @@ EXPORT INT32 HWRAPI (StartSource) (INT32 chan)
 	if (FSOUND_GetPaused(relcheckup(chan)))
 	{
 		if (!FSOUND_SetPaused(relcheckup(chan), false))
-			DBG_Printf("FMOD(StartSource,FSOUND_SetPaused, channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(StartSource,FSOUND_SetPaused, channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
 		else if (relstack(chan) != -1)
 			relarray[relstack(chan)].pos.active = false;
 	}
 	else
-		DBG_Printf("FMOD(StartSource,FSOUND_GetPaused): Channel %i is playing already",chan);
+		GL_DBG_Printf("FMOD(StartSource,FSOUND_GetPaused): Channel %i is playing already",chan);
 
 	return chan;
 }
@@ -777,7 +777,7 @@ EXPORT void HWRAPI (StopSource) (INT32 chan)
 	{
 		if (!FSOUND_SetPaused(relcheckup(chan),true))
 		{
-			DBG_Printf("FMOD(StopSource,FSOUND_SetPaused, channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(StopSource,FSOUND_SetPaused, channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
 		}
 		else if (relstack(chan) != -1)
 		{
@@ -786,7 +786,7 @@ EXPORT void HWRAPI (StopSource) (INT32 chan)
 	}
 #ifdef MORESTUFF
 	else
-		DBG_Printf("FMOD(StopSource,FSOUND_GetPaused): Channel %i is stopped already\n",chan);
+		GL_DBG_Printf("FMOD(StopSource,FSOUND_GetPaused): Channel %i is stopped already\n",chan);
 #endif
 }
 
@@ -845,7 +845,7 @@ EXPORT void HWRAPI (UpdateListener) (listener_data_t *data)
 	else
 	{
 		relset(-1);
-		DBG_Printf("Error: 1st listener data is missing\n");
+		GL_DBG_Printf("Error: 1st listener data is missing\n");
 	}
 }
 
@@ -885,11 +885,11 @@ EXPORT void HWRAPI (UpdateSourceVolume) (INT32 chan, INT32 vol)
 		return;
 
 	if (!FSOUND_SetVolume(chan,vol))
-		DBG_Printf("FMOD(UpdateSourceVolume, FSOUND_SetVolume, channel %i to volume %i): %s\n", chan,vol,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(UpdateSourceVolume, FSOUND_SetVolume, channel %i to volume %i): %s\n", chan,vol,FMOD_ErrorString(FSOUND_GetError()));
 	else
 	{
 #ifdef MORESTUFF
-		DBG_Printf("FMOD(UpdateSourceVolume, Main): channel %i is set to the volume of %i", chan,vol);
+		GL_DBG_Printf("FMOD(UpdateSourceVolume, Main): channel %i is set to the volume of %i", chan,vol);
 #endif
 		relvol(chan);
 	}
@@ -913,7 +913,7 @@ EXPORT void HWRAPI (Update2DSoundParms) (INT32 chan, INT32 vol, INT32 sep)
 	{
 		if (!FSOUND_Sample_GetMode(fmsample) & FSOUND_2D)
 		{
-			DBG_Printf("FMOD(Update2DSoundParms,Main): 2D Vol/Pan on 3D channel %i?\n",chan);
+			GL_DBG_Printf("FMOD(Update2DSoundParms,Main): 2D Vol/Pan on 3D channel %i?\n",chan);
 			//return;
 		}
 	}
@@ -921,16 +921,16 @@ EXPORT void HWRAPI (Update2DSoundParms) (INT32 chan, INT32 vol, INT32 sep)
 		return;
 
 	if (!FSOUND_SetPaused(chan, true))
-		DBG_Printf("FMOD(Update2DSoundParms, FSOUND_SetPaused, Pause, channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Update2DSoundParms, FSOUND_SetPaused, Pause, channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
 
 	if (!FSOUND_SetVolume(chan,vol))
-		DBG_Printf("FMOD(Update2DSoundParms, , channel %i to volume %i): %s\n", chan,vol,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Update2DSoundParms, , channel %i to volume %i): %s\n", chan,vol,FMOD_ErrorString(FSOUND_GetError()));
 
 	if (!FSOUND_SetPan(chan, sep == NORMAL_SEP ? FSOUND_STEREOPAN : sep))
-		DBG_Printf("FMOD(Update2DSoundParms, FSOUND_SetPan, channel %i to sep %i): %s\n", chan,sep,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Update2DSoundParms, FSOUND_SetPan, channel %i to sep %i): %s\n", chan,sep,FMOD_ErrorString(FSOUND_GetError()));
 
 	if (!FSOUND_SetPaused(chan, false))
-		DBG_Printf("FMOD(Update2DSoundParms, FSOUND_SetPaused, Resume, channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Update2DSoundParms, FSOUND_SetPaused, Resume, channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
 }
 
 // --------------------------------------------------------------------------
@@ -942,7 +942,7 @@ EXPORT void HWRAPI (SetGlobalSfxVolume) (INT32 vol)
 
 	FSOUND_SetSFXMasterVolume(realvol);
 #ifdef MORESTUFF
-	DBG_Printf("FMOD(SetGlobalSfxVolume, Main, the volume is set to %i): %s\n", realvol,FMOD_ErrorString(FSOUND_GetError()));
+	GL_DBG_Printf("FMOD(SetGlobalSfxVolume, Main, the volume is set to %i): %s\n", realvol,FMOD_ErrorString(FSOUND_GetError()));
 #endif
 }
 
@@ -960,7 +960,7 @@ EXPORT INT32 HWRAPI (SetCone) (INT32 chan, cone_def_t *cone_def)
 	{
 		if (FSOUND_Sample_GetMode(fmsample) & FSOUND_2D)
 		{
-			DBG_Printf("FMOD(Update3DSource,Main): 3D Cone on 2D Channel %i?\n",chan);
+			GL_DBG_Printf("FMOD(Update3DSource,Main): 3D Cone on 2D Channel %i?\n",chan);
 			return -1;
 		}
 	}
@@ -1000,7 +1000,7 @@ EXPORT void HWRAPI (Update3DSource) (INT32 chan, source3D_pos_t *sfx)
 	{
 		if (FSOUND_Sample_GetMode(fmsample) & FSOUND_2D)
 		{
-			//DBG_Printf("FMOD(Update3DSource,Main): 3D Pos/Vel on 2D Channel %i?\n",chan);
+			//GL_DBG_Printf("FMOD(Update3DSource,Main): 3D Pos/Vel on 2D Channel %i?\n",chan);
 			//return;
 		}
 	}
@@ -1010,7 +1010,7 @@ EXPORT void HWRAPI (Update3DSource) (INT32 chan, source3D_pos_t *sfx)
 	}
 
 	if (!FSOUND_3D_SetAttributes(chan,pos,vel))
-		DBG_Printf("FMOD(Update3DSource,FSOUND_3D_SetAttributes, onto channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Update3DSource,FSOUND_3D_SetAttributes, onto channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
 	else
 		relplace(chan);
 }
@@ -1035,12 +1035,12 @@ EXPORT INT32 HWRAPI (Reload3DSource) (INT32 handle, sfx_data_t *sfx)
 
 	if (FSOUND_Sample_GetMode(fmsample) & FSOUND_2D)
 	{
-		DBG_Printf("FMOD(Reload3DSource,Main): New 3D Sound on 2D Channel %i?\n",handle);
+		GL_DBG_Printf("FMOD(Reload3DSource,Main): New 3D Sound on 2D Channel %i?\n",handle);
 		return -1;
 	}
 #ifdef MORESTUFF
 	else
-		DBG_Printf("FMOD(Reload3DSource, Main, sending new sfx# %i to chan %i)\n",sfx->id,handle);
+		GL_DBG_Printf("FMOD(Reload3DSource, Main, sending new sfx# %i to chan %i)\n",sfx->id,handle);
 #endif
 
 #ifdef OLDFMOD
@@ -1048,12 +1048,12 @@ EXPORT INT32 HWRAPI (Reload3DSource) (INT32 handle, sfx_data_t *sfx)
 	src.max_distance = MAX_DISTANCE;
 #else
 	if (!FSOUND_3D_GetMinMaxDistance(handle,&src.min_distance,&src.min_distance))
-		DBG_Printf("FMOD(Reload3DSource, FSOUND_3D_GetMinMaxDistance, channel %i, for sfxid# %i): %s\n",handle, sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Reload3DSource, FSOUND_3D_GetMinMaxDistance, channel %i, for sfxid# %i): %s\n",handle, sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 #endif
 	src.head_relative = (handle != chan);
 	src.permanent = FSOUND_GetReserved(handle);
 	if (!FSOUND_3D_GetAttributes(handle,&pos[0],&vel[0]))
-		DBG_Printf("FMOD(Reload3DSource, FSOUND_3D_GetAttributes, channel %i, for sfxid# %i): %s\n",handle,sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Reload3DSource, FSOUND_3D_GetAttributes, channel %i, for sfxid# %i): %s\n",handle,sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 
 	//if (handle == chan)
 	{
@@ -1067,7 +1067,7 @@ EXPORT INT32 HWRAPI (Reload3DSource) (INT32 handle, sfx_data_t *sfx)
 	fmsample = FSOUND_Sample_Load(FSOUND_FREE, INT2CHAR(sfx->data), FSOUND_DOOMLOAD, SFXLENGTH);
 
 	if (!FSOUND_StopSound(chan))
-		DBG_Printf("FMOD(Reload3DSource,FSOUND_StopSound, of channel %i for sfxid# %i): %s\n", handle,sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Reload3DSource,FSOUND_StopSound, of channel %i for sfxid# %i): %s\n", handle,sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 
 	if (fmsample)
 	{
@@ -1076,35 +1076,35 @@ EXPORT INT32 HWRAPI (Reload3DSource) (INT32 handle, sfx_data_t *sfx)
 		 sfx->volume == -1 ? 255 : sfx->volume,
 		 sfx->sep == NORMAL_SEP ? FSOUND_STEREOPAN : sfx->sep,
 		 sfx->priority))
-			DBG_Printf("FMOD(Reload3DSource, FSOUND_Sample_SetDefaults, for sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Reload3DSource, FSOUND_Sample_SetDefaults, for sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 
 		if (!FSOUND_Sample_SetMinMaxDistance(fmsample, src.min_distance, src.max_distance))
-			DBG_Printf("FMOD(Reload3DSource, FSOUND_Sample_SetMinMaxDistance, SFX's ID# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Reload3DSource, FSOUND_Sample_SetMinMaxDistance, SFX's ID# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 
 		chan = FSOUND_PlaySoundEx(chan,fmsample,NULL,true);
 
 		if (chan == -1)
 		{
-			DBG_Printf("FMOD(Reload3DSource, FSOUND_PlaySoundEx, for sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+			GL_DBG_Printf("FMOD(Reload3DSource, FSOUND_PlaySoundEx, for sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 			return chan;
 		}
 
 		if (FSOUND_GetCurrentSample(chan))
 		{
 			if (!FSOUND_SetCurrentPosition(chan, 0))
-				DBG_Printf("FMOD(Reload3DSource, FSOUND_SetCurrentPosition, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
+				GL_DBG_Printf("FMOD(Reload3DSource, FSOUND_SetCurrentPosition, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
 
 			if (!FSOUND_3D_SetAttributes(chan,pos,vel))
-				DBG_Printf("FMOD(Reload3DSource, FSOUND_3D_SetAttributes, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
+				GL_DBG_Printf("FMOD(Reload3DSource, FSOUND_3D_SetAttributes, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
 
 			if (!FSOUND_SetReserved(chan, (signed char)src.permanent))
-				DBG_Printf("FMOD(Reload3DSource, FSOUND_SetReserved, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
+				GL_DBG_Printf("FMOD(Reload3DSource, FSOUND_SetReserved, channel %i, sfxid# %i): %s\n", chan,sfx?sfx->id:0,FMOD_ErrorString(FSOUND_GetError()));
 
 			if (src.head_relative) relupdate(handle);
 		}
 	}
 	else
-		DBG_Printf("FMOD(Reload3DSource,FSOUND_Sample_Load, for sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(Reload3DSource,FSOUND_Sample_Load, for sfxid# %i): %s\n", sfx->id,FMOD_ErrorString(FSOUND_GetError()));
 
 	return chan;
 }
@@ -1133,15 +1133,15 @@ EXPORT void HWRAPI (KillSource) (INT32 chan)
 #ifdef MORESTUFF
 	if (FSOUND_IsPlaying(relchan))
 		if (!FSOUND_SetLoopMode(relchan, FSOUND_LOOP_OFF))
-			DBG_Printf("FMOD(KillSource,FSOUND_SetLoopMode, for channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError())); //Alam_GBC: looping off
+			GL_DBG_Printf("FMOD(KillSource,FSOUND_SetLoopMode, for channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError())); //Alam_GBC: looping off
 	else
 #endif
 	if (!FSOUND_StopSound(relchan))
 	{
-		DBG_Printf("FMOD(KillSource,FSOUND_StopSound, for channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
+		GL_DBG_Printf("FMOD(KillSource,FSOUND_StopSound, for channel %i): %s\n", chan,FMOD_ErrorString(FSOUND_GetError()));
 	}
 #ifdef MORESTUFF
-	else DBG_Printf("FMOD(KillSource, Main, for channel %i)\n", chan);
+	else GL_DBG_Printf("FMOD(KillSource, Main, for channel %i)\n", chan);
 #endif
 	if (fmsample != blankfmsample) FSOUND_Sample_Free(fmsample);
 }

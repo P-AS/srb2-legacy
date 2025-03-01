@@ -21,9 +21,10 @@
 #include "r_state.h"
 #ifdef POLYOBJECTS
 #include "p_polyobj.h"
-#endif 
+#endif
 #include "z_zone.h"
 #include "d_net.h" //MAXSPLITSCREENPLAYERS
+#include "hardware/hw_main.h" //cv_grshearing
 
 
 static CV_PossibleValue_t fpscap_cons_t[] = {
@@ -146,8 +147,7 @@ static vector3_t *R_LerpVector3(const vector3_t *from, const vector3_t *to, fixe
 }
 
 // taken from r_main.c
-// WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) ((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)>>FRACBITS)
+
 
 void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 {
@@ -161,8 +161,8 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 		frac = FRACUNIT;
 
 
-    
-   
+
+
 	if (viewcontext == VIEWCONTEXT_SKY1 || viewcontext == VIEWCONTEXT_PLAYER1)
 	{
 		i = 0;
@@ -198,18 +198,27 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 	viewsector = R_PointInSubsector(viewx, viewy)->sector;
 	viewsky = newview->sky;
 
+
+	// clip it in the case we are looking a hardware 90 degrees full aiming
+	// (lmps, network and use F12...)
+	if (rendermode == render_soft
+#ifdef HWRENDER
+		|| cv_grshearing.value
+#endif
+		)
+	{
+		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
+	}
+
 	if (rendermode == render_soft)
 	{
-		// clip it in the case we are looking a hardware 90 degrees full aiming
-		// (lmps, network and use F12...)
-		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
-
-		dy = AIMINGTODY(aimingangle) * viewwidth/BASEVIDWIDTH;
-
+		dy = (AIMINGTODY(aimingangle)>>FRACBITS) * viewwidth/BASEVIDWIDTH;
 		yslope = &yslopetab[viewheight*8 - (viewheight/2 + dy)];
 	}
+
 	centery = (viewheight/2) + dy;
 	centeryfrac = centery<<FRACBITS;
+
 }
 
 void R_UpdateViewInterpolation(void)
@@ -380,7 +389,7 @@ void R_UpdateMobjInterpolators(void)
 // Reset the rendering interpolation state of the mobj.
 //
 void R_ResetMobjInterpolationState(mobj_t *mobj)
-{   
+{
 	mobj->old_x2 = mobj->old_x;
 	mobj->old_y2 = mobj->old_y;
 	mobj->old_z2 = mobj->old_z;
@@ -423,7 +432,7 @@ static void AddInterpolator(levelinterpolator_t* interpolator)
 		{
 			levelinterpolators_size *= 2;
 		}
-		
+
 		levelinterpolators = Z_ReallocAlign(
 			(void*) levelinterpolators,
 			sizeof(levelinterpolator_t*) * levelinterpolators_size,
@@ -585,19 +594,19 @@ void R_UpdateLevelInterpolators(void)
 	for (i = 0; i < levelinterpolators_len; i++)
 	{
 		levelinterpolator_t *interp = levelinterpolators[i];
-		
+
 		UpdateLevelInterpolatorState(interp);
 	}
 }
 
 void R_ClearLevelInterpolatorState(thinker_t *thinker)
 {
-	
+
 	size_t i;
 	for (i = 0; i < levelinterpolators_len; i++)
 	{
 		levelinterpolator_t *interp = levelinterpolators[i];
-		
+
 		if (interp->thinker == thinker)
 		{
 			// Do it twice to make the old state match the new
@@ -669,7 +678,7 @@ void R_RestoreLevelInterpolators(void)
 	for (i = 0; i < levelinterpolators_len; i++)
 	{
 		levelinterpolator_t *interp = levelinterpolators[i];
-		
+
 		switch (interp->type)
 		{
 		case LVLINTERP_SectorPlane:
@@ -724,7 +733,7 @@ void R_DestroyLevelInterpolators(thinker_t *thinker)
 	for (i = 0; i < levelinterpolators_len; i++)
 	{
 		levelinterpolator_t *interp = levelinterpolators[i];
-		
+
 		if (interp->thinker == thinker)
 		{
 			// Swap the tail of the level interpolators to this spot
@@ -735,4 +744,4 @@ void R_DestroyLevelInterpolators(thinker_t *thinker)
 			i -= 1;
 		}
 	}
-}	
+}

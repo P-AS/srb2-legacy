@@ -174,18 +174,18 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, // handle to DLL module
 
 /***************************************************************
  *
- * DBG_Printf
+ * GL_DBG_Printf
  * Output error messages to debug log if DEBUG_TO_FILE is defined,
  * else do nothing
  *
  ***************************************************************
  */
 // -----------------+
-// DBG_Printf       : Output error messages to debug log if DEBUG_TO_FILE is defined,
+// GL_DBG_Printf       : Output error messages to debug log if DEBUG_TO_FILE is defined,
 //                  : else do nothing
 // Returns          :
 // -----------------+
-void DBG_Printf(const char *lpFmt, ... )
+void GL_DBG_Printf(const char *lpFmt, ... )
 {
 #ifdef DEBUG_TO_FILE
 	char    str[4096] = "";
@@ -313,7 +313,7 @@ static LPDIRECTSOUNDBUFFER create_buffer (void *data, INT32 length, BOOL as3d)
 	// macro rather than check explictly for DS_OK value
 	if (FAILED(hr))
 	{
-		DBG_Printf("CreateSoundBuffer FAILED. Code %d\n", hr);
+		GL_DBG_Printf("CreateSoundBuffer FAILED. Code %d\n", hr);
 		return NULL;
 	}
 
@@ -368,13 +368,13 @@ static LPDIRECTSOUND3DBUFFER create_3dbuffer(LPDIRECTSOUNDBUFFER dsbuffer, LPDIR
 
 	if (FAILED(hr))
 	{
-		DBG_Printf("Couldn't obtain 3D Buffer interface. Code %d\n", hr);
+		GL_DBG_Printf("Couldn't obtain 3D Buffer interface. Code %d\n", hr);
 		return NULL;
 	}
 #ifdef DX7
 	if (hr == DS_NO_VIRTUALIZATION)
 	{
-		DBG_Printf("The 3D virtualization is not supported under this OS.\n");
+		GL_DBG_Printf("The 3D virtualization is not supported under this OS.\n");
 			virtualization = FALSE;
 	}
 #endif
@@ -422,7 +422,7 @@ static INT32 find_handle(INT32 new_sfx_id, INT32 new_is3d)
 	// No suitable resource found so increase sound stack
 	if (free_sfx == allocated_sounds)
 	{
-		DBG_Printf("No free or same sfx found so increase stack (currently %d srcs)\n", allocated_sounds);
+		GL_DBG_Printf("No free or same sfx found so increase stack (currently %d srcs)\n", allocated_sounds);
 		free_sfx = reallocate_stack() ? free_sfx : -1;
 	}
 
@@ -493,20 +493,20 @@ EXPORT BOOL HWRAPI( Startup ) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 	DWORD        speaker_geometry;
 
 	I_ErrorDS3D = FatalErrorFunction;
-	DBG_Printf ("S_DS3D Init(): DirectSound3D driver for SRB2 v1.09"); // Tails
+	GL_DBG_Printf ("S_DS3D Init(): DirectSound3D driver for SRB2 v1.09"); // Tails
 
-	DBG_Printf("Initialising DirectSound3D...\n");
+	GL_DBG_Printf("Initialising DirectSound3D...\n");
 	hr = DirectSoundCreate( NULL, &DSnd, NULL);
 	if (FAILED(hr))
 	{
-		DBG_Printf("Failed to obtain DirectSound\n");
+		GL_DBG_Printf("Failed to obtain DirectSound\n");
 		return FALSE;
 	}
 
 	hr = IDirectSound_SetCooperativeLevel(DSnd, snd_dev->hWnd, snd_dev->cooplevel);
 	if (FAILED(hr))
 	{
-		DBG_Printf("Couldn't set coopertive level\n");
+		GL_DBG_Printf("Couldn't set coopertive level\n");
 		return FALSE;
 	}
 
@@ -515,41 +515,41 @@ EXPORT BOOL HWRAPI( Startup ) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 	IDirectSound_GetCaps(DSnd, &dscaps);
 	IDirectSound_GetSpeakerConfig(DSnd, &speakers);
 
-	DBG_Printf("Sound hardware capabilities:\n");
-	DBG_Printf("   Driver is %scertified.\n", (dscaps.dwFlags & DSCAPS_CERTIFIED) == DSCAPS_CERTIFIED?"":"not ");
-	DBG_Printf("   Maximum hardware mixing buffers %d\n", dscaps.dwMaxHwMixingAllBuffers);
-	DBG_Printf("   Maximum hardware 3D buffers %d\n", dscaps.dwFreeHw3DAllBuffers);
+	GL_DBG_Printf("Sound hardware capabilities:\n");
+	GL_DBG_Printf("   Driver is %scertified.\n", (dscaps.dwFlags & DSCAPS_CERTIFIED) == DSCAPS_CERTIFIED?"":"not ");
+	GL_DBG_Printf("   Maximum hardware mixing buffers %d\n", dscaps.dwMaxHwMixingAllBuffers);
+	GL_DBG_Printf("   Maximum hardware 3D buffers %d\n", dscaps.dwFreeHw3DAllBuffers);
 
 	speaker_config = DSSPEAKER_CONFIG(speakers);
 	speaker_geometry = DSSPEAKER_GEOMETRY(speakers);
 
-	DBG_Printf("Current speaker configuration: ");
+	GL_DBG_Printf("Current speaker configuration: ");
 
 	switch (speaker_config)
 	{
 #ifdef DX7
 		case DSSPEAKER_5POINT1:
-			DBG_Printf("5.1 (5 speakers with subwoofer).\n");
+			GL_DBG_Printf("5.1 (5 speakers with subwoofer).\n");
 			break;
 #endif
 		case DSSPEAKER_HEADPHONE:
-			DBG_Printf("headphone.\n");
+			GL_DBG_Printf("headphone.\n");
 			break;
 
 		case DSSPEAKER_MONO:
-			DBG_Printf("single speaker (mono).\n");
+			GL_DBG_Printf("single speaker (mono).\n");
 			break;
 
 		case DSSPEAKER_QUAD:
-			DBG_Printf("quadrophonic\n");
+			GL_DBG_Printf("quadrophonic\n");
 			break;
 
 		case DSSPEAKER_SURROUND:
-			DBG_Printf("surround.\n");
+			GL_DBG_Printf("surround.\n");
 			break;
 
 		case DSSPEAKER_STEREO:
-			DBG_Printf("stereo with %s geometry ",
+			GL_DBG_Printf("stereo with %s geometry ",
 				speaker_geometry == DSSPEAKER_GEOMETRY_WIDE
 					? "wide (arc of 20 deg.)"
 					: speaker_geometry == DSSPEAKER_GEOMETRY_NARROW
@@ -561,7 +561,7 @@ EXPORT BOOL HWRAPI( Startup ) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 								: "unknown");
 			break;
 		default:
-			DBG_Printf("undetectable.\n");
+			GL_DBG_Printf("undetectable.\n");
 
 	}
 
@@ -577,7 +577,7 @@ EXPORT BOOL HWRAPI( Startup ) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 	hr = IDirectSound_CreateSoundBuffer(DSnd, &desc, &PrimaryBuffer, NULL);
 	if (FAILED(hr))
 	{
-		DBG_Printf("CreateSoundBuffer FAILED (ErrNo %d)\n", hr);
+		GL_DBG_Printf("CreateSoundBuffer FAILED (ErrNo %d)\n", hr);
 		return FALSE;
 	}
 
@@ -587,7 +587,7 @@ EXPORT BOOL HWRAPI( Startup ) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 
 	if (FAILED(hr))
 	{
-		DBG_Printf("Couldn't obtain 3D Listener interface (ErrNo %d)\n", hr);
+		GL_DBG_Printf("Couldn't obtain 3D Listener interface (ErrNo %d)\n", hr);
 		return FALSE;
 	}
 
@@ -610,11 +610,11 @@ EXPORT BOOL HWRAPI( Startup ) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 	{
 		hr = IDirectSoundBuffer_SetFormat(PrimaryBuffer, &wfm);
 		if (FAILED(hr))
-			DBG_Printf("Couldn't set primary buffer format.\n");
+			GL_DBG_Printf("Couldn't set primary buffer format.\n");
 
-		DBG_Printf(" Compacting onboard sound-memory...");
+		GL_DBG_Printf(" Compacting onboard sound-memory...");
 		hr = IDirectSound_Compact(DSnd);
-		DBG_Printf(" %s\n", SUCCEEDED(hr) ? M_GetText("Done\n") : M_GetText("Failed\n"));
+		GL_DBG_Printf(" %s\n", SUCCEEDED(hr) ? M_GetText("Done\n") : M_GetText("Failed\n"));
 	}
 
 #ifdef DX7
@@ -640,7 +640,7 @@ EXPORT void HWRAPI( Shutdown ) (void)
 {
 	INT32 i;
 
-	DBG_Printf ("S_DS3D Shutdown()\n");
+	GL_DBG_Printf ("S_DS3D Shutdown()\n");
 
 	for (i = 0; i < allocated_sounds; i++)
 	{
