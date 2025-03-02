@@ -1295,10 +1295,10 @@ static SINT8 SOCK_NetMakeNodewPort(const char *address, const char *port)
 	hints.ai_protocol = IPPROTO_UDP;
 
 	gaie = I_getaddrinfo(address, port, &hints, &ai);
-	if (gaie == 0)
-	{
-		newnode = getfreenode();
-	}
+	if (gaie != 0)
+		return -1;
+
+	newnode = getfreenode();
 	if (newnode == -1)
 	{
 		I_freeaddrinfo(ai);
