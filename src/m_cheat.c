@@ -1103,7 +1103,6 @@ void OP_ObjectplaceMovement(player_t *player)
 	player->mo->old_y = player->mo->y;
 	player->mo->old_z = player->mo->z;
 
-
 	if (cmd->buttons & BT_JUMP)
 		player->mo->z += FRACUNIT*cv_speed.value;
 	else if (cmd->buttons & BT_USE)
@@ -1126,13 +1125,6 @@ void OP_ObjectplaceMovement(player_t *player)
 		player->mo->z = player->mo->ceilingz - player->mo->height;
 	if (player->mo->z < player->mo->floorz)
 		player->mo->z = player->mo->floorz;
-
-
-	player->mo->new_x = player->mo->x;
-	player->mo->new_y = player->mo->y;
-	player->mo->new_z = player->mo->z;
-
-
 
 	if (cv_opflags.value & MTF_OBJECTFLIP)
 		player->mo->eflags |= MFE_VERTICALFLIP;
