@@ -242,14 +242,14 @@ static void FlipCam2_OnChange(void)
 }
 
 //
-// R_PointOnSide
+// R_OldPointOnSide
 // Traverse BSP (sub) tree,
 // check point against partition plane.
 // Returns side 0 (front) or 1 (back).
 //
 // killough 5/2/98: reformatted
 //
-INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *node)
+INT32 R_OldPointOnSide(fixed_t x, fixed_t y, node_t *node)
 {
 	if (!node->dx)
 		return x <= node->x ? node->dy > 0 : node->dy < 0;
@@ -264,29 +264,6 @@ INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *node)
 	INT32 mask = (node->dy ^ node->dx ^ x ^ y) >> 31;
 	return (mask & ((node->dy ^ x) < 0)) |	// (left is negative)
 		(~mask & (FixedMul(y, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, x)));
-}
-
-// killough 5/2/98: reformatted
-INT32 R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line)
-{
-	fixed_t lx = line->v1->x;
-	fixed_t ly = line->v1->y;
-	fixed_t ldx = line->v2->x - lx;
-	fixed_t ldy = line->v2->y - ly;
-
-	if (!ldx)
-		return x <= lx ? ldy > 0 : ldy < 0;
-
-	if (!ldy)
-		return y <= ly ? ldx < 0 : ldx > 0;
-
-	x -= lx;
-	y -= ly;
-
-	// Try to quickly decide by looking at sign bits.
-	INT32 mask = (ldy ^ ldx ^ x ^ y) >> 31;
-	return (mask & ((ldy ^ x) < 0)) |	// (left is negative)
-		(~mask & (FixedMul(y, ldx>>FRACBITS) >= FixedMul(ldy>>FRACBITS, x)));
 }
 
 //
@@ -705,6 +682,51 @@ void R_Init(void)
 }
 
 //
+// R_IsPointInSector
+//
+boolean R_IsPointInSector(sector_t *sector, fixed_t x, fixed_t y)
+{
+	size_t i;
+	size_t passes = 0;
+
+	for (i = 0; i < sector->linecount; i++)
+	{
+		line_t *line = sector->lines[i];
+		vertex_t *v1, *v2;
+
+		if (line->frontsector == line->backsector)
+			continue;
+
+		v1 = line->v1;
+		v2 = line->v2;
+
+		// make sure v1 is below v2
+		if (v1->y > v2->y)
+		{
+			vertex_t *tmp = v1;
+			v1 = v2;
+			v2 = tmp;
+		}
+		else if (v1->y == v2->y)
+			// horizontal line, we can't match this
+			continue;
+
+		if (v1->y < y && y <= v2->y)
+		{
+			// if the y axis in inside the line, find the point where we intersect on the x axis...
+			fixed_t vx = v1->x + (INT64)(v2->x - v1->x) * (y - v1->y) / (v2->y - v1->y);
+
+			// ...and if that point is to the left of the point, count it as inside.
+			if (vx < x)
+				passes++;
+		}
+	}
+
+	// and odd number of passes means we're inside the polygon.
+	return passes % 2;
+}
+
+//
 // R_PointInSubsector
 //
 subsector_t *R_PointInSubsector(fixed_t x, fixed_t y)
@@ -713,6 +735,19 @@ subsector_t *R_PointInSubsector(fixed_t x, fixed_t y)
 
 	while (!(nodenum & NF_SUBSECTOR))
 		nodenum = nodes[nodenum].children[R_PointOnSide(x, y, nodes+nodenum)];
+
+	return &subsectors[nodenum & ~NF_SUBSECTOR];
+}
+
+//
+// R_OldPointInSubsector
+//
+subsector_t *R_OldPointInSubsector(fixed_t x, fixed_t y)
+{
+	size_t nodenum = numnodes-1;
+
+	while (!(nodenum & NF_SUBSECTOR))
+		nodenum = nodes[nodenum].children[R_OldPointOnSide(x, y, nodes+nodenum)];
 
 	return &subsectors[nodenum & ~NF_SUBSECTOR];
 }
@@ -742,7 +777,6 @@ subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y)
 
 	ret = &subsectors[nodenum & ~NF_SUBSECTOR];
 	for (i = 0; i < ret->numlines; i++)
-		//if (R_PointOnSegSide(x, y, &segs[ret->firstline + i])) -- breaks in ogl because polyvertex_t cast over vertex pointers
 		if (P_PointOnLineSide(x, y, segs[ret->firstline + i].linedef) != segs[ret->firstline + i].side)
 			return 0;
 
