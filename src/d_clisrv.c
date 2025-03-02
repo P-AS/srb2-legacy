@@ -1733,7 +1733,7 @@ void CL_UpdateServerList(boolean internetsearch, INT32 room)
 				{
 					INT32 node = I_NetMakeNodewPort(server_list[i].ip, server_list[i].port);
 					if (node == -1)
-						break; // no more node free
+						continue; // no more node free, or resolution failure
 					SendAskInfo(node, true);
 					// Force close the connection so that servers can't eat
 					// up nodes forever if we never get a reply back from them
