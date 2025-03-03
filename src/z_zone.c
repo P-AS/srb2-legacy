@@ -43,6 +43,19 @@ static boolean Z_calloc = false;
 #include "memcheck.h"
 #endif
 
+#if defined(__SANITIZE_ADDRESS__)
+#   include <sanitizer/asan_interface.h>
+#elif defined(__has_feature)
+#   if __has_feature(address_sanitizer)
+#       include <sanitizer/asan_interface.h>
+#   endif
+#endif
+
+#if !defined(ASAN_POISON_MEMORY_REGION)
+#    define ASAN_POISON_MEMORY_REGION(a, b) do {} while(0)
+#    define ASAN_UNPOISON_MEMORY_REGION(a, b) do {} while(0)
+#endif
+
 #define ZONEID 0xa441d13d
 
 #ifdef ZDEBUG
@@ -135,6 +148,7 @@ void Z_Free(void *ptr)
 #endif
 
 	block = MEMBLOCK(ptr);
+	ASAN_UNPOISON_MEMORY_REGION(block, sizeof(memblock_t));
 #ifdef PARANOIA
 	if (block->id != ZONEID)
 #ifdef ZDEBUG
@@ -163,8 +177,13 @@ void Z_Free(void *ptr)
 #ifdef VALGRIND_DESTROY_MEMPOOL
 	VALGRIND_DESTROY_MEMPOOL(block);
 #endif
+
+	ASAN_UNPOISON_MEMORY_REGION(block->prev, sizeof(memblock_t));
 	block->prev->next = block->next;
+	ASAN_POISON_MEMORY_REGION(block->prev, sizeof(memblock_t));
+	ASAN_UNPOISON_MEMORY_REGION(block->next, sizeof(memblock_t));
 	block->next->prev = block->prev;
+	ASAN_POISON_MEMORY_REGION(block->next, sizeof(memblock_t));
 	free(block);
 }
 
@@ -235,7 +254,9 @@ void *Z_MallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits)
 	block->next = head.next;
 	block->prev = &head;
 	head.next = block;
+	ASAN_UNPOISON_MEMORY_REGION(block->next, sizeof(memblock_t));
 	block->next->prev = block;
+	ASAN_POISON_MEMORY_REGION(block->next, sizeof(memblock_t));
 
 	block->tag = tag;
 	block->user = NULL;
@@ -260,6 +281,8 @@ void *Z_MallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits)
 	else if (tag >= PU_PURGELEVEL)
 		I_Error("Z_Malloc: attempted to allocate purgable block "
 			"(size %s) with no user", sizeu1(size));
+
+	ASAN_POISON_MEMORY_REGION(block, sizeof(memblock_t));
 
 	return ptr;
 }
@@ -359,10 +382,12 @@ void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignb
 	rez = Z_MallocAlign(size, tag, user, alignbits);
 #endif
 
+	ASAN_UNPOISON_MEMORY_REGION(block, sizeof(memblock_t));
 	if (size < block->realsize)
 		copysize = size;
 	else
 		copysize = block->realsize;
+	ASAN_POISON_MEMORY_REGION(block, sizeof(memblock_t));
 
 	M_Memcpy(rez, ptr, copysize);
 
@@ -395,9 +420,12 @@ void Z_FreeTags(INT32 lowtag, INT32 hightag)
 	Z_CheckHeap(420);
 	for (block = head.next; block != &head; block = next)
 	{
+		ASAN_UNPOISON_MEMORY_REGION(block, sizeof(memblock_t));
 		next = block->next; // get link before freeing
 		if (block->tag >= lowtag && block->tag <= hightag)
 			Z_Free(MEMORY(block));
+		else
+			ASAN_POISON_MEMORY_REGION(block, sizeof(memblock_t));
 	}
 }
 
@@ -490,6 +518,7 @@ void Z_CheckHeap(INT32 i)
 				);
 		}
 #endif
+		ASAN_UNPOISON_MEMORY_REGION(block, sizeof(memblock_t));
 		if (block->user != NULL && *(block->user) != given)
 		{
 			I_Error("Z_CheckHeap %d: block %u"
@@ -502,6 +531,7 @@ void Z_CheckHeap(INT32 i)
 #endif
 				);
 		}
+		ASAN_UNPOISON_MEMORY_REGION(block->next, sizeof(memblock_t));
 		if (block->next->prev != block)
 		{
 			I_Error("Z_CheckHeap %d: block %u"
@@ -514,6 +544,9 @@ void Z_CheckHeap(INT32 i)
 #endif
 				);
 		}
+		ASAN_POISON_MEMORY_REGION(block->next, sizeof(memblock_t));
+
+		ASAN_UNPOISON_MEMORY_REGION(block->prev, sizeof(memblock_t));
 		if (block->prev->next != block)
 		{
 			I_Error("Z_CheckHeap %d: block %u"
@@ -526,6 +559,8 @@ void Z_CheckHeap(INT32 i)
 #endif
 				);
 		}
+		ASAN_POISON_MEMORY_REGION(block->prev, sizeof(memblock_t));
+
 		if (block->id != ZONEID)
 		{
 			I_Error("Z_CheckHeap %d: block %u"
@@ -538,6 +573,7 @@ void Z_CheckHeap(INT32 i)
 #endif
 				);
 		}
+		ASAN_UNPOISON_MEMORY_REGION(block, sizeof(memblock_t));
 	}
 }
 
@@ -564,6 +600,7 @@ void Z_ChangeTag(void *ptr, INT32 tag)
 		return;
 
 	block = MEMBLOCK(ptr);
+	ASAN_UNPOISON_MEMORY_REGION(block, sizeof(memblock_t));
 
 #ifdef PARANOIA
 	if (block->id != ZONEID) I_Error("Z_ChangeTag at %s:%d: wrong id", file, line);
@@ -574,6 +611,7 @@ void Z_ChangeTag(void *ptr, INT32 tag)
 			"tried to make block purgable but it has no owner");
 
 	block->tag = tag;
+	ASAN_POISON_MEMORY_REGION(block, sizeof(memblock_t));
 }
 
 /** Changes a memory block's user.
@@ -596,6 +634,7 @@ void Z_SetUser(void *ptr, void **newuser)
 
 	block = MEMBLOCK(ptr);
 
+	ASAN_UNPOISON_MEMORY_REGION(block, sizeof(memblock_t));
 #ifdef PARANOIA
 	if (block->id != ZONEID) I_Error("Z_SetUser at %s:%d: wrong id", file, line);
 #endif
@@ -606,6 +645,7 @@ void Z_SetUser(void *ptr, void **newuser)
 
 	block->user = (void*)newuser;
 	*newuser = ptr;
+	ASAN_POISON_MEMORY_REGION(block, sizeof(memblock_t));
 }
 
 // -----------------
