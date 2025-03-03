@@ -244,13 +244,14 @@ enum EPolyFlags
 	                                    // When set, pass the color constant into the FSurfaceInfo -> PolyColor
 	PF_NoTexture        = 0x00002000,   // Use the small white texture
 	PF_Corona           = 0x00004000,   // Tell the rendrer we are drawing a corona
-	PF_Ripple          	= 0x00008000,   // Water shader effect
+	PF_ColorMapped      = 0x00008000,   // Surface has "tint" and "fade" colors, which are sent as uniforms to a shader.
 	PF_RemoveYWrap      = 0x00010000,   // Force clamp texture on Y
 	PF_ForceWrapX       = 0x00020000,   // Force repeat texture on X
 	PF_ForceWrapY       = 0x00040000,   // Force repeat texture on Y
 	PF_Clip             = 0x40000000,   // clip to frustum and nearz plane (glide only, automatic in opengl)
 	PF_NoZClip          = 0x20000000,   // in conjonction with PF_Clip
-	PF_Debug            = 0x80000000    // print debug message in driver :)
+	PF_Debug            = 0x80000000,    // print debug message in driver :)
+	PF_Ripple           = 0x01000000    // Water ripple effect. The current backend doesn't use it for anything.
 };
 
 
