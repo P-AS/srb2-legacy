@@ -1638,7 +1638,7 @@ static int mapheaderinfo_get(lua_State *L)
 	default:
 		// Read custom vars now
 		// (note: don't include the "LUA." in your lua scripts!)
-		UINT8 j = 0;
+		UINT32 j = 0;
 		for (;j < header->numCustomOptions && !fastcmp(lua_tostring(L, 2), header->customopts[j].option); ++j);
 
 		if(j < header->numCustomOptions)
