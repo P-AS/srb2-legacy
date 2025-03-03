@@ -2658,10 +2658,14 @@ static void P_NetUnArchiveThinkers(void)
 		next = currentthinker->next;
 
 		if (currentthinker->function.acp1 == (actionf_p1)P_MobjThinker)
+		{
 			P_RemoveSavegameMobj((mobj_t *)currentthinker); // item isn't saved, don't remove it
+		}
 		else
-		    R_DestroyLevelInterpolators(currentthinker);
+		{
+			R_DestroyLevelInterpolators(currentthinker);
 			Z_Free(currentthinker);
+		}
 	}
 
 	// we don't want the removed mobjs to come back

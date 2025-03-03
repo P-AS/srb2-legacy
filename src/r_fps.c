@@ -350,7 +350,7 @@ void R_RemoveMobjInterpolator(mobj_t *mobj)
 
 	if (interpolated_mobjs_len == 0) return;
 
-	for (i = 0; i < interpolated_mobjs_len - 1; i++)
+	for (i = 0; i < interpolated_mobjs_len; i++)
 	{
 		if (interpolated_mobjs[i] == mobj)
 		{
@@ -365,8 +365,6 @@ void R_RemoveMobjInterpolator(mobj_t *mobj)
 
 void R_InitMobjInterpolators(void)
 {
-	// apparently it's not acceptable to free something already unallocated
-	// Z_Free(interpolated_mobjs);
 	interpolated_mobjs = NULL;
 	interpolated_mobjs_len = 0;
 	interpolated_mobjs_capacity = 0;
