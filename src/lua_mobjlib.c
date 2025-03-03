@@ -781,20 +781,28 @@ static int mapthing_set(lua_State *L)
 	{
 	case mapthing_x:
 		mt->x = (INT16)luaL_checkinteger(L, 3);
+		break;
 	case mapthing_y:
 		mt->y = (INT16)luaL_checkinteger(L, 3);
+		break;
 	case mapthing_angle:
 		mt->angle = (INT16)luaL_checkinteger(L, 3);
+		break;
 	case mapthing_type:
 		mt->type = (UINT16)luaL_checkinteger(L, 3);
+		break;
 	case mapthing_options:
 		mt->options = (UINT16)luaL_checkinteger(L, 3);
+		break;
 	case mapthing_z:
 		mt->z = (INT16)luaL_checkinteger(L, 3);
+		break;
 	case mapthing_extrainfo:
 		mt->extrainfo = (UINT8)luaL_checkinteger(L, 3);
+		break;
 	case mapthing_mobj:
 		mt->mobj = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
+		break;
 	default:
 		return luaL_error(L, LUA_QL("mapthing_t") " has no field named " LUA_QS, luaL_checkstring(L, 2));
 	}
