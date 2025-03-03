@@ -62,15 +62,15 @@ extern lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 #define NUMCOLORMAPS 32
 
 // Utility functions.
-INT32 R_OldPointOnSide(fixed_t x, fixed_t y, node_t *node);
+INT32 R_OldPointOnSide(fixed_t x, fixed_t y, const node_t *node);
 
-FUNCINLINE INT32 ATTRINLINE R_PointOnSide(fixed_t x, fixed_t y, node_t *node)
+FUNCINLINE INT32 ATTRINLINE PUREFUNC R_PointOnSide(fixed_t x, fixed_t y, const node_t *node)
 {
 	// use cross product to determine side quickly
 	return ((INT64)y - node->y) * node->dx - ((INT64)x - node->x) * node->dy > 0;
 }
 
-FUNCINLINE INT32 ATTRINLINE R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line)
+FUNCINLINE INT32 ATTRINLINE PUREFUNC R_PointOnSegSide(fixed_t x, fixed_t y, const seg_t *line)
 {
 	fixed_t lx = line->v1->x;
 	fixed_t ly = line->v1->y;

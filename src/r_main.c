@@ -249,7 +249,7 @@ static void FlipCam2_OnChange(void)
 //
 // killough 5/2/98: reformatted
 //
-INT32 R_OldPointOnSide(fixed_t x, fixed_t y, node_t *node)
+PUREFUNC INT32 R_OldPointOnSide(fixed_t x, fixed_t y, const node_t *restrict node)
 {
 	if (!node->dx)
 		return x <= node->x ? node->dy > 0 : node->dy < 0;
