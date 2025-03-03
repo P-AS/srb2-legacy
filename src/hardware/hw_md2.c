@@ -1203,7 +1203,8 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 #ifdef USE_FTRANSFORM_MIRROR
 		p.mirror = atransform.mirror; // from Kart
 #endif
-	    HWD.pfnSetShader(SHADER_MODEL);	// model shader
+		if (HWR_UseShader())
+			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_MODEL));
 		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, &Surf);
 	}
 }
