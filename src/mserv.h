@@ -47,7 +47,7 @@ typedef struct
 	char name[32];
 	INT32 room;
 	char version[8]; // format is: x.yy.z (like 1.30.2 or 1.31)
-} ATTRPACK msg_server_ext_t;
+} ATTRPACK msg_ext_server_t;
 
 typedef struct
 {
@@ -93,7 +93,7 @@ void UnregisterServer(void);
 
 void MasterClient_Ticker(void);
 
-const msg_server_ext_t *GetShortServersList(INT32 room);
+const msg_ext_server_t *GetShortServersList(INT32 room);
 INT32 GetRoomsList(boolean hosting);
 #ifdef UPDATE_ALERT
 const char *GetMODVersion(void);
