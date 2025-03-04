@@ -1711,7 +1711,7 @@ void CL_UpdateServerList(boolean internetsearch, INT32 room)
 
 	if (internetsearch)
 	{
-		const msg_server_t *server_list;
+		const msg_ext_server_t *server_list;
 		INT32 i = -1;
 		server_list = GetShortServersList(room);
 		if (server_list)
