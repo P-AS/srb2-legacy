@@ -14,6 +14,7 @@
 #ifndef __P_LOCAL__
 #define __P_LOCAL__
 
+#include "doomtype.h"
 #include "command.h"
 #include "d_player.h"
 #include "d_think.h"
@@ -207,7 +208,6 @@ void P_RecalcPrecipInSector(sector_t *sector);
 void P_PrecipitationEffects(void);
 
 void P_RemoveMobj(mobj_t *th);
-boolean P_MobjWasRemoved(mobj_t *th);
 void P_RemoveSavegameMobj(mobj_t *th);
 boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
@@ -218,6 +218,14 @@ boolean P_RailThinker(mobj_t *mobj);
 void P_PushableThinker(mobj_t *mobj);
 void P_SceneryThinker(mobj_t *mobj);
 
+// This does not need to be added to Lua.
+// To test it in Lua, check mobj.valid
+FUNCINLINE static boolean ATTRINLINE PUREFUNC P_MobjWasRemoved(mobj_t *mobj)
+{
+	if (mobj && mobj->thinker.function.acp1 == (actionf_p1)P_MobjThinker)
+		return false;
+	return true;
+}
 
 fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect);
 fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect);
