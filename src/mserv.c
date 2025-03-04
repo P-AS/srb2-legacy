@@ -409,9 +409,9 @@ static INT32 MS_Connect(const char *ip_addr, const char *str_port, int flags)
 }
 
 #define NUM_LIST_SERVER MAXSERVERLIST
-const msg_server_t *GetShortServersList(INT32 room)
+const msg_server_ext_t *GetShortServersList(INT32 room)
 {
-	static msg_server_t server_list[NUM_LIST_SERVER+1]; // +1 for easy test
+	static msg_server_ext_t server_list[NUM_LIST_SERVER+1]; // +1 for easy test
 	msg_t msg;
 	INT32 i;
 
