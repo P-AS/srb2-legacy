@@ -7091,6 +7091,8 @@ void P_MobjThinker(mobj_t *mobj)
 		case MT_BLUETEAMRING:
 			// No need to check water. Who cares?
 			P_RingThinker(mobj);
+			if (P_MobjWasRemoved(mobj))
+				return;
 			if (mobj->flags2 & MF2_NIGHTSPULL)
 				P_NightsItemChase(mobj);
 			else
