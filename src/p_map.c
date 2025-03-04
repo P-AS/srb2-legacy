@@ -2939,7 +2939,7 @@ retry:
 	{
 		// the move must have hit the middle, so stairstep
 stairstep:
-		if (!P_TryMove(mo, mo->x, mo->y + mo->momy, true)) //Allow things to drop off.
+		if (!P_MobjWasRemoved(mo) && !P_TryMove(mo, mo->x, mo->y + mo->momy, true)) //Allow things to drop off.
 			P_TryMove(mo, mo->x + mo->momx, mo->y, true);
 		return;
 	}
