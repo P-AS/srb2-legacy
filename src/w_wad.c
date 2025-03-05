@@ -665,14 +665,12 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 	return lumpinfo;
 }
 
+
 static void W_ReadFileShaders(wadfile_t *wadfile)
 {
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
-	{
 		HWR_LoadCustomShadersFromFile(numwadfiles - 1, W_FileHasFolders(wadfile));
-		HWR_CompileShaders();
-	}
 #else
 	(void)wadfile;
 #endif
@@ -825,10 +823,8 @@ UINT16 W_InitFile(const char *filename)
 	wadfiles[numwadfiles] = wadfile;
 	numwadfiles++; // must come BEFORE W_LoadDehackedLumps, so any addfile called by COM_BufInsertText called by Lua doesn't overwrite what we just loaded
 
-#ifdef HWRENDER
-	if(rendermode == render_opengl)
-	HWR_LoadCustomShadersFromFile(numwadfiles - 1, (type == RET_PK3));
-#endif // HWRENDER
+	// Read shaders from file
+	W_ReadFileShaders(wadfile);
 
 	// TODO: HACK ALERT - Load Lua & SOC stuff right here. I feel like this should be out of this place, but... Let's stick with this for now.
 	switch (wadfile->type)

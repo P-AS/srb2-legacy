@@ -24,6 +24,9 @@
 #include "p_setup.h" // levelflats
 #include "v_video.h" // pLocalPalette
 #include "dehacked.h"
+#ifdef HWRENDER
+#include "hardware/hw_glob.h" // HWR_ClearLightTables
+#endif
 
 #if defined (_WIN32) || defined (_WIN32_WCE)
 #include <malloc.h> // alloca(sizeof)
@@ -1116,6 +1119,9 @@ void R_ClearColormaps(void)
 		foundcolormaps[i] = LUMPERROR;
 
 	memset(extra_colormaps, 0, sizeof (extra_colormaps));
+#ifdef HWRENDER
+	HWR_ClearLightTables();
+#endif
 }
 
 INT32 R_ColormapNumForName(char *name)
@@ -1352,6 +1358,35 @@ UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b)
 		dr = r - pLocalPalette[i].s.red;
 		dg = g - pLocalPalette[i].s.green;
 		db = b - pLocalPalette[i].s.blue;
+		distortion = dr*dr + dg*dg + db*db;
+		if (distortion < bestdistortion)
+		{
+			if (!distortion)
+				return (UINT8)i;
+
+			bestdistortion = distortion;
+			bestcolor = i;
+		}
+	}
+
+	return (UINT8)bestcolor;
+}
+// Thanks to quake2 source!
+// utils3/qdata/images.c
+UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette)
+{
+	int dr, dg, db;
+	int distortion, bestdistortion = 256 * 256 * 4, bestcolor = 0, i;
+
+	// Use local palette if none specified
+	if (palette == NULL)
+		palette = pLocalPalette;
+
+	for (i = 0; i < 256; i++)
+	{
+		dr = r - palette[i].s.red;
+		dg = g - palette[i].s.green;
+		db = b - palette[i].s.blue;
 		distortion = dr*dr + dg*dg + db*db;
 		if (distortion < bestdistortion)
 		{

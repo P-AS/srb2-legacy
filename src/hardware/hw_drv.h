@@ -33,9 +33,9 @@ EXPORT void HWRAPI(Shutdown) (void);
 EXPORT void HWRAPI(GetModeList) (vmode_t **pvidmodes, INT32 *numvidmodes);
 #endif
 #if defined (PURESDL) || defined (macintosh)
-EXPORT void HWRAPI(SetPalette) (INT32 *);
+EXPORT void HWRAPI(SetTexturePalette) (INT32 *);
 #else
-EXPORT void HWRAPI(SetPalette) (RGBA_t *ppal);
+EXPORT void HWRAPI(SetTexturePalette) (RGBA_t *ppal);
 #endif
 EXPORT void HWRAPI(FinishUpdate) (INT32 waitvbl);
 EXPORT void HWRAPI(Draw2DLine) (F2DCoord *v1, F2DCoord *v2, RGBA_t Color);
@@ -50,10 +50,10 @@ EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height, INT32
 EXPORT void HWRAPI(GClipRect) (INT32 minx, INT32 miny, INT32 maxx, INT32 maxy, float nearclip);
 EXPORT void HWRAPI(ClearMipMapCache) (void);
 
-//Hurdler: added for backward compatibility
+
 EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value);
 
-//Hurdler: added for new development
+
 EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, INT32 duration, INT32 tics, INT32 nextFrameIndex, FTransform *pos, float scale, UINT8 flipped, FSurfaceInfo *Surface);
 EXPORT void HWRAPI(CreateModelVBOs) (model_t *model);
 EXPORT void HWRAPI(SetTransform) (FTransform *ptransform);
@@ -82,6 +82,11 @@ EXPORT void HWRAPI(UnSetShader) (void);
 
 EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value);
 
+EXPORT void HWRAPI(SetPaletteLookup)(UINT8 *lut);
+EXPORT UINT32 HWRAPI(CreateLightTable)(RGBA_t *hw_lighttable);
+EXPORT void HWRAPI(ClearLightTables)(void);
+EXPORT void HWRAPI(SetScreenPalette)(RGBA_t *palette);
+
 // ==========================================================================
 //                                      HWR DRIVER OBJECT, FOR CLIENT PROGRAM
 // ==========================================================================
@@ -91,7 +96,7 @@ EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value);
 struct hwdriver_s
 {
 	Init                pfnInit;
-	SetPalette          pfnSetPalette;
+	SetTexturePalette   pfnSetTexturePalette;
 	FinishUpdate        pfnFinishUpdate;
 	Draw2DLine          pfnDraw2DLine;
 	DrawPolygon         pfnDrawPolygon;
@@ -104,7 +109,7 @@ struct hwdriver_s
 	ReadRect            pfnReadRect;
 	GClipRect           pfnGClipRect;
 	ClearMipMapCache    pfnClearMipMapCache;
-	SetSpecialState     pfnSetSpecialState;//Hurdler: added for backward compatibility
+	SetSpecialState     pfnSetSpecialState;
 	DrawModel           pfnDrawModel;
 	CreateModelVBOs     pfnCreateModelVBOs;
 	SetTransform        pfnSetTransform;
@@ -132,6 +137,11 @@ struct hwdriver_s
 	UnSetShader         pfnUnSetShader;
 
 	SetShaderInfo       pfnSetShaderInfo;
+
+	SetPaletteLookup    pfnSetPaletteLookup;
+	CreateLightTable    pfnCreateLightTable;
+	ClearLightTables    pfnClearLightTables;
+	SetScreenPalette    pfnSetScreenPalette;
 };
 
 extern struct hwdriver_s hwdriver;

@@ -1245,6 +1245,17 @@ void I_FinishUpdate(void)
 #ifdef HWRENDER
 	else if (rendermode == render_opengl)
 	{
+		// Final postprocess step of palette rendering, after everything else has been drawn.
+		if (HWR_ShouldUsePaletteRendering())
+		{
+		// not using the function for its original named purpose but can be used like this too
+		HWR_MakeScreenFinalTexture();
+		HWD.pfnSetSpecialState(HWD_SET_SHADERS, 1);
+		HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_PALETTE_POSTPROCESS));
+		HWR_DrawScreenFinalTexture(vid.width, vid.height);
+		HWD.pfnUnSetShader();
+		HWD.pfnSetSpecialState(HWD_SET_SHADERS, 0);
+		}		
 		OglSdlFinishUpdate(cv_vidwait.value);
 	}
 #endif
@@ -1786,7 +1797,7 @@ void I_StartupGraphics(void)
 		HWD.pfnGClipRect        = hwSym("GClipRect",NULL);
 		HWD.pfnClearMipMapCache = hwSym("ClearMipMapCache",NULL);
 		HWD.pfnSetSpecialState  = hwSym("SetSpecialState",NULL);
-		HWD.pfnSetPalette       = hwSym("SetPalette",NULL);
+		HWD.pfnSetTexturePalette= hwSym("SetTexturePalette",NULL);
 		HWD.pfnGetTextureUsed   = hwSym("GetTextureUsed",NULL);
 		HWD.pfnDrawModel        = hwSym("DrawModel",NULL);
 		HWD.pfnCreateModelVBOs  = hwSym("CreateModelVBOs",NULL);
@@ -1806,6 +1817,10 @@ void I_StartupGraphics(void)
 		HWD.pfnSetShader = hwSym("SetShader",NULL);
 		HWD.pfnUnSetShader = hwSym("UnSetShader",NULL);
 		HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
+		HWD.pfnSetPaletteLookup = hwSym("SetPaletteLookup",NULL);
+		HWD.pfnCreateLightTable = hwSym("CreateLightTable",NULL);
+		HWD.pfnClearLightTables = hwSym("ClearLightTables",NULL);
+		HWD.pfnSetScreenPalette = hwSym("SetScreenPalette",NULL);
 
 		if (!HWD.pfnInit()) // load the OpenGL library
 		{
