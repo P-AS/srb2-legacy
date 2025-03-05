@@ -624,15 +624,12 @@ static void ST_drawScore(void)
 
 	V_DrawScaledPatch(hudinfo[HUD_SCORE].x, hudinfo[HUD_SCORE].y + v_splitoffset, scoreflags, sboscore);
 
-	//ST_DrawPatchFromHud(HUD_SCORE, sboscore);
 	if (objectplacing)
 	{
 		if (op_displayflags > UINT16_MAX)
 			V_DrawFixedPatch((hudinfo[HUD_SCORENUM].x-tallminus->width) * FRACUNIT, (hudinfo[HUD_SCORENUM].y) * FRACUNIT, FRACUNIT, hudinfo[HUD_SCORENUM].flags, tallminus, (void *) 0);
-			//ST_DrawOverlayPatch(SCX(hudinfo[HUD_SCORENUM].x-tallminus->width), SCY(hudinfo[HUD_SCORENUM].y), tallminus);
 		else
 			V_DrawTallNum(hudinfo[HUD_SCORENUM].x, hudinfo[HUD_SCORENUM].y, hudinfo[HUD_SCORENUM].flags, op_displayflags);
-			//ST_DrawNumFromHud(HUD_SCORENUM, op_displayflags);
 	}
 
 	INT32 scorenumflags = hudinfo[HUD_SCORENUM].flags|v_splitflag;
@@ -641,10 +638,8 @@ static void ST_drawScore(void)
 
 	if (!splitscreen && (cv_scorepos.value == 1))
 		V_DrawTallNum(hudinfo[HUD_SCORENUMMODERN].x, hudinfo[HUD_SCORENUMMODERN].y, hudinfo[HUD_SCORENUMMODERN].flags, stplyr->score);
-		//ST_DrawNumFromHud(HUD_SCORENUMMODERN, stplyr->score);
 	else
 		V_DrawTallNum(hudinfo[HUD_SCORENUM].x, hudinfo[HUD_SCORENUM].y + v_splitoffset, scorenumflags, stplyr->score);
-		//ST_DrawNumFromHud(HUD_SCORENUM, stplyr->score);
 }
 
 static void ST_drawTime(void)
