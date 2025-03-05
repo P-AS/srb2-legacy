@@ -362,6 +362,7 @@ void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignb
 	}
 
 	block = MEMBLOCK(ptr);
+	ASAN_UNPOISON_MEMORY_REGION(block, sizeof(memblock_t));
 #ifdef PARANOIA
 	if (block->id != ZONEID)
 #ifdef ZDEBUG
@@ -374,6 +375,12 @@ void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignb
 	if (block == NULL)
 		return NULL;
 
+	if (size < block->realsize)
+		copysize = size;
+	else
+		copysize = block->realsize;
+	ASAN_POISON_MEMORY_REGION(block, sizeof(memblock_t));
+
 #ifdef ZDEBUG
 	// Write every Z_Realloc call to a debug file.
 	DEBFILE(va("Z_Realloc at %s:%d\n", file, line));
@@ -381,13 +388,6 @@ void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignb
 #else
 	rez = Z_MallocAlign(size, tag, user, alignbits);
 #endif
-
-	ASAN_UNPOISON_MEMORY_REGION(block, sizeof(memblock_t));
-	if (size < block->realsize)
-		copysize = size;
-	else
-		copysize = block->realsize;
-	ASAN_POISON_MEMORY_REGION(block, sizeof(memblock_t));
 
 	M_Memcpy(rez, ptr, copysize);
 
