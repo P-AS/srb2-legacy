@@ -45,7 +45,7 @@
 #include "lzf.h"
 #include "lua_script.h"
 #include "lua_hook.h"
-#include "md5.h" 
+#include "md5.h"
 #include "r_fps.h"
 
 #ifdef CLIENT_LOADINGSCREEN
@@ -2403,9 +2403,9 @@ static void CL_RemovePlayer(INT32 playernum, INT32 reason)
 	// the remaining players.
 	if (G_IsSpecialStage(gamemap))
 	{
-		INT32 count;
+		INT32 count = 0;
 
-		for (INT32 i = 0, count = 0; i < MAXPLAYERS; i++)
+		for (INT32 i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i])
 				count++;
@@ -4697,7 +4697,7 @@ boolean TryRunTics(tic_t realtics)
 			// run the count * tics
 			while (neededtic > gametic)
 			{
-				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic)); 
+				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
 
 				G_Ticker((gametic % NEWTICRATERATIO) == 0);
 				ExtraDataTicker();
