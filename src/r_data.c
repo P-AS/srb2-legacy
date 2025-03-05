@@ -1120,6 +1120,7 @@ void R_ClearColormaps(void)
 
 	memset(extra_colormaps, 0, sizeof (extra_colormaps));
 #ifdef HWRENDER
+if (rendermode == render_opengl)
 	HWR_ClearLightTables();
 #endif
 }
