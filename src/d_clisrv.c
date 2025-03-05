@@ -2403,28 +2403,31 @@ static void CL_RemovePlayer(INT32 playernum, INT32 reason)
 	// the remaining players.
 	if (G_IsSpecialStage(gamemap))
 	{
-		INT32 i, count, increment, rings;
+		INT32 count;
 
-		for (i = 0, count = 0; i < MAXPLAYERS; i++)
+		for (INT32 i = 0, count = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i])
 				count++;
 		}
 
 		count--;
-		rings = players[playernum].health - 1;
-		increment = rings/count;
-
-		for (i = 0; i < MAXPLAYERS; i++)
+		if(count > 0)
 		{
-			if (playeringame[i] && i != playernum)
-			{
-				if (rings < increment)
-					P_GivePlayerRings(&players[i], rings);
-				else
-					P_GivePlayerRings(&players[i], increment);
+			INT32 rings = players[playernum].health - 1;
+			INT32 increment = rings/count;
 
-				rings -= increment;
+			for (INT32 i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && i != playernum)
+				{
+					if (rings < increment)
+						P_GivePlayerRings(&players[i], rings);
+					else
+						P_GivePlayerRings(&players[i], increment);
+
+					rings -= increment;
+				}
 			}
 		}
 	}
