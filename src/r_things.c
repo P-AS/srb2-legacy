@@ -76,6 +76,33 @@ static spriteframe_t sprtemp[64];
 static size_t maxframe;
 static const char *spritename;
 
+//
+// Clipping against drawsegs optimization, from prboom-plus
+//
+// TODO: This should be done with proper subsector pass through
+// sprites which would ideally remove the need to do it at all.
+// Unfortunately, SRB2's drawing loop has lots of annoying
+// changes from Doom for portals, which make it hard to implement.
+
+typedef struct drawseg_xrange_item_s
+{
+	INT16 x1, x2;
+	drawseg_t *user;
+} drawseg_xrange_item_t;
+
+typedef struct drawsegs_xrange_s
+{
+	drawseg_xrange_item_t *items;
+	INT32 count;
+} drawsegs_xrange_t;
+
+#define DS_RANGES_COUNT 3
+static drawsegs_xrange_t drawsegs_xranges[DS_RANGES_COUNT];
+
+static drawseg_xrange_item_t *drawsegs_xrange;
+static size_t drawsegs_xrange_size = 0;
+static INT32 drawsegs_xrange_count = 0;
+
 // ==========================================================================
 //
 // Sprite loading routines: support sprites in pwad, dehacked sprite renaming,
@@ -2189,21 +2216,93 @@ static void R_DrawPrecipitationSprite(vissprite_t *spr)
 // Clips vissprites without drawing, so that portals can work. -Red
 void R_ClipSprites(void)
 {
+	const size_t maxdrawsegs = ds_p - drawsegs;
+	const INT32 cx = viewwidth / 2;
+	drawseg_t* ds;
+	INT32 i;
+
+	// e6y
+	// Reducing of cache misses in the following R_DrawSprite()
+	// Makes sense for scenes with huge amount of drawsegs.
+	// ~12% of speed improvement on epic.wad map05
+	for (i = 0; i < DS_RANGES_COUNT; i++)
+		drawsegs_xranges[i].count = 0;
+
+	if (visspritecount - clippedvissprites <= 0)
+		return;
+
+	if (drawsegs_xrange_size < maxdrawsegs)
+	{
+		drawsegs_xrange_size = 2 * maxdrawsegs;
+
+		for (i = 0; i < DS_RANGES_COUNT; i++)
+		{
+			drawsegs_xranges[i].items = Z_Realloc(
+				drawsegs_xranges[i].items,
+				drawsegs_xrange_size * sizeof(drawsegs_xranges[i].items[0]),
+				PU_STATIC, NULL
+			);
+		}
+	}
+
+	for (ds = ds_p; ds-- > drawsegs;)
+	{
+		if (ds->silhouette || ds->maskedtexturecol)
+		{
+			drawsegs_xranges[0].items[drawsegs_xranges[0].count].x1 = ds->x1;
+			drawsegs_xranges[0].items[drawsegs_xranges[0].count].x2 = ds->x2;
+			drawsegs_xranges[0].items[drawsegs_xranges[0].count].user = ds;
+
+			// e6y: ~13% of speed improvement on sunder.wad map10
+			if (ds->x1 < cx)
+			{
+				drawsegs_xranges[1].items[drawsegs_xranges[1].count] =
+					drawsegs_xranges[0].items[drawsegs_xranges[0].count];
+				drawsegs_xranges[1].count++;
+			}
+
+			if (ds->x2 >= cx)
+			{
+				drawsegs_xranges[2].items[drawsegs_xranges[2].count] =
+					drawsegs_xranges[0].items[drawsegs_xranges[0].count];
+				drawsegs_xranges[2].count++;
+			}
+
+			drawsegs_xranges[0].count++;
+		}
+	}
+
 	vissprite_t *spr;
 	for (;clippedvissprites < visspritecount; clippedvissprites++)
 	{
 		drawseg_t *ds;
-		INT32		x;
-		INT32		r1;
-		INT32		r2;
-		fixed_t		scale;
-		fixed_t		lowscale;
-		INT32		silhouette;
+		INT32 x;
+		INT32 r1;
+		INT32 r2;
+		fixed_t scale;
+		fixed_t lowscale;
+		INT32 silhouette;
 
 		spr = R_GetVisSprite(clippedvissprites);
 
 		for (x = spr->x1; x <= spr->x2; x++)
 			spr->clipbot[x] = spr->cliptop[x] = -2;
+
+		if (spr->x2 < cx)
+		{
+			drawsegs_xrange = drawsegs_xranges[1].items;
+			drawsegs_xrange_count = drawsegs_xranges[1].count;
+		}
+		else if (spr->x1 >= cx)
+		{
+			drawsegs_xrange = drawsegs_xranges[2].items;
+			drawsegs_xrange_count = drawsegs_xranges[2].count;
+		}
+		else
+		{
+			drawsegs_xrange = drawsegs_xranges[0].items;
+			drawsegs_xrange_count = drawsegs_xranges[0].count;
+		}
 
 		// Scan drawsegs from end to start for obscuring segs.
 		// The first drawseg that has a greater scale
@@ -2212,79 +2311,84 @@ void R_ClipSprites(void)
 		// Pointer check was originally nonportable
 		// and buggy, by going past LEFT end of array:
 
-		//    for (ds = ds_p-1; ds >= drawsegs; ds--)    old buggy code
-		for (ds = ds_p; ds-- > drawsegs ;)
+		// e6y: optimization
+		if (drawsegs_xrange_size)
 		{
-			// determine if the drawseg obscures the sprite
-			if (ds->x1 > spr->x2 ||
-			    ds->x2 < spr->x1 ||
-			    (!ds->silhouette
-			     && !ds->maskedtexturecol))
+			const drawseg_xrange_item_t *last = &drawsegs_xrange[drawsegs_xrange_count - 1];
+			drawseg_xrange_item_t *curr = &drawsegs_xrange[-1];
+
+			while (++curr <= last)
 			{
-				// does not cover sprite
-				continue;
-			}
-
-			if (ds->portalpass > 0 && ds->portalpass <= portalrender)
-				continue; // is a portal
-
-			r1 = ds->x1 < spr->x1 ? spr->x1 : ds->x1;
-			r2 = ds->x2 > spr->x2 ? spr->x2 : ds->x2;
-
-			if (ds->scale1 > ds->scale2)
-			{
-				lowscale = ds->scale2;
-				scale = ds->scale1;
-			}
-			else
-			{
-				lowscale = ds->scale1;
-				scale = ds->scale2;
-			}
-
-			if (scale < spr->scale ||
-			    (lowscale < spr->scale &&
-			     !R_PointOnSegSide (spr->gx, spr->gy, ds->curline)))
-			{
-				// masked mid texture?
-				/*if (ds->maskedtexturecol)
-					R_RenderMaskedSegRange (ds, r1, r2);*/
-				// seg is behind sprite
-				continue;
-			}
-
-			// clip this piece of the sprite
-			silhouette = ds->silhouette;
-
-			if (spr->gz >= ds->bsilheight)
-				silhouette &= ~SIL_BOTTOM;
-
-			if (spr->gzt <= ds->tsilheight)
-				silhouette &= ~SIL_TOP;
-
-			if (silhouette == SIL_BOTTOM)
-			{
-				// bottom sil
-				for (x = r1; x <= r2; x++)
-					if (spr->clipbot[x] == -2)
-						spr->clipbot[x] = ds->sprbottomclip[x];
-			}
-			else if (silhouette == SIL_TOP)
-			{
-				// top sil
-				for (x = r1; x <= r2; x++)
-					if (spr->cliptop[x] == -2)
-						spr->cliptop[x] = ds->sprtopclip[x];
-			}
-			else if (silhouette == (SIL_TOP|SIL_BOTTOM))
-			{
-				// both
-				for (x = r1; x <= r2; x++)
+				// determine if the drawseg obscures the sprite
+				if (curr->x1 > spr->x2 || curr->x2 < spr->x1)
 				{
-					if (spr->clipbot[x] == -2)
-						spr->clipbot[x] = ds->sprbottomclip[x];
-					if (spr->cliptop[x] == -2)
-						spr->cliptop[x] = ds->sprtopclip[x];
+					// does not cover sprite
+					continue;
+				}
+
+				ds = curr->user;
+
+				if (ds->portalpass > 0 && ds->portalpass <= portalrender)
+					continue; // is a portal
+
+				r1 = ds->x1 < spr->x1 ? spr->x1 : ds->x1;
+				r2 = ds->x2 > spr->x2 ? spr->x2 : ds->x2;
+
+				if (ds->scale1 > ds->scale2)
+				{
+					lowscale = ds->scale2;
+					scale = ds->scale1;
+				}
+				else
+				{
+					lowscale = ds->scale1;
+					scale = ds->scale2;
+				}
+
+				if (scale < spr->scale ||
+				    (lowscale < spr->scale &&
+				     !R_PointOnSegSide (spr->gx, spr->gy, ds->curline)))
+				{
+					// masked mid texture?
+					/*if (ds->maskedtexturecol)
+						R_RenderMaskedSegRange (ds, r1, r2);*/
+					// seg is behind sprite
+					continue;
+				}
+
+				// clip this piece of the sprite
+				silhouette = ds->silhouette;
+
+				if (spr->gz >= ds->bsilheight)
+					silhouette &= ~SIL_BOTTOM;
+
+				if (spr->gzt <= ds->tsilheight)
+					silhouette &= ~SIL_TOP;
+
+				if (silhouette == SIL_BOTTOM)
+				{
+					// bottom sil
+					for (x = r1; x <= r2; x++)
+						if (spr->clipbot[x] == -2)
+							spr->clipbot[x] = ds->sprbottomclip[x];
+				}
+				else if (silhouette == SIL_TOP)
+				{
+					// top sil
+					for (x = r1; x <= r2; x++)
+						if (spr->cliptop[x] == -2)
+							spr->cliptop[x] = ds->sprtopclip[x];
+				}
+				else if (silhouette == (SIL_TOP|SIL_BOTTOM))
+				{
+					// both
+					for (x = r1; x <= r2; x++)
+					{
+						if (spr->clipbot[x] == -2)
+							spr->clipbot[x] = ds->sprbottomclip[x];
+						if (spr->cliptop[x] == -2)
+							spr->cliptop[x] = ds->sprtopclip[x];
+					}
 				}
 			}
 		}
