@@ -33,6 +33,7 @@
 #ifdef ESLOPE
 #include "p_slopes.h"
 #endif
+#include "m_menu.h"
 
 savedata_t savedata;
 UINT8 *save_p;
@@ -3341,11 +3342,34 @@ void P_SetSaveGameName(const char* gamedataPrefix, const char* savedataPrefix)
 
 	CONS_Printf("%s\n%s\n%s\n", gamedatafilename, timeattackfolder, savegamename);
 
-	// Check if we have a gamedata to copy it from root
+	// Attempt to copy files from root if we don't have a gamedata
 	FILE* f = fopen(gamedatafilename, "rb");
 	if(!f)
 	{
-		//TODO: copy old files
+		char dataBuffer[GAMEDATASIZE];
+		char buffer2[512];
+		snprintf(buffer, sizeof(buffer) - 1, "%s/%s.dat", srb2home, gamedataPrefix);
+
+		f = fopen(buffer, "rb");
+		if(f)
+		{
+			fclose(f);
+			rename(buffer, gamedatafilename);
+		}
+		
+
+		// Now repeat for saves
+		for(int slot = 0; slot < (MAXSAVEGAMES - 1); slot++)
+		{
+			snprintf(buffer, sizeof(buffer) - 1, "%s/%s%u.ssg", srb2home, savedataPrefix, slot);
+			f = fopen(buffer, "rb");
+			if(f)
+			{
+				snprintf(buffer2, sizeof(buffer2) - 1, "%s/%s/%s%u.ssg", srb2home, savefolder, savedataPrefix, slot);
+				fclose(f);
+				rename(buffer, buffer2);
+			}
+		}
 	}
 	else
 	{
