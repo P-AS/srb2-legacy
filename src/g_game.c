@@ -66,6 +66,7 @@ JoyType_t Joystick2;
 
 char gamedatafilename[64] = "gamedata.dat";
 char timeattackfolder[64] = "main";
+char savefolder[64] = "save";
 char customversionstring[32] = "\0";
 
 static void G_DoCompleted(void);
@@ -3513,7 +3514,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 {
 	size_t length;
 	char vcheck[VERSIONSIZE];
-	char savename[255];
+	char savename[260];
 
 	// memset savedata to all 0, fixes calling perfectly valid saves corrupt because of bots
 	memset(&savedata, 0, sizeof(savedata));
@@ -3600,7 +3601,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 void G_SaveGame(UINT32 savegameslot)
 {
 	boolean saved;
-	char savename[256] = "";
+	char savename[260] = "";
 	const char *backup;
 
 	sprintf(savename, savegamename, savegameslot);

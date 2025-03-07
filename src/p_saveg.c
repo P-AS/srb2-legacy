@@ -3331,6 +3331,28 @@ static inline boolean P_NetUnArchiveMisc(void)
 	return true;
 }
 
+void P_SetSaveGameName(const char* gamedataPrefix, const char* savedataPrefix)
+{
+	char buffer[512];
+	snprintf(buffer, sizeof(buffer) -1, "%s/%s", srb2home, savefolder);
+	I_mkdir(buffer, 0755);
+	snprintf(gamedatafilename, sizeof(gamedatafilename) - 1, "%s/%s/%s.dat", srb2home, savefolder, gamedataPrefix);
+	snprintf(savegamename, sizeof(savegamename) - 1, "%s/%s/%s%%u.ssg", srb2home, savefolder, savedataPrefix);
+
+	CONS_Printf("%s\n%s\n%s\n", gamedatafilename, timeattackfolder, savegamename);
+
+	// Check if we have a gamedata to copy it from root
+	FILE* f = fopen(gamedatafilename, "rb");
+	if(!f)
+	{
+		//TODO: copy old files
+	}
+	else
+	{
+		fclose(f);
+	}
+}
+
 void P_SaveGame(void)
 {
 	P_ArchiveMisc();

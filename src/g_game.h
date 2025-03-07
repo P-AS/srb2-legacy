@@ -20,6 +20,7 @@
 
 extern char gamedatafilename[64];
 extern char timeattackfolder[64];
+extern char savefolder[64];
 extern char customversionstring[32];
 #define GAMEDATASIZE (4*8192)
 
