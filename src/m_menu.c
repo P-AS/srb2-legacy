@@ -4775,12 +4775,15 @@ static void M_DrawChecklist(void)
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
+		char *s;
 		if (unlockables[i].name[0] == 0 || unlockables[i].nochecklist
 		|| !unlockables[i].conditionset || unlockables[i].conditionset > MAXCONDITIONSETS)
 			continue;
 
+		s = V_WordWrap(160, 292, 0, unlockables[i].objective);
 		V_DrawString(8, 8+(24*j), V_RETURN8, unlockables[i].name);
-		V_DrawString(160, 8+(24*j), V_RETURN8, V_WordWrap(160, 292, 0, unlockables[i].objective));
+		V_DrawString(160, 8+(24*j), V_RETURN8, s);
+		Z_Free(s);
 
 		if (unlockables[i].unlocked)
 			V_DrawString(308, 8+(24*j), V_YELLOWMAP, "Y");
@@ -4807,7 +4810,7 @@ static void M_DrawEmblemHints(void)
 	INT32 i, j = 0;
 	UINT32 collected = 0;
 	emblem_t *emblem;
-	const char *hint;
+	char *hint;
 
 	for (i = 0; i < numemblems; i++)
 	{
@@ -4833,6 +4836,7 @@ static void M_DrawEmblemHints(void)
 			hint = M_GetText("No hints available.");
 		hint = V_WordWrap(40, BASEVIDWIDTH-12, 0, hint);
 		V_DrawString(40, 8+(28*j), V_RETURN8|V_ALLOWLOWERCASE|collected, hint);
+		Z_Free(hint);
 
 		if (++j >= NUMHINTS)
 			break;
@@ -6637,7 +6641,7 @@ static INT32 menuRoomIndex = 0;
 
 static void M_DrawRoomMenu(void)
 {
-	const char *rmotd;
+	char *rmotd;
 
 	// use generic drawer for cursor, items and title
 	M_DrawGenericMenu();
@@ -6653,6 +6657,7 @@ static void M_DrawRoomMenu(void)
 
 	rmotd = V_WordWrap(0, 20*8, 0, rmotd);
 	V_DrawString(144+8, 32, V_ALLOWLOWERCASE|V_RETURN8, rmotd);
+	Z_Free(rmotd);
 }
 
 static void M_DrawConnectMenu(void)
