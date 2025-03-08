@@ -894,18 +894,10 @@ static void ST_drawInput(void)
 	INT32 inputflags = hudinfo[HUD_INPUT].flags;
 
 	if(stplyr->pflags & PF_NIGHTSMODE)
-	y += 8;
-	else if (modeattacking
-		#ifdef HAVE_BLUA
-		|| !LUA_HudEnabled(hud_lives)
-		#endif
-	    )
+		y += 8;
+	else if (modeattacking || !LUA_HudEnabled(hud_lives))
 		y += 24;
-	else if (G_RingSlingerGametype()
-	#ifdef HAVE_BLUA
-	&& LUA_HudEnabled(hud_powerstones)
-	#endif
-		)
+	else if (G_RingSlingerGametype() && LUA_HudEnabled(hud_powerstones))
 		y -= 5;
 
 	// O backing
@@ -1014,8 +1006,8 @@ static void ST_drawInput(void)
 		V_DrawFill(x+ 7, y+10-offs,  2,  1, col);
 	}
 
-#define drawbuttons(xoffs, yoffs, butt, symb)\
-	if (stplyr->cmd.buttons & butt)\
+#define drawbuttons(xoffs, yoffs, button, symb)\
+	if (stplyr->cmd.buttons & button)\
 	{\
 		offs = 0;\
 		col = accent;\
@@ -1071,7 +1063,7 @@ static void ST_drawInput(void)
 			y -= 8;
 		}
 	if (!demosynced) // should always be last, so it doesn't push anything else around
-		V_DrawThinString(x, y, V_SNAPTOLEFT|V_SNAPTOBOTTOM|((leveltime & 4) ? V_YELLOWMAP : V_REDMAP), "BAD DEMO!!");
+		V_DrawThinString(x, y, inputflags|((leveltime & 4) ? V_YELLOWMAP : V_REDMAP), "BAD DEMO!!");
 }
 
 static void ST_drawLevelTitle(void)
@@ -2259,7 +2251,7 @@ static void ST_overlayDrawer(void)
 		}
 	}
 
-	if ((cv_showinput.value && !players[displayplayer].spectator) || modeattacking)
+	if (!splitscreen && ((cv_showinput.value && !players[displayplayer].spectator) || modeattacking))
 		ST_drawInput();
 
 	ST_drawDebugInfo();
