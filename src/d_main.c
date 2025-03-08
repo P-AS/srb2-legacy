@@ -142,7 +142,7 @@ boolean advancedemo;
 INT32 debugload = 0;
 #endif
 
-char savegamename[256];
+char savegamename[512];
 
 #ifdef _arch_dreamcast
 char srb2home[256] = "/cd";

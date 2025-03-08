@@ -18,7 +18,7 @@
 #include "doomstat.h"
 #include "d_event.h"
 
-extern char gamedatafilename[64];
+extern char gamedatafilename[512];
 extern char timeattackfolder[64];
 extern char savefolder[64];
 extern char customversionstring[32];

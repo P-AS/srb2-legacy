@@ -34,6 +34,7 @@
 #include "p_slopes.h"
 #endif
 #include "m_menu.h"
+#include "i_system.h"
 
 savedata_t savedata;
 UINT8 *save_p;
@@ -3346,7 +3347,6 @@ void P_SetSaveGameName(const char* gamedataPrefix, const char* savedataPrefix)
 	FILE* f = fopen(gamedatafilename, "rb");
 	if(!f)
 	{
-		char dataBuffer[GAMEDATASIZE];
 		char buffer2[512];
 		snprintf(buffer, sizeof(buffer) - 1, "%s/%s.dat", srb2home, gamedataPrefix);
 
