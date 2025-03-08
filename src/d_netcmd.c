@@ -206,6 +206,8 @@ static CV_PossibleValue_t pause_cons_t[] = {{0, "Server"}, {1, "All"}, {0, NULL}
 static CV_PossibleValue_t timetic_cons_t[] = {{0, "Normal"}, {1, "Centiseconds"}, {2, "Mania"}, {3, "Tics"}, {0, NULL}};
 //Using "Normal" instead of 2.2's "Classic" in order to be compatible with people's existing configurations.
 
+consvar_t cv_showinput = {"showinput", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_showinputjoy = {"showinputjoy", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t  scorepos_cons_t[] = {{0, "Normal"}, {1, "Modern"}, {0, NULL}};
 
 #ifdef NETGAME_DEVMODE
@@ -689,6 +691,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_timetic);
 	CV_RegisterVar(&cv_scorepos);
 	CV_RegisterVar(&cv_itemfinder);
+	CV_RegisterVar(&cv_showinput);
+	CV_RegisterVar(&cv_showinputjoy);
 
 	// time attack ghost options are also saved to config
 	CV_RegisterVar(&cv_ghost_bestscore);

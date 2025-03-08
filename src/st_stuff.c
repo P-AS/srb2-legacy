@@ -166,6 +166,7 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	// Do not modify above this line.
 	{ 136,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUMTICS
 	{ 136,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORENUMMODERN
+	{ 16, 152, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_INPUT
 };
 
 //
@@ -774,6 +775,295 @@ static void ST_drawLives(void)
 	V_DrawScaledPatch(hudinfo[HUD_LIVESX].x, hudinfo[HUD_LIVESX].y + (v_splitflag ? -4 : 0), hudinfo[HUD_LIVESX].flags|V_HUDTRANS|v_splitflag, stlivex);
 	// lives
 	V_DrawRightAlignedString(hudinfo[HUD_LIVESNUM].x, hudinfo[HUD_LIVESNUM].y + (v_splitflag ? -4 : 0), hudinfo[HUD_LIVESNUM].flags|V_HUDTRANS|v_splitflag, va("%d",stplyr->lives));
+}
+
+static void ST_drawInput(void)
+{
+	INT32 accent = V_SNAPTOLEFT|V_SNAPTOBOTTOM;
+	INT32 col;
+	UINT8 offs;
+
+	switch(stplyr->skincolor) //stupid switch
+	{
+		case SKINCOLOR_WHITE:
+			accent |= 0x00;
+		break;
+
+		case SKINCOLOR_SILVER:
+			accent |= 0x03;
+		break;
+
+		case SKINCOLOR_GREY:
+			accent |= 0x08;
+		break;
+
+		case SKINCOLOR_BLACK:
+			accent |= 0x18;
+		break;
+
+		case SKINCOLOR_CYAN:
+			accent |= 0xd0;
+		break;
+
+		case SKINCOLOR_TEAL:
+			accent |= 0xdc;
+		break;
+
+		case SKINCOLOR_STEELBLUE:
+			accent |= 0xc8;
+		break;
+
+		case SKINCOLOR_BLUE:
+			accent |= 0xe2;
+		break;
+
+		case SKINCOLOR_PEACH:
+			accent |= 0x40;
+		break;
+
+		case SKINCOLOR_TAN:
+			accent |= 0x48;
+		break;
+
+		case SKINCOLOR_PINK:
+			accent |= 0x90;
+		break;
+
+		case SKINCOLOR_LAVENDER:
+			accent |= 0xf8;
+		break;
+
+		case SKINCOLOR_ORANGE:
+			accent |= 0x52;
+		break;
+
+		case SKINCOLOR_PURPLE:
+			accent |= 0xc0;
+		break;
+
+		case SKINCOLOR_ROSEWOOD:
+			accent |= 0x5c;
+		break;
+
+		case SKINCOLOR_BEIGE:
+			accent |= 0x20;
+		break;
+
+		case SKINCOLOR_BROWN:
+			accent |= 0x30;
+		break;
+
+		case SKINCOLOR_RED:
+			accent |= 0x7d;
+		break;
+
+		case SKINCOLOR_DARKRED:
+			accent |= 0x85;
+		break;
+
+		case SKINCOLOR_NEONGREEN:
+			accent |= 0xb8;
+		break;
+
+		case SKINCOLOR_GREEN:
+			accent |= 0xa0;
+		break;
+
+		case SKINCOLOR_ZIM:
+			accent |= 0xb0;
+		break;
+
+		case SKINCOLOR_OLIVE:
+			accent |= 0x69;
+		break;
+
+		case SKINCOLOR_YELLOW:
+			accent |= 0x67;
+		break;
+
+		case SKINCOLOR_GOLD:
+			accent |= 0x70;
+		break;
+
+		default:
+			break;
+	}
+
+	INT32 x = hudinfo[HUD_INPUT].x;
+	INT32 y = hudinfo[HUD_INPUT].y;
+	INT32 inputflags = hudinfo[HUD_INPUT].flags;
+
+	if(stplyr->pflags & PF_NIGHTSMODE)
+		y += 8;
+	else if (modeattacking || !LUA_HudEnabled(hud_lives))
+		y += 24;
+	else if (G_RingSlingerGametype() && LUA_HudEnabled(hud_powerstones))
+		y -= 5;
+
+	// O backing
+	V_DrawFill(x, y-1, 16, 16, inputflags|20);
+	V_DrawFill(x, y+15, 16, 1, inputflags|29);
+
+	if (cv_showinputjoy.value) // joystick render!
+	{
+		/*V_DrawFill(x   , y   , 16,  1, inputflags|16);
+		V_DrawFill(x   , y+15, 16,  1, inputflags|16);
+		V_DrawFill(x   , y+ 1,  1, 14, inputflags|16);
+		V_DrawFill(x+15, y+ 1,  1, 14, inputflags|16); -- red's outline*/
+		if (stplyr->cmd.sidemove || stplyr->cmd.forwardmove)
+		{
+			// joystick hole
+			V_DrawFill(x+5, y+4, 6, 6, inputflags|29);
+			// joystick top
+			V_DrawFill(x+3+stplyr->cmd.sidemove/12,
+				y+2-stplyr->cmd.forwardmove/12,
+				10, 10, inputflags|29);
+			V_DrawFill(x+3+stplyr->cmd.sidemove/9,
+				y+1-stplyr->cmd.forwardmove/9,
+				10, 10, accent);
+		}
+		else
+		{
+			// just a limited, greyed out joystick top
+			V_DrawFill(x+3, y+11, 10, 1, inputflags|29);
+			V_DrawFill(x+3,
+				y+1,
+				10, 10, inputflags|16);
+		}
+	}
+	else // arrows!
+	{
+		// <
+		if (stplyr->cmd.sidemove < 0)
+		{
+			offs = 0;
+			col = accent;
+		}
+		else
+		{
+			offs = 1;
+			col = inputflags|16;
+			V_DrawFill(x- 2, y+10,  6,  1, inputflags|29);
+			V_DrawFill(x+ 4, y+ 9,  1,  1, inputflags|29);
+			V_DrawFill(x+ 5, y+ 8,  1,  1, inputflags|29);
+		}
+		V_DrawFill(x- 2, y+ 5-offs,  6,  6, col);
+		V_DrawFill(x+ 4, y+ 6-offs,  1,  4, col);
+		V_DrawFill(x+ 5, y+ 7-offs,  1,  2, col);
+
+		// ^
+		if (stplyr->cmd.forwardmove > 0)
+		{
+			offs = 0;
+			col = accent;
+		}
+		else
+		{
+			offs = 1;
+			col = inputflags|16;
+			V_DrawFill(x+ 5, y+ 3,  1,  1, inputflags|29);
+			V_DrawFill(x+ 6, y+ 4,  1,  1, inputflags|29);
+			V_DrawFill(x+ 7, y+ 5,  2,  1, inputflags|29);
+			V_DrawFill(x+ 9, y+ 4,  1,  1, inputflags|29);
+			V_DrawFill(x+10, y+ 3,  1,  1, inputflags|29);
+		}
+		V_DrawFill(x+ 5, y- 2-offs,  6,  6, col);
+		V_DrawFill(x+ 6, y+ 4-offs,  4,  1, col);
+		V_DrawFill(x+ 7, y+ 5-offs,  2,  1, col);
+
+		// >
+		if (stplyr->cmd.sidemove > 0)
+		{
+			offs = 0;
+			col = accent;
+		}
+		else
+		{
+			offs = 1;
+			col = inputflags|16;
+			V_DrawFill(x+12, y+10,  6,  1, inputflags|29);
+			V_DrawFill(x+11, y+ 9,  1,  1, inputflags|29);
+			V_DrawFill(x+10, y+ 8,  1,  1, inputflags|29);
+		}
+		V_DrawFill(x+12, y+ 5-offs,  6,  6, col);
+		V_DrawFill(x+11, y+ 6-offs,  1,  4, col);
+		V_DrawFill(x+10, y+ 7-offs,  1,  2, col);
+
+		// v
+		if (stplyr->cmd.forwardmove < 0)
+		{
+			offs = 0;
+			col = accent;
+		}
+		else
+		{
+			offs = 1;
+			col = inputflags|16;
+			V_DrawFill(x+ 5, y+17,  6,  1, inputflags|29);
+		}
+		V_DrawFill(x+ 5, y+12-offs,  6,  6, col);
+		V_DrawFill(x+ 6, y+11-offs,  4,  1, col);
+		V_DrawFill(x+ 7, y+10-offs,  2,  1, col);
+	}
+
+#define drawbuttons(xoffs, yoffs, button, symb)\
+	if (stplyr->cmd.buttons & button)\
+	{\
+		offs = 0;\
+		col = accent;\
+	}\
+	else\
+	{\
+		offs = 1;\
+		col = inputflags|16;\
+		V_DrawFill(x+16+(xoffs), y+9+(yoffs), 10, 1, inputflags|29);\
+	}\
+	V_DrawFill(x+16+(xoffs), y+(yoffs)-offs, 10, 10, col);\
+	V_DrawCharacter(x+16+1+(xoffs), y+1+(yoffs)-offs, inputflags|symb, false)
+
+	drawbuttons( 4,-3, BT_JUMP, 'J');
+	drawbuttons(15,-3, BT_USE,  'S');
+
+	V_DrawFill(x+16+4, y+8, 21, 10, inputflags|20); // sundial backing
+	if (stplyr->mo)
+	{
+		UINT8 i, precision;
+		angle_t ang = ((stplyr->pflags & PF_NIGHTSMODE))
+		? (FixedAngle((stplyr->flyangle-90)<<FRACBITS)>>ANGLETOFINESHIFT)
+		: (stplyr->mo->angle - R_PointToAngle(stplyr->mo->x, stplyr->mo->y))>>ANGLETOFINESHIFT;
+		fixed_t xcomp = FINESINE(ang)>>13;
+		fixed_t ycomp = FINECOSINE(ang)>>14;
+		if (ycomp == 4)
+			ycomp = 3;
+
+		if (ycomp > 0)
+			V_DrawFill(x+16+13-xcomp, y+11-ycomp, 3, 3, accent); // point (behind)
+
+		precision = max(3, abs(xcomp));
+		for (i = 0; i < precision; i++) // line
+		{
+			V_DrawFill(x+16+14-(i*xcomp)/precision,
+				y+12-(i*ycomp)/precision,
+				1, 1, inputflags|16);
+		}
+
+		if (ycomp <= 0)
+			V_DrawFill(x+16+13-xcomp, y+11-ycomp, 3, 3, accent); // point (in front)
+	}
+
+#undef drawbuttons
+
+	// text above
+	x -= 2;
+	y -= 13;
+
+		if (stplyr->pflags & PF_ANALOGMODE)
+		{
+			V_DrawThinString(x, y, inputflags, "ANALOG");
+			y -= 8;
+		}
+	if (!demosynced) // should always be last, so it doesn't push anything else around
+		V_DrawThinString(x, y, inputflags|((leveltime & 4) ? V_YELLOWMAP : V_REDMAP), "BAD DEMO!!");
 }
 
 static void ST_drawLevelTitle(void)
@@ -1960,6 +2250,9 @@ static void ST_overlayDrawer(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(164), V_HUDTRANSHALF, M_GetText("Press Jump to float and Spin to sink."));
 		}
 	}
+
+	if (!splitscreen && ((cv_showinput.value && !players[displayplayer].spectator) || modeattacking))
+		ST_drawInput();
 
 	ST_drawDebugInfo();
 }
