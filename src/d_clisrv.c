@@ -1430,89 +1430,78 @@ static void SV_SendPlayerInfo(INT32 node)
   * \return True if the packet was successfully sent
   *
   */
-static boolean SV_SendServerConfig(INT32 node)
-{
-	INT32 i;
-	UINT8 *p, *op;
-	boolean waspacketsent;
-
-	netbuffer->packettype = PT_SERVERCFG;
-
-	netbuffer->u.servercfg.version = VERSION;
-	netbuffer->u.servercfg.subversion = SUBVERSION;
-
-	netbuffer->u.servercfg.serverplayer = (UINT8)serverplayer;
-	netbuffer->u.servercfg.totalslotnum = (UINT8)(doomcom->numslots);
-	netbuffer->u.servercfg.gametic = (tic_t)LONG(gametic);
-	netbuffer->u.servercfg.clientnode = (UINT8)node;
-	netbuffer->u.servercfg.gamestate = (UINT8)gamestate;
-	netbuffer->u.servercfg.gametype = (UINT8)gametype;
-	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
-
-	if (!resendingsavegame[node])
-	{
-		// we fill these structs with FFs so that any players not in game get sent as 0xFFFF
-		// which is nice and easy for us to detect
-		memset(netbuffer->u.servercfg.playerskins, 0xFF, sizeof(netbuffer->u.servercfg.playerskins));
-		memset(netbuffer->u.servercfg.playercolor, 0xFF, sizeof(netbuffer->u.servercfg.playercolor));
-
-		memset(netbuffer->u.servercfg.adminplayers, -1, sizeof(netbuffer->u.servercfg.adminplayers));
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			netbuffer->u.servercfg.adminplayers[i] = (SINT8)adminplayers[i];
-
-			if (!playeringame[i])
-				continue;
-
-			netbuffer->u.servercfg.playerskins[i] = (UINT8)players[i].skin;
-			netbuffer->u.servercfg.playercolor[i] = (UINT8)players[i].skincolor;
-		}
-	}
-
-	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
-	if (!resendingsavegame[node])
-	{
-		op = p = netbuffer->u.servercfg.varlengthinputs;
-
-		CV_SavePlayerNames(&p);
-		CV_SaveNetVars(&p);
-	}
-	{
-		size_t len;
-
-		if (resendingsavegame[node])
-			len = sizeof (serverconfig_pak);
-		else
-			len = sizeof (serverconfig_pak) + (size_t)(p - op);
-
-#ifdef DEBUGFILE
-		if (debugfile)
-		{
-			fprintf(debugfile, "ServerConfig Packet about to be sent, size of packet:%s to node:%d\n",
-				sizeu1(len), node);
-		}
-#endif
-
-		waspacketsent = HSendPacket(node, true, 0, len);
-	}
-
-#ifdef DEBUGFILE
-	if (debugfile)
-	{
-		if (waspacketsent)
-		{
-			fprintf(debugfile, "ServerConfig Packet was sent\n");
-		}
-		else
-		{
-			fprintf(debugfile, "ServerConfig Packet could not be sent right now\n");
-		}
-	}
-#endif
-
-	return waspacketsent;
-}
+ static boolean SV_SendServerConfig(INT32 node)
+ {
+	 INT32 i;
+	 UINT8 *p, *op;
+	 boolean waspacketsent;
+ 
+	 netbuffer->packettype = PT_SERVERCFG;
+ 
+	 netbuffer->u.servercfg.version = VERSION;
+	 netbuffer->u.servercfg.subversion = SUBVERSION;
+ 
+	 netbuffer->u.servercfg.serverplayer = (UINT8)serverplayer;
+	 netbuffer->u.servercfg.totalslotnum = (UINT8)(doomcom->numslots);
+	 netbuffer->u.servercfg.gametic = (tic_t)LONG(gametic);
+	 netbuffer->u.servercfg.clientnode = (UINT8)node;
+	 netbuffer->u.servercfg.gamestate = (UINT8)gamestate;
+	 netbuffer->u.servercfg.gametype = (UINT8)gametype;
+	 netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
+ 
+	 // we fill these structs with FFs so that any players not in game get sent as 0xFFFF
+	 // which is nice and easy for us to detect
+	 memset(netbuffer->u.servercfg.playerskins, 0xFF, sizeof(netbuffer->u.servercfg.playerskins));
+	 memset(netbuffer->u.servercfg.playercolor, 0xFF, sizeof(netbuffer->u.servercfg.playercolor));
+ 
+	 memset(netbuffer->u.servercfg.adminplayers, -1, sizeof(netbuffer->u.servercfg.adminplayers));
+ 
+	 for (i = 0; i < MAXPLAYERS; i++)
+	 {
+		 netbuffer->u.servercfg.adminplayers[i] = (SINT8)adminplayers[i];
+ 
+		 if (!playeringame[i])
+			 continue;
+ 
+		 netbuffer->u.servercfg.playerskins[i] = (UINT8)players[i].skin;
+		 netbuffer->u.servercfg.playercolor[i] = (UINT8)players[i].skincolor;
+	 }
+ 
+	 memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
+ 
+	 op = p = netbuffer->u.servercfg.varlengthinputs;
+ 
+	 CV_SavePlayerNames(&p);
+	 CV_SaveNetVars(&p);
+ 
+	 size_t len = sizeof (serverconfig_pak) + (size_t)(p - op);
+ 
+ #ifdef DEBUGFILE
+	 if (debugfile)
+	 {
+		 fprintf(debugfile, "ServerConfig Packet about to be sent, size of packet:%s to node:%d\n",
+			 sizeu1(len), node);
+	 }
+ #endif
+ 
+	 waspacketsent = HSendPacket(node, true, 0, len);
+ 
+ #ifdef DEBUGFILE
+	 if (debugfile)
+	 {
+		 if (waspacketsent)
+		 {
+			 fprintf(debugfile, "ServerConfig Packet was sent\n");
+		 }
+		 else
+		 {
+			 fprintf(debugfile, "ServerConfig Packet could not be sent right now\n");
+		 }
+	 }
+ #endif
+ 
+	 return waspacketsent;
+ }
 
 #ifdef JOININGAME
 #define SAVEGAMESIZE (768*1024)
@@ -3142,16 +3131,16 @@ static void ResetNode(INT32 node)
 {
 	nodeingame[node] = false;
 	nodewaiting[node] = 0;
-	nettics[node] = gametic;
-	supposedtics[node] = gametic;
-	is_client_fusionadvance[node] = false;
 	nodetoplayer[node] = -1;
 	nodetoplayer2[node] = -1;
 	nettics[node] = gametic;
 	supposedtics[node] = gametic;
 	nodewaiting[node] = 0;
 	playerpernode[node] = 0;
+	nettics[node] = gametic;
+	supposedtics[node] = gametic;
 	sendingsavegame[node] = false;
+	is_client_fusionadvance[node] = false;
 	resendingsavegame[node] = false;
 	savegameresendcooldown[node] = 0;
 }
@@ -5119,18 +5108,13 @@ FILESTAMP
 
 	if (client)
 	{
+		// If the client just finished redownloading the game state, load it
+		if (cl_redownloadinggamestate && fileneeded[0].status == FS_FOUND)
+			CL_ReloadReceivedSavegame();
 		if (!resynch_local_inprogress)
 			CL_SendClientCmd(); // Send tic cmd
+
 		hu_resynching = resynch_local_inprogress;
-
-		if (cl_redownloadinggamestate)
-		{
-			// If the client just finished redownloading the game state, load it
-			if (cl_redownloadinggamestate && fileneeded[0].status == FS_FOUND)
-				CL_ReloadReceivedSavegame();
-
-			CL_SendClientCmd(); // Send tic cmd
-		}
 		hu_redownloadinggamestate = cl_redownloadinggamestate;
 	}
 	else
