@@ -20,7 +20,7 @@
 
 // Persistent storage/archiving.
 // These are the load / save game routines.
-
+void P_SetSaveGameName(const char* gamedataPrefix, const char* savedataPrefix);
 void P_SaveGame(void);
 void P_SaveNetGame(void);
 boolean P_LoadGame(INT16 mapoverride);

@@ -33,6 +33,8 @@
 #ifdef ESLOPE
 #include "p_slopes.h"
 #endif
+#include "m_menu.h"
+#include "i_system.h"
 
 savedata_t savedata;
 UINT8 *save_p;
@@ -3329,6 +3331,50 @@ static inline boolean P_NetUnArchiveMisc(void)
 		paused = true;
 
 	return true;
+}
+
+void P_SetSaveGameName(const char* gamedataPrefix, const char* savedataPrefix)
+{
+	char buffer[512];
+	snprintf(buffer, sizeof(buffer) -1, "%s/%s", srb2home, savefolder);
+	I_mkdir(buffer, 0755);
+	snprintf(gamedatafilename, sizeof(gamedatafilename) - 1, "%s/%s/%s.dat", srb2home, savefolder, gamedataPrefix);
+	snprintf(savegamename, sizeof(savegamename) - 1, "%s/%s/%s%%u.ssg", srb2home, savefolder, savedataPrefix);
+
+	CONS_Printf("%s\n%s\n%s\n", gamedatafilename, timeattackfolder, savegamename);
+
+	// Attempt to copy files from root if we don't have a gamedata
+	FILE* f = fopen(gamedatafilename, "rb");
+	if(!f)
+	{
+		char buffer2[512];
+		snprintf(buffer, sizeof(buffer) - 1, "%s/%s.dat", srb2home, gamedataPrefix);
+
+		f = fopen(buffer, "rb");
+		if(f)
+		{
+			fclose(f);
+			rename(buffer, gamedatafilename);
+		}
+		
+
+		// Now repeat for saves
+		for(int slot = 0; slot < (MAXSAVEGAMES - 1); slot++)
+		{
+			snprintf(buffer, sizeof(buffer) - 1, "%s/%s%u.ssg", srb2home, savedataPrefix, slot);
+			f = fopen(buffer, "rb");
+			if(f)
+			{
+				snprintf(buffer2, sizeof(buffer2) - 1, "%s/%s/%s%u.ssg", srb2home, savefolder, savedataPrefix, slot);
+				fclose(f);
+				rename(buffer, buffer2);
+			}
+		}
+	}
+	else
+	{
+		fclose(f);
+	}
 }
 
 void P_SaveGame(void)
