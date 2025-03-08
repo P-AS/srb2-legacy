@@ -3105,11 +3105,11 @@ static void readmaincfg(MYFILE *f)
 					filenamelen -= 4;
 				if (filenamelen >= sizeof(timeattackfolder))
 					filenamelen = sizeof(timeattackfolder)-1;
-				char tmpfilename[256];
+				char tmpfilename[sizeof(timeattackfolder)];
 				strncpy(tmpfilename, word2, filenamelen);
 				tmpfilename[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
 				strlwr(tmpfilename);
-				strncpy(timeattackfolder, tmpfilename, sizeof(timeattackfolder) - 1);
+				strncpy(timeattackfolder, tmpfilename, sizeof(timeattackfolder));
 
 				P_SetSaveGameName(tmpfilename, tmpfilename);
 
