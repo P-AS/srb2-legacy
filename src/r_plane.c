@@ -422,9 +422,7 @@ static visplane_t *new_visplane(unsigned hash)
 visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 	fixed_t xoff, fixed_t yoff, angle_t plangle, extracolormap_t *planecolormap,
 	ffloor_t *pfloor
-#ifdef POLYOBJECTS_PLANES
 			, polyobj_t *polyobj
-#endif
 #ifdef ESLOPE
 			, pslope_t *slope
 #endif
@@ -461,12 +459,10 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 
 	for (check = visplanes[hash]; check; check = check->next)
 	{
-#ifdef POLYOBJECTS_PLANES
 		if (check->polyobj && pfloor)
 			continue;
 		if (polyobj != check->polyobj)
 			continue;
-#endif
 		if (height == check->height && picnum == check->picnum
 			&& lightlevel == check->lightlevel
 			&& xoff == check->xoffs && yoff == check->yoffs
@@ -499,9 +495,7 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 	check->viewz = viewz;
 	check->viewangle = viewangle;
 	check->plangle = plangle;
-#ifdef POLYOBJECTS_PLANES
 	check->polyobj = polyobj;
-#endif
 #ifdef ESLOPE
 	check->slope = slope;
 #endif
@@ -571,9 +565,7 @@ visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop)
 		new_pl->viewz = pl->viewz;
 		new_pl->viewangle = pl->viewangle;
 		new_pl->plangle = pl->plangle;
-#ifdef POLYOBJECTS_PLANES
 		new_pl->polyobj = pl->polyobj;
-#endif
 #ifdef ESLOPE
 		new_pl->slope = pl->slope;
 #endif
@@ -600,11 +592,10 @@ void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop)
 	INT32 unionl, unionh;
 //	INT32 x;
 
-#ifdef POLYOBJECTS_PLANES
+
 	// Don't expand polyobject planes here - we do that on our own.
 	if (pl->polyobj)
 		return;
-#endif
 
 	if (start < pl->minx)
 	{
@@ -715,11 +706,7 @@ void R_DrawPlanes(void)
 				continue;
 			}
 
-			if (pl->ffloor != NULL
-#ifdef POLYOBJECTS_PLANES
-			|| pl->polyobj != NULL
-#endif
-			)
+			if (pl->ffloor != NULL || pl->polyobj != NULL)
 				continue;
 
 			R_DrawSinglePlane(pl);
@@ -747,7 +734,6 @@ void R_DrawSinglePlane(visplane_t *pl)
 #endif
 	spanfunc = basespanfunc;
 
-#ifdef POLYOBJECTS_PLANES
 	if (pl->polyobj && pl->polyobj->translucency != 0) {
 		spanfunc = R_DrawTranslucentSpan_8;
 
@@ -769,7 +755,6 @@ void R_DrawSinglePlane(visplane_t *pl)
 			light = LIGHTLEVELS-1;
 
 	} else
-#endif
 	if (pl->ffloor)
 	{
 		// Don't draw planes that shouldn't be drawn.

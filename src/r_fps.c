@@ -19,9 +19,7 @@
 #include "r_plane.h"
 #include "p_spec.h"
 #include "r_state.h"
-#ifdef POLYOBJECTS
 #include "p_polyobj.h"
-#endif
 #include "z_zone.h"
 #include "d_net.h" //MAXSPLITSCREENPLAYERS
 #include "hardware/hw_main.h" //cv_grshearing

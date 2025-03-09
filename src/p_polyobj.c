@@ -28,7 +28,7 @@
 #include "r_state.h"
 #include "r_defs.h"
 
-#ifdef POLYOBJECTS
+
 
 /*
    Theory behind Polyobjects:
@@ -2895,6 +2895,6 @@ INT32 EV_DoPolyObjFlag(line_t *pfdata)
 	return 1;
 }
 
-#endif // ifdef POLYOBJECTS
+
 
 // EOF

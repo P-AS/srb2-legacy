@@ -1483,7 +1483,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			// heights of the polygon, and h & l, are the final (clipped)
 			// poly coords.
 
-#ifdef POLYOBJECTS
+
 			// NOTE: With polyobjects, whenever you need to check the properties of the polyobject sector it belongs to,
 			// you must use the linedef's backsector to be correct
 			// From CB
@@ -1493,7 +1493,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				popenbottom = back->floorheight;
 			}
 			else
-#endif
+
             {
 #ifdef ESLOPE
 				popentop = min(worldtop, worldhigh);
@@ -1532,7 +1532,6 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				polybottom = polytop - textureheight[gr_midtexture]*repeats;
 			}
 			// CB
-#ifdef POLYOBJECTS
 			// NOTE: With polyobjects, whenever you need to check the properties of the polyobject sector it belongs to,
 			// you must use the linedef's backsector to be correct
 			if (gr_curline->polyseg)
@@ -1540,7 +1539,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				lowcut = polybottom;
 				highcut = polytop;
 			}
-#endif
+
 			else
 			{
 				// The cut-off values of a linedef can always be constant, since every line has an absoulute front and or back sector
@@ -1676,7 +1675,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					break;
 			}
 
-#ifdef POLYOBJECTS
+
 			if (gr_curline->polyseg && gr_curline->polyseg->translucency > 0)
 			{
 				if (gr_curline->polyseg->translucency >= NUMTRANSMAPS) // wall not drawn
@@ -1687,7 +1686,6 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				else
 					blendmode = HWR_TranstableToAlpha(gr_curline->polyseg->translucency, &Surf);
 			}
-#endif
 
 			if (gr_frontsector->numlights)
 			{
@@ -2558,10 +2556,8 @@ static void HWR_AddLine(seg_t * line)
 	static sector_t tempsec;
 
 	fixed_t v1x, v1y, v2x, v2y; // the seg's vertexes as fixed_t
-#ifdef POLYOBJECTS
 	if (line->polyseg && !(line->polyseg->flags & POF_RENDERSIDES))
 		return;
-#endif
 
 	gr_curline = line;
 
@@ -2877,7 +2873,7 @@ static boolean HWR_CheckBBox(const fixed_t *bspcoord)
 #endif
 }
 
-#ifdef POLYOBJECTS
+
 
 //
 // HWR_AddPolyObjectSegs
@@ -2921,7 +2917,7 @@ static inline void HWR_AddPolyObjectSegs(void)
 	Z_Free(gr_fakeline);
 }
 
-#ifdef POLYOBJECTS_PLANES
+
 static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, boolean isceiling, fixed_t fixedheight,
 									FBITFIELD blendmode, UINT8 lightlevel, lumpnum_t lumpnum, sector_t *FOFsector,
 									UINT8 alpha, extracolormap_t *planecolormap)
@@ -3157,8 +3153,6 @@ static void HWR_AddPolyObjectPlanes(void)
 		}
 	}
 }
-#endif
-#endif
 
 // -----------------+
 // HWR_Subsector    : Determine floor/ceiling planes.
@@ -3489,7 +3483,7 @@ static void HWR_Subsector(size_t num)
 #endif
 #endif //doplanes
 
-#ifdef POLYOBJECTS
+
 	// Draw all the polyobjects in this subsector
 	if (sub->polyList)
 	{
@@ -3510,15 +3504,13 @@ static void HWR_Subsector(size_t num)
 		// Draw polyobject lines.
 		HWR_AddPolyObjectSegs();
 
-#ifdef POLYOBJECTS_PLANES
+
 		if (sub->validcount != validcount) // This validcount situation seems to let us know that the floors have already been drawn.
 		{
 			// Draw polyobject planes
 			HWR_AddPolyObjectPlanes();
 		}
-#endif
 	}
-#endif
 
 // Hurder ici se passe les choses INT32�essantes!
 // on vient de tracer le sol et le plafond
@@ -3540,9 +3532,7 @@ static void HWR_Subsector(size_t num)
 
 		while (count--)
 		{
-#ifdef POLYOBJECTS
 				if (!line->polyseg) // ignore segs that belong to polyobjects
-#endif
 				HWR_AddLine(line);
 				line++;
 		}
