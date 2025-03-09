@@ -11,7 +11,6 @@
 /// \brief player skin structure library for Lua scripting
 
 #include "doomdef.h"
-#ifdef HAVE_BLUA
 #include "fastcmp.h"
 #include "r_things.h"
 #include "sounds.h"
@@ -335,5 +334,3 @@ int LUA_SkinLib(lua_State *L)
 
 	return 0;
 }
-
-#endif

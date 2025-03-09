@@ -11,7 +11,6 @@
 /// \brief hooks for Lua scripting
 
 #include "doomdef.h"
-#ifdef HAVE_BLUA
 #include "doomstat.h"
 #include "p_mobj.h"
 #include "g_game.h"
@@ -1101,5 +1100,3 @@ void LUAh_PlayerQuit(player_t *plr, int reason)
 
 	lua_settop(gL, 0);
 }
-
-#endif

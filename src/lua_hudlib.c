@@ -11,7 +11,6 @@
 /// \brief custom HUD rendering library for Lua scripting
 
 #include "doomdef.h"
-#ifdef HAVE_BLUA
 #include "r_defs.h"
 #include "r_local.h"
 #include "st_stuff.h" // hudinfo[]
@@ -788,5 +787,3 @@ void LUAh_ScoresHUD(void)
 	lua_pop(gL, -1);
 	hud_running = false;
 }
-
-#endif
