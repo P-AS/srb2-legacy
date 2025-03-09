@@ -1261,9 +1261,7 @@ static void P_LoadRawLineDefs(UINT8 *data, size_t i)
 		if (ld->sidenum[1] != 0xffff && ld->special)
 			sides[ld->sidenum[1]].special = ld->special;
 
-#ifdef POLYOBJECTS
 		ld->polyobj = NULL;
-#endif
 	}
 }
 
@@ -1894,11 +1892,10 @@ static void P_CreateBlockMap(void)
 		blocklinks = Z_Calloc(count, PU_LEVEL, NULL);
 		blockmap = blockmaplump + 4;
 
-#ifdef POLYOBJECTS
+
 		// haleyjd 2/22/06: setup polyobject blockmap
 		count = sizeof(*polyblocklinks) * bmapwidth * bmapheight;
 		polyblocklinks = Z_Calloc(count, PU_LEVEL, NULL);
-#endif
 	}
 }
 
@@ -1971,11 +1968,10 @@ static boolean P_LoadBlockMap(lumpnum_t lumpnum)
 	blocklinks = Z_Calloc(count, PU_LEVEL, NULL);
 	blockmap = blockmaplump+4;
 
-#ifdef POLYOBJECTS
+
 	// haleyjd 2/22/06: setup polyobject blockmap
 	count = sizeof(*polyblocklinks) * bmapwidth * bmapheight;
 	polyblocklinks = Z_Calloc(count, PU_LEVEL, NULL);
-#endif
 	return true;
 /* Original
 		blockmaplump = W_CacheLumpNum(lump, PU_LEVEL);
@@ -2037,13 +2033,11 @@ static boolean P_LoadRawBlockMap(UINT8 *data, size_t count, const char *lumpname
 	blocklinks = Z_Calloc(count, PU_LEVEL, NULL);
 	blockmap = blockmaplump+4;
 
-#ifdef POLYOBJECTS
 	// haleyjd 2/22/06: setup polyobject blockmap
 	count = sizeof(*polyblocklinks) * bmapwidth * bmapheight;
 	polyblocklinks = Z_Calloc(count, PU_LEVEL, NULL);
 #endif
 	return true;
-#endif
 }
 
 //

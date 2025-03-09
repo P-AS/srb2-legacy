@@ -490,7 +490,6 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	I_Assert(front != NULL);
 	I_Assert(back != NULL);
 
-#ifdef POLYOBJECTS
 	if (linedef->polyobj)
 	{
 		// set these defaults so that polyobjects don't interfere with collision above or below them
@@ -503,7 +502,6 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 #endif
 	}
 	else
-#endif
 	{ // Set open and high/low values here
 		fixed_t frontheight, backheight;
 
@@ -566,22 +564,6 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				texheight = textures[texnum]->height << FRACBITS;
 
 				// Set texbottom and textop to the Z coordinates of the texture's boundaries
-#if 0 // #ifdef POLYOBJECTS
-				// don't remove this code unless solid midtextures
-				// on non-solid polyobjects should NEVER happen in the future
-				if (linedef->polyobj && (linedef->polyobj->flags & POF_TESTHEIGHT)) {
-					if (linedef->flags & ML_EFFECT5 && !side->repeatcnt) { // "infinite" repeat
-						texbottom = back->floorheight + side->rowoffset;
-						textop = back->ceilingheight + side->rowoffset;
-					} else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3)) {
-						texbottom = back->floorheight + side->rowoffset;
-						textop = texbottom + texheight*(side->repeatcnt+1);
-					} else {
-						textop = back->ceilingheight + side->rowoffset;
-						texbottom = textop - texheight*(side->repeatcnt+1);
-					}
-				} else
-#endif
 				{
 					if (linedef->flags & ML_EFFECT5 && !side->repeatcnt) { // "infinite" repeat
 						texbottom = openbottom + side->rowoffset;
@@ -609,7 +591,6 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				}
 			}
 		}
-#ifdef POLYOBJECTS
 		if (linedef->polyobj)
 		{
 			// Treat polyobj's backsector like a 3D Floor
@@ -646,7 +627,6 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 			// otherwise don't do anything special, pretend there's nothing else there
 		}
 		else
-#endif
 		// Check for fake floors in the sector.
 		if (front->ffloors || back->ffloors)
 		{
@@ -987,9 +967,7 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
 {
 	INT32 offset;
 	const INT32 *list; // Big blockmap
-#ifdef POLYOBJECTS
 	polymaplink_t *plink; // haleyjd 02/22/06
-#endif
 	line_t *ld;
 
 	if (x < 0 || y < 0 || x >= bmapwidth || y >= bmapheight)
@@ -997,7 +975,6 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
 
 	offset = y*bmapwidth + x;
 
-#ifdef POLYOBJECTS
 	// haleyjd 02/22/06: consider polyobject lines
 	plink = polyblocklinks[offset];
 
@@ -1021,7 +998,6 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
 		}
 		plink = (polymaplink_t *)(plink->link.next);
 	}
-#endif
 
 	offset = *(blockmap + offset); // offset = blockmap[y*bmapwidth+x];
 

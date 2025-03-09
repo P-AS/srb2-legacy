@@ -19,7 +19,6 @@
 #include "r_defs.h"
 
 // haleyjd: temporary define
-#ifdef POLYOBJECTS
 //
 // Defines
 //
@@ -304,7 +303,6 @@ extern polyobj_t *PolyObjects;
 extern INT32 numPolyObjects;
 extern polymaplink_t **polyblocklinks; // polyobject blockmap
 
-#endif // ifdef POLYOBJECTS
 
 #endif
 
