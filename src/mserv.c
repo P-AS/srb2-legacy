@@ -219,7 +219,6 @@ enum { MSCS_NONE, MSCS_REGISTERED, MSCS_FAILED };
 static int con_state = MSCS_NONE;
 static int con6_state = MSCS_NONE;
 
-static INT32 msnode = -1;
 UINT16 current_port = 0;
 
 #if (defined (_WIN32) || defined (_WIN32_WCE) || defined (_WIN32)) && !defined (NONET)
@@ -812,26 +811,6 @@ const char *GetMasterServerIP(void)
 	return str_ip;
 }
 
-void MSOpenUDPSocket(void)
-{
-#ifndef NONET
-	if (I_NetMakeNodewPort)
-	{
-		// If it's already open, there's nothing to do.
-		if (msnode < 0)
-			msnode = I_NetMakeNodewPort(GetMasterServerIP(), GetMasterServerPort());
-	}
-	else
-#endif
-		msnode = -1;
-}
-
-void MSCloseUDPSocket(void)
-{
-	if (msnode != INT16_MAX) I_NetFreeNodenum(msnode);
-	msnode = -1;
-}
-
 static inline void SendPingToMasterServer(void)
 {
 	time_t timestamp = time(NULL);
@@ -846,42 +825,6 @@ static inline void SendPingToMasterServer(void)
 #endif
 		MSLastPing = timestamp;
 	}
-}
-
-void SendAskInfoViaMS(INT32 node, tic_t asktime)
-{
-	const char *address;
-	UINT16 port;
-	char *inip;
-	ms_holepunch_packet_t mshpp;
-
-	MSOpenUDPSocket();
-
-	// This must be called after calling MSOpenUDPSocket, due to the
-	// static buffer.
-	address = I_GetNodeAddress(node);
-
-	// no address?
-	if (!address)
-		return;
-
-	// Copy the IP address into the buffer.
-	inip = mshpp.ip;
-	while(*address && *address != ':') *inip++ = *address++;
-	*inip = '\0';
-
-	// Get the port.
-	port = (UINT16)(*address++ ? atoi(address) : 0);
-	mshpp.port = SHORT(port);
-
-	// Set the time for ping calculation.
-	mshpp.time = LONG(asktime);
-
-	// Send to the MS.
-	M_Memcpy(netbuffer, &mshpp, sizeof(mshpp));
-	doomcom->datalength = sizeof(ms_holepunch_packet_t);
-	doomcom->remotenode = (INT16)msnode;
-	I_NetSend();
 }
 
 void RegisterServer(void)
@@ -912,7 +855,6 @@ void UnregisterServer(void)
 	con_state = MSCS_NONE;
 	con6_state = MSCS_NONE;
 
-	MSCloseUDPSocket();
 	MSLastPing = 0;
 }
 
