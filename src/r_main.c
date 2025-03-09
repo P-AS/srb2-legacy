@@ -75,6 +75,7 @@ player_t *viewplayer;
 
 fixed_t rendertimefrac;
 fixed_t renderdeltatics;
+boolean renderisnewtic;
 
 
 // PORTALS!
