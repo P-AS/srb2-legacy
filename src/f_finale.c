@@ -1314,6 +1314,7 @@ void F_StartGameEvaluation(void)
 	CON_ToggleOff();
 
 	finalecount = 0;
+	eemeralds_start = I_GetTime();
 }
 
 void F_GameEvaluationDrawer(void)
@@ -1332,8 +1333,7 @@ void F_GameEvaluationDrawer(void)
 	else
 		V_DrawString(124, 16, 0, "TRY AGAIN!");
 
-	eemeralds_start++;
-	eemeralds_cur = eemeralds_start;
+	eemeralds_cur = (I_GetTime() - eemeralds_start) % 360;
 
 	for (i = 0; i < 7; ++i)
 	{
@@ -1349,8 +1349,6 @@ void F_GameEvaluationDrawer(void)
 
 		eemeralds_cur += INTERVAL;
 	}
-	if (eemeralds_start >= 360)
-		eemeralds_start -= 360;
 
 	if (finalecount == 5*TICRATE)
 	{
