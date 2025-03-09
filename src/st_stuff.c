@@ -39,9 +39,7 @@
 #include "hardware/hw_main.h"
 #endif
 
-#ifdef HAVE_BLUA
 #include "lua_hud.h"
-#endif
 
 UINT16 objectsdrawn = 0;
 
@@ -1329,11 +1327,7 @@ static void ST_drawNiGHTSHUD(void)
 	}
 
 	// Link drawing
-	if (
-#ifdef HAVE_BLUA
-	LUA_HudEnabled(hud_nightslink) &&
-#endif
-	stplyr->linkcount > minlink)
+	if (LUA_HudEnabled(hud_nightslink) && stplyr->linkcount > minlink)
 	{
 		skincolors_t colornum = linkColor[((stplyr->linkcount-1) / 5) % (sizeof(linkColor) / sizeof(skincolors_t))];
 		if (stplyr->powers[pw_nights_linkfreeze])
@@ -1388,11 +1382,7 @@ static void ST_drawNiGHTSHUD(void)
 	}
 
 	// Drill meter
-	if (
-#ifdef HAVE_BLUA
-	LUA_HudEnabled(hud_nightsdrill) &&
-#endif
-	stplyr->pflags & PF_NIGHTSMODE)
+	if (LUA_HudEnabled(hud_nightsdrill) && stplyr->pflags & PF_NIGHTSMODE)
 	{
 		INT32 locx, locy;
 		INT32 dfill;
@@ -1463,117 +1453,105 @@ static void ST_drawNiGHTSHUD(void)
 	}
 
 	// Begin drawing brackets/chip display
-#ifdef HAVE_BLUA
 	if (LUA_HudEnabled(hud_nightsrings))
 	{
-#endif
-	ST_DrawOverlayPatch(SCX(16), SCY(8), nbracket);
-	if (G_IsSpecialStage(gamemap))
-		ST_DrawOverlayPatch(SCX(24), SCY(8) + SCZ(8), nsshud);
-	else
-		ST_DrawOverlayPatch(SCX(24), SCY(8) + SCZ(8), nhud[(leveltime/2)%12]);
+		ST_DrawOverlayPatch(SCX(16), SCY(8), nbracket);
+		if (G_IsSpecialStage(gamemap))
+			ST_DrawOverlayPatch(SCX(24), SCY(8) + SCZ(8), nsshud);
+		else
+			ST_DrawOverlayPatch(SCX(24), SCY(8) + SCZ(8), nhud[(leveltime/2)%12]);
 
-	if (G_IsSpecialStage(gamemap))
-	{
-		INT32 i;
-		total_ringcount = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] /*&& players[i].pflags & PF_NIGHTSMODE*/ && players[i].health)
-				total_ringcount += players[i].health - 1;
-	}
-	else
-		total_ringcount = stplyr->health-1;
-
-	if (stplyr->capsule)
-	{
-		INT32 amount;
-		const INT32 length = 88;
-
-		origamount = stplyr->capsule->spawnpoint->angle;
-		I_Assert(origamount > 0); // should not happen now
-
-		ST_DrawOverlayPatch(SCX(72), SCY(8), nbracket);
-		ST_DrawOverlayPatch(SCX(74), SCY(8) + SCZ(4), minicaps);
-
-		if (stplyr->capsule->reactiontime != 0)
+		if (G_IsSpecialStage(gamemap))
 		{
-			INT32 r;
-			const INT32 orblength = 20;
+			INT32 i;
+			total_ringcount = 0;
+			for (i = 0; i < MAXPLAYERS; i++)
+				if (playeringame[i] /*&& players[i].pflags & PF_NIGHTSMODE*/ && players[i].health)
+					total_ringcount += players[i].health - 1;
+		}
+		else
+			total_ringcount = stplyr->health-1;
 
-			for (r = 0; r < 5; r++)
+		if (stplyr->capsule)
+		{
+			INT32 amount;
+			const INT32 length = 88;
+
+			origamount = stplyr->capsule->spawnpoint->angle;
+			I_Assert(origamount > 0); // should not happen now
+
+			ST_DrawOverlayPatch(SCX(72), SCY(8), nbracket);
+			ST_DrawOverlayPatch(SCX(74), SCY(8) + SCZ(4), minicaps);
+
+			if (stplyr->capsule->reactiontime != 0)
 			{
-				ST_DrawOverlayPatch(SCX(230 - (7*r)), SCY(144), redstat);
-				ST_DrawOverlayPatch(SCX(188 - (7*r)), SCY(144), orngstat);
-				ST_DrawOverlayPatch(SCX(146 - (7*r)), SCY(144), yelstat);
-				ST_DrawOverlayPatch(SCX(104 - (7*r)), SCY(144), byelstat);
-			}
+				INT32 r;
+				const INT32 orblength = 20;
 
-			amount = (origamount - stplyr->capsule->health);
-			amount = (amount * orblength)/origamount;
-
-			if (amount > 0)
-			{
-				INT32 t;
-
-				// Fill up the bar with blue orbs... in reverse! (yuck)
-				for (r = amount; r > 0; r--)
+				for (r = 0; r < 5; r++)
 				{
-					t = r;
+					ST_DrawOverlayPatch(SCX(230 - (7*r)), SCY(144), redstat);
+					ST_DrawOverlayPatch(SCX(188 - (7*r)), SCY(144), orngstat);
+					ST_DrawOverlayPatch(SCX(146 - (7*r)), SCY(144), yelstat);
+					ST_DrawOverlayPatch(SCX(104 - (7*r)), SCY(144), byelstat);
+				}
 
-					if (r > 15) ++t;
-					if (r > 10) ++t;
-					if (r > 5)  ++t;
+				amount = (origamount - stplyr->capsule->health);
+				amount = (amount * orblength)/origamount;
 
-					ST_DrawOverlayPatch(SCX(69 + (7*t)), SCY(144), bluestat);
+				if (amount > 0)
+				{
+					INT32 t;
+
+					// Fill up the bar with blue orbs... in reverse! (yuck)
+					for (r = amount; r > 0; r--)
+					{
+						t = r;
+
+						if (r > 15) ++t;
+						if (r > 10) ++t;
+						if (r > 5)  ++t;
+
+						ST_DrawOverlayPatch(SCX(69 + (7*t)), SCY(144), bluestat);
+					}
 				}
 			}
+			else
+			{
+				INT32 cfill;
+
+				// Lil' white box!
+				V_DrawScaledPatch(15, STRINGY(8) + 34, V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS, capsulebar);
+
+				amount = (origamount - stplyr->capsule->health);
+				amount = (amount * length)/origamount;
+
+				for (cfill = 0; cfill < amount && cfill < 88; ++cfill)
+					V_DrawScaledPatch(15 + cfill + 1, STRINGY(8) + 35, V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS, capsulefill);
+			}
+
+			if (total_ringcount >= stplyr->capsule->health)
+				ST_DrawOverlayPatch(SCX(40), SCY(8) + SCZ(5), nredar[leveltime%8]);
+			else
+				ST_DrawOverlayPatch(SCX(40), SCY(8) + SCZ(5), narrow[(leveltime/2)%8]);
 		}
 		else
-		{
-			INT32 cfill;
+			ST_DrawOverlayPatch(SCX(40), SCY(8) + SCZ(5), narrow[8]);
 
-			// Lil' white box!
-			V_DrawScaledPatch(15, STRINGY(8) + 34, V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS, capsulebar);
-
-			amount = (origamount - stplyr->capsule->health);
-			amount = (amount * length)/origamount;
-
-			for (cfill = 0; cfill < amount && cfill < 88; ++cfill)
-				V_DrawScaledPatch(15 + cfill + 1, STRINGY(8) + 35, V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS, capsulefill);
-		}
-
-		if (total_ringcount >= stplyr->capsule->health)
-			ST_DrawOverlayPatch(SCX(40), SCY(8) + SCZ(5), nredar[leveltime%8]);
+		if (total_ringcount >= 100)
+			ST_DrawOverlayNum((total_ringcount >= 1000) ? SCX(76) : SCX(72), SCY(8) + SCZ(11), total_ringcount);
 		else
-			ST_DrawOverlayPatch(SCX(40), SCY(8) + SCZ(5), narrow[(leveltime/2)%8]);
+			ST_DrawOverlayNum(SCX(68), SCY(8) + SCZ(11), total_ringcount);
 	}
-	else
-		ST_DrawOverlayPatch(SCX(40), SCY(8) + SCZ(5), narrow[8]);
-
-	if (total_ringcount >= 100)
-		ST_DrawOverlayNum((total_ringcount >= 1000) ? SCX(76) : SCX(72), SCY(8) + SCZ(11), total_ringcount);
-	else
-		ST_DrawOverlayNum(SCX(68), SCY(8) + SCZ(11), total_ringcount);
-#ifdef HAVE_BLUA
-	}
-#endif
 
 	// Score
-	if (!stplyr->exiting
-#ifdef HAVE_BLUA
-	&& LUA_HudEnabled(hud_nightsscore)
-#endif
-	)
+	if (!stplyr->exiting && LUA_HudEnabled(hud_nightsscore))
 	{
 		ST_DrawNightsOverlayNum(304, STRINGY(16), SPLITFLAGS(V_SNAPTOTOP)|V_SNAPTORIGHT, stplyr->marescore, nightsnum, SKINCOLOR_STEELBLUE);
 	}
 
-	if (!stplyr->exiting
-#ifdef HAVE_BLUA
 	// TODO give this its own section for Lua
-	&& LUA_HudEnabled(hud_nightsscore)
-#endif
-	)
+	if (!stplyr->exiting && LUA_HudEnabled(hud_nightsscore))
 	{
 		if (modeattacking == ATTACKING_NIGHTS)
 		{
@@ -1597,11 +1575,7 @@ static void ST_drawNiGHTSHUD(void)
 	}
 
 	// Ideya time remaining
-	if (!stplyr->exiting && stplyr->nightstime > 0
-#ifdef HAVE_BLUA
-	&& LUA_HudEnabled(hud_nightstime)
-#endif
-	)
+	if (!stplyr->exiting && stplyr->nightstime > 0 && LUA_HudEnabled(hud_nightstime))
 	{
 		INT32 realnightstime = stplyr->nightstime/TICRATE;
 		INT32 numbersize;
@@ -1675,10 +1649,8 @@ static void ST_drawNiGHTSHUD(void)
 	}
 
 	// Records/extra text
-#ifdef HAVE_BLUA
 	if (LUA_HudEnabled(hud_nightsrecords))
-#endif
-	ST_drawNightsRecords();
+		ST_drawNightsRecords();
 
 	if (nosshack)
 		splitscreen = true;
@@ -1728,9 +1700,7 @@ static void ST_drawMatchHUD(void)
 	if (G_TagGametype() && !(stplyr->pflags & PF_TAGIT))
 		return;
 
-#ifdef HAVE_BLUA
 	if (LUA_HudEnabled(hud_weaponrings)) {
-#endif
 
 	if (stplyr->powers[pw_infinityring])
 		ST_drawWeaponRing(pw_infinityring, 0, 0, offset, infinityring);
@@ -1755,11 +1725,9 @@ static void ST_drawMatchHUD(void)
 	offset += 20;
 	ST_drawWeaponRing(pw_railring, RW_RAIL, WEP_RAIL, offset, railring);
 
-#ifdef HAVE_BLUA
 	}
 
 	if (LUA_HudEnabled(hud_powerstones)) {
-#endif
 
 	// Power Stones collected
 	offset = 136; // Used for Y now
@@ -1793,9 +1761,7 @@ static void ST_drawMatchHUD(void)
 	if (stplyr->powers[pw_emeralds] & EMERALD7)
 		V_DrawScaledPatch(28, STRINGY(offset), V_SNAPTOLEFT, tinyemeraldpics[6]);
 
-#ifdef HAVE_BLUA
 	}
-#endif
 }
 
 static inline void ST_drawRaceHUD(void)
@@ -2099,23 +2065,13 @@ static void ST_overlayDrawer(void)
 			ST_drawNiGHTSHUD();
 		else
 		{
-#ifdef HAVE_BLUA
 			if (LUA_HudEnabled(hud_score))
-#endif
-			ST_drawScore();
-#ifdef HAVE_BLUA
+				ST_drawScore();
 			if (LUA_HudEnabled(hud_time))
-#endif
-			ST_drawTime();
-#ifdef HAVE_BLUA
+				ST_drawTime();
 			if (LUA_HudEnabled(hud_rings))
-#endif
-			ST_drawRings();
-			if (G_GametypeUsesLives()
-#ifdef HAVE_BLUA
-			&& LUA_HudEnabled(hud_lives)
-#endif
-			)
+				ST_drawRings();
+			if (G_GametypeUsesLives() && LUA_HudEnabled(hud_lives))
 				ST_drawLives();
 		}
 	}
@@ -2202,17 +2158,11 @@ static void ST_overlayDrawer(void)
 		}
 	}
 
-#ifdef HAVE_BLUA
 	if (!(netgame || multiplayer) || !hu_showscores)
 		LUAh_GameHUD(stplyr);
-#endif
 
 	// draw level title Tails
-	if (*mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer))
-#ifdef HAVE_BLUA
-	&& LUA_HudEnabled(hud_stagetitle)
-#endif
-	)
+	if (*mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer)) && LUA_HudEnabled(hud_stagetitle))
 		ST_drawLevelTitle();
 
 	if (!hu_showscores && !splitscreen && netgame && displayplayer == consoleplayer)
@@ -2233,11 +2183,7 @@ static void ST_overlayDrawer(void)
 			else
 				V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(132), V_HUDTRANSHALF, M_GetText("Press Jump to respawn."));
 		}
-		else if (stplyr->spectator
-#ifdef HAVE_BLUA
-		&& LUA_HudEnabled(hud_textspectator)
-#endif
-		)
+		else if (stplyr->spectator && LUA_HudEnabled(hud_textspectator))
 		{
 			V_DrawCenteredString(BASEVIDWIDTH/2, STRINGY(60), V_HUDTRANSHALF, M_GetText("You are a spectator."));
 			if (G_GametypeHasTeams())

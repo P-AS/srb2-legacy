@@ -11,7 +11,6 @@
 /// \brief player object library for Lua scripting
 
 #include "doomdef.h"
-#ifdef HAVE_BLUA
 #include "fastcmp.h"
 #include "p_mobj.h"
 #include "d_player.h"
@@ -1249,5 +1248,3 @@ int LUA_PlayerLib(lua_State *L)
 	lua_setglobal(L, "players");
 	return 0;
 }
-
-#endif

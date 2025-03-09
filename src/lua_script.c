@@ -11,7 +11,6 @@
 /// \brief Lua scripting basics
 
 #include "doomdef.h"
-#ifdef HAVE_BLUA
 #include "fastcmp.h"
 #include "dehacked.h"
 #include "z_zone.h"
@@ -1102,5 +1101,3 @@ int Lua_CreateFieldTable(lua_State *L, const char *const lst[])
 
 	return luaL_ref(L, LUA_REGISTRYINDEX);
 }
-
-#endif // HAVE_BLUA
