@@ -2188,8 +2188,12 @@ Unoptimized version
 			heatindex[view] %= height;
 		}
 
-		heatindex[view]++;
-		heatindex[view] %= vid.height;
+
+		if (renderisnewtic) // This isn't interpolated... but how do you interpolate a one-pixel shift?
+		{
+			heatindex[view]++;
+			heatindex[view] %= vid.height;
+		}
 
 		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset, screens[0]+vid.width*vid.bpp*yoffset,
 				vid.width*vid.bpp, height, vid.width*vid.bpp, vid.width);
