@@ -46,7 +46,7 @@
 #include "lua_hook.h"
 #include "b_bot.h"
 #include "m_cond.h" // condition sets
-#include "md5.h" // demo checksums 
+#include "md5.h" // demo checksums
 #include "r_fps.h" // Uncapped
 
 
@@ -66,7 +66,7 @@ JoyType_t Joystick2;
 
 char gamedatafilename[512] = "gamedata.dat";
 char timeattackfolder[64] = "main";
-char savefolder[64] = "save";
+char savefolder[64] = "saves";
 char customversionstring[32] = "\0";
 
 static void G_DoCompleted(void);
@@ -5840,4 +5840,3 @@ INT32 G_TicsToMilliseconds(tic_t tics)
 {
 	return (INT32)((tics%TICRATE) * (1000.00f/TICRATE));
 }
-
