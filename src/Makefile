@@ -244,8 +244,6 @@ endif
 # debug_opts also get passed to windres
 opts+=$(debug_opts)
 
-opts+=-DHAVE_BLUA
-
 opts+=$(foreach v,$(passthru_opts),$(if $($(v)),-D$(v)))
 
 opts+=$(WFLAGS) $(CPPFLAGS) $(CFLAGS)

@@ -7,8 +7,6 @@ target_sourcefile(c)
 target_sources(SRB2SDL2 PRIVATE comptime.c md5.c config.h.in)
 
 ### Configuration
-set(SRB2_CONFIG_HAVE_BLUA ON CACHE BOOL
-	"Enable Lua interpreter support")
 set(SRB2_CONFIG_HAVE_PNG ON CACHE BOOL
 	"Enable PNG support. Depends on zlib, so will be disabled if you don't enable that too.")
 set(SRB2_CONFIG_HAVE_ZLIB ON CACHE BOOL
@@ -38,7 +36,6 @@ if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
 	"Use SRB2's internal copies of required dependencies (SDL2, PNG, zlib, GME, OpenMPT).")
 endif()
 
-add_definitions(-DHAVE_BLUA)
 add_subdirectory(blua)
 
 if(${SRB2_CONFIG_HAVE_GME})

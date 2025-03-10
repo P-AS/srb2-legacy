@@ -142,10 +142,8 @@ typedef enum
 	XD_SETMOTD,     // 19
 	XD_SUICIDE,     // 20
 	XD_DEMOTED,     // 21
-#ifdef HAVE_BLUA
 	XD_LUACMD,      // 22
 	XD_LUAVAR,      // 23
-#endif
 	MAXNETXCMD
 } netxcmd_t;
 
