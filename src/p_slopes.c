@@ -23,7 +23,7 @@
 #include "p_maputl.h"
 #include "w_wad.h"
 
-#ifdef ESLOPE
+
 
 static pslope_t *slopelist = NULL;
 static UINT16 slopecount = 0;
@@ -625,7 +625,6 @@ void P_ResetDynamicSlopes(void) {
 	size_t i;
 #ifdef ESLOPE_TYPESHIM // Rewrite old specials to new ones, and give a console warning
 	boolean warned = false;
-#endif
 
 	slopelist = NULL;
 	slopecount = 0;

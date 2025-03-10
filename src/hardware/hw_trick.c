@@ -610,10 +610,10 @@ static boolean isCeilingFloating(sector_t *thisSector)
 		if (!adjSector) // assume floating sectors have surrounding sectors
 			return false;
 
-#ifdef ESLOPE
+
 		if (adjSector->c_slope) // Don't bother with slopes
 			return false;
-#endif
+
 
 		if (!refSector)
 		{
@@ -663,10 +663,10 @@ static boolean isFloorFloating(sector_t *thisSector)
 		if (!adjSector) // assume floating sectors have surrounding sectors
 			return false;
 
-#ifdef ESLOPE
+
 		if (adjSector->f_slope) // Don't bother with slopes
 			return false;
-#endif
+
 
 		if (!refSector)
 		{
