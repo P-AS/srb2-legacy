@@ -83,11 +83,6 @@ extern INT16 ms_RoomId;
 const char *GetMasterServerPort(void);
 const char *GetMasterServerIP(void);
 
-void MSOpenUDPSocket(void);
-void MSCloseUDPSocket(void);
-
-void SendAskInfoViaMS(INT32 node, tic_t asktime);
-
 void RegisterServer(void);
 void UnregisterServer(void);
 
