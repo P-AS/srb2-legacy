@@ -79,12 +79,8 @@ enum mobj_e {
 	mobj_extravalue1,
 	mobj_extravalue2,
 	mobj_cusval,
-#ifdef ESLOPE
 	mobj_cvmem,
 	mobj_standingslope
-#else
-	mobj_cvmem
-#endif
 };
 
 static const char *const mobj_opt[] = {
@@ -144,9 +140,7 @@ static const char *const mobj_opt[] = {
 	"extravalue2",
 	"cusval",
 	"cvmem",
-#ifdef ESLOPE
 	"standingslope",
-#endif
 	NULL};
 
 static int mobj_fields_ref = LUA_NOREF;
@@ -379,11 +373,9 @@ static int mobj_get(lua_State *L)
 	case mobj_cvmem:
 		lua_pushinteger(L, mo->cvmem);
 		break;
-#ifdef ESLOPE
 	case mobj_standingslope:
 		LUA_PushUserdata(L, mo->standingslope, META_SLOPE);
 		break;
-#endif
 	default: // extra custom variables in Lua memory
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
@@ -676,10 +668,8 @@ static int mobj_set(lua_State *L)
 	case mobj_cvmem:
 		mo->cvmem = luaL_checkinteger(L, 3);
 		break;
-#ifdef ESLOPE
 	case mobj_standingslope:
 		return NOSET;
-#endif
 	default:
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
