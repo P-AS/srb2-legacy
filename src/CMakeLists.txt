@@ -25,6 +25,8 @@ set(SRB2_CONFIG_STATIC_OPENGL OFF CACHE BOOL
 	"Use statically linked OpenGL. NOT RECOMMENDED.")
 set(SRB2_CONFIG_DEDICATED OFF CACHE BOOL
 	"Build a dedicated server.")
+set(SRB2_CONFIG_DEBUGMODE ON CACHE BOOL
+	"Build a version with additional debug information.")
 
 if(${SRB2_CONFIG_DEDICATED})
 	set(SRB2_CONFIG_HAVE_GME NO)
@@ -179,6 +181,12 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
+
+if(${SRB2_CONFIG_DEBUGMODE})
+	target_compile_definitions(SRB2SDL2 PRIVATE -D_DEBUG -DPARANOIA -DRANGECHECK)
+else()
+	target_compile_definitions(SRB2SDL2 PRIVATE -DNDEBUG)
+endif()
 
 #add_library(SRB2Core STATIC
 #	${SRB2_CORE_SOURCES}
