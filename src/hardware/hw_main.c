@@ -5705,7 +5705,9 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 	if (cv_grshearing.value == 1 || (cv_grshearing.value == 2 && R_IsViewpointFirstPerson(player, skybox)))
 	{
 		fixed_t fixedaiming = AIMINGTODY(aimingangle);
-		trans->viewaiming = FIXED_TO_FLOAT(fixedaiming);
+		trans->viewaiming = FIXED_TO_FLOAT(fixedaiming) * ((float)vid.width / vid.height) / ((float)BASEVIDWIDTH / BASEVIDHEIGHT);
+		if (splitscreen)
+			trans->viewaiming *= 2.125; // splitscreen adjusts fov with 0.8, so compensate (but only halfway, since splitscreen means only half the screen is used)
 		trans->shearing = true;
 		gr_aimingangle = 0;
 	}
