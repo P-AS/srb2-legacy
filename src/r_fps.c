@@ -201,7 +201,8 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 	// (lmps, network and use F12...)
 	if (rendermode == render_soft
 #ifdef HWRENDER
-		|| cv_grshearing.value
+		|| cv_grshearing.value == 1
+		|| (cv_grshearing.value == 2 && R_IsViewpointFirstPerson(player, skybox))
 #endif
 		)
 	{
