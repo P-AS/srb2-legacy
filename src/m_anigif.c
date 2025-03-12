@@ -520,18 +520,15 @@ static void GIF_framewrite(void)
 		blitw = vid.width;
 		blith = vid.height;
 
-		if (gif_frames == 0)
-		{
-			if (rendermode == render_soft)
-				I_ReadScreen(movie_screen);
+		if (rendermode == render_soft)
+			I_ReadScreen(movie_screen);
 #ifdef HWRENDER
-			else if (rendermode == render_opengl)
-			{
-				hwrconvert();
-				VID_BlitLinearScreen(screens[2], screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-			}
-#endif
+		else if (rendermode == render_opengl)
+		{
+			hwrconvert();
+			VID_BlitLinearScreen(screens[2], screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
 		}
+#endif
 		movie_screen = screens[0];
 	}
 
