@@ -4922,8 +4922,8 @@ static ffloor_t *P_AddFakeFloor(sector_t *sec, sector_t *sec2, line_t *master, f
 
 	if (sec2->numattached == 0)
 	{
-		sec2->attached = Z_Malloc(sizeof (*sec2->attached) * sec2->maxattached, PU_STATIC, NULL);
-		sec2->attachedsolid = Z_Malloc(sizeof (*sec2->attachedsolid) * sec2->maxattached, PU_STATIC, NULL);
+		sec2->attached = Z_Malloc(sizeof (*sec2->attached) * sec2->maxattached, PU_LEVEL, NULL);
+		sec2->attachedsolid = Z_Malloc(sizeof (*sec2->attachedsolid) * sec2->maxattached, PU_LEVEL, NULL);
 		sec2->attached[0] = sec - sectors;
 		sec2->numattached = 1;
 		sec2->attachedsolid[0] = (flags & FF_SOLID);
@@ -4937,8 +4937,8 @@ static ffloor_t *P_AddFakeFloor(sector_t *sec, sector_t *sec2, line_t *master, f
 		if (sec2->numattached >= sec2->maxattached)
 		{
 			sec2->maxattached *= 2;
-			sec2->attached = Z_Realloc(sec2->attached, sizeof (*sec2->attached) * sec2->maxattached, PU_STATIC, NULL);
-			sec2->attachedsolid = Z_Realloc(sec2->attachedsolid, sizeof (*sec2->attachedsolid) * sec2->maxattached, PU_STATIC, NULL);
+			sec2->attached = Z_Realloc(sec2->attached, sizeof (*sec2->attached) * sec2->maxattached, PU_LEVEL, NULL);
+			sec2->attachedsolid = Z_Realloc(sec2->attachedsolid, sizeof (*sec2->attachedsolid) * sec2->maxattached, PU_LEVEL, NULL);
 		}
 		sec2->attached[sec2->numattached] = sec - sectors;
 		sec2->attachedsolid[sec2->numattached] = (flags & FF_SOLID);
