@@ -56,40 +56,51 @@ void M_AATreeFree(aatree_t *aatree)
 	Z_Free(aatree);
 }
 
-static aatree_node_t *M_AATreeSkew(aatree_node_t *node)
+static aatree_node_t *M_AATreeRotateRight(aatree_node_t *node)
 {
-	if (node && node->left && node->left->level == node->level)
-	{
-		// Not allowed: horizontal left-link. Reverse the
-		// horizontal link and hook the orphan back in.
-		aatree_node_t *oldleft = node->left;
-		node->left = oldleft->right;
-		oldleft->right = node;
-
-		return oldleft;
-	}
-
-	// No change needed.
-	return node;
+	aatree_node_t *newnode = node->left;
+	newnode->right = node;
+	node->left = NULL;
+	return newnode;
 }
 
-static aatree_node_t *M_AATreeSplit(aatree_node_t *node)
+static aatree_node_t *M_AATreeRotateLeft(aatree_node_t *node)
 {
-	if (node && node->right && node->right->right && node->level == node->right->right->level)
+	aatree_node_t *newnode = node->right;
+	newnode->left = node;
+	node->right = NULL;
+	return newnode;
+}
+
+static aatree_node_t *M_AATreeRebalance(aatree_node_t *node)
+{
+	if (node->right && !node->left)
 	{
-		// Not allowed: two consecutive horizontal right-links.
-		// The middle one becomes the new root at this point,
-		// with suitable adjustments below.
+		if (node->right->left && !node->right->right)
+		{
+			node->right = M_AATreeRotateRight(node->right);
+			return M_AATreeRotateLeft(node);
+		}
 
-		aatree_node_t *oldright = node->right;
-		node->right = oldright->left;
-		oldright->left = node;
-		oldright->level++;
+		if (node->right->right && !node->right->left)
+		{
+			return M_AATreeRotateLeft(node);
+		}
+	}
+	else if (node->left && !node->right)
+	{
+		if (node->left->right && !node->left->left)
+		{
+			node->left = M_AATreeRotateLeft(node->left);
+			return M_AATreeRotateRight(node);
+		}
 
-		return oldright;
+		if (node->left->left && !node->left->right)
+		{
+			return M_AATreeRotateRight(node);
+		}
 	}
 
-	// No change needed.
 	return node;
 }
 
@@ -118,8 +129,7 @@ static aatree_node_t *M_AATreeSet_Node(aatree_node_t *node, UINT32 flags, INT32 
 			else node->value = value;
 		}
 
-		node = M_AATreeSkew(node);
-		node = M_AATreeSplit(node);
+		node = M_AATreeRebalance(node);
 	}
 
 	return node;

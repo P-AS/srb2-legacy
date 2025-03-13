@@ -539,7 +539,7 @@ UINT8* R_GetTranslationColormap(INT32 skinnum, skincolors_t color, UINT8 flags)
 	// Generate the colormap if necessary
 	if (!ret)
 	{
-		ret = Z_MallocAlign(NUM_PALETTE_ENTRIES, (flags & GTC_CACHE) ? PU_LEVEL : PU_STATIC, NULL, 8);
+		ret = Z_Malloc(NUM_PALETTE_ENTRIES, (flags & GTC_CACHE) ? PU_LEVEL : PU_STATIC, NULL);
 		R_GenerateTranslationColormap(ret, skinnum, color);
 
 		// Cache the colormap if desired

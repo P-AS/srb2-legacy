@@ -5142,6 +5142,8 @@ static void M_DrawLoadGameData(void)
 	{
 		UINT8 *colormap = R_GetTranslationColormap(savegameinfo[saveSlotSelected].skinnum, savegameinfo[saveSlotSelected].skincolor, 0);
 		V_DrawMappedPatch(SP_LoadDef.x,144+8,0,W_CachePatchName(skins[savegameinfo[saveSlotSelected].skinnum].face, PU_CACHE), colormap);
+
+		Z_Free(colormap);
 	}
 
 	V_DrawString(ecks + 12, 152, 0, savegameinfo[saveSlotSelected].playername);
