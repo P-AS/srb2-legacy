@@ -104,6 +104,14 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 #endif
 
+#if (defined (__unix__) && !defined (_MSDOS)) || (defined (UNIXCOMMON) && !defined(__APPLE__))
+#include <errno.h>
+#include <sys/wait.h>
+#ifndef __HAIKU__ // haiku's crash dialog is just objectively better
+#define NEWSIGNALHANDLER
+#endif
+#endif
+
 #ifndef NOMUMBLE
 #ifdef __linux__ // need -lrt
 #include <sys/mman.h>
@@ -133,7 +141,17 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <errno.h>
 #endif
 
-// Locations for searching the srb2.srb
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#ifndef NOEXECINFO
+#include <execinfo.h>
+#endif
+#include <time.h>
+#define UNIXBACKTRACE
+#endif
+
+
+ 
+// Locations for searching the srb2.srb 
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2legacy"
 #define DEFAULTWADLOCATION2 "/usr/local/games/SRB2legacy"
@@ -241,13 +259,91 @@ SDL_bool framebuffer = SDL_FALSE;
 
 UINT8 keyboard_started = false;
 
-FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
+#ifdef UNIXBACKTRACE
+
+static void bt_write_file(int fd, const char *string) {
+	ssize_t written = 0;
+	ssize_t sourcelen = strlen(string);
+
+	while (fd != -1 && (written != -1 && errno != EINTR) && written < sourcelen)
+		written = write(fd, string, sourcelen);
+}
+
+static void bt_write_stderr(const char *string) {
+	bt_write_file(STDERR_FILENO, string);
+}
+
+static void bt_write_all(int fd, const char *string) {
+	bt_write_file(fd, string);
+	bt_write_file(STDERR_FILENO, string);
+}
+
+static void write_backtrace(INT32 signal)
+{
+	int fd = -1;
+	time_t rawtime;
+	struct tm timeinfo;
+	size_t bt_size;
+
+	enum { BT_SIZE = 1024, STR_SIZE = 32 };
+	void *funcptrs[BT_SIZE];
+	char timestr[STR_SIZE];
+
+	const char *filename = va("%s" PATHSEP "%s", srb2home, "crash-log.txt");
+
+	fd = open(filename, O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
+
+	if (fd == -1) // File handle error
+		bt_write_stderr("\nWARNING: Couldn't open crash log for writing! Make sure your permissions are correct. Please save the below report!\n");
+
+	// Get the current time as a string.
+	time(&rawtime);
+	localtime_r(&rawtime, &timeinfo);
+	strftime(timestr, STR_SIZE, "%a, %d %b %Y %T %z", &timeinfo);
+
+	bt_write_file(fd, "------------------------\n"); // Nice looking seperator
+
+	bt_write_all(fd, "\n"); // Newline to look nice for both outputs.
+	bt_write_all(fd, "An error occurred within SRB2! Send this stack trace to someone who can help!\n");
+
+	if (fd != -1) // If the crash log exists,
+		bt_write_stderr("(Or find crash-log.txt in your SRB2 directory.)\n"); // tell the user where the crash log is.
+
+	// Tell the log when we crashed.
+	bt_write_file(fd, "Time of crash: ");
+	bt_write_file(fd, timestr);
+	bt_write_file(fd, "\n");
+
+	// Give the crash log the cause and a nice 'Backtrace:' thing
+	// The signal is given to the user when the parent process sees we crashed.
+	bt_write_file(fd, "Cause: ");
+	bt_write_file(fd, strsignal(signal));
+	bt_write_file(fd, "\n"); // Newline for the signal name
+
+	bt_write_all(fd, "\nBacktrace:\n");
+
+	// Flood the output and log with the backtrace
+	bt_size = backtrace(funcptrs, BT_SIZE);
+	backtrace_symbols_fd(funcptrs, bt_size, fd);
+	backtrace_symbols_fd(funcptrs, bt_size, STDERR_FILENO);
+
+	bt_write_file(fd, "\n"); // Write another newline to the log so it looks nice :)
+
+	if (fd != -1) {
+		fsync(fd); // reaaaaally make sure we got that data written.
+		close(fd);
+	}
+}
+
+#endif // UNIXBACKTRACE
+
+
+
+static void I_ReportSignal(int num, int coredumped)
 {
 	//static char msg[] = "oh no! back to reality!\r\n";
 	const char *      sigmsg;
-	char        sigdef[32];
-
-	D_QuitNetGame(); // Fix server freezes
+	char msg[128];
 
 	switch (num)
 	{
@@ -273,21 +369,45 @@ FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
 		sigmsg = "SIGABRT - abnormal termination triggered by abort call";
 		break;
 	default:
-		sprintf(sigdef,"signal number %d", num);
-		sigmsg = sigdef;
+		sprintf(msg,"signal number %d", num);
+		if (coredumped)
+			sigmsg = 0;
+		else
+			sigmsg = msg;
 	}
 
-	I_OutputMsg("\nsignal_handler() error: %s\n", sigmsg);
+	if (coredumped)
+	{
+		if (sigmsg)
+			sprintf(msg, "%s (core dumped)", sigmsg);
+		else
+			strcat(msg, " (core dumped)");
+
+		sigmsg = msg;
+	}
+
+	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
 
 	if (!M_CheckParm("-dedicated"))
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-			"Signal caught",
+			"Process killed by signal",
 			sigmsg, NULL);
+}
+
+#ifndef NEWSIGNALHANDLER
+FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
+{
+	D_QuitNetGame(); // Fix server freezes
+#ifdef UNIXBACKTRACE
+	write_backtrace(num);
+#endif
+	I_ReportSignal(num, 0);
 	I_ShutdownSystem();
 	signal(num, SIG_DFL);               //default signal action
 	raise(num);
 	I_Quit();
 }
+#endif
 
 FUNCNORETURN static ATTRNORETURN void quit_handler(int num)
 {
@@ -672,7 +792,7 @@ static inline void I_ShutdownConsole(void){}
 //
 // StartupKeyboard
 //
-void I_StartupKeyboard (void)
+void I_RegisterSignals (void)
 {
 #ifdef SIGINT
 	signal(SIGINT , quit_handler);
@@ -686,11 +806,35 @@ void I_StartupKeyboard (void)
 
 	// If these defines don't exist,
 	// then compilation would have failed above us...
+#ifndef NEWSIGNALHANDLER
 	signal(SIGILL , signal_handler);
 	signal(SIGSEGV , signal_handler);
 	signal(SIGABRT , signal_handler);
 	signal(SIGFPE , signal_handler);
+#endif
 }
+
+#ifdef NEWSIGNALHANDLER
+static void signal_handler_child(INT32 num)
+{
+#ifdef UNIXBACKTRACE
+	write_backtrace(num);
+#endif
+
+	signal(num, SIG_DFL);               //default signal action
+	raise(num);
+}
+
+static void I_RegisterChildSignals(void)
+{
+	// If these defines don't exist,
+	// then compilation would have failed above us...
+	signal(SIGILL , signal_handler_child);
+	signal(SIGSEGV , signal_handler_child);
+	signal(SIGABRT , signal_handler_child);
+	signal(SIGFPE , signal_handler_child);
+}
+#endif
 
 //
 //I_OutputMsg
@@ -2182,6 +2326,86 @@ void I_SleepDuration(precise_t duration)
 
 
 
+#ifdef NEWSIGNALHANDLER
+static void newsignalhandler_Warn(const char *pr)
+{
+	char text[128];
+
+	snprintf(text, sizeof text,
+			"Error while setting up signal reporting: %s: %s",
+			pr,
+			strerror(errno)
+	);
+
+	I_OutputMsg("%s\n", text);
+
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+		"Startup error",
+		text, NULL);
+
+	I_ShutdownConsole();
+	exit(-1);
+}
+
+static void I_Fork(void)
+{
+	int child;
+	int status;
+	int signum;
+	int c;
+
+	child = fork();
+
+	switch (child)
+	{
+		case -1:
+			newsignalhandler_Warn("fork()");
+			break;
+		case 0:
+			I_RegisterChildSignals();
+			break;
+		default:
+			if (logstream)
+				fclose(logstream);/* the child has this */
+
+			c = wait(&status);
+
+#ifdef LOGMESSAGES
+			/* By the way, exit closes files. */
+			logstream = fopen(logfilename, "at");
+#else
+			logstream = 0;
+#endif
+
+			if (c == -1)
+			{
+				kill(child, SIGKILL);
+				newsignalhandler_Warn("wait()");
+			}
+			else
+			{
+				if (WIFSIGNALED (status))
+				{
+					signum = WTERMSIG (status);
+#ifdef WCOREDUMP
+					I_ReportSignal(signum, WCOREDUMP (status));
+#else
+					I_ReportSignal(signum, 0);
+#endif
+					status = 128 + signum;
+				}
+				else if (WIFEXITED (status))
+				{
+					status = WEXITSTATUS (status);
+				}
+
+				I_ShutdownConsole();
+				exit(status);
+			}
+	}
+}
+#endif/*NEWSIGNALHANDLER*/
+
 INT32 I_StartupSystem(void)
 {
 	SDL_version SDLcompiled;
@@ -2189,6 +2413,13 @@ INT32 I_StartupSystem(void)
 	SDL_VERSION(&SDLcompiled)
 	SDL_GetVersion(&SDLlinked);
 	I_StartupConsole();
+#ifdef NEWSIGNALHANDLER
+	// This is useful when debugging. It lets GDB attach to
+	// the correct process easily.
+	if (!M_CheckParm("-nofork"))
+		I_Fork();
+#endif
+	I_RegisterSignals();
 	I_OutputMsg("Compiled for SDL version: %d.%d.%d\n",
 	 SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
@@ -2212,7 +2443,6 @@ void I_Quit(void)
 	if (quiting) goto death;
 	SDLforceUngrabMouse();
 	quiting = SDL_FALSE;
-	I_ShutdownConsole();
 	M_SaveConfig(NULL); //save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
@@ -2331,8 +2561,6 @@ void I_Error(const char *error, ...)
 	I_OutputMsg("\nI_Error(): %s\n", buffer);
 	// ---
 
-	I_ShutdownConsole();
-
 	M_SaveConfig(NULL); // save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
@@ -2432,6 +2660,12 @@ void I_RemoveExitFunc(void (*func)())
 void I_ShutdownSystem(void)
 {
 	INT32 c;
+
+#ifndef NEWSIGNALHANDLER
+	if (M_CheckParm("-nofork"))
+#endif
+		I_ShutdownConsole();
+
 
 	for (c = MAX_QUIT_FUNCS-1; c >= 0; c--)
 		if (quit_funcs[c])

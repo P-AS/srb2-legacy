@@ -35,6 +35,7 @@
 
 #ifdef LOGMESSAGES
 FILE *logstream = NULL;
+char  logfilename[1024];
 #endif
 
 #ifndef DOXYGEN
@@ -78,28 +79,29 @@ int main(int argc, char **argv)
 #ifdef LOGMESSAGES
 	if (!M_CheckParm("-nolog"))
 	{
-		logdir = D_Home();
 		time_t my_time;
 		struct tm * timeinfo;
 		char buf[26];
+		logdir = D_Home();
 		my_time = time(NULL);
 		timeinfo = localtime(&my_time);
 		strftime(buf, 26, "%Y-%m-%d %H-%M-%S", timeinfo);
-		strcpy(logfile, va("log-%s.txt", buf));
+		strcpy(logfilename, va("log-%s.txt", buf));
 #ifdef DEFAULTDIR
 		if (logdir)
 		{
 			// Create dirs here because D_SRB2Main() is too late.
 			I_mkdir(va("%s%s"DEFAULTDIR, logdir, PATHSEP), 0755);
 			I_mkdir(va("%s%s"DEFAULTDIR"%slogs",logdir, PATHSEP, PATHSEP), 0755);
-			logstream = fopen(va("%s%s"DEFAULTDIR"%slogs%s%s",logdir, PATHSEP, PATHSEP, PATHSEP, logfile), "wt");
+			strcpy(logfilename, va("%s%s"DEFAULTDIR"%slogs%s%s",logdir, PATHSEP, PATHSEP, PATHSEP, logfilename));
 		}
 		else
 #endif
 		{
 			I_mkdir("."PATHSEP"logs"PATHSEP, 0755);
-			logstream = fopen(va("."PATHSEP"logs"PATHSEP"%s", logfile), "wt");
+			strcpy(logfilename, va("."PATHSEP"logs"PATHSEP"%s", logfilename));
 		}
+		logstream = fopen(logfilename, "wt");
 #endif
 	}
 	//I_OutputMsg("I_StartupSystem() ...\n");
@@ -113,8 +115,11 @@ int main(int argc, char **argv)
 	// startup SRB2
 	CONS_Printf("Setting up SRB2...\n");
 	D_SRB2Main();
+#ifdef LOGMESSAGES
+	if (!M_CheckParm("-nolog"))
+		CONS_Printf("Logfile: %s\n", logfilename);
+#endif
 	CONS_Printf("Entering main game loop...\n");
-	CONS_Printf("%s\n", logfile);
 	// never return
 	D_SRB2Loop();
 
