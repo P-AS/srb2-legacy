@@ -3812,12 +3812,18 @@ FILESTAMP
 			/// \todo Use a separate cvar for that kind of timeout?
 			freezetimeout[node] = I_GetTime() + connectiontimeout;
 
+			// If we've alredy received a ticcmd for this tic, just submit it for the next one.
+			tic_t faketic = maketic;
+			if ((!!(netcmds[maketic % BACKUPTICS][netconsole].angleturn & TICCMD_RECEIVED))
+				&& (maketic - firstticstosend < BACKUPTICS))
+				faketic++;
+
 			// Copy ticcmd
-			G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][netconsole], &netbuffer->u.clientpak.cmd, 1);
+			G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][netconsole], &netbuffer->u.clientpak.cmd, 1);
 
 			// Check ticcmd for "speed hacks"
-			if (netcmds[maketic%BACKUPTICS][netconsole].forwardmove > MAXPLMOVE || netcmds[maketic%BACKUPTICS][netconsole].forwardmove < -MAXPLMOVE
-				|| netcmds[maketic%BACKUPTICS][netconsole].sidemove > MAXPLMOVE || netcmds[maketic%BACKUPTICS][netconsole].sidemove < -MAXPLMOVE)
+			if (netcmds[faketic%BACKUPTICS][netconsole].forwardmove > MAXPLMOVE || netcmds[faketic%BACKUPTICS][netconsole].forwardmove < -MAXPLMOVE
+				|| netcmds[faketic%BACKUPTICS][netconsole].sidemove > MAXPLMOVE || netcmds[faketic%BACKUPTICS][netconsole].sidemove < -MAXPLMOVE)
 			{
 				XBOXSTATIC char buf[2];
 				CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), netconsole);
@@ -3832,7 +3838,7 @@ FILESTAMP
 			// Splitscreen cmd
 			if ((netbuffer->packettype == PT_CLIENT2CMD || netbuffer->packettype == PT_CLIENT2MIS)
 				&& nodetoplayer2[node] >= 0)
-				G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][(UINT8)nodetoplayer2[node]],
+				G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][(UINT8)nodetoplayer2[node]],
 					&netbuffer->u.client2pak.cmd2, 1);
 
 			// A delay before we check resynching
