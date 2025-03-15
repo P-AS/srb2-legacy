@@ -23,7 +23,7 @@ set(SRB2_CONFIG_STATIC_OPENGL OFF CACHE BOOL
 	"Use statically linked OpenGL. NOT RECOMMENDED.")
 set(SRB2_CONFIG_DEDICATED OFF CACHE BOOL
 	"Build a dedicated server.")
-set(SRB2_CONFIG_DEBUGMODE ON CACHE BOOL
+set(SRB2_CONFIG_DEBUGMODE OFF CACHE BOOL
 	"Build a version with additional debug information.")
 
 if(${SRB2_CONFIG_DEDICATED})
