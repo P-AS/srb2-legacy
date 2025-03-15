@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- Copyright 2020 Flathub maintainers -->
 <component type="desktop-application">
-  <id>org.srb2.srb2-legacy</id>
+  <id>io.github.PAS.srb2-legacy</id>
   <metadata_license>FSFAP</metadata_license>
   <project_license>GPL-2.0+</project_license>
   <name>Sonic Robo Blast 2 Legacy</name>
@@ -13,29 +13,29 @@
       improvements seen in 2.2.
     </p>
   </description>
-  <launchable type="desktop-id">org.srb2.srb2-legacy.desktop</launchable>
+  <launchable type="desktop-id">io.github.PAS.srb2-legacy.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image>https://git.do.srb2.org/PAS/srb2-legacy/-/wikis/uploads/03ba436b7831eff418aa189773a17929/srb20001.png</image>
+      <image>https://github.com/user-attachments/assets/8eb891b7-47d6-4d02-8daa-1f639a5ef870</image>
       <caption>Title screen</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.do.srb2.org/PAS/srb2-legacy/-/wikis/uploads/81349ccd6c3791e1fde9f9862ccc10b1/srb20002.png</image>
+      <image>https://github.com/user-attachments/assets/f5e16e84-8b30-4488-87d7-13eede5acd08</image>
       <caption>Sonic in Greenflower Zone Act 1</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.do.srb2.org/PAS/srb2-legacy/-/wikis/uploads/609f8f70358dc2e1ef012ea92644d25c/srb20004.png</image>
+      <image>https://github.com/user-attachments/assets/a3f38e1a-61ae-4177-aaff-a2a65cc854d7</image>
       <caption>Tails in Castle Eggman Zone Act 2</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.do.srb2.org/PAS/srb2-legacy/-/wikis/uploads/f63b62e4bdc0f41e20161dcdce30d067/srb20008.png</image>
+      <image>https://github.com/user-attachments/assets/3702c307-023d-4a02-bf5f-8ab7769c9c6b</image>
       <caption>Knuckles in Arid Canyon Zone Act 1</caption>
     </screenshot>
   </screenshots>
   <url type="homepage">https://github.com/P-AS/srb2-legacy</url>
   <url type="bugtracker">https://github.com/P-AS/srb2-legacy/issues</url>
-  <url type="vcs-browser">https://git.do.srb2.org/PAS/srb2-legacy</url>
-  <developer id="org.srb2">
+  <url type="vcs-browser">https://github.com/P-AS/srb2-legacy</url>
+  <developer id="io.github.PAS">
     <name>SRB2 Legacy Contributors</name>
   </developer>
   <provides>
