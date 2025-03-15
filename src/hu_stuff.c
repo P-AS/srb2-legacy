@@ -1546,7 +1546,7 @@ static void HU_drawChatLog(INT32 offset)
 	{
 		INT32 clrflag = 0;
 		INT32 j = 0;
-		const char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_log[i]); // get the current message, and word wrap it.
+		char *msg = CHAT_WordWrap(x+2, boxw-(charwidth*2), V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_log[i]); // get the current message, and word wrap it.
 		UINT8 *colormap = NULL;
 		while(msg[j]) // iterate through msg
 		{
@@ -1586,6 +1586,7 @@ static void HU_drawChatLog(INT32 offset)
 		}
 		dy += charheight;
 		dx = 0;
+		Z_Free(msg);
 	}
 
 
