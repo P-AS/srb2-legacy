@@ -747,7 +747,15 @@ static void Command_Memdump_f(void)
   * \param s The string to be copied.
   * \return A copy of the string, allocated in zone memory.
   */
+#ifdef ZDEBUG
+char *Z_StrDup2(const char *s, const char *file, INT32 line)
+#else
 char *Z_StrDup(const char *s)
+#endif
 {
+#ifdef ZDEBUG
+	return strcpy(Z_Malloc2(strlen(s) + 1, PU_STATIC, NULL, 0, file, line), s);
+#else
 	return strcpy(ZZ_Alloc(strlen(s) + 1), s);
+#endif
 }

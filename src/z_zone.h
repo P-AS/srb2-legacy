@@ -143,7 +143,12 @@ size_t Z_TagsUsage(INT32 lowtag, INT32 hightag);
 //
 // Miscellaneous functions
 //
-char *Z_StrDup(const char *in);
+#ifdef ZDEBUG
+#define Z_StrDup(s) Z_StrDup2(s, __FILE__, __LINE__)
+char *Z_StrDup2(const char *s, const char *file, INT32 line);
+#else
+char *Z_StrDup(const char *s);
+#endif
 #define Z_Unlock(p) (void)p // TODO: remove this now that NDS code has been removed
 
 #endif

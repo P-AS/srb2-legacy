@@ -529,7 +529,7 @@ void M_FirstLoadConfig(void)
 void M_SaveConfig(const char *filename)
 {
 	FILE *f;
-	char *filepath;
+	const char *filepath;
 
 	// make sure not to write back the config until it's been correctly loaded
 	if (!gameconfig_loaded)
@@ -549,7 +549,7 @@ void M_SaveConfig(const char *filename)
 		if (!strstr(filename, srb2home))
 			filepath = va(pandf,srb2home, filename);
 		else
-			filepath = Z_StrDup(filename);
+			filepath = filename;
 
 		f = fopen(filepath, "w");
 		// change it only if valid
