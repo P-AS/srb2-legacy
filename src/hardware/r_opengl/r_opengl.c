@@ -1088,6 +1088,11 @@ EXPORT void HWRAPI(LoadCustomShader) (int number, char *code, size_t size, boole
 EXPORT void HWRAPI(SetShader) (int shader)
 {
 #ifdef GL_SHADERS
+	if (shader == -1)
+	{
+		UnSetShader();
+		return;
+	}	
 	if (gl_allowshaders)
 	{
 		// If using model lighting, set the appropriate shader.
