@@ -144,6 +144,7 @@ typedef struct
 // Predefined shader types
 enum
 {
+	SHADER_NONE = -1,
 	SHADER_DEFAULT = 0,
 
 	SHADER_FLOOR,

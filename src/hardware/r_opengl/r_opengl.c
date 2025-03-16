@@ -1088,7 +1088,7 @@ EXPORT void HWRAPI(LoadCustomShader) (int number, char *code, size_t size, boole
 EXPORT void HWRAPI(SetShader) (int shader)
 {
 #ifdef GL_SHADERS
-	if (shader == -1)
+	if (shader == SHADER_NONE)
 	{
 		UnSetShader();
 		return;

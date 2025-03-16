@@ -3662,7 +3662,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	pslope_t *floorslope;
 	fixed_t slopez;
 	FBITFIELD blendmode = PF_Translucent|PF_Modulated|PF_Clip;
-	INT32 shader = -1;
+	INT32 shader = SHADER_DEFAULT;
 
 	R_GetShadowZ(spr->mobj, &floorslope);
 
@@ -3852,7 +3852,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 		sSurf.PolyColor.s.alpha = (UINT8)(sSurf.PolyColor.s.alpha - floorheight/4);
 		if (HWR_UseShader())
 		{
-			shader = -1;
+			shader = SHADER_NONE;
 			blendmode |= PF_ColorMapped;
 		}	
 		HWR_ProcessPolygon(&sSurf, swallVerts, 4, blendmode, shader, false);
