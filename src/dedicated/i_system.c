@@ -110,10 +110,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define O_BINARY 0
 #endif
 
-#ifdef __APPLE__
-#include "mac_resources.h"
-#endif
-
 #ifndef errno
 #include <errno.h>
 #endif
@@ -1968,8 +1964,7 @@ boolean I_InitNetwork(void)
 }
 
 #ifdef __APPLE__
-// from src/sdl/macosx/mac_resources.c
-#include <string.h>
+// formerly from src/sdl/macosx/mac_resources.c
 #include <CoreFoundation/CoreFoundation.h>
 
 void OSX_GetResourcesPath(char * buffer)
