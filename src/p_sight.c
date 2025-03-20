@@ -37,45 +37,12 @@ static INT32 sightcounts[2];
 //
 // Returns side 0 (front), 1 (back), or 2 (on).
 //
-static INT32 P_DivlineSide(fixed_t x, fixed_t y, divline_t *node)
+FUNCMATH FUNCINLINE static ATTRINLINE INT32 P_DivlineSide(fixed_t x, fixed_t y, divline_t *node)
 {
-	fixed_t dx, dy, left, right;
-
-	if (!node->dx)
-	{
-		if (x == node->x)
-			return 2;
-
-		if (x <= node->x)
-			return (node->dy > 0);
-
-		return (node->dy < 0);
-	}
-
-	if (!node->dy)
-	{
-		if (y == node->y)
-			return 2;
-
-		if (y <= node->y)
-			return (node->dx < 0);
-
-		return (node->dx > 0);
-	}
-
-	dx = x - node->x;
-	dy = y - node->y;
-
-	left = (node->dy>>FRACBITS) * (dx>>FRACBITS);
-	right = (dy>>FRACBITS) * (node->dx>>FRACBITS);
-
-	if (right < left)
-		return 0; // front side
-
-	if (left == right)
+	INT64 v = ((INT64)y - node->y) * node->dx - ((INT64)x - node->x) * node->dy;
+	if (v == 0)
 		return 2;
-
-	return 1; // back side
+	return v > 0;
 }
 
 //
