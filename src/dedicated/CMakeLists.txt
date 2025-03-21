@@ -10,12 +10,6 @@ if(${CMAKE_SYSTEM} MATCHES Windows)
 		../win32/Srb2win.rc)
 endif()
 
-if(${CMAKE_SYSTEM} MATCHES Darwin)
-	set(MACOSX_BUNDLE_ICON_FILE Srb2mac.icns)
-	set_source_files_properties(../sdl/macosx/Srb2mac.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-	target_sources(SRB2SDL2 PRIVATE ../sdl/macosx/Srb2mac.icns)
-endif()
-
 if(${CMAKE_SYSTEM} MATCHES Windows)
 	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacy)
 elseif(${CMAKE_SYSTEM} MATCHES Linux)

@@ -133,6 +133,10 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define O_BINARY 0
 #endif
 
+#ifdef __APPLE__
+#include "macosx/mac_resources.h"
+#endif
+
 #ifndef errno
 #include <errno.h>
 #endif
@@ -146,8 +150,8 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 
 
-
-// Locations for searching the srb2.srb
+ 
+// Locations for searching the srb2.srb 
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2legacy"
 #define DEFAULTWADLOCATION2 "/usr/local/games/SRB2legacy"
@@ -188,8 +192,12 @@ static char returnWadPath[256];
 
 #include "../i_joy.h"
 
-#include "../m_argv.h"
+#include "../m_argv.h" 
 #include "../r_main.h" // Uncapped
+
+#ifdef MAC_ALERT
+#include "macosx/mac_alert.h"
+#endif
 
 #include "../d_main.h"
 
@@ -3193,42 +3201,4 @@ size_t I_GetFreeMem(size_t *total)
 
 // note CPUAFFINITY code used to reside here
 void I_RegisterSysCommands(void) {}
-#endif
-
-#ifdef __APPLE__
-// formerly from src/sdl/macosx/mac_resources.c
-#include <CoreFoundation/CoreFoundation.h>
-
-void OSX_GetResourcesPath(char * buffer)
-{
-    CFBundleRef mainBundle;
-    mainBundle = CFBundleGetMainBundle();
-    if (mainBundle)
-    {
-        const int BUF_SIZE = 256; // because we somehow always know that
-
-        CFURLRef appUrlRef = CFBundleCopyBundleURL(mainBundle);
-        CFStringRef macPath;
-        if (appUrlRef != NULL)
-            macPath = CFURLCopyFileSystemPath(appUrlRef, kCFURLPOSIXPathStyle);
-        else
-            macPath = NULL;
-
-        const char* rawPath;
-
-        if (macPath != NULL)
-            rawPath = CFStringGetCStringPtr(macPath, kCFStringEncodingASCII);
-        else
-            rawPath = NULL;
-
-        if (rawPath != NULL && (CFStringGetLength(macPath) + strlen("/Contents/Resources") < BUF_SIZE))
-        {
-            strcpy(buffer, rawPath);
-            strcat(buffer, "/Contents/Resources");
-        }
-
-        CFRelease(macPath);
-        CFRelease(appUrlRef);
-    }
-}
 #endif

@@ -304,8 +304,6 @@ const char *I_ClipboardPaste(void);
 
 void I_RegisterSysCommands(void);
 
-// formerly from src/sdl/macosx/mac_resources.h
-#ifdef __APPLE__
-void OSX_GetResourcesPath(char * buffer);
-#endif
+
+
 #endif
