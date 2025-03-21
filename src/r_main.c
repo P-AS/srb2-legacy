@@ -131,6 +131,26 @@ lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 size_t num_extra_colormaps;
 extracolormap_t extra_colormaps[MAXCOLORMAPS];
 
+// Render stats
+precise_t ps_prevframetime = 0;
+ps_metric_t ps_rendercalltime = {0};
+ps_metric_t ps_otherrendertime = {0};
+ps_metric_t ps_uitime = {0};
+ps_metric_t ps_swaptime = {0};
+
+ps_metric_t ps_skyboxtime = {0};
+ps_metric_t ps_bsptime = {0};
+
+ps_metric_t ps_sw_spritecliptime = {0};
+ps_metric_t ps_sw_portaltime = {0};
+ps_metric_t ps_sw_planetime = {0};
+ps_metric_t ps_sw_maskedtime = {0};
+
+ps_metric_t ps_numbspcalls = {0};
+ps_metric_t ps_numsprites = {0};
+ps_metric_t ps_numdrawnodes = {0};
+ps_metric_t ps_numpolyobjects = {0};
+
 static CV_PossibleValue_t drawdist_cons_t[] = {
 	{256, "256"},	{512, "512"},	{768, "768"},
 	{1024, "1024"},	{1536, "1536"},	{2048, "2048"},
@@ -1323,6 +1343,7 @@ void R_RenderPlayerView(player_t *player)
 	portalrender = 0;
 	portal_base = portal_cap = NULL;
 
+	PS_START_TIMING(ps_skyboxtime);
 	if (skybox && skyVisible)
 	{
 		R_SkyboxFrame(player);
@@ -1343,6 +1364,7 @@ void R_RenderPlayerView(player_t *player)
 #endif
 		R_DrawMasked();
 	}
+	PS_STOP_TIMING(ps_skyboxtime);
 
 	R_SetupFrame(player, skybox);
 	skyVisible = false;
@@ -1368,8 +1390,14 @@ void R_RenderPlayerView(player_t *player)
 	mytotal = 0;
 	ProfZeroTimer();
 #endif
+	ps_numbspcalls.value.i = ps_numpolyobjects.value.i = ps_numdrawnodes.value.i = 0;
+	PS_START_TIMING(ps_bsptime);
 	R_RenderBSPNode((INT32)numnodes - 1);
+	PS_STOP_TIMING(ps_bsptime);
+	ps_numsprites.value.i = visspritecount;
+	PS_START_TIMING(ps_sw_spritecliptime);
 	R_ClipSprites();
+	PS_STOP_TIMING(ps_sw_spritecliptime);
 #ifdef TIMING
 	RDMSR(0x10, &mycount);
 	mytotal += mycount; // 64bit add
@@ -1382,6 +1410,7 @@ void R_RenderPlayerView(player_t *player)
 
 
 	// PORTAL RENDERING
+	PS_START_TIMING(ps_sw_portaltime);
 	for(portal = portal_base; portal; portal = portal_base)
 	{
 		// render the portal
@@ -1409,15 +1438,20 @@ void R_RenderPlayerView(player_t *player)
 		Z_Free(portal->frontscale);
 		Z_Free(portal);
 	}
+	PS_STOP_TIMING(ps_sw_portaltime);
 	// END PORTAL RENDERING
 
+	PS_START_TIMING(ps_sw_planetime);
 	R_DrawPlanes();
+	PS_STOP_TIMING(ps_sw_planetime);
 #ifdef FLOORSPLATS
 	R_DrawVisibleFloorSplats();
 #endif
 	// draw mid texture and sprite
 	// And now 3D floors/sides!
+	PS_START_TIMING(ps_sw_maskedtime);
 	R_DrawMasked();
+	PS_STOP_TIMING(ps_sw_maskedtime);
 
 	// Check for new console commands.
 	NetUpdate();

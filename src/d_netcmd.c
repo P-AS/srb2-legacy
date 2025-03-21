@@ -48,6 +48,7 @@
 #include "m_cond.h"
 #include "m_anigif.h"
 #include "md5.h"
+#include "m_perfstats.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -373,6 +374,16 @@ consvar_t cv_mute = {"mute", "Off", CV_NETVAR|CV_CALL, CV_OnOff, Mute_OnChange, 
 
 consvar_t cv_sleep = {"cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL, -1, NULL, NULL, 0, 0, NULL};
 consvar_t cv_freedemocamera = {"freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL};
+
+static CV_PossibleValue_t perfstats_cons_t[] = {
+	{0, "Off"}, {1, "Rendering"}, {2, "Logic"}, {3, "ThinkFrame"}, {0, NULL}};
+consvar_t cv_perfstats = {"perfstats", "Off", CV_CALL, perfstats_cons_t, PS_PerfStats_OnChange, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t ps_samplesize_cons_t[] = {
+	{1, "MIN"}, {1000, "MAX"}, {0, NULL}};
+consvar_t cv_ps_samplesize = {"ps_samplesize", "1", CV_CALL, ps_samplesize_cons_t, PS_SampleSize_OnChange, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t ps_descriptor_cons_t[] = {
+	{1, "Average"}, {2, "SD"}, {3, "Minimum"}, {4, "Maximum"}, {0, NULL}};
+consvar_t cv_ps_descriptor = {"ps_descriptor", "Average", 0, ps_descriptor_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 // Netplay Compatibility with 2.1.25
 #ifndef NONET
@@ -792,6 +803,10 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_height);
 
 	CV_RegisterVar(&cv_soundtest);
+
+	CV_RegisterVar(&cv_perfstats);
+	CV_RegisterVar(&cv_ps_samplesize);
+	CV_RegisterVar(&cv_ps_descriptor);
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);

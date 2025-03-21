@@ -26,6 +26,7 @@
 #include "../am_map.h"
 #include "../d_player.h"
 #include "../r_defs.h"
+#include "../m_perfstats.h"
 
 // Startup & Shutdown the hardware mode renderer
 void HWR_Startup(void);
@@ -120,6 +121,23 @@ extern float gr_viewwindowx, gr_basewindowcentery;
 // BP: big hack for a test in lighting ref : 1249753487AB
 extern fixed_t *hwbbox;
 extern FTransform atransform;
+
+// Render stats
+extern ps_metric_t ps_hw_nodesorttime;
+extern ps_metric_t ps_hw_nodedrawtime;
+extern ps_metric_t ps_hw_spritesorttime;
+extern ps_metric_t ps_hw_spritedrawtime;
+
+// Render stats for batching
+extern ps_metric_t ps_hw_numpolys;
+extern ps_metric_t ps_hw_numverts;
+extern ps_metric_t ps_hw_numcalls;
+extern ps_metric_t ps_hw_numshaders;
+extern ps_metric_t ps_hw_numtextures;
+extern ps_metric_t ps_hw_numpolyflags;
+extern ps_metric_t ps_hw_numcolors;
+extern ps_metric_t ps_hw_batchsorttime;
+extern ps_metric_t ps_hw_batchdrawtime;
 
 //bye bye floorinfo
 

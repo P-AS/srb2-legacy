@@ -169,6 +169,8 @@ typedef struct vissprite_s
 	fixed_t thingscale;
 } vissprite_t;
 
+extern UINT32 visspritecount;
+
 // A drawnode is something that points to a 3D floor, 3D side, or masked
 // middle texture. This is used for sorting with sprites.
 typedef struct drawnode_s

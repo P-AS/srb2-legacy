@@ -16,6 +16,7 @@
 
 #include "d_player.h"
 #include "r_data.h"
+#include "m_perfstats.h"
 
 //
 // POV related.
@@ -96,6 +97,28 @@ subsector_t *R_OldPointInSubsector(fixed_t x, fixed_t y);
 subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y);
 
 boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixed_t bottomh, fixed_t toph);
+
+// Render stats
+
+extern precise_t ps_prevframetime;// time when previous frame was rendered
+extern ps_metric_t ps_rendercalltime;
+extern ps_metric_t ps_otherrendertime;
+extern ps_metric_t ps_uitime;
+extern ps_metric_t ps_swaptime;
+
+extern ps_metric_t ps_skyboxtime;
+extern ps_metric_t ps_bsptime;
+
+extern ps_metric_t ps_sw_spritecliptime;
+extern ps_metric_t ps_sw_portaltime;
+extern ps_metric_t ps_sw_planetime;
+extern ps_metric_t ps_sw_maskedtime;
+
+extern ps_metric_t ps_numbspcalls;
+extern ps_metric_t ps_numsprites;
+extern ps_metric_t ps_numdrawnodes;
+extern ps_metric_t ps_numpolyobjects;
+
 
 //
 // REFRESH - the actual rendering functions.

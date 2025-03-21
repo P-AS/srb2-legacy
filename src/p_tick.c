@@ -625,9 +625,14 @@ void P_Ticker(boolean run)
 			}
 		}
 
+		ps_lua_mobjhooks.value.i = 0;
+		ps_checkposition_calls.value.i = 0;
+
+		PS_START_TIMING(ps_playerthink_time);
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
+		PS_STOP_TIMING(ps_playerthink_time);
 	}
 
 	// Keep track of how long they've been playing!
@@ -641,15 +646,19 @@ void P_Ticker(boolean run)
 		P_EmeraldManager(); // Power stone mode
 
 	if (run)
-	{
+	{	
+		PS_START_TIMING(ps_thinkertime);
 		P_RunThinkers();
+		PS_STOP_TIMING(ps_thinkertime);
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
+		PS_START_TIMING(ps_lua_thinkframe_time);
 		LUAh_ThinkFrame();
+		PS_STOP_TIMING(ps_lua_thinkframe_time);
 	}
 
 	// Run shield positioning

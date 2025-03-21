@@ -1,7 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2020 by Sonic Team Junior.
+// Copyright (C) 2020-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -32,7 +31,7 @@ int finalVertexArrayAllocSize = 65536;
 
 PolygonArrayEntry* polygonArray = NULL;// contains the polygon data from DrawPolygon, waiting to be processed
 int polygonArraySize = 0;
-unsigned int* polygonIndexArray = NULL;// contains sorting pointers for polygonArray
+UINT32* polygonIndexArray = NULL;// contains sorting pointers for polygonArray
 int polygonArrayAllocSize = 65536;
 
 FOutVector* unsortedVertexArray = NULL;// contains unsorted vertices and texture coordinates from DrawPolygon
@@ -43,20 +42,20 @@ int unsortedVertexArrayAllocSize = 65536;
 // Call HWR_RenderBatches to render all the collected geometry.
 void HWR_StartBatching(void)
 {
-    if (currently_batching)
-        I_Error("Repeat call to HWR_StartBatching without HWR_RenderBatches");
+	if (currently_batching)
+		I_Error("Repeat call to HWR_StartBatching without HWR_RenderBatches");
 
-    // init arrays if that has not been done yet
+	// init arrays if that has not been done yet
 	if (!finalVertexArray)
 	{
 		finalVertexArray = malloc(finalVertexArrayAllocSize * sizeof(FOutVector));
 		finalVertexIndexArray = malloc(finalVertexArrayAllocSize * 3 * sizeof(UINT32));
 		polygonArray = malloc(polygonArrayAllocSize * sizeof(PolygonArrayEntry));
-		polygonIndexArray = malloc(polygonArrayAllocSize * sizeof(unsigned int));
+		polygonIndexArray = malloc(polygonArrayAllocSize * sizeof(UINT32));
 		unsortedVertexArray = malloc(unsortedVertexArrayAllocSize * sizeof(FOutVector));
 	}
 
-    currently_batching = true;
+	currently_batching = true;
 }
 
 // This replaces the direct calls to pfnSetTexture in cases where batching is available.
@@ -94,7 +93,7 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 			polygonArray = new_array;
 			// also need to redo the index array, dont need to copy it though
 			free(polygonIndexArray);
-			polygonIndexArray = malloc(polygonArrayAllocSize * sizeof(unsigned int));
+			polygonIndexArray = malloc(polygonArrayAllocSize * sizeof(UINT32));
 		}
 
 		while (unsortedVertexArraySize + (int)iNumPts > unsortedVertexArrayAllocSize)
@@ -177,25 +176,36 @@ void HWR_RenderBatches(void)
 	int polygonReadPos = 0;// position in polygonIndexArray
 
 	int currentShader;
+	int nextShader = 0;
 	GLMipmap_t *currentTexture;
-	FBITFIELD currentPolyFlags;
+	GLMipmap_t *nextTexture = NULL;
+	FBITFIELD currentPolyFlags = 0;
+	FBITFIELD nextPolyFlags = 0;
 	FSurfaceInfo currentSurfaceInfo;
+	FSurfaceInfo nextSurfaceInfo;
 
 	int i;
 
     if (!currently_batching)
 		I_Error("HWR_RenderBatches called without starting batching");
 
+	nextSurfaceInfo.LightInfo.fade_end = 0;
+	nextSurfaceInfo.LightInfo.fade_start = 0;
+	nextSurfaceInfo.LightInfo.light_level = 0;
+
 	currently_batching = false;// no longer collecting batches
 	if (!polygonArraySize)
 	{
-		//rs_hw_numpolys = rs_hw_numcalls = rs_hw_numshaders = rs_hw_numtextures = rs_hw_numpolyflags = rs_hw_numcolors = 0;
+		ps_hw_numpolys.value.i = ps_hw_numcalls.value.i = ps_hw_numshaders.value.i
+			= ps_hw_numtextures.value.i = ps_hw_numpolyflags.value.i
+			= ps_hw_numcolors.value.i = 0;
 		return;// nothing to draw
 	}
 	// init stats vars
-	//rs_hw_numpolys = polygonArraySize;
-	//rs_hw_numcalls = rs_hw_numverts = 0;
-	//rs_hw_numshaders = rs_hw_numtextures = rs_hw_numpolyflags = rs_hw_numcolors = 1;
+	ps_hw_numpolys.value.i = polygonArraySize;
+	ps_hw_numcalls.value.i = ps_hw_numverts.value.i = 0;
+	ps_hw_numshaders.value.i = ps_hw_numtextures.value.i
+		= ps_hw_numpolyflags.value.i = ps_hw_numcolors.value.i = 1;
 	// init polygonIndexArray
 	for (i = 0; i < polygonArraySize; i++)
 	{
@@ -203,9 +213,9 @@ void HWR_RenderBatches(void)
 	}
 
 	// sort polygons
-	//rs_hw_batchsorttime = I_GetTimeMicros();
+	PS_START_TIMING(ps_hw_batchsorttime);
 	qsort(polygonIndexArray, polygonArraySize, sizeof(unsigned int), comparePolygons);
-	//rs_hw_batchsorttime = I_GetTimeMicros() - rs_hw_batchsorttime;
+	PS_STOP_TIMING(ps_hw_batchsorttime);
 	// sort order
 	// 1. shader
 	// 2. texture
@@ -213,7 +223,7 @@ void HWR_RenderBatches(void)
 	// 4. colors + light level
 	// not sure about what order of the last 2 should be, or if it even matters
 
-	//rs_hw_batchdrawtime = I_GetTimeMicros();
+	PS_START_TIMING(ps_hw_batchdrawtime);
 
 	currentShader = polygonArray[polygonIndexArray[0]].shader;
 	currentTexture = polygonArray[polygonIndexArray[0]].texture;
@@ -221,19 +231,19 @@ void HWR_RenderBatches(void)
 	currentSurfaceInfo = polygonArray[polygonIndexArray[0]].surf;
 	// For now, will sort and track the colors. Vertex attributes could be used instead of uniforms
 	// and a color array could replace the color calls.
-	
+
 	// set state for first batch
-	
+
 	if (cv_grshaders.value && gr_shadersavailable)
 	{
 		HWD.pfnSetShader(currentShader);
 	}
-	
+
 	if (currentPolyFlags & PF_NoTexture)
 		currentTexture = NULL;
     else
 	    HWD.pfnSetTexture(currentTexture);
-	
+
 	while (1)// note: remember handling notexture polyflag as having texture number 0 (also in comparePolygons)
 	{
 		int firstIndex;
@@ -242,13 +252,9 @@ void HWR_RenderBatches(void)
 		boolean stopFlag = false;
 		boolean changeState = false;
 		boolean changeShader = false;
-		int nextShader;
 		boolean changeTexture = false;
-		GLMipmap_t *nextTexture;
 		boolean changePolyFlags = false;
-		FBITFIELD nextPolyFlags;
 		boolean changeSurfaceInfo = false;
-		FSurfaceInfo nextSurfaceInfo;
 
 		// steps:
 		// write vertices
@@ -260,7 +266,7 @@ void HWR_RenderBatches(void)
 		// change states according to next vars and change bools, updating the current vars and reseting the bools
 		// reset write pos
 		// repeat loop
-		
+
 		int index = polygonIndexArray[polygonReadPos++];
 		int numVerts = polygonArray[index].numVerts;
 		// before writing, check if there is enough room
@@ -295,7 +301,7 @@ void HWR_RenderBatches(void)
 			finalVertexIndexArray[finalIndexWritePos++] = finalVertexWritePos - 1;
 			finalVertexIndexArray[finalIndexWritePos++] = finalVertexWritePos++;
 		}
-		
+
 		if (polygonReadPos >= polygonArraySize)
 		{
 			stopFlag = true;
@@ -304,105 +310,111 @@ void HWR_RenderBatches(void)
 		{
 			// check if a state change is required, set the change bools and next vars
 			int nextIndex = polygonIndexArray[polygonReadPos];
-			nextShader = polygonArray[nextIndex].shader;
-			nextTexture = polygonArray[nextIndex].texture;
-			nextPolyFlags = polygonArray[nextIndex].polyFlags;
-			nextSurfaceInfo = polygonArray[nextIndex].surf;
-			if (nextPolyFlags & PF_NoTexture)
-				nextTexture = 0;
-			if (currentShader != nextShader && cv_grshaders.value && gr_shadersavailable)
+			if (polygonArray[index].hash != polygonArray[nextIndex].hash)
 			{
-				changeState = true;
-				changeShader = true;
-			}
-			if (currentTexture != nextTexture)
-			{
-				changeState = true;
-				changeTexture = true;
-			}
-			if (currentPolyFlags != nextPolyFlags)
-			{
-				changeState = true;
-				changePolyFlags = true;
-			}
-			if (cv_grshaders.value && gr_shadersavailable)
-			{
-				if (currentSurfaceInfo.PolyColor.rgba != nextSurfaceInfo.PolyColor.rgba ||
-					currentSurfaceInfo.TintColor.rgba != nextSurfaceInfo.TintColor.rgba ||
-					currentSurfaceInfo.FadeColor.rgba != nextSurfaceInfo.FadeColor.rgba ||
-					currentSurfaceInfo.LightInfo.light_level != nextSurfaceInfo.LightInfo.light_level ||
-					currentSurfaceInfo.LightInfo.fade_start != nextSurfaceInfo.LightInfo.fade_start ||
-					currentSurfaceInfo.LightInfo.fade_end != nextSurfaceInfo.LightInfo.fade_end)
+				nextShader = polygonArray[nextIndex].shader;
+				nextTexture = polygonArray[nextIndex].texture;
+				nextPolyFlags = polygonArray[nextIndex].polyFlags;
+				nextSurfaceInfo = polygonArray[nextIndex].surf;
+				if (nextPolyFlags & PF_NoTexture)
+					nextTexture = 0;
+				if (currentShader != nextShader && cv_grshaders.value && gr_shadersavailable)
 				{
 					changeState = true;
-					changeSurfaceInfo = true;
+					changeShader = true;
 				}
-			}
-			else
-			{
-				if (currentSurfaceInfo.PolyColor.rgba != nextSurfaceInfo.PolyColor.rgba)
+				if (currentTexture != nextTexture)
 				{
 					changeState = true;
-					changeSurfaceInfo = true;
+					changeTexture = true;
+				}
+				if (currentPolyFlags != nextPolyFlags)
+				{
+					changeState = true;
+					changePolyFlags = true;
+				}
+				if (cv_grshaders.value && gr_shadersavailable)
+				{
+					if (currentSurfaceInfo.PolyColor.rgba != nextSurfaceInfo.PolyColor.rgba ||
+						currentSurfaceInfo.TintColor.rgba != nextSurfaceInfo.TintColor.rgba ||
+						currentSurfaceInfo.FadeColor.rgba != nextSurfaceInfo.FadeColor.rgba ||
+						currentSurfaceInfo.LightInfo.light_level != nextSurfaceInfo.LightInfo.light_level ||
+						currentSurfaceInfo.LightInfo.fade_start != nextSurfaceInfo.LightInfo.fade_start ||
+						currentSurfaceInfo.LightInfo.fade_end != nextSurfaceInfo.LightInfo.fade_end)
+					{
+						changeState = true;
+						changeSurfaceInfo = true;
+					}
+				}
+				else
+				{
+					if (currentSurfaceInfo.PolyColor.rgba != nextSurfaceInfo.PolyColor.rgba)
+					{
+						changeState = true;
+						changeSurfaceInfo = true;
+					}
 				}
 			}
 		}
-		
+
 		if (changeState || stopFlag)
 		{
 			// execute draw call
             HWD.pfnDrawIndexedTriangles(&currentSurfaceInfo, finalVertexArray, finalIndexWritePos, currentPolyFlags, finalVertexIndexArray);
 			// update stats
-			//rs_hw_numcalls++;
-			// rs_hw_numverts += finalIndexWritePos;
+			ps_hw_numcalls.value.i++;
+			ps_hw_numverts.value.i += finalIndexWritePos;
 			// reset write positions
 			finalVertexWritePos = 0;
 			finalIndexWritePos = 0;
 		}
 		else continue;
-		
+
 		// if we're here then either its time to stop or time to change state
 		if (stopFlag) break;
-		
+
 		// change state according to change bools and next vars, update current vars and reset bools
-		if (changeShader)
+		if (changeState)
 		{
-			HWD.pfnSetShader(nextShader);
-			currentShader = nextShader;
-			changeShader = false;
+			if (changeShader)
+			{
+				HWD.pfnSetShader(nextShader);
+				currentShader = nextShader;
+				changeShader = false;
 
-			// /rs_hw_numshaders++;
-		}
-		if (changeTexture)
-		{
-			// texture should be already ready for use from calls to SetTexture during batch collection
-		    HWD.pfnSetTexture(nextTexture);
-			currentTexture = nextTexture;
-			changeTexture = false;
+				ps_hw_numshaders.value.i++;
+			}
+			if (changeTexture)
+			{
+				// texture should be already ready for use from calls to SetTexture during batch collection
+			    HWD.pfnSetTexture(nextTexture);
+				currentTexture = nextTexture;
+				changeTexture = false;
 
-			//rs_hw_numtextures++;
-		}
-		if (changePolyFlags)
-		{
-			currentPolyFlags = nextPolyFlags;
-			changePolyFlags = false;
+				ps_hw_numtextures.value.i++;
+			}
+			if (changePolyFlags)
+			{
+				currentPolyFlags = nextPolyFlags;
+				changePolyFlags = false;
 
-			//rs_hw_numpolyflags++;
-		}
-		if (changeSurfaceInfo)
-		{
-			currentSurfaceInfo = nextSurfaceInfo;
-			changeSurfaceInfo = false;
+				ps_hw_numpolyflags.value.i++;
+			}
+			if (changeSurfaceInfo)
+			{
+				currentSurfaceInfo = nextSurfaceInfo;
+				changeSurfaceInfo = false;
 
-			//rs_hw_numcolors++;
+				ps_hw_numcolors.value.i++;
+			}
 		}
 		// and that should be it?
 	}
 	// reset the arrays (set sizes to 0)
 	polygonArraySize = 0;
 	unsortedVertexArraySize = 0;
-	
-	// /rs_hw_batchdrawtime = I_GetTimeMicros() - rs_hw_batchdrawtime;
+
+	PS_STOP_TIMING(ps_hw_batchdrawtime);
 }
 
 
