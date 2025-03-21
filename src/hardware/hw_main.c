@@ -230,6 +230,23 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 boolean gr_shadersavailable = true;
 
 
+// Render stats
+ps_metric_t ps_hw_nodesorttime = {0};
+ps_metric_t ps_hw_nodedrawtime = {0};
+ps_metric_t ps_hw_spritesorttime = {0};
+ps_metric_t ps_hw_spritedrawtime = {0};
+
+// Render stats for batching
+ps_metric_t ps_hw_numpolys = {0};
+ps_metric_t ps_hw_numverts = {0};
+ps_metric_t ps_hw_numcalls = {0};
+ps_metric_t ps_hw_numshaders = {0};
+ps_metric_t ps_hw_numtextures = {0};
+ps_metric_t ps_hw_numpolyflags = {0};
+ps_metric_t ps_hw_numcolors = {0};
+ps_metric_t ps_hw_batchsorttime = {0};
+ps_metric_t ps_hw_batchdrawtime = {0};
+
 // ==========================================================================
 //   Lighting
 // ==========================================================================
@@ -3347,6 +3364,9 @@ static void HWR_Subsector(size_t num)
 			po = (polyobj_t *)(po->link.next);
 		}
 
+		// for render stats
+		ps_numpolyobjects.value.i += numpolys;
+
 		// Sort polyobjects
 		R_SortPolyObjects(sub);
 
@@ -3423,6 +3443,9 @@ static void HWR_RenderBSPNode(INT32 bspnum)
 {
 	node_t *bsp;
 	INT32 side;
+
+	ps_numbspcalls.value.i++;
+
 	while (!(bspnum & NF_SUBSECTOR))  // Found a subsector?
 	{
 		bsp = &nodes[bspnum];
@@ -4741,6 +4764,8 @@ static void HWR_CreateDrawNodes(void)
 	// If true, swap the draw order.
 	boolean shift = false;
 
+	PS_START_TIMING(ps_hw_nodesorttime);
+
 	for (i = 0; i < numplanes; i++, p++)
 	{
 		sortnode[p].plane = &planeinfo[i];
@@ -4758,6 +4783,8 @@ static void HWR_CreateDrawNodes(void)
 		sortnode[p].wall = &wallinfo[i];
 		sortindex[p] = p;
 	}
+
+	ps_numdrawnodes.value.i = p;
 
 	// p is the number of stuff to sort
 
@@ -4860,6 +4887,9 @@ static void HWR_CreateDrawNodes(void)
 		} //i++
 	} // loop++
 
+	PS_STOP_TIMING(ps_hw_nodesorttime);
+
+	PS_START_TIMING(ps_hw_nodedrawtime);
 
 	// Okay! Let's draw it all! Woo!
 	HWD.pfnSetTransform(&atransform);
@@ -4895,6 +4925,8 @@ HWR_RenderPlane(NULL, sortnode[sortindex[i]].plane->xsub, sortnode[sortindex[i]]
 				sortnode[sortindex[i]].wall->lightlevel, sortnode[sortindex[i]].wall->wallcolormap);
 		}
 	}
+
+	PS_STOP_TIMING(ps_hw_nodedrawtime);
 
 	numwalls = 0;
 	numplanes = 0;
@@ -5944,8 +5976,10 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	if (viewnumber == 0) // Only do it if it's the first screen being rendered
 		HWD.pfnClearBuffer(true, false, &ClearColor); // Clear the Color Buffer, stops HOMs. Also seems to fix the skybox issue on Intel GPUs.
 
+	PS_START_TIMING(ps_skyboxtime);
 	if (skybox && drawsky) // If there's a skybox and we should be drawing the sky, draw the skybox
 		HWR_RenderSkyboxView(viewnumber, player); // This is drawn before everything else so it is placed behind
+	PS_STOP_TIMING(ps_skyboxtime);
 
 	{
 		// do we really need to save player (is it not the same)?
@@ -6053,12 +6087,18 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	HWD.pfnSetSpecialState(HWD_SET_SHADERS, cv_grshaders.value);
 	HWD.pfnSetShader(0);
 
+	ps_numbspcalls.value.i = 0;
+	ps_numpolyobjects.value.i = 0;
+	PS_START_TIMING(ps_bsptime);
+
 	validcount++;
 
 	if (cv_grbatching.value)
 		HWR_StartBatching();
 
 	HWR_RenderBSPNode((INT32)numnodes-1);
+
+	PS_STOP_TIMING(ps_bsptime);
 
 #ifndef NEWCLIP
 	// Make a viewangle int so we can render things based on mouselook
@@ -6102,18 +6142,22 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 #endif
 
 	// Draw MD2 and sprites
-
+	ps_numsprites.value.i = gr_visspritecount;
+	PS_START_TIMING(ps_hw_spritesorttime);
 	HWR_SortVisSprites();
-
-
-
+	PS_STOP_TIMING(ps_hw_spritesorttime);
+	PS_START_TIMING(ps_hw_spritedrawtime);
 	HWR_DrawSprites();
+	PS_STOP_TIMING(ps_hw_spritedrawtime);
 
 #ifdef NEWCORONAS
 	//Hurdler: they must be drawn before translucent planes, what about gl fog?
 	HWR_DrawCoronas();
 #endif
 
+	ps_numdrawnodes.value.i = 0;
+	ps_hw_nodesorttime.value.p = 0;
+	ps_hw_nodedrawtime.value.p = 0;
 	if (numplanes || numpolyplanes || numwalls) //Hurdler: render 3D water and transparent walls after everything
 	{
 		HWR_CreateDrawNodes();

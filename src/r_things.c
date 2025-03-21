@@ -524,7 +524,7 @@ void R_DelSpriteDefs(UINT16 wadnum)
 //
 // GAME FUNCTIONS
 //
-static UINT32 visspritecount;
+UINT32 visspritecount;
 static UINT32 clippedvissprites;
 static vissprite_t *visspritechunks[MAXVISSPRITES >> VISSPRITECHUNKBITS] = {NULL};
 
@@ -2141,6 +2141,7 @@ static drawnode_t *R_CreateDrawNode(drawnode_t *link)
 	node->thickseg = NULL;
 	node->ffloor = NULL;
 	node->sprite = NULL;
+	ps_numdrawnodes.value.i++;
 	return node;
 }
 

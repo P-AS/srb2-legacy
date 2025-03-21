@@ -78,6 +78,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "keys.h"
 #include "filesrch.h" // refreshdirmenu, mainwadstally 
 #include "r_fps.h"
+#include "m_perfstats.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -356,6 +357,8 @@ static boolean D_Display(void)
 		// draw the view directly
 		if (cv_renderview.value && !automapactive)
 		{
+			PS_START_TIMING(ps_rendercalltime);
+
 			R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 			if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 			{
@@ -401,6 +404,8 @@ static boolean D_Display(void)
 					V_DoPostProcessor(1, postimgtype2, postimgparam2);
 			}
 			R_RestoreLevelInterpolators();
+
+			PS_STOP_TIMING(ps_rendercalltime);
 		}
 
 		if (lastdraw)
@@ -413,8 +418,13 @@ static boolean D_Display(void)
 			lastdraw = false;
 		}
 
+		PS_START_TIMING(ps_uitime);
 		ST_Drawer();
 		HU_Drawer();
+	}
+	else
+	{
+		PS_START_TIMING(ps_uitime);
 	}
 
 	// change gamma if needed
@@ -442,6 +452,8 @@ static boolean D_Display(void)
 
 	M_Drawer(); // menu is drawn even on top of everything
 	// focus lost moved to M_Drawer
+
+	PS_STOP_TIMING(ps_uitime);
 
 	CON_Drawer();
 
@@ -497,6 +509,11 @@ static boolean D_Display(void)
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "SysMiss %.2f%%", lostpercent);
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
+		}
+
+		if (cv_perfstats.value)
+		{
+			M_DrawPerfStats();
 		}
 
 		return true; // Do I_FinishUpdate in the main loop
@@ -696,7 +713,9 @@ void D_SRB2Loop(void)
 		// because it synchronizes it more closely with the frame counter.
 		if (screenUpdate == true)
 		{
+			PS_START_TIMING(ps_swaptime);
 			I_FinishUpdate(); // page flip or blit buffer
+			PS_STOP_TIMING(ps_swaptime);
 		}
 
 		// Fully completed frame made.
