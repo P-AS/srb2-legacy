@@ -149,9 +149,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define UNIXBACKTRACE
 #endif
 
-
- 
-// Locations for searching the srb2.srb 
+// Locations for searching the srb2.srb
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2legacy"
 #define DEFAULTWADLOCATION2 "/usr/local/games/SRB2legacy"
@@ -192,12 +190,8 @@ static char returnWadPath[256];
 
 #include "../i_joy.h"
 
-#include "../m_argv.h" 
+#include "../m_argv.h"
 #include "../r_main.h" // Uncapped
-
-#ifdef MAC_ALERT
-#include "macosx/mac_alert.h"
-#endif
 
 #include "../d_main.h"
 
@@ -212,7 +206,6 @@ static char returnWadPath[256];
 // query the scheduler granularity. SDL will do what's needed to make this as
 // low as possible though.
 #define MIN_SLEEP_DURATION_MS 2.1
-
 
 /**	\brief	The JoyReset function
 

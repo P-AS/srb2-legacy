@@ -111,7 +111,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 
 #ifdef __APPLE__
-#include "mac_resources.h"
+#include "../sdl/macosx/mac_resources.h"
 #endif
 
 #ifndef errno
@@ -1966,42 +1966,3 @@ boolean I_InitNetwork(void)
 	// this must exist, but this is actually handled in i_tcp.c
 	return false;
 }
-
-#ifdef __APPLE__
-// from src/sdl/macosx/mac_resources.c
-#include <string.h>
-#include <CoreFoundation/CoreFoundation.h>
-
-void OSX_GetResourcesPath(char * buffer)
-{
-    CFBundleRef mainBundle;
-    mainBundle = CFBundleGetMainBundle();
-    if (mainBundle)
-    {
-        const int BUF_SIZE = 256; // because we somehow always know that
-
-        CFURLRef appUrlRef = CFBundleCopyBundleURL(mainBundle);
-        CFStringRef macPath;
-        if (appUrlRef != NULL)
-            macPath = CFURLCopyFileSystemPath(appUrlRef, kCFURLPOSIXPathStyle);
-        else
-            macPath = NULL;
-
-        const char* rawPath;
-
-        if (macPath != NULL)
-            rawPath = CFStringGetCStringPtr(macPath, kCFStringEncodingASCII);
-        else
-            rawPath = NULL;
-
-        if (rawPath != NULL && (CFStringGetLength(macPath) + strlen("/Contents/Resources") < BUF_SIZE))
-        {
-            strcpy(buffer, rawPath);
-            strcat(buffer, "/Contents/Resources");
-        }
-
-        CFRelease(macPath);
-        CFRelease(appUrlRef);
-    }
-}
-#endif
