@@ -10,7 +10,7 @@ finish-args:
   - --socket=wayland
   - --socket=fallback-x11
   - --device=all
-  - --filesystem=~/.srb2_21
+  - --persist=.srb2_21
 
 cleanup:
   - /include
