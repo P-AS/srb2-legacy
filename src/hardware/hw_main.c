@@ -96,6 +96,9 @@ CV_PossibleValue_t glloadingscreen_cons_t[] = {{0, "OFF"}, {1, "2.1.0-2.1.4"}, {
 
 static CV_PossibleValue_t grfakecontrast_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Smooth"}, {0, NULL}};
 static CV_PossibleValue_t grshearing_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Third-person"}, {0, NULL}};
+static CV_PossibleValue_t grrenderdistance_cons_t[] = {
+	{0, "Max"}, {1, "1024"}, {2, "2048"}, {3, "4096"}, {4, "6144"}, {5, "8192"},
+	{6, "12288"}, {7, "16384"}, {0, NULL}};
 
 consvar_t cv_grshaders = {"gr_shaders", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -126,6 +129,17 @@ consvar_t cv_grcorrecttricks = {"gr_correcttricks", "Off", 0, CV_OnOff, NULL, 0,
 consvar_t cv_grsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_grbatching = {"gr_batching", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+// values for the far clipping plane
+static float clipping_distances[] = {1024.0f, 2048.0f, 4096.0f, 6144.0f, 8192.0f, 12288.0f, 16384.0f};
+// values for bsp culling
+// slightly higher than the far clipping plane to compensate for impreciseness
+static INT32 bsp_culling_distances[] = {(1024+512)*FRACUNIT, (2048+512)*FRACUNIT, (4096+512)*FRACUNIT,
+	(6144+512)*FRACUNIT, (8192+512)*FRACUNIT, (12288+512)*FRACUNIT, (16384+512)*FRACUNIT};
+
+static INT32 current_bsp_culling_distance = 0;
+
+consvar_t cv_grrenderdistance = {"gr_renderdistance", "Max", CV_SAVE, grrenderdistance_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_grmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
@@ -2689,6 +2703,70 @@ static boolean HWR_CheckBBox(const fixed_t *bspcoord)
 	px2 = bspcoord[checkcoord[boxpos][2]];
 	py2 = bspcoord[checkcoord[boxpos][3]];
 
+	if (current_bsp_culling_distance)
+	{
+		//fixed_t midx = (px1 >> 1) + (px2 >> 1);
+		//fixed_t midy = (py1 >> 1) + (py2 >> 1);
+		//fixed_t mindist = min(min(R_PointToDist(px1, py1), R_PointToDist(px2, py2)), R_PointToDist(midx, midy));
+
+		//fixed_t mindist = ClosestPointOnLineDistance(px1, py1, px2, py2);
+
+		//fixed_t mindist1 = ClosestPointOnLineDistance(bspcoord[BOXLEFT], bspcoord[BOXTOP], bspcoord[BOXRIGHT], bspcoord[BOXTOP]); // top line
+		//fixed_t mindist2 = ClosestPointOnLineDistance(bspcoord[BOXLEFT], bspcoord[BOXTOP], bspcoord[BOXLEFT], bspcoord[BOXBOTTOM]); // left line
+		//fixed_t mindist3 = ClosestPointOnLineDistance(bspcoord[BOXLEFT], bspcoord[BOXBOTTOM], bspcoord[BOXRIGHT], bspcoord[BOXBOTTOM]); // bottom line
+		//fixed_t mindist4 = ClosestPointOnLineDistance(bspcoord[BOXRIGHT], bspcoord[BOXTOP], bspcoord[BOXRIGHT], bspcoord[BOXBOTTOM]); // right line
+		// this one seems too lax.. maybe closestpointonlinedistance is glitchy and returns points that are not on the line segment?
+		// could try building an if-else structure that determines what point or line is closest
+		// 1  | 2  | 3
+		//--------------
+		// 4  |node| 5
+		//--------------
+		// 6  | 7  | 8
+		// y
+		// ^
+		// |
+		// -----> x
+		// inside node: always inside draw distance. the above boxpos thing might have returned true already?
+		// 1. check top left corner     2. check top line     3. check top right corner
+		// 4. check left line                                 5. check right line
+		// 6. check bottom left corner  7. check bottom line  8. check bottom right corner
+		// one if statement will split the space in two for one coordinate
+		// for example:
+		// x < BOXLEFT   || BOXLEFT ||   !(x < BOXLEFT)   <-- (same as x >= BOXLEFT)
+		fixed_t mindist;// = min(min(mindist1, mindist2), min(mindist3, mindist4));
+
+		// new thing
+		// calculate distance to axis aligned bounding box.
+		if (viewx < bspcoord[BOXLEFT]) // 1,4,6
+		{
+			if (viewy > bspcoord[BOXTOP]) // 1
+				mindist = R_PointToDist(bspcoord[BOXLEFT], bspcoord[BOXTOP]);
+			else if (viewy < bspcoord[BOXBOTTOM]) // 6
+				mindist = R_PointToDist(bspcoord[BOXLEFT], bspcoord[BOXBOTTOM]);
+			else // 4
+				mindist = bspcoord[BOXLEFT] - viewx;
+		}
+		else if (viewx > bspcoord[BOXRIGHT]) // 3,5,8
+		{
+			if (viewy > bspcoord[BOXTOP]) // 3
+				mindist = R_PointToDist(bspcoord[BOXRIGHT], bspcoord[BOXTOP]);
+			else if (viewy < bspcoord[BOXBOTTOM]) // 8
+				mindist = R_PointToDist(bspcoord[BOXRIGHT], bspcoord[BOXBOTTOM]);
+			else // 5
+				mindist = viewx - bspcoord[BOXRIGHT];
+		}
+		else // 2,node,7
+		{
+			if (viewy > bspcoord[BOXTOP]) // 2
+				mindist = viewy - bspcoord[BOXTOP];
+			else if (viewy < bspcoord[BOXBOTTOM]) // 7
+				mindist = bspcoord[BOXBOTTOM] - viewy;
+			else // node
+				mindist = 0;
+		}
+		if (mindist > current_bsp_culling_distance) return false;
+	}
+
 #ifdef NEWCLIP
 	angle1 = R_PointToAngle(px1, py1);
 	angle2 = R_PointToAngle(px2, py2);
@@ -4987,7 +5065,7 @@ static void HWR_AddSprites(sector_t *sec)
 #ifdef HWPRECIP
 	precipmobj_t *precipthing;
 #endif
-	fixed_t approx_dist, limit_dist;
+	fixed_t approx_dist, limit_dist, precip_limit_dist;
 
 	// BSP is traversed by subsector.
 	// A sector might have been split into several
@@ -5002,9 +5080,24 @@ static void HWR_AddSprites(sector_t *sec)
 	// sprite lighting
 	sectorlight = sec->lightlevel & 0xff;
 
+	if (current_bsp_culling_distance)
+	{
+		// Use the smaller setting
+		if (cv_drawdist.value)
+			limit_dist = min(current_bsp_culling_distance, (maptol & TOL_NIGHTS) ? cv_drawdist_nights.value : cv_drawdist.value << FRACBITS);
+		else
+			limit_dist = current_bsp_culling_distance;
+		precip_limit_dist = min(current_bsp_culling_distance, cv_drawdist_precip.value << FRACBITS);
+	}
+	else
+	{
+		limit_dist = cv_drawdist.value << FRACBITS;
+		precip_limit_dist = cv_drawdist_precip.value << FRACBITS;
+	}
+
 	// Handle all things in sector.
 	// If a limit exists, handle things a tiny bit different.
-	if ((limit_dist = (fixed_t)((maptol & TOL_NIGHTS) ? cv_drawdist_nights.value : cv_drawdist.value) << FRACBITS))
+	if (limit_dist)
 	{
 		for (thing = sec->thinglist; thing; thing = thing->snext)
 		{
@@ -5029,7 +5122,7 @@ static void HWR_AddSprites(sector_t *sec)
 
 #ifdef HWPRECIP
 	// Someone seriously wants infinite draw distance for precipitation?
-	if ((limit_dist = (fixed_t)cv_drawdist_precip.value << FRACBITS))
+	if (precip_limit_dist)
 	{
 		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
 		{
@@ -5038,7 +5131,7 @@ static void HWR_AddSprites(sector_t *sec)
 
 			approx_dist = P_AproxDistance(viewx-precipthing->x, viewy-precipthing->y);
 
-			if (approx_dist > limit_dist)
+			if (approx_dist > precip_limit_dist)
 				continue;
 
 			HWR_ProjectPrecipitationSprite(precipthing);
@@ -5685,7 +5778,7 @@ static inline void HWR_ClearView(void)
 	                 (INT32)gr_viewwindowy,
 	                 (INT32)(gr_viewwindowx + gr_viewwidth),
 	                 (INT32)(gr_viewwindowy + gr_viewheight),
-	                 ZCLIP_PLANE);
+	                 ZCLIP_PLANE, FAR_ZCLIP_DEFAULT);
 	HWD.pfnClearBuffer(false, true, 0);
 
 	//disable clip window - set to full size
@@ -5877,6 +5970,8 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 
 	HWR_RenderBSPNode((INT32)numnodes-1);
 
+	current_bsp_culling_distance = 0;
+
 #ifndef NEWCLIP
 	// Make a viewangle int so we can render things based on mouselook
 	if (player == &players[consoleplayer])
@@ -5945,7 +6040,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 
 	// added by Hurdler for correct splitscreen
 	// moved here by hurdler so it works with the new near clipping plane
-	HWD.pfnGClipRect(0, 0, vid.width, vid.height, NZCLIP_PLANE);
+	HWD.pfnGClipRect(0, 0, vid.width, vid.height, NZCLIP_PLANE, FAR_ZCLIP_DEFAULT);
 }
 
 // ==========================================================================
@@ -5994,6 +6089,18 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 
 	// note: sets viewangle, viewx, viewy, viewz
 	R_SetupFrame(player, false); // This can stay false because it is only used to set viewsky in r_main.c, which isn't used here
+
+	current_bsp_culling_distance = 0;
+
+	if (!skybox && cv_grrenderdistance.value)
+	{
+		HWD.pfnGClipRect((INT32)gr_viewwindowx,
+	                 (INT32)gr_viewwindowy,
+	                 (INT32)(gr_viewwindowx + gr_viewwidth),
+	                 (INT32)(gr_viewwindowy + gr_viewheight),
+	                 ZCLIP_PLANE, clipping_distances[cv_grrenderdistance.value - 1]);
+		current_bsp_culling_distance = bsp_culling_distances[cv_grrenderdistance.value - 1];
+	}
 
 	// copy view cam position for local use
 	dup_viewx = viewx;
@@ -6175,7 +6282,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 
 	// added by Hurdler for correct splitscreen
 	// moved here by hurdler so it works with the new near clipping plane
-	HWD.pfnGClipRect(0, 0, vid.width, vid.height, NZCLIP_PLANE);
+	HWD.pfnGClipRect(0, 0, vid.width, vid.height, NZCLIP_PLANE, FAR_ZCLIP_DEFAULT);
 }
 
 
@@ -6217,6 +6324,7 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_grcorrecttricks);
 	CV_RegisterVar(&cv_grsolvetjoin);
 	CV_RegisterVar(&cv_grbatching);
+	CV_RegisterVar(&cv_grrenderdistance);
 	CV_RegisterVar(&cv_grmodellighting);
 	CV_RegisterVar(&cv_glloadingscreen);
 	CV_RegisterVar(&cv_grshearing);
