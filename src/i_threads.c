@@ -9,7 +9,7 @@
 /// \file  i_threads.c
 /// \brief Multithreading abstraction
 
-#if defined (__unix__) || (!defined(__APPLE__) && defined (UNIXCOMMON))
+#if defined (__unix__) || defined(__APPLE__)
 
 #include <pthread.h>
 
