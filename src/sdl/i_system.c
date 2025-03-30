@@ -135,6 +135,8 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 #ifdef __APPLE__
 #include "macosx/mac_resources.h"
+#include <mach/mach.h>
+#include <mach/mach_time.h>
 #endif
 
 #ifndef errno
@@ -2261,6 +2263,13 @@ void I_Sleep(UINT32 ms)
 	SDL_Delay(ms);
 }
 
+#ifdef __APPLE__
+static mach_timebase_info_data_t timebase_info;
+
+static uint64_t nanos_to_abs(uint64_t nanos) {
+	return nanos * timebase_info.denom / timebase_info.numer;
+}
+#endif
 
 void I_SleepDuration(precise_t duration)
 {
@@ -2279,6 +2288,15 @@ void I_SleepDuration(precise_t duration)
 		do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
 		while (status == EINTR);
 	}
+
+	// busy-wait the rest
+	while (((INT64)dest - (INT64)I_GetPreciseTime()) > 0);
+#elif defined (__APPLE__)
+	mach_timebase_info(&timebase_info);
+	precise_t dest = I_GetPreciseTime() + duration;
+	UINT64 precision = I_GetPrecisePrecision();
+	precise_t slack = nanos_to_abs(precision / 10);
+	mach_wait_until(dest - slack);
 
 	// busy-wait the rest
 	while (((INT64)dest - (INT64)I_GetPreciseTime()) > 0);
