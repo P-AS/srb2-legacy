@@ -135,8 +135,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 #ifdef __APPLE__
 #include "macosx/mac_resources.h"
-#include <mach/mach.h>
-#include <mach/mach_time.h>
 #endif
 
 #ifndef errno
@@ -201,6 +199,11 @@ static char returnWadPath[256];
 // Mumble context string
 #include "../d_clisrv.h"
 #include "../byteptr.h"
+#endif
+
+#ifdef __APPLE__
+#include <mach/mach.h>
+#include <mach/mach_time.h> // mach_wait_until
 #endif
 
 // A little more than the minimum sleep duration on Windows.
