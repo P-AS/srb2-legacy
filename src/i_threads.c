@@ -9,7 +9,7 @@
 /// \file  i_threads.c
 /// \brief Multithreading abstraction
 
-#if defined (__unix__) || defined(__APPLE__)
+#if defined (__unix__) || defined(UNIXCOMMON)
 
 #include <pthread.h>
 
@@ -323,6 +323,7 @@ void I_SpawnThread(const char *name, thread_fn_t entry, void *userdata)
 
 int I_ThreadIsStopped(void)
 {
+	return true;
 }
 
 void I_StartThreads(void)
