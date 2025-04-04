@@ -165,6 +165,11 @@ static char returnWadPath[256];
 #include "../byteptr.h"
 #endif
 
+#ifdef __APPLE__
+#include <mach/mach.h>
+#include <mach/mach_time.h> // mach_wait_until
+#endif
+
 boolean consolevent = false;
 boolean framebuffer = false;
 
@@ -982,181 +987,10 @@ ticcmd_t *I_BaseTiccmd2(void)
 	return &emptycmd2;
 }
 
-#if 0
-static HMODULE winmm = NULL;
-static DWORD starttickcount = 0; // hack for win2k time bug
-static p_timeGetTime pfntimeGetTime = NULL;
-
-static LARGE_INTEGER basetime = {{0, 0}};
-
-// use this if High Resolution timer is found
-static LARGE_INTEGER frequency;
-
-// ---------
-// I_GetTime
-// Use the High Resolution Timer if available,
-// else use the multimedia timer which has 1 millisecond precision on Windowz 95,
-// but lower precision on Windows NT
-// ---------
-
-tic_t I_GetTime(void)
-{
-	tic_t newtics = 0;
-
-	if (!starttickcount) // high precision timer
-	{
-		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-
-		if (!basetime.LowPart)
-		{
-			if (!QueryPerformanceFrequency(&frequency))
-				frequency.QuadPart = 0;
-			else
-				QueryPerformanceCounter(&basetime);
-		}
-
-		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
-		{
-			newtics = (INT32)((currtime.QuadPart - basetime.QuadPart) * NEWTICRATE
-				/ frequency.QuadPart);
-		}
-		else if (pfntimeGetTime)
-		{
-			currtime.LowPart = pfntimeGetTime();
-			if (!basetime.LowPart)
-				basetime.LowPart = currtime.LowPart;
-			newtics = ((currtime.LowPart - basetime.LowPart)/(1000/NEWTICRATE));
-		}
-	}
-	else
-		newtics = (GetTickCount() - starttickcount)/(1000/NEWTICRATE);
-
-	return newtics;
-}
-
-void I_SleepToTic(tic_t tic)
-{
-	tic_t untilnexttic = 0;
-
-	if (!starttickcount) // high precision timer
-	{
-		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
-		{
-			untilnexttic = (INT32)((currtime.QuadPart - basetime.QuadPart) * 1000
-				/ frequency.QuadPart % NEWTICRATE);
-		}
-		else if (pfntimeGetTime)
-		{
-			currtime.LowPart = pfntimeGetTime();
-			if (!basetime.LowPart)
-				basetime.LowPart = currtime.LowPart;
-			untilnexttic = ((currtime.LowPart - basetime.LowPart)%(1000/NEWTICRATE));
-		}
-	}
-	else
-	{
-		untilnexttic = (GetTickCount() - starttickcount)%(1000/NEWTICRATE);
-		untilnexttic = (1000/NEWTICRATE) - untilnexttic;
-	}
-
-	// give some extra slack then busy-wait on windows, since windows' sleep is garbage
-	if (untilnexttic > 2)
-		Sleep(untilnexttic - 2);
-	while (tic > I_GetTime());
-}
-
-static void I_ShutdownTimer(void)
-{
-	pfntimeGetTime = NULL;
-	if (winmm)
-	{
-		p_timeEndPeriod pfntimeEndPeriod = (p_timeEndPeriod)(LPVOID)GetProcAddress(winmm, "timeEndPeriod");
-		if (pfntimeEndPeriod)
-			pfntimeEndPeriod(1);
-		FreeLibrary(winmm);
-		winmm = NULL;
-	}
-}
-static struct timespec basetime;
-
-//
-// I_GetTime
-// returns time in 1/TICRATE second tics
-//
-tic_t I_GetTime (void)
-{
-	struct timespec ts;
-	uint64_t ticks;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-
-	if (basetime.tv_sec == 0)
-		basetime = ts;
-
-	ts.tv_sec -= basetime.tv_sec;
-	ts.tv_nsec -= basetime.tv_nsec;
-	if (ts.tv_nsec < 0)
-	{
-		ts.tv_sec--;
-		ts.tv_nsec += 1000000000;
-	}
-	ticks = ((uint64_t)ts.tv_sec * 1000000000) + ts.tv_nsec;
-	ticks = ticks * TICRATE / 1000000000;
-
-	return (tic_t)ticks;
-}
-
-void I_SleepToTic(tic_t tic)
-{
-	struct timespec ts;
-	uint64_t curtime, targettime;
-	int status;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-
-	ts.tv_sec -= basetime.tv_sec;
-	ts.tv_nsec -= basetime.tv_nsec;
-	if (ts.tv_nsec < 0)
-	{
-		ts.tv_sec--;
-		ts.tv_nsec += 1000000000;
-	}
-	curtime = ((uint64_t)ts.tv_sec * 1000000000) + ts.tv_nsec;
-	targettime = ((uint64_t)tic * 1000000000) / TICRATE;
-	if (targettime < curtime)
-		return;
-
-	ts.tv_sec = (targettime - curtime) / 1000000000;
-	ts.tv_nsec = (targettime - curtime) % 1000000000;
-
-	do status = nanosleep(&ts, &ts);
-	while (status == EINTR);
-	I_Assert(status == 0);
-}
-#endif
-
 //
 //I_StartupTimer
 //
 void I_StartupTimer(void){}
-
-
-/*static void I_SleepMillis(INT32 millis)
-{
-#if _WIN32
-	Sleep(millis);
-#else
-	int status;
-	struct timespec ts = {
-		.tv_sec = millis / 1000,
-		.tv_nsec = (millis % 1000) * 1000000,
-	};
-
-	do status = nanosleep(&ts, &ts);
-	while (status == EINTR);
-#endif
-}*/
-
-
 
 void I_Sleep(UINT32 ms)
 {
@@ -1166,7 +1000,7 @@ void I_Sleep(UINT32 ms)
 		.tv_nsec = ms % 1000 * 1000000,
 	};
 	int status;
-	do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+	do status = nanosleep(&ts, &ts);
 	while (status == EINTR);
 #elif defined (_WIN32)
 	Sleep(ms);
@@ -1175,6 +1009,14 @@ void I_Sleep(UINT32 ms)
 #warning No sleep function for this system!
 #endif
 }
+
+#ifdef __APPLE__
+static mach_timebase_info_data_t timebase_info;
+
+static uint64_t nanos_to_abs(uint64_t nanos) {
+	return nanos * timebase_info.denom / timebase_info.numer;
+}
+#endif
 
 void I_SleepDuration(precise_t duration)
 {
@@ -1193,6 +1035,15 @@ void I_SleepDuration(precise_t duration)
 		do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
 		while (status == EINTR);
 	}
+
+	// busy-wait the rest
+	while (((INT64)dest - (INT64)I_GetPreciseTime()) > 0);
+#elif defined (__APPLE__)
+	mach_timebase_info(&timebase_info);
+	precise_t dest = I_GetPreciseTime() + duration;
+	UINT64 precision = I_GetPrecisePrecision();
+	precise_t slack = nanos_to_abs(precision / 10);
+	mach_wait_until(dest - slack);
 
 	// busy-wait the rest
 	while (((INT64)dest - (INT64)I_GetPreciseTime()) > 0);
