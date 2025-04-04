@@ -987,10 +987,23 @@ ticcmd_t *I_BaseTiccmd2(void)
 	return &emptycmd2;
 }
 
+#ifdef __APPLE__
+static mach_timebase_info_data_t timebase_info;
+
+static uint64_t nanos_to_abs(uint64_t nanos) {
+	return nanos * timebase_info.denom / timebase_info.numer;
+}
+#endif
+
 //
 //I_StartupTimer
 //
-void I_StartupTimer(void){}
+void I_StartupTimer(void)
+{
+#ifdef __APPLE__
+	mach_timebase_info(&timebase_info);
+#endif
+}
 
 void I_Sleep(UINT32 ms)
 {
@@ -1009,14 +1022,6 @@ void I_Sleep(UINT32 ms)
 #warning No sleep function for this system!
 #endif
 }
-
-#ifdef __APPLE__
-static mach_timebase_info_data_t timebase_info;
-
-static uint64_t nanos_to_abs(uint64_t nanos) {
-	return nanos * timebase_info.denom / timebase_info.numer;
-}
-#endif
 
 void I_SleepDuration(precise_t duration)
 {
@@ -1039,7 +1044,6 @@ void I_SleepDuration(precise_t duration)
 	// busy-wait the rest
 	while (((INT64)dest - (INT64)I_GetPreciseTime()) > 0);
 #elif defined (__APPLE__)
-	mach_timebase_info(&timebase_info);
 	precise_t dest = I_GetPreciseTime() + duration;
 	UINT64 precision = I_GetPrecisePrecision();
 	precise_t slack = nanos_to_abs(precision / 10);
