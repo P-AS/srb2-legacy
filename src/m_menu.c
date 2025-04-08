@@ -1149,16 +1149,18 @@ static menuitem_t OP_VideoOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
 	                         NULL, "Brightness",          &cv_usegamma,      50},
-	{IT_STRING | IT_CVAR,    NULL, "Draw Distance",       &cv_drawdist, 60},
-	{IT_STRING | IT_CVAR,    NULL, "NiGHTS Draw Dist",    &cv_drawdist_nights, 70},
-	{IT_STRING | IT_CVAR,    NULL, "Precip Draw Dist",    &cv_drawdist_precip, 80},
-	{IT_STRING | IT_CVAR,    NULL, "Precip Density",      &cv_precipdensity, 90},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
+							 NULL, "Saturation",      &cv_usesaturation,     60},   
+	{IT_STRING | IT_CVAR,    NULL, "Draw Distance",       &cv_drawdist, 70},
+	{IT_STRING | IT_CVAR,    NULL, "NiGHTS Draw Dist",    &cv_drawdist_nights, 80},
+	{IT_STRING | IT_CVAR,    NULL, "Precip Draw Dist",    &cv_drawdist_precip, 90},
+	{IT_STRING | IT_CVAR,    NULL, "Precip Density",      &cv_precipdensity, 100},
 
-	{IT_STRING | IT_CVAR,    NULL, "Show FPS",            &cv_ticrate,    100},
-	{IT_STRING | IT_CVAR,    NULL, "Show TPS",            &cv_tpscounter,    110},
-	{IT_STRING | IT_CVAR,    NULL, "Clear Before Redraw", &cv_homremoval, 120},
-	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    130},
-	{IT_STRING | IT_CVAR,    NULL, "FPS Cap",       &cv_fpscap, 140},
+	{IT_STRING | IT_CVAR,    NULL, "Show FPS",            &cv_ticrate,    110},
+	{IT_STRING | IT_CVAR,    NULL, "Show TPS",            &cv_tpscounter,    120},
+	{IT_STRING | IT_CVAR,    NULL, "Clear Before Redraw", &cv_homremoval, 130},
+	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    140},
+	{IT_STRING | IT_CVAR,    NULL, "FPS Cap",       &cv_fpscap, 150},
 };
 
 static menuitem_t OP_VideoModeMenu[] =
