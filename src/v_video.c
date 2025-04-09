@@ -367,15 +367,10 @@ static void LoadPalette(const char *lumpname)
 			}
 #undef dowork
 
-			/*
-			I don't know what I messed up such that red takes index 2 and blue takes index 0.
-			It should be the other way around, but I've just got this working after spending
-			hours on it and I'm not going to look a gift ho(rse/t)fix in the mouth.
-			toast 18/04/17
-			*/
-			pLocalPalette[i].s.red = (UINT8)(working[0][2]);
+
+			pLocalPalette[i].s.red = (UINT8)(working[0][0]);
 			pLocalPalette[i].s.green = (UINT8)(working[0][1]);
-			pLocalPalette[i].s.blue = (UINT8)(working[0][0]);
+			pLocalPalette[i].s.blue = (UINT8)(working[0][2]);
 		}
 	}
 }
