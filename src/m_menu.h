@@ -71,6 +71,7 @@ void M_QuitResponse(INT32 ch);
 
 // Determines whether to show a level in the list
 boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
+boolean M_CanShowLevelInNewList(INT32 mapnum, INT32 gt);
 
 // flags for items in the menu
 // menu handle (what we do when key is pressed
@@ -189,6 +190,22 @@ typedef struct
 	char picname[8];
 	char skinname[SKINNAMESIZE*2+2]; // skin&skin\0
 } description_t;
+
+// experimental level select -- remember to use M_HandleSetupMultiPlayer
+typedef struct
+{
+	char header[22+5]; // mapheader_t lvltttl max length + " ZONE"
+	INT32 maplist[3];
+	char mapnames[3][22];
+	boolean mapavailable[3];
+} levelselectrow_t;
+
+typedef struct
+{
+	UINT8 numrows;
+	levelselectrow_t *rows;
+} levelselect_t;
+// experimental level select end
 
 // mode descriptions for video mode menu
 typedef struct
