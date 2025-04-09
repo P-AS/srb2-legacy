@@ -1743,7 +1743,6 @@ menu_t OP_JoystickSetDef =
 	NULL
 };
 
-//DEFAULTMENUSTYLE("M_VIDEO", OP_VideoOptionsMenu, &OP_MainDef, 60, 30);
 menu_t OP_VideoOptionsDef = DEFAULTMENUSTYLE("M_VIDEO", OP_VideoOptionsMenu, &OP_MainDef, 60, 30);
 menu_t OP_VideoModeDef =
 {
@@ -3547,6 +3546,13 @@ static void M_DrawCenteredMenu(void)
 						switch(currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_SLIDER:
+								// draws the little arrows on the left and right
+								// to indicate that it is changeable
+								if (i == itemOn)
+								{
+									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+								}
 								M_DrawSlider(x, y, cv);
 							case IT_CV_NOPRINT: // color use this
 								break;
@@ -3559,6 +3565,13 @@ static void M_DrawCenteredMenu(void)
 								y += 16;
 								break;
 							default:
+								// draws the little arrows on the left and right
+								// to indicate that it is changeable
+								if (i == itemOn)
+								{
+									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+								}
 								V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0), y,
 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
 								break;
@@ -7854,6 +7867,13 @@ static void M_DrawGenericScrollMenu(void)
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_SLIDER:
+								// draws the little arrows on the left and right
+								// to indicate that it is changeable
+								if (i == itemOn)
+								{
+									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+								}
 								M_DrawSlider(x, y, cv);
 							case IT_CV_NOPRINT: // color use this
 							case IT_CV_INVISSLIDER: // monitor toggles use this
@@ -7867,6 +7887,13 @@ static void M_DrawGenericScrollMenu(void)
 								y += 16;
 								break;
 							default:
+								// draws the little arrows on the left and right
+								// to indicate that it is changeable
+								if (i == itemOn)
+								{
+									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+								}
 								V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0), y,
 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
 								break;
