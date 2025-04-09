@@ -294,6 +294,7 @@ static void M_DrawSkyRoom(void);
 static void M_DrawChecklist(void);
 static void M_DrawEmblemHints(void);
 static void M_DrawPauseMenu(void);
+static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade);
 static void M_DrawServerMenu(void);
 static void M_DrawLevelSelectMenu(void);
 static void M_DrawImageDef(void);
@@ -547,7 +548,7 @@ static menuitem_t MISC_ChangeLevelMenu[] =
 {
 	{IT_STRING|IT_CVAR,              NULL, "Game Type",             &cv_newgametype,    30},
 	{IT_STRING|IT_CVAR,              NULL, "Level",                 &cv_nextmap,        60},
-	{IT_WHITESTRING|IT_CALL,         NULL, "Change Level",          M_ChangeLevel,     120},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Change Level",          M_ChangeLevel,     130},
 };
 
 static menuitem_t MISC_HelpMenu[] =
@@ -4876,6 +4877,7 @@ static void M_DrawLevelSelectMenu(void)
 	{
 		lumpnum_t lumpnum;
 		patch_t *PictureOfLevel;
+		INT32 x, y, w, i, oldval, trans = 0, dupadjust = ((vid.width/vid.dupx) - BASEVIDWIDTH)>>1;
 
 		//  A 160x100 image of the level as entry MAPxxP
 		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cv_nextmap.value)));
@@ -4885,7 +4887,80 @@ static void M_DrawLevelSelectMenu(void)
 		else
 			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
 
-		V_DrawSmallScaledPatch(200, 110, 0, PictureOfLevel);
+		w = (SHORT(PictureOfLevel->width)/4);
+		x = BASEVIDWIDTH/2 - w;
+		y = currentMenu->y + 120 - (SHORT(PictureOfLevel->height)/2);
+
+		V_DrawSmallScaledPatch(x, y, 0, PictureOfLevel);
+
+
+		y += SHORT(PictureOfLevel->height)/8;
+		i = cv_nextmap.value - 1;
+		trans = V_TRANSLUCENT;
+
+		#define horizspac 2
+	do
+	{
+		oldval = i;
+		do
+		{
+			i--;
+			if (i == -1)
+				i = NUMMAPS-1;
+
+			if (i == oldval)
+				return;
+
+			if(!mapheaderinfo[i])
+				continue; // Don't allocate the header.  That just makes memory usage skyrocket.
+
+		} while (!M_CanShowLevelInList(i, cv_newgametype.value));
+
+		//  A 160x100 image of the level as entry MAPxxP
+		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(i+1)));
+
+		if (lumpnum != LUMPERROR)
+			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
+		else
+			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+
+		x -= horizspac + SHORT(PictureOfLevel->width)/4;
+		V_DrawTinyScaledPatch(x, y, trans, PictureOfLevel);
+	} while (x > horizspac-dupadjust);
+
+	x = BASEVIDWIDTH/2 + w + horizspac;
+	i = cv_nextmap.value - 1;
+	trans = 0;
+
+	while (x < BASEVIDWIDTH+dupadjust-horizspac)
+	{
+		oldval = i;
+		do
+		{
+			i++;
+			if (i == NUMMAPS)
+				i = 0;
+
+			if (i == oldval)
+				return;
+
+			if(!mapheaderinfo[i])
+				continue; // Don't allocate the header.  That just makes memory usage skyrocket.
+
+		} while (!M_CanShowLevelInList(i, cv_newgametype.value));
+
+		//  A 160x100 image of the level as entry MAPxxP
+		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(i+1)));
+
+		if (lumpnum != LUMPERROR)
+			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
+		else
+			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+
+		V_DrawTinyScaledPatch(x, y, trans, PictureOfLevel);
+		x += horizspac + SHORT(PictureOfLevel->width)/4;
+	}
+#undef horizspac
 	}
 }
 
@@ -6978,11 +7053,100 @@ static void M_StartServer(INT32 choice)
 	M_ClearMenus(true);
 }
 
-static void M_DrawServerMenu(void)
+static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 {
 	lumpnum_t lumpnum;
 	patch_t *PictureOfLevel;
+	INT32 x, y, w, i, oldval, trans = 0, dupadjust = ((vid.width/vid.dupx) - BASEVIDWIDTH)>>1;
 
+	//  A 160x100 image of the level as entry MAPxxP
+	lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cv_nextmap.value)));
+
+	if (lumpnum != LUMPERROR)
+		PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
+	else
+		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+
+	w = (SHORT(PictureOfLevel->width)/4);
+	x = BASEVIDWIDTH/2 - w;
+	y = currentMenu->y + 130 + 8 - (SHORT(PictureOfLevel->height)/2);
+
+	V_DrawSmallScaledPatch(x, y, 0, PictureOfLevel);
+
+	y += SHORT(PictureOfLevel->height)/8;
+	i = cv_nextmap.value - 1;
+	trans = (leftfade ? V_TRANSLUCENT : 0);
+
+#define horizspac 2
+	do
+	{
+		oldval = i;
+		do
+		{
+			i--;
+			if (i == -1)
+				i = NUMMAPS-1;
+
+			if (i == oldval)
+				return;
+
+			if(!mapheaderinfo[i])
+				continue; // Don't allocate the header.  That just makes memory usage skyrocket.
+
+		} while (!M_CanShowLevelInList(i, cv_newgametype.value));
+
+		//  A 160x100 image of the level as entry MAPxxP
+		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(i+1)));
+
+		if (lumpnum != LUMPERROR)
+			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
+		else
+			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+
+		x -= horizspac + SHORT(PictureOfLevel->width)/4;
+		V_DrawTinyScaledPatch(x, y, trans, PictureOfLevel);
+	} while (x > horizspac-dupadjust);
+
+	x = BASEVIDWIDTH/2 + w + horizspac;
+	i = cv_nextmap.value - 1;
+	trans = (rightfade ? V_TRANSLUCENT : 0);
+
+	while (x < BASEVIDWIDTH+dupadjust-horizspac)
+	{
+		oldval = i;
+		do
+		{
+			i++;
+			if (i == NUMMAPS)
+				i = 0;
+
+			if (i == oldval)
+				return;
+
+			if(!mapheaderinfo[i])
+				continue; // Don't allocate the header.  That just makes memory usage skyrocket.
+
+		} while (!M_CanShowLevelInList(i, cv_newgametype.value));
+
+		//  A 160x100 image of the level as entry MAPxxP
+		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(i+1)));
+
+		if (lumpnum != LUMPERROR)
+			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
+		else
+			PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+
+		V_DrawTinyScaledPatch(x, y, trans, PictureOfLevel);
+		x += horizspac + SHORT(PictureOfLevel->width)/4;
+	}
+#undef horizspac
+}
+
+
+static void M_DrawServerMenu(void)
+{
+
+	M_DrawLevelSelectOnly((currentMenu == &MP_SplitServerDef), false);
 	M_DrawGenericMenu();
 
 #ifndef NONET
@@ -6997,16 +7161,6 @@ static void M_DrawServerMenu(void)
 			                         V_YELLOWMAP, room_list[menuRoomIndex].name);
 	}
 #endif
-
-	//  A 160x100 image of the level as entry MAPxxP
-	lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cv_nextmap.value)));
-
-	if (lumpnum != LUMPERROR)
-		PictureOfLevel = W_CachePatchName(va("%sP", G_BuildMapName(cv_nextmap.value)), PU_CACHE);
-	else
-		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
-
-	V_DrawSmallScaledPatch((BASEVIDWIDTH*3/4)-(SHORT(PictureOfLevel->width)/4), ((BASEVIDHEIGHT*3/4)-(SHORT(PictureOfLevel->height)/4)+10), 0, PictureOfLevel);
 }
 
 static void M_MapChange(INT32 choice)
