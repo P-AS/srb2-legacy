@@ -1743,6 +1743,7 @@ menu_t OP_JoystickSetDef =
 	NULL
 };
 
+//DEFAULTMENUSTYLE("M_VIDEO", OP_VideoOptionsMenu, &OP_MainDef, 60, 30);
 menu_t OP_VideoOptionsDef = DEFAULTMENUSTYLE("M_VIDEO", OP_VideoOptionsMenu, &OP_MainDef, 60, 30);
 menu_t OP_VideoModeDef =
 {
@@ -3254,6 +3255,13 @@ static void M_DrawGenericMenu(void)
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_SLIDER:
+								// draws the little arrows on the left and right
+								// to indicate that it is changeable
+								if (i == itemOn)
+								{
+									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+								}
 								M_DrawSlider(x, y, cv);
 							case IT_CV_NOPRINT: // color use this
 							case IT_CV_INVISSLIDER: // monitor toggles use this
@@ -3267,6 +3275,13 @@ static void M_DrawGenericMenu(void)
 								y += 16;
 								break;
 							default:
+								// draws the little arrows on the left and right
+								// to indicate that it is changeable
+								if (i == itemOn)
+								{
+									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+								}
 								V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0), y,
 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
 								break;
@@ -5090,7 +5105,7 @@ static void M_LoadGameLevelSelect(INT32 choice)
 // ==============
 
 static INT32 saveSlotSelected = 0;
-static short menumovedir = 0;
+static INT32 menumovedir = 0;
 
 static void M_DrawLoadGameData(void)
 {
@@ -5176,6 +5191,7 @@ static void M_DrawLoadGameData(void)
 
 #define LOADBARHEIGHT SP_LoadDef.y + (LINEHEIGHT * (j+1)) + ymod
 #define CURSORHEIGHT  SP_LoadDef.y + (LINEHEIGHT*3) - 1
+
 static void M_DrawLoad(void)
 {
 	INT32 i, j;
@@ -5185,7 +5201,7 @@ static void M_DrawLoad(void)
 
 	if (menumovedir != 0) //movement illusion
 	{
-		ymod = (-(LINEHEIGHT/4))*menumovedir;
+		ymod = (-(LINEHEIGHT/4))*(menumovedir/(FRACUNIT-1));
 		offset = ((menumovedir > 0) ? -1 : 1);
 	}
 
@@ -5228,8 +5244,8 @@ static void M_DrawLoad(void)
 
 	//finishing the movement illusion
 	if (menumovedir)
-		menumovedir += ((menumovedir > 0) ? 1 : -1);
-	if (abs(menumovedir) > 3)
+		menumovedir += FixedMul((menumovedir > 0) ? FRACUNIT : -FRACUNIT, renderdeltatics);
+	if (abs(menumovedir) >= 4*FRACUNIT)
 		menumovedir = 0;
 }
 #undef LOADBARHEIGHT
@@ -5449,7 +5465,7 @@ static void M_HandleLoadSave(INT32 choice)
 			++saveSlotSelected;
 			if (saveSlotSelected >= MAXSAVEGAMES)
 				saveSlotSelected -= MAXSAVEGAMES;
-			menumovedir = 1;
+			menumovedir = FixedMul(FRACUNIT, renderdeltatics);
 			break;
 
 		case KEY_UPARROW:
@@ -5457,7 +5473,7 @@ static void M_HandleLoadSave(INT32 choice)
 			--saveSlotSelected;
 			if (saveSlotSelected < 0)
 				saveSlotSelected += MAXSAVEGAMES;
-			menumovedir = -1;
+			menumovedir = -FixedMul(FRACUNIT, renderdeltatics);
 			break;
 
 		case KEY_ENTER:
@@ -5560,13 +5576,13 @@ static void M_DrawSetupChoosePlayerMenu(void)
 	if (abs(itemOn*128*FRACUNIT - char_scroll) > 256*FRACUNIT)
 		char_scroll = itemOn*128*FRACUNIT;
 	else if (itemOn*128*FRACUNIT - char_scroll > 128*FRACUNIT)
-		char_scroll += 48*FRACUNIT;
+		char_scroll += FixedMul(48*FRACUNIT, renderdeltatics);
 	else if (itemOn*128*FRACUNIT - char_scroll < -128*FRACUNIT)
-		char_scroll -= 48*FRACUNIT;
-	else if (itemOn*128*FRACUNIT > char_scroll+16*FRACUNIT)
-		char_scroll += 16*FRACUNIT;
-	else if (itemOn*128*FRACUNIT < char_scroll-16*FRACUNIT)
-		char_scroll -= 16*FRACUNIT;
+		char_scroll -= FixedMul(48*FRACUNIT, renderdeltatics);
+	else if (itemOn*128*FRACUNIT > char_scroll+FixedMul(16*FRACUNIT, renderdeltatics))
+		char_scroll += FixedMul(16*FRACUNIT, renderdeltatics);
+	else if (itemOn*128*FRACUNIT < char_scroll-FixedMul(16*FRACUNIT, renderdeltatics))
+		char_scroll -= FixedMul(16*FRACUNIT, renderdeltatics);
 	else // close enough.
 		char_scroll = itemOn*128*FRACUNIT; // just be exact now.
 	i = (char_scroll+16*FRACUNIT)/(128*FRACUNIT);
