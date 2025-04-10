@@ -624,7 +624,7 @@ static menuitem_t SR_LevelSelectMenu[] =
 {
 	{IT_STRING|IT_CVAR,              NULL, "Level",                 &cv_nextmap,        60},
 
-	{IT_WHITESTRING|IT_CALL,         NULL, "Start",                 M_LevelSelectWarp,     120},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Start",                 M_LevelSelectWarp,     130},
 };
 
 static menuitem_t SR_UnlockChecklistMenu[] =
