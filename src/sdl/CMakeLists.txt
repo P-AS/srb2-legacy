@@ -27,6 +27,7 @@ else()
 endif()
 
 target_sourcefile(c)
+target_sources(SRB2SDL2 PRIVATE SDL_main/SDL_android_main.c)
 
 target_sources(SRB2SDL2 PRIVATE ogl_sdl.c)
 
