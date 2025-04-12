@@ -467,6 +467,9 @@ extern UINT16 software_MAXPACKETLENGTH;
 extern boolean acceptnewnode;
 extern SINT8 servernode;
 
+extern plrinfo playerinfo[MAXPLAYERS];
+extern SINT8 joinnode;
+
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
 extern tic_t jointimeout;

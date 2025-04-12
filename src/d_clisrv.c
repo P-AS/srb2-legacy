@@ -83,6 +83,10 @@ boolean serverrunning = false;
 INT32 serverplayer = 0;
 char motd[254], server_context[8]; // Message of the Day, Unique Context (even without Mumble support)
 
+plrinfo playerinfo[MAXPLAYERS];
+
+SINT8 joinnode = 0; // used for CL_VIEWSERVER
+
 // Server specific vars
 UINT8 playernode[MAXPLAYERS];
 
@@ -1063,6 +1067,7 @@ static INT16 Consistancy(void);
 typedef enum
 {
 	CL_SEARCHING,
+	CL_CHECKFILES,
 	CL_DOWNLOADFILES,
 	CL_ASKJOIN,
 	CL_WAITJOINRESPONSE,
@@ -1070,7 +1075,8 @@ typedef enum
 	CL_DOWNLOADSAVEGAME,
 #endif
 	CL_CONNECTED,
-	CL_ABORTED
+	CL_ABORTED,
+	CL_VIEWSERVER
 } cl_mode_t;
 
 static void GetPackets(void);
@@ -1128,7 +1134,7 @@ static inline void CL_DrawConnectionStatus(void)
 	M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
 	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press ESC to abort");
 
-	if (cl_mode != CL_DOWNLOADFILES)
+	if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_VIEWSERVER)
 	{
 		INT32 i, animtime = ((ccstime / 4) & 15) + 16;
 		UINT8 palstart = (cl_mode == CL_SEARCHING) ? 128 : 160;
@@ -1155,6 +1161,8 @@ static inline void CL_DrawConnectionStatus(void)
 					cltext = M_GetText("Waiting to download game state...");
 				break;
 #endif
+			case CL_CHECKFILES:
+				cltext = M_GetText("Checking server files...");
 			case CL_ASKJOIN:
 			case CL_WAITJOINRESPONSE:
 				cltext = M_GetText("Requesting to join...");
@@ -1167,7 +1175,79 @@ static inline void CL_DrawConnectionStatus(void)
 	}
 	else
 	{
-		if (lastfilenum != -1)
+		if (cl_mode == CL_VIEWSERVER)
+		{
+			V_DrawFill(8, 16, BASEVIDWIDTH - 16, 54, 239);
+			
+			V_DrawThinString(12 + 80, 18, V_ALLOWLOWERCASE, va("%s", serverlist[joinnode].info.servername));
+			
+			const char *map = va("%sP", serverlist[joinnode].info.mapname);
+			patch_t *current_map = W_LumpExists(map) ? W_CachePatchName(map, PU_CACHE) : W_CachePatchName("BLANKLVL", PU_CACHE);
+			V_DrawSmallScaledPatch(10, 18, 0, current_map);
+			
+			V_DrawThinString(12 + 80, 38, V_ALLOWLOWERCASE, va("%s", serverlist[joinnode].info.maptitle));
+			V_DrawThinString(12 + 80, 48, V_ALLOWLOWERCASE, va("%s", Gametype_Names[serverlist[joinnode].info.gametype]));
+			
+			if (fileneedednum > 0)
+			{
+				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_ORANGEMAP, va("%i Addons", fileneedednum));
+			}
+			else
+			{
+				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_YELLOWMAP, "Vanilla");
+			}
+			
+			if (serverlist[joinnode].info.cheatsenabled)
+			{
+				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 58, V_ALLOWLOWERCASE|V_GREENMAP, "Cheats");
+			}
+			
+			V_DrawFill(8, 72, BASEVIDWIDTH - 16, 112, 239);
+			
+			V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Players");
+			V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i / %i", serverlist[joinnode].info.numberofplayer, serverlist[joinnode].info.maxplayer));
+			
+			INT32 i;
+			INT32 count = 0;
+			INT32 x = 14;
+			INT32 y = 84;
+			INT32 statuscolor = 1;
+			char player_name[MAXPLAYERNAME+1];
+			if (serverlist[joinnode].info.numberofplayer > 0)
+			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (playerinfo[i].node < 255)
+					{
+						strncpy(player_name, playerinfo[i].name, MAXPLAYERNAME);
+						V_DrawThinString(x + 10, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, player_name);
+						
+						if (playerinfo[i].team == 0) { statuscolor = 112; } // playing
+						if (playerinfo[i].data & 0x20) { statuscolor = 54; } // tag IT
+						if (playerinfo[i].team == 1) { statuscolor = 35; } // ctf red team
+						if (playerinfo[i].team == 2) { statuscolor = 152; } // ctf blue team
+						if (playerinfo[i].team == 255) { statuscolor = 16; } // spectator or non-team
+						
+						V_DrawFill(x, y, 7, 7, 31);
+						V_DrawFill(x, y, 6, 6, statuscolor);
+						
+						y += 9;
+						count++;
+						if ((count == 11) || (count == 22))
+						{
+							x += 104;
+							y = 84;
+						}
+					}
+				}
+			}
+			
+			// Buttons
+			V_DrawFill(8, BASEVIDHEIGHT - 14, BASEVIDWIDTH - 16, 12, 239);
+			V_DrawThinString(16, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sESC%s] = Abort", "\x82", "\x80"));
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sENTER%s] = Join", "\x82", "\x80"));
+		}
+		else if (lastfilenum != -1)
 		{
 			INT32 dldlength;
 			static char tempname[28];
@@ -1743,6 +1823,68 @@ void CL_UpdateServerList(boolean internetsearch, INT32 room)
 
 #endif // ifndef NONET
 
+static boolean CL_ServerConnectionCheckFiles(tic_t *asksent)
+{
+	INT32 i;
+
+	CONS_Printf(M_GetText("Checking files...\n"));
+	i = CL_CheckFiles();
+	if (i == 3) // too many files
+	{
+		D_QuitNetGame();
+		CL_Reset();
+		D_StartTitle();
+		M_StartMessage(M_GetText(
+			"You have too many WAD files loaded\n"
+			"to add ones the server is using.\n"
+			"Please restart SRB2 before connecting.\n\n"
+			"Press ESC\n"
+		), NULL, MM_NOTHING);
+		return false;
+	}
+	else if (i == 2) // cannot join for some reason
+	{
+		D_QuitNetGame();
+		CL_Reset();
+		D_StartTitle();
+		M_StartMessage(M_GetText(
+			"You have WAD files loaded or have\n"
+			"modified the game in some way, and\n"
+			"your file list does not match\n"
+			"the server's file list.\n"
+			"Please restart SRB2 before connecting.\n\n"
+			"Press ESC\n"
+		), NULL, MM_NOTHING);
+		return false;
+	}
+	else if (i == 1)
+		cl_mode = CL_ASKJOIN;
+	else
+	{
+		// must download something
+		// can we, though?
+		if (!CL_CheckDownloadable()) // nope!
+		{
+			D_QuitNetGame();
+			CL_Reset();
+			D_StartTitle();
+			M_StartMessage(M_GetText(
+				"You cannot connect to this server\n"
+				"because you cannot download the files\n"
+				"that you are missing from the server.\n\n"
+				"See the console or log file for\n"
+				"more details.\n\n"
+				"Press ESC\n"
+			), NULL, MM_NOTHING);
+			return false;
+		}
+		// no problem if can't send packet, we will retry later
+		if (CL_SendRequestFile())
+			cl_mode = CL_DOWNLOADFILES;
+	}
+	return true;
+}
+
 /** Called by CL_ServerConnectionTicker
   *
   * \param asksent ???
@@ -1787,61 +1929,7 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 		{
 			D_ParseFileneeded(serverlist[i].info.fileneedednum,
 				serverlist[i].info.fileneeded);
-			CONS_Printf(M_GetText("Checking files...\n"));
-			i = CL_CheckFiles();
-			if (i == 3) // too many files
-			{
-				D_QuitNetGame();
-				CL_Reset();
-				D_StartTitle();
-				M_StartMessage(M_GetText(
-					"You have too many WAD files loaded\n"
-					"to add ones the server is using.\n"
-					"Please restart SRB2 before connecting.\n\n"
-					"Press ESC\n"
-				), NULL, MM_NOTHING);
-				return false;
-			}
-			else if (i == 2) // cannot join for some reason
-			{
-				D_QuitNetGame();
-				CL_Reset();
-				D_StartTitle();
-				M_StartMessage(M_GetText(
-					"You have WAD files loaded or have\n"
-					"modified the game in some way, and\n"
-					"your file list does not match\n"
-					"the server's file list.\n"
-					"Please restart SRB2 before connecting.\n\n"
-					"Press ESC\n"
-				), NULL, MM_NOTHING);
-				return false;
-			}
-			else if (i == 1)
-				cl_mode = CL_ASKJOIN;
-			else
-			{
-				// must download something
-				// can we, though?
-				if (!CL_CheckDownloadable()) // nope!
-				{
-					D_QuitNetGame();
-					CL_Reset();
-					D_StartTitle();
-					M_StartMessage(M_GetText(
-						"You cannot connect to this server\n"
-						"because you cannot download the files\n"
-						"that you are missing from the server.\n\n"
-						"See the console or log file for\n"
-						"more details.\n\n"
-						"Press ESC\n"
-					), NULL, MM_NOTHING);
-					return false;
-				}
-				// no problem if can't send packet, we will retry later
-				if (CL_SendRequestFile())
-					cl_mode = CL_DOWNLOADFILES;
-			}
+			cl_mode = CL_VIEWSERVER;
 		}
 		else
 			cl_mode = CL_ASKJOIN; // files need not be checked for the server.
@@ -1887,6 +1975,11 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		case CL_SEARCHING:
 			if (!CL_ServerConnectionSearchTicker(asksent))
+				return false;
+			break;
+
+		case CL_CHECKFILES:
+			if (!CL_ServerConnectionCheckFiles(asksent))
 				return false;
 			break;
 
@@ -1952,6 +2045,14 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 		I_OsPolling();
 		key = I_GetKey();
+		if (cl_mode == CL_VIEWSERVER)
+		{
+			if (key == KEY_ENTER)
+				cl_mode = CL_CHECKFILES;
+			else if (key == KEY_ESCAPE)
+				cl_mode = CL_ABORTED;
+		}
+
 		if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 		{
 			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
