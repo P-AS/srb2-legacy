@@ -555,8 +555,4 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Hardware renderer: OpenGL
 #define GL_SHADERS
 
-// WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) (FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)
-
-
 #endif // __DOOMDEF__

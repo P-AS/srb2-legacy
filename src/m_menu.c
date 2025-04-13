@@ -1175,7 +1175,7 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 
 	{IT_STRING|IT_CVAR,         NULL, "Shaders",	     &cv_grshaders,        50},
 	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective", &cv_grshearing,   60},
-	{IT_STRING|IT_CVAR,         NULL, "Field of view",   &cv_grfov,            80},
+	{IT_STRING|IT_CVAR,         NULL, "Field of view",   &cv_fov,            80},
 	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        90},
 	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     100},
 	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,110},

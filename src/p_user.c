@@ -7986,13 +7986,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		dist = camdist;
 
-		// x1.5 dist for splitscreen
-		if (splitscreen)
-		{
-			dist = FixedMul(dist, 3*FRACUNIT/2);
-			camheight = FixedMul(camheight, 3*FRACUNIT/2);
-		}
-
 		// x1.2 dist for analog
 		if (P_AnalogMove(player))
 		{
