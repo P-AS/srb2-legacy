@@ -129,6 +129,11 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 #endif // NOMUMBLE
 
+#if defined(__ANDROID__)
+#include "../android-jni/jni_android.h" // includes jni.h
+#include "../android-jni/ndk_crash_handler.h"
+#endif
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
@@ -2150,7 +2155,7 @@ void I_SetTextInputMode(boolean active)
 boolean I_GetTextInputMode(void)
 {
 	boolean inputtextactive = (boolean)SDL_IsTextInputActive();
-	
+
 	return inputtextactive;
 }
 
@@ -2938,6 +2943,10 @@ static const char *locateWad(void)
 #endif
 
 
+#if defined(__ANDROID__)
+#define SHAREDSTORAGEFOLDER "SRB2 Legacy"
+#endif
+
 #ifdef CMAKECONFIG
 #ifndef NDEBUG
 	I_OutputMsg(","CMAKE_ASSETS_DIR);
@@ -3060,6 +3069,46 @@ const char *I_LocateWad(void)
 #endif
 	}
 	return waddir;
+}
+const char *I_AppStorageLocation(void)
+{
+#if defined(__ANDROID__)
+    return SDL_AndroidGetExternalStoragePath();
+#else
+    return NULL;
+#endif
+}
+
+const char *I_SharedStorageLocation(void)
+{
+#if defined(__ANDROID__)
+    static char *sharedStorage = NULL;
+
+    if (sharedStorage == NULL)
+    {
+        char *dir = JNI_GetStorageDirectory();
+        if (dir)
+        {
+            char *gamePath = SHAREDSTORAGEFOLDER;
+            size_t size = strlen(dir) + strlen(PATHSEP) + strlen(gamePath) + 1;
+            sharedStorage = (char*)malloc(size);
+            snprintf(sharedStorage, size, "%s" PATHSEP "%s", dir, gamePath);
+        }
+    }
+
+    return sharedStorage;
+#else
+    return NULL;
+#endif
+}
+
+const char *I_RemovableStorageLocation(void)
+{
+#if defined(__ANDROID__)
+    return JNI_RemovableStoragePath();
+#else
+    return NULL;
+#endif
 }
 
 #ifdef __linux__
@@ -3200,6 +3249,118 @@ size_t I_GetFreeMem(size_t *total)
 #endif
 }
 
+<<<<<<< HEAD
+=======
+const CPUInfoFlags *I_CPUInfo(void)
+{
+#if defined (_WIN32)
+	static CPUInfoFlags WIN_CPUInfo;
+	SYSTEM_INFO SI;
+	p_IsProcessorFeaturePresent pfnCPUID = (p_IsProcessorFeaturePresent)(LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsProcessorFeaturePresent");
+
+	ZeroMemory(&WIN_CPUInfo,sizeof (WIN_CPUInfo));
+	if (pfnCPUID)
+	{
+		WIN_CPUInfo.FPPE       = pfnCPUID( 0); //PF_FLOATING_POINT_PRECISION_ERRATA
+		WIN_CPUInfo.FPE        = pfnCPUID( 1); //PF_FLOATING_POINT_EMULATED
+		WIN_CPUInfo.cmpxchg    = pfnCPUID( 2); //PF_COMPARE_EXCHANGE_DOUBLE
+		WIN_CPUInfo.MMX        = pfnCPUID( 3); //PF_MMX_INSTRUCTIONS_AVAILABLE
+		WIN_CPUInfo.PPCMM64    = pfnCPUID( 4); //PF_PPC_MOVEMEM_64BIT_OK
+		WIN_CPUInfo.ALPHAbyte  = pfnCPUID( 5); //PF_ALPHA_BYTE_INSTRUCTIONS
+		WIN_CPUInfo.SSE        = pfnCPUID( 6); //PF_XMMI_INSTRUCTIONS_AVAILABLE
+		WIN_CPUInfo.AMD3DNow   = pfnCPUID( 7); //PF_3DNOW_INSTRUCTIONS_AVAILABLE
+		WIN_CPUInfo.RDTSC      = pfnCPUID( 8); //PF_RDTSC_INSTRUCTION_AVAILABLE
+		WIN_CPUInfo.PAE        = pfnCPUID( 9); //PF_PAE_ENABLED
+		WIN_CPUInfo.SSE2       = pfnCPUID(10); //PF_XMMI64_INSTRUCTIONS_AVAILABLE
+		//WIN_CPUInfo.blank    = pfnCPUID(11); //PF_SSE_DAZ_MODE_AVAILABLE
+		WIN_CPUInfo.DEP        = pfnCPUID(12); //PF_NX_ENABLED
+		WIN_CPUInfo.SSE3       = pfnCPUID(13); //PF_SSE3_INSTRUCTIONS_AVAILABLE
+		WIN_CPUInfo.cmpxchg16b = pfnCPUID(14); //PF_COMPARE_EXCHANGE128
+		WIN_CPUInfo.cmp8xchg16 = pfnCPUID(15); //PF_COMPARE64_EXCHANGE128
+		WIN_CPUInfo.PFC        = pfnCPUID(16); //PF_CHANNELS_ENABLED
+	}
+#ifdef HAVE_SDLCPUINFO
+	else
+	{
+		WIN_CPUInfo.RDTSC       = SDL_HasRDTSC();
+		WIN_CPUInfo.MMX         = SDL_HasMMX();
+		WIN_CPUInfo.AMD3DNow    = SDL_Has3DNow();
+		WIN_CPUInfo.SSE         = SDL_HasSSE();
+		WIN_CPUInfo.SSE2        = SDL_HasSSE2();
+		WIN_CPUInfo.AltiVec     = SDL_HasAltiVec();
+	}
+	WIN_CPUInfo.MMXExt      = SDL_FALSE; //SDL_HasMMXExt(); No longer in SDL2
+	WIN_CPUInfo.AMD3DNowExt = SDL_FALSE; //SDL_Has3DNowExt(); No longer in SDL2
+#endif
+	GetSystemInfo(&SI);
+	WIN_CPUInfo.CPUs = SI.dwNumberOfProcessors;
+	WIN_CPUInfo.IA64 = (SI.dwProcessorType == 2200); // PROCESSOR_INTEL_IA64
+	WIN_CPUInfo.AMD64 = (SI.dwProcessorType == 8664); // PROCESSOR_AMD_X8664
+	return &WIN_CPUInfo;
+#elif defined (HAVE_SDLCPUINFO)
+	static CPUInfoFlags SDL_CPUInfo;
+	memset(&SDL_CPUInfo,0,sizeof (CPUInfoFlags));
+	SDL_CPUInfo.RDTSC       = SDL_HasRDTSC();
+	SDL_CPUInfo.MMX         = SDL_HasMMX();
+	SDL_CPUInfo.MMXExt      = SDL_FALSE; //SDL_HasMMXExt(); No longer in SDL2
+	SDL_CPUInfo.AMD3DNow    = SDL_Has3DNow();
+	SDL_CPUInfo.AMD3DNowExt = SDL_FALSE; //SDL_Has3DNowExt(); No longer in SDL2
+	SDL_CPUInfo.SSE         = SDL_HasSSE();
+	SDL_CPUInfo.SSE2        = SDL_HasSSE2();
+	SDL_CPUInfo.AltiVec     = SDL_HasAltiVec();
+	return &SDL_CPUInfo;
+#else
+	return NULL; /// \todo CPUID asm
+#endif
+}
+
+INT32 I_CheckSystemPermission(const char *permission)
+{
+#if defined(__ANDROID__)
+    if (JNI_CheckPermission(permission))
+        return 1;
+#else
+    (void)permission;
+#endif
+    return 0;
+}
+
+INT32 I_RequestSystemPermission(const char *permission)
+{
+#if defined(__ANDROID__)
+    if (SDL_AndroidRequestPermission(permission))
+        return 1;
+#else
+    (void)permission;
+#endif
+    return 0;
+}
+
+INT32 I_StoragePermission(void)
+{
+#if defined(__ANDROID__)
+    if (JNI_StoragePermissionGranted())
+        return 1;
+    else
+        return 0;
+#else
+    return 1;
+#endif
+}
+
+INT32 I_SystemStoragePermission(void)
+{
+#if defined(__ANDROID__)
+    if (JNI_CheckStoragePermission())
+        return 1;
+    else
+        return 0;
+#else
+    return 1;
+#endif
+}
+
+>>>>>>> 0d3567dd (fadpiwejh)
 // note CPUAFFINITY code used to reside here
 void I_RegisterSysCommands(void) {}
 #endif

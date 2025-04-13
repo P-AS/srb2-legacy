@@ -14,7 +14,7 @@ find_path(SDL2_MIXER_INCLUDE_DIR
 	NAMES SDL_mixer.h
 	PATHS
 		${SDL2_MIXER_PKGCONF_INCLUDE_DIRS}
-		../../thirdparty/SDL2_mixer/include/
+		"../../thirdparty/SDL2_mixer/include/"
 		"/usr/include/SDL2"
 		"/usr/local/include/SDL2"
 )
@@ -24,7 +24,7 @@ find_library(SDL2_MIXER_LIBRARY
 	NAMES SDL2_mixer
 	PATHS
 		${SDL2_MIXER_PKGCONF_LIBRARY_DIRS}
-		../../thirdparty/SDL2_mixer/libs/arm64-v8a/
+		"../../thirdparty/SDL2_mixer/libs/arm64-v8a/"
 		"/usr/lib"
 		"/usr/local/lib"
 )

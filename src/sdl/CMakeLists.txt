@@ -13,7 +13,9 @@ if(${SRB2_CONFIG_SDL2_USEMIXER})
 			set(SDL2_MIXER_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/i686-w64-mingw32/lib -lSDL2_mixer")
 		endif()
 	else()
-		find_package(SDL2_mixer)
+		set(SDL2_MIXER_FOUND ON)
+		set(SDL2_MIXER_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/include/)
+		set(SDL2_MIXER_LIBRARIES "-L${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/libs/arm64-v8a/ -lSDL2_mixer")
 	endif()
 	if(${SDL2_MIXER_FOUND})
 		set(SRB2_HAVE_MIXER ON)
@@ -32,19 +34,24 @@ target_sources(SRB2SDL2 PRIVATE SDL_main/SDL_android_main.c)
 target_sources(SRB2SDL2 PRIVATE ogl_sdl.c)
 
 # Dependency
-if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-	set(SDL2_FOUND ON)
-	if(${SRB2_SYSTEM_BITS} EQUAL 64)
-		set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/include/SDL2)
-		set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/lib -lSDL2")
-	else() # 32-bit
-		set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/include/SDL2)
-		set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib -lSDL2")
-	endif()
-else()
-	find_package(SDL2 CONFIG REQUIRED)
-	find_package(SDL2 REQUIRED)
-endif()
+#if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
+#	set(SDL2_FOUND ON)
+#	if(${SRB2_SYSTEM_BITS} EQUAL 64)
+#		set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/include/SDL2)
+#		set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/lib -lSDL2")
+#	else() # 32-bit
+#		set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/include/SDL2)
+#		set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib -lSDL2")
+#	endif()
+#else()
+#	find_package(SDL2 CONFIG REQUIRED)
+#	find_package(SDL2 REQUIRED)
+#endif()
+
+set(SDL2_FOUND ON)
+set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/SDL2/include)
+set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/libs/arm64-v8a/ -lSDL2")
+
 
 if(${SDL2_FOUND})
 	if(${CMAKE_SYSTEM} MATCHES Windows)
@@ -63,13 +70,8 @@ if(${SDL2_FOUND})
 		)
 	endif()
 
-	if(${CMAKE_SYSTEM} MATCHES Windows)
-		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacywin)
-	elseif(${CMAKE_SYSTEM} MATCHES Linux)
-		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME lsdl2srb2legacy)
-	else()
-		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacy)
-	endif()
+	add_library(SRB2SDL2 SHARED)
+	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacy)
 
 	if(${CMAKE_SYSTEM} MATCHES Darwin)
 		find_library(CORE_FOUNDATION_LIBRARY "CoreFoundation")
@@ -88,18 +90,18 @@ if(${SDL2_FOUND})
 			RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/macosx/Srb2mac.icns"
 		)
 	endif()
-
+	target_link_libraries(SRB2SDL2 PRIVATE "${CMAKE_SOURCE_DIR}/thirdparty/SDL2/libs/arm64-v8a/libSDL2.so")
 	target_link_libraries(SRB2SDL2 PRIVATE
-		${SDL2_LIBRARIES}
 		${SDL2_MIXER_LIBRARIES}
 		${GME_LIBRARIES}
 		${OPENMPT_LIBRARIES}
 		${MIXERX_LIBRARIES}
 		${PNG_LIBRARIES}
-		${ZLIB_LIBRARIES}
+		"-lz"
 		${OPENGL_LIBRARIES}
-		${CURL_LIBRARIES}
 	)
+	target_link_libraries(SRB2SDL2 PRIVATE CURL::curl)
+	target_link_libraries(SRB2SDL2 PRIVATE libpng::libpng)
 
 	if(${CMAKE_SYSTEM} MATCHES Linux)
 		target_link_libraries(SRB2SDL2 PRIVATE

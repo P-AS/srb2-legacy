@@ -14,6 +14,7 @@
 #include "d_main.h" // for srb2home
 #include "g_game.h"
 #include "sounds.h"
+#include "s_sound.h"
 #include "info.h"
 #include "d_think.h"
 #include "m_argv.h"

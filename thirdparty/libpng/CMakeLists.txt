@@ -15,6 +15,7 @@ add_library(libpng STATIC
 	pngwtran.c
 	pngwutil.c
 )
+target_link_libraries(libpng "-lz")
 add_library(libpng::libpng ALIAS libpng)
 target_include_directories(libpng PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 set(PNG_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libpng-src/projects -lpng64")

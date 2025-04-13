@@ -100,6 +100,8 @@ if(${SRB2_CONFIG_HAVE_PNG} AND ${SRB2_CONFIG_HAVE_ZLIB})
 			set(SRB2_HAVE_PNG ON)
 			add_definitions(-DHAVE_PNG)
 			add_definitions(-D_LARGEFILE64_SOURCE)
+			set(PNG_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/thirdparty/libpng")
+
 		else()
 			message(WARNING "You have specified that PNG is available but it was not found. SRB2 may not compile correctly.")
 		endif()
@@ -108,6 +110,8 @@ endif()
 
 if(${SRB2_CONFIG_HAVE_CURL})
 	set(CURL_FOUND ON)
+	set(CURL_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/curl/include)
+	set(CURL_LIBRARIES "-L${CMAKE_SOURCE_DIR}/thirdparty/curl/libs/arm64-v8a -lcurl")
 	#target_link_libraries(SRB2 PRIVATE CURL::curl)
 	set(SRB2_HAVE_CURL ON)
 	add_definitions(-DHAVE_CURL)
@@ -148,6 +152,8 @@ else()
 	target_compile_definitions(SRB2SDL2 PRIVATE -DNDEBUG)
 endif()
 
+target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG -DNOMUMBLE -DSTDC_HEADERS)
+
 #add_library(SRB2Core STATIC
 #	${SRB2_CORE_SOURCES}
 #	${SRB2_CORE_HEADERS}
@@ -169,7 +175,6 @@ if(${CMAKE_SYSTEM} MATCHES Windows)
 	add_subdirectory(win32)
 endif()
 
-add_subdirectory(sdl)
 add_subdirectory(android-jni)
 
 if(NOT ${SRB2_SDL2_AVAILABLE} AND NOT ${SRB2_WIN32_AVAILABLE})

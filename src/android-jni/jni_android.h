@@ -18,12 +18,12 @@ extern "C" {
 #endif
 #include <jni.h>
 
-#include "../../../../src/doomdata.h"
-#include "../../../../src/doomtype.h"
-#include "../../../../src/doomdef.h"
+#include "../doomdata.h"
+#include "../doomtype.h"
+#include "../doomdef.h"
 
-#include "../../../../src/i_system.h"
-#include "../../../../src/console.h"
+#include "../i_system.h"
+#include "../console.h"
 
 void JNI_Startup(void);
 void JNI_SetupActivity(void);

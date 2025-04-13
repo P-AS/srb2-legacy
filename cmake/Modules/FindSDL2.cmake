@@ -14,7 +14,7 @@ find_path(SDL2_INCLUDE_DIR
 	NAMES SDL.h
 	PATHS
 		${SDL2_PKGCONF_INCLUDE_DIRS}
-		../../thirdparty/SDL2/include
+		"../../thirdparty/SDL2/include"
 		"/usr/include/SDL2"
 		"/usr/local/include/SDL2"
 )
@@ -24,7 +24,7 @@ find_library(SDL2_LIBRARY
 	NAMES SDL2
 	PATHS
 		${SDL2_PKGCONF_LIBRARY_DIRS}
-		../../thirdparty/SDL2/libs/arm64-v8a/
+		"../../thirdparty/SDL2/libs/arm64-v8a/"
 		"/usr/lib"
 		"/usr/local/lib"
 )
