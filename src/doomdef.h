@@ -419,6 +419,8 @@ extern INT32 cv_debug;
 #define DBG_MEMORY      0x0200
 #define DBG_SETUP       0x0400
 #define DBG_LUA         0x0800
+#define DBG_VIEWMORPH   0x2000
+
 
 // =======================
 // Misc stuff for later...
