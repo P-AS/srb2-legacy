@@ -76,7 +76,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
 #include "keys.h"
-#include "filesrch.h" // refreshdirmenu, mainwadstally 
+#include "filesrch.h" // refreshdirmenu, mainwadstally
 #include "r_fps.h"
 #include "m_perfstats.h"
 
@@ -252,7 +252,7 @@ static void D_Display(void)
 	if (vid.recalc)
 		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
 
-	
+
 	if (rendermode == render_soft && !splitscreen)
 		R_CheckViewMorph();
 
@@ -406,7 +406,7 @@ static void D_Display(void)
 			{
 				if (!splitscreen)
 					R_ApplyViewMorph();
-					
+
 				if (postimgtype)
 					V_DoPostProcessor(0, postimgtype, postimgparam);
 				if (postimgtype2)
@@ -775,7 +775,7 @@ void D_StartTitle(void)
 	INT32 i;
 
 	S_StopMusic();
-	
+
 	if (netgame)
 	{
 		if (gametype == GT_COOP)
@@ -1017,6 +1017,53 @@ static inline void D_MakeTitleString(char *s)
 	strcpy(s, temp);
 }
 
+#if defined(__ANDROID__)
+static void FindUsableStorageLocation(char *dest, size_t destsize, char *path, const char **homelist, char *defpath)
+{
+    for (INT32 i = 0; homelist[i]; i++)
+    {
+        snprintf(dest, destsize, "%s" PATHSEP "%s", homelist[i], path);
+        if (FIL_ReadFileOK(dest))
+            return;
+    }
+
+    snprintf(dest, destsize, "%s" PATHSEP "%s", defpath, path);
+}
+
+static void D_AndroidSetupHome(const char *userhome)
+{
+    const char *homelist[3] = { NULL, NULL, NULL };
+    INT32 next = 0;
+
+    strlcpy(srb2home, userhome, sizeof(srb2home));
+
+#define ListAdd(path) \
+	homelist[next] = path; \
+	if (homelist[next]) \
+		next++;
+
+    ListAdd(srb2home);
+    ListAdd(I_AppStorageLocation());
+
+#define SetupLocation(loc, path) FindUsableStorageLocation(loc, sizeof(loc), path, homelist, srb2home)
+
+    SetupLocation(downloaddir, "DOWNLOAD");
+
+    if (dedicated)
+        SetupLocation(configfile, "d" CONFIGFILENAME);
+    else
+        SetupLocation(configfile, CONFIGFILENAME);
+
+#ifdef TOUCHINPUTS
+    SetupLocation(touchlayoutfolder, "touchlayouts");
+#endif
+
+
+#undef SetupLocation
+#undef ListAdd
+}
+#endif
+
 
 //
 // D_SRB2Main
@@ -1111,6 +1158,9 @@ void D_SRB2Main(void)
 
 	{
 		const char *userhome = D_Home(); //Alam: path to home
+#if defined(__ANDROID__)
+        strlcpy(srb2path, I_AppStorageLocation(), sizeof(srb2path));
+#endif
 
 		if (!userhome)
 		{
@@ -1130,8 +1180,10 @@ void D_SRB2Main(void)
 		}
 		else
 		{
+#if defined(__ANDROID__)
+            D_AndroidSetupHome(userhome);
 			// use user specific config file
-#ifdef DEFAULTDIR
+#elif defined(DEFAULTDIR)
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
 			if (dedicated)
@@ -1532,8 +1584,9 @@ const char *D_Home(void)
 {
 	const char *userhome = NULL;
 
-#ifdef ANDROID
-	return "/data/data/org.srb2/";
+#if defined(ANDROID)
+    userhome = I_AppStorageLocation();
+    return userhome;
 #endif
 #ifdef _arch_dreamcast
 	char VMUHOME[] = "HOME=/vmu/a1";
@@ -1581,4 +1634,3 @@ const char *D_Home(void)
 	if (usehome) return userhome;
 	else return NULL;
 }
-
