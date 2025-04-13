@@ -90,11 +90,10 @@ if(${SDL2_FOUND})
 		)
 	endif()
 	target_link_libraries(SRB2SDL2 PRIVATE "${CMAKE_SOURCE_DIR}/thirdparty/SDL2/libs/arm64-v8a/libSDL2.so")
+	target_link_libraries(SRB2SDL2 PRIVATE "${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/libs/arm64-v8a/libSDL2_mixer.so" "${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/libs/arm64-v8a/libmpg123.so")
 	target_link_libraries(SRB2SDL2 PRIVATE
-		${SDL2_MIXER_LIBRARIES}
 		${GME_LIBRARIES}
 		${OPENMPT_LIBRARIES}
-		${MIXERX_LIBRARIES}
 		${PNG_LIBRARIES}
 		"-lz"
 		${OPENGL_LIBRARIES}
