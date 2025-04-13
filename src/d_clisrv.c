@@ -1163,6 +1163,7 @@ static inline void CL_DrawConnectionStatus(void)
 #endif
 			case CL_CHECKFILES:
 				cltext = M_GetText("Checking server files...");
+				break;
 			case CL_ASKJOIN:
 			case CL_WAITJOINRESPONSE:
 				cltext = M_GetText("Requesting to join...");
@@ -1178,16 +1179,16 @@ static inline void CL_DrawConnectionStatus(void)
 		if (cl_mode == CL_VIEWSERVER)
 		{
 			V_DrawFill(8, 16, BASEVIDWIDTH - 16, 54, 239);
-			
+
 			V_DrawThinString(12 + 80, 18, V_ALLOWLOWERCASE, va("%s", serverlist[joinnode].info.servername));
-			
+
 			const char *map = va("%sP", serverlist[joinnode].info.mapname);
 			patch_t *current_map = W_LumpExists(map) ? W_CachePatchName(map, PU_CACHE) : W_CachePatchName("BLANKLVL", PU_CACHE);
 			V_DrawSmallScaledPatch(10, 18, 0, current_map);
-			
+
 			V_DrawThinString(12 + 80, 38, V_ALLOWLOWERCASE, va("%s", serverlist[joinnode].info.maptitle));
 			V_DrawThinString(12 + 80, 48, V_ALLOWLOWERCASE, va("%s", Gametype_Names[serverlist[joinnode].info.gametype]));
-			
+
 			if (fileneedednum > 0)
 			{
 				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_ORANGEMAP, va("%i Addons", fileneedednum));
@@ -1196,17 +1197,17 @@ static inline void CL_DrawConnectionStatus(void)
 			{
 				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_YELLOWMAP, "Vanilla");
 			}
-			
+
 			if (serverlist[joinnode].info.cheatsenabled)
 			{
 				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 58, V_ALLOWLOWERCASE|V_GREENMAP, "Cheats");
 			}
-			
+
 			V_DrawFill(8, 72, BASEVIDWIDTH - 16, 112, 239);
-			
+
 			V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Players");
 			V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i / %i", serverlist[joinnode].info.numberofplayer, serverlist[joinnode].info.maxplayer));
-			
+
 			INT32 i;
 			INT32 count = 0;
 			INT32 x = 14;
@@ -1221,16 +1222,16 @@ static inline void CL_DrawConnectionStatus(void)
 					{
 						strncpy(player_name, playerinfo[i].name, MAXPLAYERNAME);
 						V_DrawThinString(x + 10, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, player_name);
-						
+
 						if (playerinfo[i].team == 0) { statuscolor = 112; } // playing
 						if (playerinfo[i].data & 0x20) { statuscolor = 54; } // tag IT
 						if (playerinfo[i].team == 1) { statuscolor = 35; } // ctf red team
 						if (playerinfo[i].team == 2) { statuscolor = 152; } // ctf blue team
 						if (playerinfo[i].team == 255) { statuscolor = 16; } // spectator or non-team
-						
+
 						V_DrawFill(x, y, 7, 7, 31);
 						V_DrawFill(x, y, 6, 6, statuscolor);
-						
+
 						y += 9;
 						count++;
 						if ((count == 11) || (count == 22))
@@ -1241,7 +1242,7 @@ static inline void CL_DrawConnectionStatus(void)
 					}
 				}
 			}
-			
+
 			// Buttons
 			V_DrawFill(8, BASEVIDHEIGHT - 14, BASEVIDWIDTH - 16, 12, 239);
 			V_DrawThinString(16, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sESC%s] = Abort", "\x82", "\x80"));
@@ -4787,7 +4788,7 @@ boolean TryRunTics(tic_t realtics)
 				{
 					PS_STOP_TIMING(ps_tictime);
 					PS_UpdateTickStats();
-				}	
+				}
 			}
 	}
 	else
