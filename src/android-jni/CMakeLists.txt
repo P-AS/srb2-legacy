@@ -1,8 +1,10 @@
-target_sources(SRB2SDL2 PRIVATE
+set(SRB2_ANDROID_SOURCES
         jni_android.c
-        jni_android.h
         ndk_crash_handler.c
-        ndk_crash_handler.h
         ndk_strings.c
+)
+set(SRB2_ANDROID_HEADERS
+        jni_android.h
+        ndk_crash_handler.h
         ndk_strings.h
 )
