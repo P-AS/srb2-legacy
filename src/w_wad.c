@@ -241,7 +241,6 @@ static inline void W_LoadDehackedLumps(UINT16 wadnum)
 		for (lump = 0; lump < wadfiles[wadnum]->numlumps; lump++, lump_p++)
 			if (memcmp(lump_p->name,"SOC_",4)==0) // Check for generic SOC lump
 			{	// shameless copy+paste of code from LUA_LoadLump
-				
 				size_t length = strlen(wadfiles[wadnum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
 				char *name = malloc(length + 1);
 				sprintf(name, "%s|%s", wadfiles[wadnum]->filename, lump_p->fullname);
@@ -354,7 +353,6 @@ static lumpinfo_t* ResGetLumpsStandalone (FILE* handle, UINT16* numlumps, const 
 	*numlumps = 1;
 	return lumpinfo;
 }
-
 
 /** Create a lumpinfo_t array for a WAD file.
  */
@@ -537,9 +535,9 @@ typedef struct zlentry_s
  */
 static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 {
-    zend_t zend;
-    zentry_t zentry;
-    zlentry_t zlentry;
+	zend_t zend;
+	zentry_t zentry;
+	zlentry_t zlentry;
 
 	UINT16 numlumps = *nlmp;
 	lumpinfo_t* lumpinfo;
@@ -637,6 +635,7 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 			lump_p->compression = CM_UNSUPPORTED;
 			break;
 		}
+
 		free(fullname);
 
 		// skip and ignore comments/extra fields
@@ -825,7 +824,6 @@ UINT16 W_InitFile(const char *filename)
 	CONS_Printf(M_GetText("Added file %s (%u lumps)\n"), filename, numlumps);
 	wadfiles[numwadfiles] = wadfile;
 	numwadfiles++; // must come BEFORE W_LoadDehackedLumps, so any addfile called by COM_BufInsertText called by Lua doesn't overwrite what we just loaded
-
 
 	// Read shaders from file
 	W_ReadFileShaders(wadfile);
@@ -1017,7 +1015,6 @@ UINT16 W_CheckNumForLongNamePwad(const char *name, UINT16 wad, UINT16 startlump)
 	return INT16_MAX;
 }
 
-
 UINT16
 W_CheckNumForMarkerStartPwad (const char *name, UINT16 wad, UINT16 startlump)
 {
@@ -1027,7 +1024,6 @@ W_CheckNumForMarkerStartPwad (const char *name, UINT16 wad, UINT16 startlump)
 		marker++; // Do not count the first marker
 	return marker;
 }
-
 
 // Look for the first lump from a folder.
 UINT16 W_CheckNumForFolderStartPK3(const char *name, UINT16 wad, UINT16 startlump)
@@ -1329,7 +1325,6 @@ boolean W_IsLumpWad(lumpnum_t lumpnum)
 
 	return false; // WADs should never be inside non-PK3s as far as SRB2 is concerned
 }
-
 
 //
 // W_IsLumpFolder
@@ -1817,7 +1812,6 @@ void W_VerifyFileMD5(UINT16 wadfilenum, const char *matchmd5)
 #endif
 }
 
-
 // Verify versions for different archive
 // formats. checklist assumed to be valid.
 
@@ -1835,7 +1829,6 @@ W_VerifyName (const char *name, lumpchecklist_t *checklist, boolean status)
 	}
 	return false;
 }
-
 
 static int W_VerifyWAD(FILE *fp, lumpchecklist_t *checklist, boolean status)
 {
@@ -1875,7 +1868,7 @@ static int W_VerifyWAD(FILE *fp, lumpchecklist_t *checklist, boolean status)
 			continue;
 
 		for (j = 0; j < NUMSPRITES; j++)
-			if (sprnames[j] && !strncmp(lumpinfo.name, sprnames[j], 4)) // Sprites
+			if (sprnames[j][0] && !strncmp(lumpinfo.name, sprnames[j], 4)) // Sprites
 				continue;
 
 		if (! W_VerifyName(lumpinfo.name, checklist, status))
@@ -1883,7 +1876,6 @@ static int W_VerifyWAD(FILE *fp, lumpchecklist_t *checklist, boolean status)
 	}
 	return true;
 }
-
 
 // List of blacklisted folders to use when checking the PK3
 static lumpchecklist_t folderblacklist[] =
@@ -1898,16 +1890,14 @@ static lumpchecklist_t folderblacklist[] =
 	{NULL, 0},
 };
 
-
-
 static int
 W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, boolean status)
 {
 	int verified = true;
 
-    zend_t zend;
-    zentry_t zentry;
-    zlentry_t zlentry;
+	zend_t zend;
+	zentry_t zentry;
+	zlentry_t zlentry;
 
 	long file_size;/* size of zip file */
 	long data_size;/* size of data inside zip file */
@@ -2031,8 +2021,6 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, boolean status)
 	}
 }
 
-
-
 // Note: This never opens lumps themselves and therefore doesn't have to
 // deal with compressed lumps.
 static int W_VerifyFile(const char *filename, lumpchecklist_t *checklist,
@@ -2061,8 +2049,6 @@ static int W_VerifyFile(const char *filename, lumpchecklist_t *checklist,
 	fclose(handle);
 	return goodfile;
 }
-
-
 
 /** Checks a wad for lumps other than music and sound.
   * Used during game load to verify music.dta is a good file and during a
