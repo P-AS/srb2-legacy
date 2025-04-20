@@ -29,8 +29,8 @@
 #include "v_video.h"
 #include "p_spec.h" // skyboxmo
 #include "z_zone.h"
-#include "m_random.h" // quake camera shake 
-#include "r_fps.h" 
+#include "m_random.h" // quake camera shake
+#include "r_fps.h"
 #include "i_system.h"
 
 
@@ -124,7 +124,7 @@ angle_t xtoviewangle[MAXVIDWIDTH+1];
 
 lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 lighttable_t *scalelightfixed[MAXLIGHTSCALE];
-lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ]; 
+lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 
 
 
@@ -196,7 +196,7 @@ consvar_t cv_homremoval = {"homremoval", "No", CV_SAVE, homremoval_cons_t, NULL,
 
 consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_maxportals = {"maxportals", "2", CV_SAVE, maxportals_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL}; 
+consvar_t cv_maxportals = {"maxportals", "2", CV_SAVE, maxportals_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 
 
@@ -1260,12 +1260,12 @@ void R_SkyboxFrame(player_t *player)
 	camera_t *thiscam;
 
 	if (splitscreen && player == &players[secondarydisplayplayer]
-	&& player != &players[consoleplayer]) 
+	&& player != &players[consoleplayer])
 	{
         R_SetViewContext(VIEWCONTEXT_SKY2);
-		thiscam = &camera2; 
+		thiscam = &camera2;
 	}
-	else 
+	else
 	{
 		R_SetViewContext(VIEWCONTEXT_SKY1);
 		thiscam = &camera;
@@ -1736,7 +1736,7 @@ void R_RenderPlayerView(player_t *player)
 
 	CONS_Debug(DBG_RENDER, "RenderBSPNode: 0x%d %d\n", *((INT32 *)&mytotal + 1), (INT32)mytotal);
 #endif
-//profile stuff --------------------------------------------------------- 
+//profile stuff ---------------------------------------------------------
 
 
 
@@ -1833,9 +1833,8 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_cam_speed);
 	CV_RegisterVar(&cv_cam_rotate);
 	CV_RegisterVar(&cv_cam_rotspeed);
-	CV_RegisterVar(&cv_cam_orbital);
+	CV_RegisterVar(&cv_cam_orbit);
 	CV_RegisterVar(&cv_cam_adjust);
-
 
 	CV_RegisterVar(&cv_cam2_dist);
 	CV_RegisterVar(&cv_cam2_still);
@@ -1843,11 +1842,10 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_cam2_speed);
 	CV_RegisterVar(&cv_cam2_rotate);
 	CV_RegisterVar(&cv_cam2_rotspeed);
-	CV_RegisterVar(&cv_cam2_orbital);
+	CV_RegisterVar(&cv_cam2_orbit);
 	CV_RegisterVar(&cv_cam2_adjust);
 
 	CV_RegisterVar(&cv_viewroll);
-
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);
@@ -1856,7 +1854,7 @@ void R_RegisterEngineStuff(void)
 
 	// Default viewheight is changeable,
 	// initialized to standard viewheight
-	CV_RegisterVar(&cv_viewheight); 
+	CV_RegisterVar(&cv_viewheight);
 	// Uncapped
 	CV_RegisterVar(&cv_fpscap);
 

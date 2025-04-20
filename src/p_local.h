@@ -112,7 +112,7 @@ extern camera_t camera, camera2;
 extern consvar_t cv_cam_dist, cv_cam_still, cv_cam_height;
 extern consvar_t cv_cam_speed, cv_cam_rotate, cv_cam_rotspeed;
 
-extern consvar_t cv_cam_orbital, cv_cam2_orbital;
+extern consvar_t cv_cam_orbit, cv_cam2_orbit;
 
 extern consvar_t cv_cam_adjust, cv_cam2_adjust;
 
@@ -430,4 +430,3 @@ void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 
 #endif // __P_LOCAL__
-
