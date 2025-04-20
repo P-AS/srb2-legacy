@@ -202,7 +202,7 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 	if (rendermode == render_soft
 #ifdef HWRENDER
 		|| cv_grshearing.value == 1
-		|| (cv_grshearing.value == 2 && R_IsViewpointFirstPerson(player, skybox))
+		|| (cv_grshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))
 #endif
 		)
 	{
