@@ -150,6 +150,7 @@ FUNCINLINE static ATTRINLINE void PolyObj_AddThinker(thinker_t *th)
 	th->next = thinkercap.next;
 	th->prev = &thinkercap;
 	thinkercap.next = th;
+	th->references = 0;
 }
 
 //
