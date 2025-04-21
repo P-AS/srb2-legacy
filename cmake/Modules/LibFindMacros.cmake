@@ -149,15 +149,15 @@ function (libfind_process PREFIX)
 
     if (DEFINED ${i}_LIBRARY_OPTS)
       # The package seems to export option lists that we can use, woohoo!
-      list(APPEND includeopts ${${i}_LIBRARY_OPTS})
+      list(APPEND libraryopts ${${i}_LIBRARY_OPTS})
     else()
       if (DEFINED ${i}_LIBRARY)
         # Singular forms can be used
-        list(APPEND includeopts ${i}_LIBRARY)
+        list(APPEND libraryopts ${i}_LIBRARY)
       else()
         if (DEFINED ${i}_LIBRARIES)
           # Plural forms can be used
-          list(APPEND includeopts ${i}_LIBRARIES)
+          list(APPEND libraryopts ${i}_LIBRARIES)
         else()
           # Oh no, we don't know the option names
           message(FATAL_ERROR "We couldn't determine config variable names for ${i} libraries. Aieeh!")
