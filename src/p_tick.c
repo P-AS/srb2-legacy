@@ -232,16 +232,17 @@ void P_RemoveThinkerDelayed(void *pthinker)
 			(next->prev = currentthinker = thinker->prev)->next = next;
 		}
 		R_DestroyLevelInterpolators(thinker);
-	if (thinker->cachable == true)
-	{
-		// put cachable thinkers in the mobj cache, so we can avoid allocations
-		((mobj_t *)thinker)->hnext = mobjcache;
-		mobjcache = (mobj_t *)thinker;
-	}
-	else
-	{
-		Z_Free(thinker);
-	}
+
+		if (thinker->cachable == true)
+		{
+			// put cachable thinkers in the mobj cache, so we can avoid allocations
+			((mobj_t *)thinker)->hnext = mobjcache;
+			mobjcache = (mobj_t *)thinker;
+		}
+		else
+		{
+			Z_Free(thinker);
+		}
 	}
 }
 
@@ -579,7 +580,7 @@ static inline void P_DoCTFStuff(void)
 //
 void P_Ticker(boolean run)
 {
-	INT32 i; 
+	INT32 i;
 
 
 	//Increment jointime even if paused.
@@ -610,7 +611,7 @@ void P_Ticker(boolean run)
 	P_MapStart();
 
 	if (run)
-	{ 
+	{
 		R_UpdateMobjInterpolators();
 		if (demorecording)
 			G_WriteDemoTiccmd(&players[consoleplayer].cmd, 0);
@@ -646,7 +647,7 @@ void P_Ticker(boolean run)
 		P_EmeraldManager(); // Power stone mode
 
 	if (run)
-	{	
+	{
 		PS_START_TIMING(ps_thinkertime);
 		P_RunThinkers();
 		PS_STOP_TIMING(ps_thinkertime);
@@ -728,7 +729,7 @@ void P_Ticker(boolean run)
 		if (modeattacking)
 			G_GhostTicker();
 	}
- 
+
  	if (run)
 	{
 		R_UpdateLevelInterpolators();
@@ -765,9 +766,9 @@ void P_Ticker(boolean run)
 		}
 	}
 
-	P_MapEnd(); 
+	P_MapEnd();
 
-	
+
 
 
 //	Z_CheckMemCleanup();
@@ -818,7 +819,7 @@ void P_PreTicker(INT32 frames)
 
 		P_UpdateSpecials();
 		P_RespawnSpecials();
-		
+
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();
 		R_ResetViewInterpolation(0);
