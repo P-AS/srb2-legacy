@@ -150,6 +150,9 @@ FUNCINLINE static ATTRINLINE void PolyObj_AddThinker(thinker_t *th)
 	th->next = thinkercap.next;
 	th->prev = &thinkercap;
 	thinkercap.next = th;
+	th->references = 0;
+
+	th->cachable = false;
 }
 
 //
@@ -2422,7 +2425,7 @@ INT32 EV_DoPolyObjMove(polymovedata_t *pmdata)
 	// TODO: start sound sequence event
 
 	oldpo = po;
-    
+
 	R_CreateInterpolator_Polyobj(&th->thinker, po);
 
 	// apply action to mirroring polyobjects as well
@@ -2596,7 +2599,7 @@ INT32 EV_DoPolyObjWaypoint(polywaypointdata_t *pwdata)
 
 		// T_PolyObjWaypoint is the only polyobject movement
 	// that can adjust z, so we add these ones too.
-	R_CreateInterpolator_SectorPlane(&th->thinker, po->lines[0]->backsector, false); 
+	R_CreateInterpolator_SectorPlane(&th->thinker, po->lines[0]->backsector, false);
 	R_CreateInterpolator_SectorPlane(&th->thinker, po->lines[0]->backsector, true);
 
 	// Most other polyobject functions handle children by recursively
@@ -2775,7 +2778,7 @@ INT32 EV_DoPolyObjDisplace(polydisplacedata_t *prdata)
 	th->dy = prdata->dy;
 
 	oldpo = po;
-	
+
 	R_CreateInterpolator_Polyobj(&th->thinker, po);
 
 	// apply action to mirroring polyobjects as well
