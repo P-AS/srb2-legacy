@@ -456,7 +456,8 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, boolean is
 
 	INT32 shader = SHADER_DEFAULT;
 
-	
+	(void)sector; ///@TODO remove shitty unused variable
+	(void)fogplane; ///@TODO remove shitty unused variable
 
 	// no convex poly were generated for this subsector
 	if (!xsub->planepoly)

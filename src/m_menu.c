@@ -4871,7 +4871,7 @@ static void M_DrawEmblemHints(void)
 		if (emblem->hint[0])
 			hint = emblem->hint;
 		else
-			hint = M_GetText("No hints available.");
+			hint = Z_StrDup(M_GetText("No hints available."));
 		hint = V_WordWrap(40, BASEVIDWIDTH-12, 0, hint);
 		V_DrawString(40, 8+(28*j), V_RETURN8|V_ALLOWLOWERCASE|collected, hint);
 		Z_Free(hint);
@@ -6692,7 +6692,7 @@ static void M_DrawRoomMenu(void)
 	M_DrawTextBox(144, 24, 20, 20);
 
 	if (itemOn == 0)
-		rmotd = M_GetText("Don't connect to the Master Server.");
+		rmotd = Z_StrDup(M_GetText("Don't connect to the Master Server."));
 	else
 		rmotd = room_list[itemOn-1].motd;
 

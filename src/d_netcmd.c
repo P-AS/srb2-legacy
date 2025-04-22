@@ -373,7 +373,7 @@ consvar_t cv_pause = {"pausepermission", "Server", CV_NETVAR, pause_cons_t, NULL
 consvar_t cv_mute = {"mute", "Off", CV_NETVAR|CV_CALL, CV_OnOff, Mute_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_sleep = {"cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL, -1, NULL, NULL, 0, 0, NULL};
-consvar_t cv_freedemocamera = {"freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL};
+consvar_t cv_freedemocamera = {"freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t perfstats_cons_t[] = {
 	{0, "Off"}, {1, "Rendering"}, {2, "Logic"}, {3, "ThinkFrame"}, {0, NULL}};

@@ -1824,7 +1824,7 @@ void CL_UpdateServerList(boolean internetsearch, INT32 room)
 
 #endif // ifndef NONET
 
-static boolean CL_ServerConnectionCheckFiles(tic_t *asksent)
+static boolean CL_ServerConnectionCheckFiles(void)
 {
 	INT32 i;
 
@@ -1980,7 +1980,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			break;
 
 		case CL_CHECKFILES:
-			if (!CL_ServerConnectionCheckFiles(asksent))
+			if (!CL_ServerConnectionCheckFiles())
 				return false;
 			break;
 

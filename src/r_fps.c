@@ -307,6 +307,8 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
+	(void)frac;
+	
 	out->x =  mobj->x;
 	out->y =  mobj->y;
 	out->z =  mobj->z;

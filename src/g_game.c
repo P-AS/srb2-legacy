@@ -780,7 +780,7 @@ const char *G_BuildMapName(INT32 map)
 	I_Assert(map > 0);
 	I_Assert(map <= NUMMAPS);
 
-	if (map < 100)
+	if (map < 100 && map >= 0)
 		sprintf(&mapname[3], "%.2d", map);
 	else
 	{

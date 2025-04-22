@@ -622,7 +622,8 @@ void I_GetConsoleEvents(void)
 			ev.data1 = tty_con.buffer[tty_con.cursor] = key;
 			tty_con.cursor++;
 			// print the current line (this is differential)
-			write(STDOUT_FILENO, &key, 1);
+			ssize_t written = write(STDOUT_FILENO, &key, 1);
+			(void)written;
 		}
 		if (ev.data1) D_PostEvent(&ev);
 		//tty_FlushIn();
@@ -2143,7 +2144,9 @@ void I_SetTextInputMode(boolean active)
 
 boolean I_GetTextInputMode(void)
 {
-	return SDL_IsTextInputActive();
+	boolean inputtextactive = (boolean)SDL_IsTextInputActive();
+	
+	return inputtextactive;
 }
 
 //

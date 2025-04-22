@@ -2759,7 +2759,7 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, INT32 duration, INT32 
 			if (nextFrameIndex != -1)
 				nextframe = &mesh->frames[nextFrameIndex % mesh->numFrames];
 
-			if (!nextframe || pol == 0.0f)
+			if (!nextframe || fpclassify(pol) == FP_ZERO)
 			{
 				// Zoom! Take advantage of just shoving the entire arrays to the GPU.
 /*				pglVertexPointer(3, GL_FLOAT, 0, frame->vertices);

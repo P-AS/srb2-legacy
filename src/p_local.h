@@ -226,7 +226,7 @@ void P_SceneryThinker(mobj_t *mobj);
 
 // This does not need to be added to Lua.
 // To test it in Lua, check mobj.valid
-FUNCINLINE static boolean ATTRINLINE PUREFUNC P_MobjWasRemoved(mobj_t *mobj)
+ATTRINLINE FUNCINLINE static boolean PUREFUNC P_MobjWasRemoved(mobj_t *mobj)
 {
 	if (mobj && mobj->thinker.function.acp1 == (actionf_p1)P_MobjThinker)
 		return false;

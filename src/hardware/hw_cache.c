@@ -430,13 +430,7 @@ void HWR_FreeTextureCache(void)
 	// now the heap don't have any 'user' pointing to our
 	// texturecache info, we can free it
 	if (gr_textures)
-	{
-		for (i = 0; i < gr_numtextures; i++)
-		{
-			Z_Free(gr_textures[i].mipmap.grInfo.data);
-		}
 		free(gr_textures);
-	}
 	gr_textures = NULL;
 	gr_numtextures = 0;
 }
