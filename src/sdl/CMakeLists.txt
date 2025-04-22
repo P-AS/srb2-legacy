@@ -134,6 +134,7 @@ if(${SDL2_FOUND})
 	endif()
 
 	target_compile_definitions(SRB2SDL2 PRIVATE
+		-DDIRECTFULLSCREEN
 		-DHAVE_SDL
 	)
 
