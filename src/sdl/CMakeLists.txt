@@ -74,8 +74,8 @@ if(${SDL2_FOUND})
 		find_library(CORE_LIB CoreFoundation)
 		target_link_libraries(SRB2SDL2 PRIVATE
 			${CORE_LIB}
-			SDL2
-			SDL2_mixer
+			${SDL2_LIBRARIES}
+			${SDL2_MIXER_LIBRARIES}
 			${GME_LIBRARIES}
 			${OPENMPT_LIBRARIES}
 			${PNG_LIBRARIES}
