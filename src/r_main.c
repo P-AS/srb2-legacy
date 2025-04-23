@@ -331,7 +331,6 @@ angle_t R_PointToAngle(fixed_t x, fixed_t y)
 }
 
 // This version uses 64-bit variables to avoid overflows with large values.
-// Currently used only by OpenGL rendering.
 angle_t R_PointToAngle64(INT64 x, INT64 y)
 {
 	return (y -= viewy, (x -= viewx) || y) ?
