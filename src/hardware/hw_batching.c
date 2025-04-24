@@ -165,7 +165,7 @@ static int comparePolygons(const void *p1, const void *p2)
 	// special case with signedness to prevent overflowing
 	// FIXME: check for prediction slowdowns!
 	if ((poly1->hash & 0x80000000) != (poly2->hash & 0x80000000))
-		return (poly1->hash & 0x80000000) < (poly2->hash & 0x80000000);
+		return (poly1->hash & 0x80000000) < (poly2->hash & 0x80000000) ? 1 : -1;
 	return poly1->hash - poly2->hash;
 }
 
