@@ -2857,6 +2857,7 @@ EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, INT32 duration,
 EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 {
 	static boolean special_splitscreen;
+	boolean shearing = false;
 	float used_fov;
 	pglLoadIdentity();
 	if (stransform)
@@ -2880,6 +2881,7 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 		pglTranslatef(-stransform->x, -stransform->z, -stransform->y);
 
 		special_splitscreen = stransform->splitscreen;
+		shearing = stransform->shearing;
 	}
 	else
 	{
@@ -2889,6 +2891,16 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 
 	pglMatrixMode(GL_PROJECTION);
 	pglLoadIdentity();
+
+	// Simulate Software's y-shearing
+	// https://zdoom.org/wiki/Y-shearing
+	if (shearing)
+	{
+		float fdy = stransform->viewaiming * 2;
+		if (stransform->flip)
+			fdy *= -1.0f;
+		pglTranslatef(0.0f, -fdy/BASEVIDHEIGHT, 0.0f);
+	}
 
 	if (special_splitscreen)
 	{
