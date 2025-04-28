@@ -251,11 +251,8 @@ enum EPolyFlags
 	PF_RemoveYWrap      = 0x00010000,   // Force clamp texture on Y
 	PF_ForceWrapX       = 0x00020000,   // Force repeat texture on X
 	PF_ForceWrapY       = 0x00040000,   // Force repeat texture on Y
-	PF_Clip             = 0x40000000,   // clip to frustum and nearz plane (glide only, automatic in opengl)
-	PF_NoZClip          = 0x20000000,   // in conjonction with PF_Clip
-	PF_Debug            = 0x80000000,    // print debug message in driver :)
-	PF_Ripple           = 0x10000000,    // Water ripple effect. The current backend doesn't use it for anything.
-	PF_WireFrame        = 0x20000000,   // Draws vertices as lines instead of triangles
+	PF_Ripple           = 0x00080000,    // Water ripple effect. The current backend doesn't use it for anything.
+	PF_WireFrame        = 0x00100000,   // Draws vertices as lines instead of triangles
 };
 
 
