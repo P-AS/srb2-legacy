@@ -75,6 +75,7 @@ sector_t *viewsector;
 player_t *viewplayer;
 
 fixed_t rendertimefrac;
+fixed_t rendertimefrac_unpaused;
 fixed_t renderdeltatics;
 boolean renderisnewtic;
 

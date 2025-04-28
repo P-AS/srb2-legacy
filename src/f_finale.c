@@ -160,6 +160,7 @@ static void F_NewCutscene(const char *basetext)
 	cutscene_textcount = TICRATE/2;
 }
 
+/*
 //
 // F_DrawPatchCol
 //
@@ -210,29 +211,23 @@ static void F_DrawPatchCol(INT32 x, patch_t *patch, INT32 col)
 		desttop += SHORT(patch->height)*vid.dupy*vid.width;
 	} while(dest < destbottom);
 }
+*/
 
 //
 // F_SkyScroll
 //
 static void F_SkyScroll(INT32 scrollspeed)
 {
-	INT32 scrolled, x, mx, fakedwidth;
+	INT32 scrolled, x;
 	patch_t *pat;
 
 	pat = W_CachePatchName("TITLESKY", PU_CACHE);
 
-	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width);
+	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width) + FixedInt((rendertimefrac_unpaused-FRACUNIT) * scrollspeed) / 16;
 
-	fakedwidth = vid.width / vid.dupx;
 
-	if (rendermode == render_soft)
-	{ // if only hardware rendering could be this elegant and complete
-		scrolled = (SHORT(pat->width) - animtimer) - 1;
-		for (x = 0, mx = scrolled; x < fakedwidth; x++, mx = (mx+1)%SHORT(pat->width))
-			F_DrawPatchCol(x, pat, mx);
-	}
-#ifdef HWRENDER
-	else if (rendermode != render_none)
+
+ if (rendermode != render_none)
 	{ // if only software rendering could be this simple and retarded
 		INT32 dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 		INT32 y, pw = SHORT(pat->width) * dupz, ph = SHORT(pat->height) * dupz;
@@ -248,7 +243,6 @@ static void F_SkyScroll(INT32 scrollspeed)
 			}
 		}
 	}
-#endif
 
 	W_UnlockCachedPatch(pat);
 }
