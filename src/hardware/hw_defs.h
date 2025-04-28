@@ -254,7 +254,8 @@ enum EPolyFlags
 	PF_Clip             = 0x40000000,   // clip to frustum and nearz plane (glide only, automatic in opengl)
 	PF_NoZClip          = 0x20000000,   // in conjonction with PF_Clip
 	PF_Debug            = 0x80000000,    // print debug message in driver :)
-	PF_Ripple           = 0x01000000    // Water ripple effect. The current backend doesn't use it for anything.
+	PF_Ripple           = 0x10000000,    // Water ripple effect. The current backend doesn't use it for anything.
+	PF_WireFrame        = 0x20000000,   // Draws vertices as lines instead of triangles
 };
 
 
@@ -308,6 +309,7 @@ enum hwdsetspecialstate
 	HWD_SET_FOV,
 	HWD_SET_TEXTUREFILTERMODE,
 	HWD_SET_TEXTUREANISOTROPICMODE,
+	HWD_SET_WIREFRAME,
 	HWD_NUMSTATE
 };
 

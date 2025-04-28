@@ -328,6 +328,8 @@ typedef void (APIENTRY * PFNglDisable) (GLenum cap);
 static PFNglDisable pglDisable;
 typedef void (APIENTRY * PFNglGetFloatv) (GLenum pname, GLfloat *params);
 static PFNglGetFloatv pglGetFloatv;
+typedef void (APIENTRY * PFNglPolygonMode) (GLenum, GLenum);
+static PFNglPolygonMode pglPolygonMode;
 //glGetIntegerv
 //glGetString
 
@@ -494,6 +496,7 @@ boolean SetupGLfunc(void)
 	GETOPENGLFUNC(pglGetFloatv, glGetFloatv)
 	GETOPENGLFUNC(pglGetIntegerv, glGetIntegerv)
 	GETOPENGLFUNC(pglGetString, glGetString)
+	GETOPENGLFUNC(pglPolygonMode, glPolygonMode)
 
 	GETOPENGLFUNC(pglClearDepth , glClearDepth)
 	GETOPENGLFUNC(pglDepthFunc , glDepthFunc)
@@ -2182,7 +2185,7 @@ EXPORT void HWRAPI(DrawPolygon) (FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUI
 
 	pglVertexPointer(3, GL_FLOAT, sizeof(FOutVector), &pOutVerts[0].x);
 	pglTexCoordPointer(2, GL_FLOAT, sizeof(FOutVector), &pOutVerts[0].s);
-	pglDrawArrays(GL_TRIANGLE_FAN, 0, iNumPts);
+	pglDrawArrays(PolyFlags & PF_WireFrame ? GL_LINES : GL_TRIANGLE_FAN, 0, iNumPts);
 
 	if (PolyFlags & PF_RemoveYWrap)
 		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -2377,6 +2380,11 @@ EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value)
 			anisotropic_filter = min(Value,maximumAnisotropy);
 			if (maximumAnisotropy)
 				Flush(); //??? if we want to change filter mode by texture, remove this
+			break;
+
+		
+		case HWD_SET_WIREFRAME:
+			pglPolygonMode(GL_FRONT_AND_BACK, Value ? GL_LINE : GL_FILL);
 			break;
 
 		default:

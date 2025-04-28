@@ -110,6 +110,7 @@ extern consvar_t cv_glloadingscreen;
 extern consvar_t cv_grfakecontrast;
 extern consvar_t cv_grslopecontrast;
 extern consvar_t cv_grbatching;
+extern consvar_t cv_grwireframe;
 
 extern float gr_viewwidth, gr_viewheight, gr_baseviewwindowy;
 

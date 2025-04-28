@@ -145,6 +145,8 @@ consvar_t cv_grsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, 
 
 consvar_t cv_grbatching = {"gr_batching", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_grwireframe = {"gr_wireframe", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 consvar_t cv_grmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_grshearing = {"gr_shearing", "Off", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -285,6 +287,11 @@ ps_metric_t ps_hw_batchdrawtime = {0};
 static boolean HWR_UseShader(void)
 {
 	return (cv_grshaders.value && gr_shadersavailable);
+}
+
+static boolean HWR_IsWireframeMode(void)
+{
+	return (cv_grwireframe.value /*&& cv_debug*/); // Wireframe at any time
 }
 
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap)
@@ -5481,6 +5488,9 @@ void HWR_BuildSkyDome(void)
 
 static void HWR_DrawSkyBackground(player_t *player)
 {
+	if (HWR_IsWireframeMode())
+		return;
+
 	HWD.pfnSetBlend(PF_Translucent|PF_NoDepthTest|PF_Modulated);
 
 	if (cv_grskydome.value)
@@ -5826,6 +5836,9 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	HWD.pfnSetSpecialState(HWD_SET_SHADERS, cv_grshaders.value);
 	HWD.pfnSetShader(0);
 
+	if (HWR_IsWireframeMode())
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 1);
+
 	validcount++;
 
 	if (cv_grbatching.value)
@@ -5892,6 +5905,10 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 		HWR_CreateDrawNodes();
 	}
 
+
+
+	if (HWR_IsWireframeMode())
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 0);
 
 	HWD.pfnSetTransform(NULL);
 	HWD.pfnUnSetShader();
@@ -6050,6 +6067,10 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	HWD.pfnSetSpecialState(HWD_SET_SHADERS, cv_grshaders.value);
 	HWD.pfnSetShader(0);
 
+
+	if (HWR_IsWireframeMode())
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 1);
+
 	ps_numbspcalls.value.i = 0;
 	ps_numpolyobjects.value.i = 0;
 	PS_START_TIMING(ps_bsptime);
@@ -6127,6 +6148,9 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	}
 
 
+	if (HWR_IsWireframeMode())
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 0);
+
 	HWD.pfnSetTransform(NULL);
 	HWD.pfnUnSetShader();
 
@@ -6171,6 +6195,7 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_grcorrecttricks);
 	CV_RegisterVar(&cv_grsolvetjoin);
 	CV_RegisterVar(&cv_grbatching);
+	CV_RegisterVar(&cv_grwireframe);
 	CV_RegisterVar(&cv_grmodellighting);
 	CV_RegisterVar(&cv_glloadingscreen);
 	CV_RegisterVar(&cv_grshearing);
