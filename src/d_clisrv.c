@@ -144,7 +144,7 @@ static boolean cl_packetmissed;
 static UINT8 mynode; // my address pointofview server
 static boolean cl_redownloadinggamestate = false;
 
-boolean is_client_fusionadvance[MAXNETNODES];
+boolean client_supports_resendgamestate[MAXNETNODES];
 
 static UINT8 localtextcmd[MAXTEXTCMD];
 static UINT8 localtextcmd2[MAXTEXTCMD]; // splitscreen
@@ -2487,7 +2487,7 @@ static void CL_RemovePlayer(INT32 playernum, INT32 reason)
 			// If a resynch was in progress, well, it no longer needs to be.
 			SV_InitResynchVars(playernode[playernum]);
 
-			is_client_fusionadvance[playernode[playernum]] = false;
+			client_supports_resendgamestate[playernode[playernum]] = false;
 			nodeingame[playernode[playernum]] = false;
 			Net_CloseConnection(playernode[playernum]);
 			ResetNode(node);
@@ -2575,7 +2575,7 @@ void CL_Reset(void)
 	if (servernode > 0 && servernode < MAXNETNODES)
 	{
 		nodeingame[(UINT8)servernode] = false;
-		is_client_fusionadvance[(UINT8)servernode] = false;
+		client_supports_resendgamestate[(UINT8)servernode] = false;
 		Net_CloseConnection(servernode);
 	}
 	D_CloseConnection(); // netgame = false
@@ -3140,7 +3140,7 @@ static void ResetNode(INT32 node)
 	nettics[node] = gametic;
 	supposedtics[node] = gametic;
 	sendingsavegame[node] = false;
-	is_client_fusionadvance[node] = false;
+	client_supports_resendgamestate[node] = false;
 	resendingsavegame[node] = false;
 	savegameresendcooldown[node] = 0;
 }
@@ -3570,9 +3570,9 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 }
 
 
-static inline void SendFAInfo(INT32 node)
+static inline void SendGamestateInfo(INT32 node)
 {
-	netbuffer->packettype = PT_ISFUSIONADVANCE;
+	netbuffer->packettype = PT_ISSUPPORTSRESENDGAMESTATEDVANCE;
 	HSendPacket(node, true, 0, 0);
 }
 
@@ -3638,7 +3638,7 @@ static void HandleConnect(SINT8 node)
 #ifdef JOININGAME
 		if (nodewaiting[node])
 		{
-			SendFAInfo(node);
+			SendGamestateInfo(node);
 			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && newnode)
 			{
 				SV_SendSaveGame(node, false); // send a complete game state
@@ -3934,7 +3934,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				break;
 			/* FALLTHRU */
 
-		case PT_ISFUSIONADVANCE:
+		case PT_ISSUPPORTSRESENDGAMESTATEDVANCE:
 			CONS_Printf("hi im on fusion advance\n");
 			break;
 
@@ -4234,7 +4234,7 @@ FILESTAMP
 			}
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
-			is_client_fusionadvance[node] = false;
+			client_supports_resendgamestate[node] = false;
 			break;
 // -------------------------------------------- CLIENT RECEIVE ----------
 		case PT_RESYNCHEND:
@@ -4398,9 +4398,9 @@ FILESTAMP
 			if (client)
 				Got_Filetxpak();
 			break;
-		case PT_ISFUSIONADVANCE:
+		case PT_ISSUPPORTSRESENDGAMESTATEDVANCE:
 			CONS_Printf("hi im on fusion advance\n");
-			is_client_fusionadvance[node] = true;
+			client_supports_resendgamestate[node] = true;
 			break;
 		case PT_CANRECEIVEGAMESTATE:
 			PT_CanReceiveGamestate(node);
