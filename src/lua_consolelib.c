@@ -179,7 +179,7 @@ static int lib_comAddCommand(lua_State *L)
 
 	if (lua_isstring(L, 2))
 	{
-		desc = luaL_checkstring(L, 2);
+		desc = Z_StrDup(luaL_checkstring(L, 2));
 		argoff = 3;
 	}
 
@@ -209,10 +209,10 @@ static int lib_comAddCommand(lua_State *L)
 	I_Assert(lua_istable(L, -1));
 
 	lua_createtable(L, 2, 0);
-		lua_pushvalue(L, 2);
+		lua_pushvalue(L, argoff);
 		lua_rawseti(L, -2, 1);
 
-		lua_pushvalue(L, 3);
+		lua_pushvalue(L, argoff+1);
 		lua_rawseti(L, -2, 2);
 	lua_setfield(L, -2, name);
 
