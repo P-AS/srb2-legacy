@@ -8035,9 +8035,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if ((camorbit) && player->playerstate != PST_DEAD && !(mo->flags2 & MF2_TWOD) &&  !twodlevel)
 	{
+#ifndef DEDICATED
 		if (rendermode == render_opengl && !cv_grshearing.value)
 			distxy = FixedMul(dist, FINECOSINE((focusaiming>>ANGLETOFINESHIFT) & FINEMASK));
 		else
+#endif
 			distxy = dist;
 		distz = -FixedMul(dist, FINESINE((focusaiming>>ANGLETOFINESHIFT) & FINEMASK)) + slopez;
 	}
