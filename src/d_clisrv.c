@@ -1205,6 +1205,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 			V_DrawFill(8, 72, BASEVIDWIDTH - 16, 112, 239);
 
+			// why i did this
 			V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Players");
 			V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i / %i", serverlist[joinnode].info.numberofplayer, serverlist[joinnode].info.maxplayer));
 
@@ -1223,10 +1224,10 @@ static inline void CL_DrawConnectionStatus(void)
 						strncpy(player_name, playerinfo[i].name, MAXPLAYERNAME);
 						V_DrawThinString(x + 10, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, player_name);
 
-						if (playerinfo[i].team == 0) { statuscolor = 112; } // playing
-						if (playerinfo[i].data & 0x20) { statuscolor = 54; } // tag IT
-						if (playerinfo[i].team == 1) { statuscolor = 35; } // ctf red team
-						if (playerinfo[i].team == 2) { statuscolor = 152; } // ctf blue team
+						if (playerinfo[i].team == 0) { statuscolor = 184; } // playing
+						if (playerinfo[i].data & 0x20) { statuscolor = 86; } // tag IT
+						if (playerinfo[i].team == 1) { statuscolor = 128; } // ctf red team
+						if (playerinfo[i].team == 2) { statuscolor = 232; } // ctf blue team
 						if (playerinfo[i].team == 255) { statuscolor = 16; } // spectator or non-team
 
 						V_DrawFill(x, y, 7, 7, 31);
