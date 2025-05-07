@@ -1012,7 +1012,7 @@ void LUA_Archive(void)
 	}
 
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
-		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
+		if (th->function == (actionf_p1)P_MobjThinker)
 		{
 			// archive function will determine when to skip mobjs,
 			// and write mobjnum in otherwise.
@@ -1046,7 +1046,7 @@ void LUA_UnArchive(void)
 	do {
 		mobjnum = READUINT32(save_p); // read a mobjnum
 		for (th = thinkercap.next; th != &thinkercap; th = th->next)
-			if (th->function.acp1 == (actionf_p1)P_MobjThinker
+			if (th->function == (actionf_p1)P_MobjThinker
 			&& ((mobj_t *)th)->mobjnum == mobjnum) // find matching mobj
 				UnArchiveExtVars(th); // apply variables
 	} while(mobjnum != UINT32_MAX); // repeat until end of mobjs marker.

@@ -228,7 +228,7 @@ void P_SceneryThinker(mobj_t *mobj);
 // To test it in Lua, check mobj.valid
 ATTRINLINE FUNCINLINE static boolean PUREFUNC P_MobjWasRemoved(mobj_t *mobj)
 {
-	if (mobj && mobj->thinker.function.acp1 == (actionf_p1)P_MobjThinker)
+	if (mobj && mobj->thinker.function == (actionf_p1)P_MobjThinker)
 		return false;
 	return true;
 }
@@ -291,14 +291,14 @@ extern player_t *stplyr; // for splitscreen correct palette changes and overlay
 extern INT32 var1;
 extern INT32 var2;
 
-boolean P_CheckMeleeRange(mobj_t *actor);
-boolean P_JetbCheckMeleeRange(mobj_t *actor);
-boolean P_FaceStabCheckMeleeRange(mobj_t *actor);
-boolean P_SkimCheckMeleeRange(mobj_t *actor);
-boolean P_CheckMissileRange(mobj_t *actor);
+boolean P_CheckMeleeRange(void *thing);
+boolean P_JetbCheckMeleeRange(void *thing);
+boolean P_FaceStabCheckMeleeRange(void *thing);
+boolean P_SkimCheckMeleeRange(void *thing);
+boolean P_CheckMissileRange(void *thing);
 
-void P_NewChaseDir(mobj_t *actor);
-boolean P_LookForPlayers(mobj_t *actor, boolean allaround, boolean tracer, fixed_t dist);
+void P_NewChaseDir(void *thing);
+boolean P_LookForPlayers(void *thing, boolean allaround, boolean tracer, fixed_t dist);
 
 //
 // P_MAP
@@ -332,7 +332,7 @@ void P_SetUnderlayPosition(mobj_t *thing);
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
-boolean P_Move(mobj_t *actor, fixed_t speed);
+boolean P_Move(void *thing, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 void P_SlideMove(mobj_t *mo);
