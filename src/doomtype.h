@@ -17,6 +17,8 @@
 #ifndef __DOOMTYPE__
 #define __DOOMTYPE__
 
+#include <stdbool.h>
+
 #if (defined (_WIN32) && !defined (_XBOX)) || (defined (_WIN32_WCE) && !defined (__GNUC__))
 //#define WIN32_LEAN_AND_MEAN
 #define RPC_NO_WINDOWS_H
