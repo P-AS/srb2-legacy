@@ -850,6 +850,11 @@ static const char *packettypename[NUMPACKETTYPE] =
 #ifdef NEWPING
 	"PING"
 #endif
+	"ISSUPPORTSRESENDGAMESTATEDVANCE",
+
+	"WILLRESENDGAMESTATE",
+	"CANRECEIVEGAMESTATE",
+	"RECEIVEDGAMESTATE"
 };
 
 static void DebugPrintpacket(const char *header)
