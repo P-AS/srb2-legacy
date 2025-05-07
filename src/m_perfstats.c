@@ -512,9 +512,9 @@ static void PS_CountThinkers(void)
 	for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
 	{
 		ps_thinkercount.value.i++;
-		if (thinker->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+		if (thinker->function == (actionf_p1)P_RemoveThinkerDelayed)
 			ps_removecount.value.i++;
-		else if (thinker->function.acp1 == (actionf_p1)P_MobjThinker)
+		else if (thinker->function == (actionf_p1)P_MobjThinker)
 		{
 			mobj_t *mobj = (mobj_t*)thinker;
 			ps_mobjcount.value.i++;
@@ -525,7 +525,7 @@ static void PS_CountThinkers(void)
 			else
 				ps_regularcount.value.i++;
 		}
-		else if (thinker->function.acp1 == (actionf_p1)P_NullPrecipThinker)
+		else if (thinker->function == (actionf_p1)P_NullPrecipThinker)
 			ps_precipcount.value.i++;
 		else
 			ps_otherthcount.value.i++;
@@ -535,7 +535,7 @@ static void PS_CountThinkers(void)
 		for (thinker = thlist[i].next; thinker != &thlist[i]; thinker = thinker->next)
 		{
 			ps_thinkercount.value.i++;
-			if (thinker->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+			if (thinker->function == (actionf_p1)P_RemoveThinkerDelayed)
 				ps_removecount.value.i++;
 			else if (i == THINK_POLYOBJ)
 				ps_polythcount.value.i++;
@@ -543,7 +543,7 @@ static void PS_CountThinkers(void)
 				ps_mainthcount.value.i++;
 			else if (i == THINK_MOBJ)
 			{
-				if (thinker->function.acp1 == (actionf_p1)P_MobjThinker)
+				if (thinker->function == (actionf_p1)P_MobjThinker)
 				{
 					mobj_t *mobj = (mobj_t*)thinker;
 					ps_mobjcount.value.i++;

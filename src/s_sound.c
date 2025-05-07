@@ -1485,7 +1485,11 @@ static void S_QueueMusic(const char *mmusic, UINT16 mflags, boolean looping, UIN
 
 static void S_ClearQueue(void)
 {
-	queue_name[0] = queue_flags = queue_looping = queue_position = queue_fadeinms = 0;
+	queue_name[0] = 0;
+	queue_flags = 0;
+	queue_looping = false;
+	queue_position = 0;
+	queue_fadeinms = 0;
 }
 
 static void S_ChangeMusicToQueue(void)

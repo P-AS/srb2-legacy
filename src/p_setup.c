@@ -818,7 +818,7 @@ void P_ReloadRings(void)
 	// scan the thinkers to find rings/wings/hoops to unset
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
 	{
-		if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+		if (th->function != (actionf_p1)P_MobjThinker)
 			continue;
 
 		mo = (mobj_t *)th;
@@ -2354,7 +2354,7 @@ void P_LoadThingsOnly(void)
 
 	for (think = thinkercap.next; think != &thinkercap; think = think->next)
 	{
-		if (think->function.acp1 != (actionf_p1)P_MobjThinker)
+		if (think->function != (actionf_p1)P_MobjThinker)
 			continue; // not a mobj thinker
 
 		mo = (mobj_t *)think;
@@ -2854,7 +2854,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skynum, true);
 
 	P_MakeMapMD5(lastloadedmaplumpnum, &mapmd5);
-    
+
 
 
 	// HACK ALERT: Cache the WAD, get the map data into the tables, free memory.
@@ -3179,7 +3179,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		R_ResetViewInterpolation(0);
 		R_UpdateMobjInterpolators();
 	}
-	
+
 	return true;
 }
 
