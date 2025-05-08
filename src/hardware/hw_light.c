@@ -1290,7 +1290,7 @@ static void HWR_SearchLightsInMobjs(void)
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
 	{
 		// a mobj ?
-		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
+		if (th->function == (actionf_p1)P_MobjThinker)
 			HWR_AddMobjLights((mobj_t *)th);
 	}
 }
