@@ -2415,6 +2415,8 @@ static void Command_connect(void)
 			CONS_Alert(CONS_ERROR, M_GetText("There is no network driver\n"));
 	}
 
+	CV_Set(&cv_lastserver, I_GetNodeAddress(servernode));
+
 	splitscreen = false;
 	SplitScreen_OnChange();
 	botingame = false;

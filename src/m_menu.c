@@ -6647,8 +6647,6 @@ static void M_Connect(INT32 choice)
 	// do not call menuexitfunc
 	M_ClearMenus(false);
 
-	CV_Set(&cv_lastserver, I_GetNodeAddress(serverlist[choice-FIRSTSERVERLINE + serverlistpage * SERVERS_PER_PAGE].node));
-
 	COM_BufAddText(va("connect node %d\n", serverlist[choice-FIRSTSERVERLINE + serverlistpage * SERVERS_PER_PAGE].node));
 }
 
@@ -7080,7 +7078,7 @@ static void M_DrawMPMainMenu(void)
 			V_DrawThinString(53 + (skullAnimCounter % 8) / 4,98, V_ALLOWLOWERCASE|V_MONOSPACE|V_YELLOWMAP, left_arrow); // Draw the left arrow
 
 		V_DrawString(65,98, V_ALLOWLOWERCASE|V_MONOSPACE, new_setupm_ip); // Draw the truncated setupm_ip.
-	 
+
 	 	// draw text cursor for name
 		if (itemOn == 2 &&
 		    skullAnimCounter < 4)   //blink cursor
@@ -7101,8 +7099,6 @@ static void M_ConnectIP(INT32 choice)
 	(void)choice;
 
 	M_ClearMenus(true);
-
-	CV_Set(&cv_lastserver,setupm_ip);
 
 	if (*setupm_ip == 0) // Length 0
 	{
@@ -7197,7 +7193,7 @@ static void M_ConnectLastServer(INT32 choice)
 	}
 
 	M_ClearMenus(true);
-	COM_BufAddText(va("connect \"%s\"\n", cv_lastserver.string));	
+	COM_BufAddText(va("connect \"%s\"\n", cv_lastserver.string));
 }
 
 // Tails 11-19-2002
@@ -7275,7 +7271,7 @@ static void M_HandleConnectIP(INT32 choice)
 				}
 				break; // break
 			}
-			
+
 			// Rudimentary number, letter, period, and colon enforcing
 			if (choice == 46 || choice == 91 || choice == 93 || (choice >= 65 && choice <= 90 ) || (choice >= 97 && choice <= 122 ) || (choice >= 48 && choice <= 58))
 			{
