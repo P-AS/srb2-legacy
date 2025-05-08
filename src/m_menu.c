@@ -21,6 +21,8 @@
 #include "doomdef.h"
 #include "d_main.h"
 #include "d_netcmd.h"
+#include "d_clisrv.h"
+#include "i_net.h"
 #include "console.h"
 #include "r_local.h"
 #include "hu_stuff.h"
@@ -330,6 +332,7 @@ static void M_HandleGameStats(INT32 choice);
 static void M_HandleLevelStats(INT32 choice);
 #ifndef NONET
 static void M_HandleConnectIP(INT32 choice);
+static void M_ConnectLastServer(INT32 choice);
 #endif
 static void M_HandleSetupMultiPlayer(INT32 choice);
 static void M_HandleVideoMode(INT32 choice);
@@ -816,11 +819,12 @@ static menuitem_t MP_MainMenu[] =
 	{IT_CALL | IT_STRING, NULL, "HOST GAME",              M_StartServerMenu,      10},
 	{IT_CALL | IT_STRING, NULL, "JOIN GAME (Search)",	  M_ConnectMenu,		  30},
 	{IT_KEYHANDLER | IT_STRING, NULL, "JOIN GAME (Specify IP)", M_HandleConnectIP,        40},
+	{IT_STRING|IT_CALL, NULL, "JOIN LAST SERVER",     M_ConnectLastServer,        65},
 #endif
-	{IT_CALL | IT_STRING, NULL, "TWO PLAYER GAME",        M_StartSplitServerMenu, 80},
+	{IT_CALL | IT_STRING, NULL, "TWO PLAYER GAME",        M_StartSplitServerMenu, 95},
 
-	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 1",         M_SetupMultiPlayer,     100},
-	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 2",         M_SetupMultiPlayer2,    110},
+	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 1",         M_SetupMultiPlayer,     115},
+	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 2",         M_SetupMultiPlayer2,    125},
 };
 
 static menuitem_t MP_ServerMenu[] =
@@ -6643,6 +6647,8 @@ static void M_Connect(INT32 choice)
 	// do not call menuexitfunc
 	M_ClearMenus(false);
 
+	CV_Set(&cv_lastserver, I_GetNodeAddress(serverlist[choice-FIRSTSERVERLINE + serverlistpage * SERVERS_PER_PAGE].node));
+
 	COM_BufAddText(va("connect node %d\n", serverlist[choice-FIRSTSERVERLINE + serverlistpage * SERVERS_PER_PAGE].node));
 }
 
@@ -7096,6 +7102,8 @@ static void M_ConnectIP(INT32 choice)
 
 	M_ClearMenus(true);
 
+	CV_Set(&cv_lastserver,setupm_ip);
+
 	if (*setupm_ip == 0) // Length 0
 	{
 		M_StartMessage("You must specify an IP address.\n", NULL, MM_NOTHING);
@@ -7176,6 +7184,20 @@ static boolean M_CheckIfValidIPv4(const char *str)
         return false;
     // Address okay.
     return true;
+}
+
+static void M_ConnectLastServer(INT32 choice)
+{
+	(void)choice;
+
+	if (!*cv_lastserver.string)
+	{
+		M_StartMessage("You haven't previously joined a server.\n", NULL, MM_NOTHING);
+		return;
+	}
+
+	M_ClearMenus(true);
+	COM_BufAddText(va("connect \"%s\"\n", cv_lastserver.string));	
 }
 
 // Tails 11-19-2002

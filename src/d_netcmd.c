@@ -390,6 +390,8 @@ consvar_t cv_ps_descriptor = {"ps_descriptor", "Average", 0, ps_descriptor_cons_
 consvar_t cv_netcompat = {"netcompat", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 #endif
 
+consvar_t cv_lastserver = {"lastserver", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 
 INT16 gametype = GT_COOP;
 boolean splitscreen = false;
@@ -822,6 +824,7 @@ void D_RegisterClientCommands(void)
 #ifndef NONET
 	CV_RegisterVar(&cv_netcompat);
 #endif
+	CV_RegisterVar(&cv_lastserver);
 
 	// add cheat commands
 	COM_AddCommand("noclip", Command_CheatNoClip_f);

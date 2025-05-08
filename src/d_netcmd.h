@@ -123,6 +123,8 @@ extern consvar_t cv_freedemocamera;
 extern consvar_t cv_netcompat;
 #endif
 
+extern consvar_t cv_lastserver;
+
 typedef enum
 {
 	XD_NAMEANDCOLOR = 1,
