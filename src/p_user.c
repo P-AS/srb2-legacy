@@ -7739,6 +7739,7 @@ consvar_t cv_cam2_adjust = {"cam2_adjust", "On", CV_SAVE|CV_SHOWMODIF, CV_OnOff,
 
 consvar_t cv_viewroll = {"viewroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_quakeiiiarena = {"earthquake", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_quakeiiii = {"quakeroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 fixed_t t_cam_dist = -42;
 fixed_t t_cam_height = -42;
@@ -8642,6 +8643,45 @@ void P_DoPityCheck(player_t *player)
 	}
 }
 
+// holy SHIT
+static INT32
+Quaketilt (player_t *player)
+{
+	angle_t tilt;
+	fixed_t lowb; // this threshold for speed
+	angle_t moma = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	angle_t delta = (INT32)( player->mo->angle - moma );
+	fixed_t speed;
+
+	if (delta == (INT32)ANGLE_180)/* FUCK YOU HAVE A HACK */
+	{
+		return 0;
+	}
+
+	// Hi! I'm "not a math guy"!
+	if (abs(delta) > ANGLE_90)
+		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
+	if (P_IsObjectOnGround(player->mo))
+	{
+		tilt = ANGLE_11hh/2;
+		lowb = 15*FRACUNIT;
+	}
+	else
+	{
+		tilt = ANGLE_22h;
+		lowb = 10*FRACUNIT;
+	}
+	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
+	speed = abs( player->mo->momx + player->mo->momy );
+	if (speed < lowb)
+	{
+		// ease out tilt as we slow...
+		moma = FixedMul(moma, FixedDiv(speed, lowb));
+	}
+	return moma;
+}
+
+
 static void
 DoABarrelRoll (player_t *player)
 {
@@ -8665,6 +8705,11 @@ DoABarrelRoll (player_t *player)
 	}
 	else
 		slope = 0;
+
+	if(cv_quakeiiii.value)
+	{
+		slope -= Quaketilt(player);
+	}
 
 	delta = (INT32)( slope - player->viewrollangle )/ 16;
 
@@ -9247,7 +9292,14 @@ void P_PlayerThink(player_t *player)
 
 		I_Error("I'm done!\n");
 	}*/
-	DoABarrelRoll(player);
+	if (cv_viewroll.value)
+	{
+		DoABarrelRoll(player);
+	}
+	else
+	{
+		player->viewrollangle = 0;
+	}
 }
 
 //
