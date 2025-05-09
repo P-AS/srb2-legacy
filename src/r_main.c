@@ -1866,6 +1866,7 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_cam2_adjust);
 
 	CV_RegisterVar(&cv_viewroll);
+	CV_RegisterVar(&cv_quakeiiiarena);
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);

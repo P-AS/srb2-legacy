@@ -7738,6 +7738,7 @@ consvar_t cv_cam2_orbit = {"cam2_orbit", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL
 consvar_t cv_cam2_adjust = {"cam2_adjust", "On", CV_SAVE|CV_SHOWMODIF, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_viewroll = {"viewroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_quakeiiiarena = {"earthquake", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 fixed_t t_cam_dist = -42;
 fixed_t t_cam_height = -42;
@@ -8671,6 +8672,9 @@ DoABarrelRoll (player_t *player)
 		player->viewrollangle += delta;
 	else
 		player->viewrollangle  = slope;
+	
+	if(cv_viewroll.value && cv_quakeiiiarena.value)
+		player->viewrollangle += quake.roll;
 }
 
 
