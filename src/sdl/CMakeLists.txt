@@ -52,7 +52,6 @@ set(SDL2_FOUND ON)
 set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/SDL2/include)
 set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/libs/arm64-v8a/ -lSDL2")
 
-
 if(${SDL2_FOUND})
 	if(${CMAKE_SYSTEM} MATCHES Windows)
 		target_sources(SRB2SDL2 PRIVATE
@@ -71,7 +70,7 @@ if(${SDL2_FOUND})
 	endif()
 
 	add_library(SRB2SDL2 SHARED)
-	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacy)
+	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME main)
 
 	if(${CMAKE_SYSTEM} MATCHES Darwin)
 		find_library(CORE_FOUNDATION_LIBRARY "CoreFoundation")
