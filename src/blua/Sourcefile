@@ -3,6 +3,7 @@ lbaselib.c
 ldo.c
 lfunc.c
 linit.c
+liolib.c
 llex.c
 lmem.c
 lobject.c
