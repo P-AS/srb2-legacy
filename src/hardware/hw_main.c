@@ -156,7 +156,7 @@ consvar_t cv_glloadingscreen = {"glloadingscreen", "Off", CV_SAVE, glloadingscre
 consvar_t cv_grmd2 = {"gr_md2", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grmodelinterpolation = {"gr_modelinterpolation", "Sometimes", CV_SAVE, grmodelinterpolation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grskydome = {"gr_skydome", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL}; //now off by default
+consvar_t cv_grskydome = {"gr_skydome", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 
 static void CV_filtermode_ONChange(void)
@@ -869,7 +869,7 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 
 	HWR_Lighting(pSurf, lightlevel, wallcolormap);
 
-	
+
 	if (HWR_UseShader())
 	{
 		shader = SHADER_WALL;
@@ -3915,7 +3915,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 		{
 			shader = SHADER_NONE;
 			blendmode |= PF_ColorMapped;
-		}	
+		}
 		HWR_ProcessPolygon(&sSurf, swallVerts, 4, blendmode, shader, false);
 	}
 }
@@ -4076,7 +4076,7 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 				baseWallVerts[i].z += (gr_viewy - baseWallVerts[i].z)*distfact;
 				baseWallVerts[i].y += (gr_viewz - baseWallVerts[i].y)*distfact;
 		}
-	}	
+	}
 
 	realtop = top = baseWallVerts[3].y;
 	realbot = bot = baseWallVerts[0].y;
@@ -4555,10 +4555,10 @@ static int CompareVisSprites(const void *p1, const void *p2)
 	gr_vissprite_t* spr2 = *(gr_vissprite_t*const*)p2;
 	int idiff;
 	float fdiff;
-	
+
 	// make transparent sprites last
 	// "boolean to int"
-	
+
 	int transparency1 = (spr1->mobj->flags2 & MF2_SHADOW) || (spr1->mobj->frame & FF_TRANSMASK);
 	int transparency2 = (spr2->mobj->flags2 & MF2_SHADOW) || (spr2->mobj->frame & FF_TRANSMASK);
 	idiff = transparency1 - transparency2;
