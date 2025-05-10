@@ -284,6 +284,8 @@ static void M_Addons(INT32 choice);
 static void M_AddonsOptions(INT32 choice);
 static patch_t *addonsp[NUM_EXT+5];
 
+menu_t OP_LegacyOptionsDef;
+
 #define numaddonsshown 4
 
 // Drawing functions
@@ -931,9 +933,11 @@ static menuitem_t OP_MainMenu[] =
 	{IT_SUBMENU | IT_STRING, NULL, "Sound Options...",      &OP_SoundOptionsDef,  40},
 	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",       &OP_DataOptionsDef,   50},
 
-	{IT_SUBMENU | IT_STRING, NULL, "Game Options...",       &OP_GameOptionsDef,   70},
-	{IT_SUBMENU | IT_STRING, NULL, "Server Options...",     &OP_ServerOptionsDef, 80},
-	{IT_STRING  | IT_CALL,   NULL, "Add-on Options...",     M_AddonsOptions,      90},
+	{IT_SUBMENU | IT_STRING, NULL, "Legacy Options...",     &OP_LegacyOptionsDef,  65},
+
+	{IT_SUBMENU | IT_STRING, NULL, "Game Options...",       &OP_GameOptionsDef,   85},
+	{IT_SUBMENU | IT_STRING, NULL, "Server Options...",     &OP_ServerOptionsDef, 95},
+	{IT_STRING  | IT_CALL,   NULL, "Add-on Options...",     M_AddonsOptions,      105},
 };
 
 static menuitem_t OP_ControlsMenu[] =
@@ -1440,6 +1444,18 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Eggman Box",        &cv_eggmanbox,    130},
 };
 
+static menuitem_t OP_LegacyOptionsMenu[] =
+{
+	{IT_HEADER|IT_STRING, NULL, "Network", NULL, 5},
+	{IT_CVAR|IT_STRING, NULL, "Net Compatibility", &cv_netcompat, 10},
+	{IT_HEADER|IT_STRING, NULL, "Screen Tilting", NULL, 15},
+	{IT_CVAR|IT_STRING, NULL, "Screen Tilting", &cv_viewroll, 	  20},
+	{IT_CVAR|IT_STRING, NULL, "Earthquake Screen Shaking", &cv_quakeiiiarena,  25},
+	{IT_CVAR|IT_STRING, NULL, "Quake Viewroll",    &cv_quakeiiii, 30},
+	{IT_HEADER|IT_STRING, NULL, "System", NULL, 35},
+	{IT_CVAR|IT_STRING, NULL, "Window Shaking",    &cv_quakelive, 40},
+};
+
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
 // ==========================================================================
@@ -1796,6 +1812,7 @@ menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE("M_DATA", OP_DataOptionsMenu, &OP_Ma
 menu_t OP_ScreenshotOptionsDef = DEFAULTSCROLLMENUSTYLE("M_DATA", OP_ScreenshotOptionsMenu, &OP_DataOptionsDef, 30, 30);
 menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE("M_ADDONS", OP_AddonsOptionsMenu, &OP_MainDef, 30, 30);
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE("M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
+menu_t OP_LegacyOptionsDef = DEFAULTSCROLLMENUSTYLE(NULL, OP_LegacyOptionsMenu, &OP_MainDef, 30, 30);
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -4697,7 +4714,7 @@ static void M_Options(INT32 choice)
 	(void)choice;
 
 	// if the player is not admin or server, disable server options
-	OP_MainMenu[5].status = (Playing() && !(server || IsPlayerAdmin(consoleplayer))) ? (IT_GRAYEDOUT) : (IT_STRING|IT_SUBMENU);
+	OP_MainMenu[6].status = (Playing() && !(server || IsPlayerAdmin(consoleplayer))) ? (IT_GRAYEDOUT) : (IT_STRING|IT_SUBMENU);
 
 	// if the player is playing _at all_, disable the erase data options
 	OP_DataOptionsMenu[1].status = (Playing()) ? (IT_GRAYEDOUT) : (IT_STRING|IT_SUBMENU);

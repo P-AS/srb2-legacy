@@ -8707,7 +8707,7 @@ DoABarrelRoll (player_t *player)
 	else
 		slope = 0;
 
-	if(cv_quakeiiii.value)
+	if(cv_quakeiiii.value && cv_viewroll.value)
 	{
 		slope -= Quaketilt(player);
 	}
