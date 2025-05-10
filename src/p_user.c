@@ -7739,7 +7739,7 @@ consvar_t cv_cam2_adjust = {"cam2_adjust", "On", CV_SAVE|CV_SHOWMODIF, CV_OnOff,
 
 consvar_t cv_viewroll = {"viewroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_quakeiiiarena = {"earthquake", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_quakeiiii = {"quakeroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_quakeiv = {"quakeroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_quakelive = {"windowquake", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 fixed_t t_cam_dist = -42;
@@ -8654,14 +8654,6 @@ Quaketilt (player_t *player)
 	angle_t delta = (INT32)( player->mo->angle - moma );
 	fixed_t speed;
 
-	if (delta == (INT32)ANGLE_180)/* FUCK YOU HAVE A HACK */
-	{
-		return 0;
-	}
-
-	// Hi! I'm "not a math guy"!
-	if (abs(delta) > ANGLE_90)
-		delta = (INT32)(( moma + ANGLE_180 ) - player->mo->angle );
 	if (P_IsObjectOnGround(player->mo))
 	{
 		tilt = ANGLE_11hh/2;
@@ -8707,7 +8699,7 @@ DoABarrelRoll (player_t *player)
 	else
 		slope = 0;
 
-	if(cv_quakeiiii.value && cv_viewroll.value)
+	if(cv_quakeiv.value && cv_viewroll.value)
 	{
 		slope -= Quaketilt(player);
 	}

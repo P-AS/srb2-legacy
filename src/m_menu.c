@@ -1451,7 +1451,7 @@ static menuitem_t OP_LegacyOptionsMenu[] =
 	{IT_HEADER|IT_STRING, NULL, "Screen Tilting", NULL, 15},
 	{IT_CVAR|IT_STRING, NULL, "Screen Tilting", &cv_viewroll, 	  20},
 	{IT_CVAR|IT_STRING, NULL, "Earthquake Screen Shaking", &cv_quakeiiiarena,  25},
-	{IT_CVAR|IT_STRING, NULL, "Quake Viewroll",    &cv_quakeiiii, 30},
+	{IT_CVAR|IT_STRING, NULL, "Quake Viewroll",    &cv_quakeiv, 30},
 	{IT_HEADER|IT_STRING, NULL, "System", NULL, 35},
 	{IT_CVAR|IT_STRING, NULL, "Window Shaking",    &cv_quakelive, 40},
 };
