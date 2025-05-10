@@ -8005,7 +8005,7 @@ static void M_DrawGenericScrollMenu(void)
 				break;
 			case IT_STRING:
 			case IT_WHITESTRING:
-				if (i == itemOn || (currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
+				if (i != itemOn && (currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
 					V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
 				else
 					V_DrawString(x, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
