@@ -1,10 +1,1 @@
-set(SRB2_ANDROID_SOURCES
-        jni_android.c
-        ndk_crash_handler.c
-        ndk_strings.c
-)
-set(SRB2_ANDROID_HEADERS
-        jni_android.h
-        ndk_crash_handler.h
-        ndk_strings.h
-)
+target_sourcefile(c)
