@@ -2,12 +2,12 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 30
-    namespace 'org.srb2.srb2legacy'
+    namespace 'org.stjr.srb2legacy'
     lintOptions {
         abortOnError false
     }
     defaultConfig {
-        applicationId "org.srb2.srb2legacy"
+        applicationId "org.stjr.srb2legacy"
 
         minSdkVersion  28
         targetSdkVersion 30
