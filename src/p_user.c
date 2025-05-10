@@ -7740,6 +7740,7 @@ consvar_t cv_cam2_adjust = {"cam2_adjust", "On", CV_SAVE|CV_SHOWMODIF, CV_OnOff,
 consvar_t cv_viewroll = {"viewroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_quakeiiiarena = {"earthquake", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_quakeiiii = {"quakeroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_quakelive = {"windowquake", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 fixed_t t_cam_dist = -42;
 fixed_t t_cam_height = -42;
