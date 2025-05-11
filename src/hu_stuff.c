@@ -49,6 +49,8 @@
 #include "lua_hud.h"
 #include "lua_hook.h"
 
+#include "s_sound.h"
+
 // coords are scaled
 #define HU_INPUTX 0
 #define HU_INPUTY 0

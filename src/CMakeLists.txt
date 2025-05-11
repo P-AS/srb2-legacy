@@ -1,6 +1,6 @@
 # SRB2 Core
 
-add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32)
+add_library(SRB2SDL2 SHARED)
 
 # Core sources
 target_sourcefile(c)
@@ -15,9 +15,9 @@ set(SRB2_CONFIG_HAVE_ZLIB ON CACHE BOOL
 	"Enable zlib support.")
 set(SRB2_CONFIG_HAVE_GME OFF CACHE BOOL
 	"Enable GME support.")
-set(SRB2_CONFIG_HAVE_OPENMPT ON CACHE BOOL
+set(SRB2_CONFIG_HAVE_OPENMPT OFF CACHE BOOL
 	"Enable OpenMPT support.")
-set(SRB2_CONFIG_HAVE_THREADS ON CACHE BOOL
+set(SRB2_CONFIG_HAVE_THREADS OFF CACHE BOOL
 	"Enable multithreading support.")
 set(SRB2_CONFIG_HWRENDER OFF CACHE BOOL
 	"Enable hardware rendering through OpenGL.")

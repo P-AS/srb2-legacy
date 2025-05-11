@@ -12,6 +12,7 @@
 
 #include "jni_android.h"
 #include "SDL.h"
+#include "../i_threads.h"
 
 static JavaVM *jvm = NULL;
 static JNIEnv *jniEnv = NULL;
@@ -34,10 +35,10 @@ int JNI_ABICount = 0;
 
 void JNI_Startup(void)
 {
-#ifdef HAVE_THREADS
+/*#ifdef HAVE_THREADS
 	I_start_threads();
 	I_AddExitFunc(I_stop_threads);
-#endif
+#endif*/
 	CONS_Printf("%s()...\n", __FUNCTION__);
 	JNI_SetupActivity();
 	JNI_SetupDeviceInfo();
