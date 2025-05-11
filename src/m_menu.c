@@ -933,11 +933,11 @@ static menuitem_t OP_MainMenu[] =
 	{IT_SUBMENU | IT_STRING, NULL, "Sound Options...",      &OP_SoundOptionsDef,  40},
 	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",       &OP_DataOptionsDef,   50},
 
-	{IT_SUBMENU | IT_STRING, NULL, "Legacy Options...",     &OP_LegacyOptionsDef,  65},
+	{IT_SUBMENU | IT_STRING, NULL, "Legacy Options...",     &OP_LegacyOptionsDef,  70},
 
-	{IT_SUBMENU | IT_STRING, NULL, "Game Options...",       &OP_GameOptionsDef,   85},
-	{IT_SUBMENU | IT_STRING, NULL, "Server Options...",     &OP_ServerOptionsDef, 95},
-	{IT_STRING  | IT_CALL,   NULL, "Add-on Options...",     M_AddonsOptions,      105},
+	{IT_SUBMENU | IT_STRING, NULL, "Game Options...",       &OP_GameOptionsDef,   90},
+	{IT_SUBMENU | IT_STRING, NULL, "Server Options...",     &OP_ServerOptionsDef, 100},
+	{IT_STRING  | IT_CALL,   NULL, "Add-on Options...",     M_AddonsOptions,      110},
 };
 
 static menuitem_t OP_ControlsMenu[] =
