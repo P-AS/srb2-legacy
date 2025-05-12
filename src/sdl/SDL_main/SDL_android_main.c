@@ -62,7 +62,7 @@ static void ShowSplashScreen(void)
 #define REQUEST_STORAGE_PERMISSION
 
 #define REQUEST_MESSAGE_TITLE "Permission required"
-#define REQUEST_MESSAGE_TEXT "Sonic Robo Blast 2 Kart needs storage permission.\nYour settings and game progress will not be saved if you decline."
+#define REQUEST_MESSAGE_TEXT "Sonic Robo Blast 2 Legacy needs storage permission.\nYour settings and game progress will not be saved if you decline."
 
 static void PermissionRequestMessage(void)
 {
@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
 		I_InitLogging();
 #endif
 
-	CONS_Printf("Sonic Robo Blast 2 Kart for Android\n");
+	CONS_Printf("Sonic Robo Blast 2 Legacy for Android\n");
 
 #ifdef LOGMESSAGES
 	if (logstream)
@@ -326,7 +326,7 @@ int main(int argc, char* argv[])
 #endif
 
 	// Begin the normal game setup and loop.
-	CONS_Printf("Setting up Sonic Robo Blast 2 Kart...\n");
+	CONS_Printf("Setting up Sonic Robo Blast 2 Legacy...\n");
 	D_SRB2Main();
 
 	CONS_Printf("Entering main game loop...\n");
