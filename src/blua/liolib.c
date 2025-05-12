@@ -184,7 +184,7 @@ static int io_open (lua_State *L) {
 			break;
 		}
 	}
-	if (strstr(filename, "..") || strchr(filename, ':') || StartsWith(filename, "\\")
+	if (strstr(filename, "..") || luaL_strchr(filename, ':') || StartsWith(filename, "\\")
 		|| StartsWith(filename, "/") || !pass)
 	{
 		luaL_error(L,"access denied to %s", filename);
@@ -196,17 +196,17 @@ static int io_open (lua_State *L) {
 	// Make directories as needed
 	splitter = destFilename;
 
-    forward = strchr(splitter, '/');
-    backward = strchr(splitter, '\\');
+    forward = luaL_strchr(splitter, '/');
+    backward = luaL_strchr(splitter, '\\');
 	while ((splitter = (forward && backward) ? min(forward, backward) : (forward ?: backward)))
 	{
 		*splitter = 0;
 		I_mkdir(destFilename, 0755);
-		*splitter = '/'; 
+		*splitter = '/';
 		splitter++;
 
-        forward = strchr(splitter, '/');
-        backward = strchr(splitter, '\\');
+        forward = luaL_strchr(splitter, '/');
+        backward = luaL_strchr(splitter, '\\');
 	}
 
 	pf = newfile(L);

@@ -586,11 +586,11 @@ static void CON_MoveConsole(void)
 		con_curlines -= FixedInt(fracmovement);
 		if (con_curlines < con_destlines)
 			con_curlines = con_destlines;
-		
+
 		if (con_destlines == 0) // If the console is being closed, not just moved up...
 			con_tick = 0; // ...don't show the blinking cursor
 	}
-	
+
 	fracmovement %= FRACUNIT; // Reset fracmovement's integer value, but keep the fraction
 }
 
@@ -1267,7 +1267,7 @@ void CONS_Printf(const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	M_vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
 	// echo console prints to log file
@@ -1325,7 +1325,7 @@ void CONS_Alert(alerttype_t level, const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	M_vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
 	switch (level)
@@ -1361,7 +1361,7 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	M_vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
 	// Again I am lazy, oh well
@@ -1617,7 +1617,7 @@ void CON_Drawer(void)
 
 	if (con_recalc)
 		CON_RecalcSize();
-	
+
 		// console movement
 	if (con_curlines != con_destlines)
 		CON_MoveConsole();
@@ -1627,4 +1627,3 @@ void CON_Drawer(void)
 	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS)
 		CON_DrawHudlines();
 }
-
