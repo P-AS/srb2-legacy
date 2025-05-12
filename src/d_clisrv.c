@@ -2047,11 +2047,12 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 		I_OsPolling();
 		key = I_GetKey();
+
 		if (cl_mode == CL_VIEWSERVER)
 		{
-			if (key == KEY_ENTER)
+			if (key == KEY_ENTER || key == KEY_JOY1)
 				cl_mode = CL_CHECKFILES;
-			else if (key == KEY_ESCAPE)
+			else if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 				cl_mode = CL_ABORTED;
 		}
 

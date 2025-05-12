@@ -1518,6 +1518,8 @@ static void P_LoadRawSideDefs2(void *data)
 					}
 					break;
 				}
+#else
+				break;
 #endif
 
 			case 413: // Change music
