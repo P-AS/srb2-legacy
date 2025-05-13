@@ -32,13 +32,14 @@ LOCAL_SRC_FILES := $(call List,$(LOCAL_PATH)/$(SRC_JNI)/Sourcefile)
 #LOCAL_SRC_FILES += $(call List,$(LOCAL_PATH)/$(SRC_HWR)/Sourcefile)
 #LOCAL_SRC_FILES += $(call List,$(LOCAL_PATH)/$(SRC_SDL)/Sourcefile)
 
-LOCAL_SRC_FILES += $(SRC_SDL)/SDL_main/SDL_android_main.c $(SRC_SDL)/mixer_sound.c $(SRC_SDL)/i_threads.c
+LOCAL_SRC_FILES += $(SRC_SDL)/SDL_main/SDL_android_main.c $(SRC_SDL)/mixer_sound.c
+LOCAL_SRC_FILES += $(SRC_MAIN)/i_threads.c
 #LOCAL_SRC_FILES += $(SRC_HWR)/r_gles/r_gles2.c $(SRC_SDL)/ogl_es_sdl.c
 #LOCAL_SRC_FILES += $(SRC_MAIN)/comptime.c $(SRC_MAIN)/md5.c
 
 # Compile flags
 LOCAL_CFLAGS += -DUNIXCOMMON -DLINUX \
-				-DHAVE_SDL -DHAVE_MIXER -DHAVE_MIXERX -DHAVE_LIBGME \
+				-DHAVE_SDL -DHAVE_MIXER -DHAVE_GME \
 				-DHWRENDER -DHAVE_GLES -DHAVE_GLES2 \
 				-DTOUCHINPUTS -DNATIVESCREENRES -DDIRECTFULLSCREEN \
 				-DHAVE_ZLIB -DHAVE_PNG -DHAVE_CURL \
