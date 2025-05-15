@@ -1438,27 +1438,6 @@ void VID_PrepareModeList(void)
 #endif
 }
 
-static UINT32 refresh_rate;
-static UINT32 VID_GetRefreshRate(void) 
-{
-	int index = SDL_GetWindowDisplayIndex(window);
-	SDL_DisplayMode m;
-
-	if (SDL_WasInit(SDL_INIT_VIDEO) == 0)
-	{
-		// Video not init yet.
-		return 0;
-	}
-
-	if (SDL_GetCurrentDisplayMode(index, &m) != 0)
-	{
-		// Error has occurred.
-		return 0;
-	}
-
-	return m.refresh_rate;
-}
-
 
 static UINT32 refresh_rate;
 static UINT32 VID_GetRefreshRate(void)
@@ -1742,15 +1721,8 @@ void I_StartupGraphics(void)
 	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY>>1,SDL_DEFAULT_REPEAT_INTERVAL<<2);
 	VID_Command_ModeList_f();
 #ifdef HWRENDER
-	if (M_CheckParm("-opengl") || rendermode == render_opengl)
-	{
-		if (!HWD.pfnInit()) // load the OpenGL library
-		{
-			rendermode = render_soft;
-		}
-	}
+	I_StartupHardwareGraphics();
 #endif
-
 	// Fury: we do window initialization after GL setup to allow
 	// SDL_GL_LoadLibrary to work well on Windows
 
