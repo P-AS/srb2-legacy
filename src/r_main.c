@@ -1821,7 +1821,7 @@ void R_RenderPlayerView(player_t *player)
 #ifdef HWRENDER
 void R_InitHardwareMode(void)
 {
-	HWR_AddCommands();
+	//HWR_AddCommands();
 	if (gamestate == GS_LEVEL)
 	{
 		HWR_SetupLevel();
