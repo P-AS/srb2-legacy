@@ -1165,7 +1165,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "FPS Cap",       &cv_fpscap, 140},
 
 #ifdef HWRENDER
-	{IT_STRING | IT_CALL, NULL,   "OpenGL Options...",   M_OpenGLOptionsMenu,    150},
+	{IT_STRING | IT_CALL, NULL,   "OpenGL Options...",   M_OpenGLOptionsMenu,    160},
 #endif
 };
 
