@@ -267,6 +267,7 @@ static void M_ChangeControl(INT32 choice);
 // Video & Sound
 menu_t OP_VideoOptionsDef, OP_VideoModeDef;
 #ifdef HWRENDER
+static void M_OpenGLOptionsMenu(void);
 menu_t OP_OpenGLOptionsDef, OP_OpenGLColorDef, OP_OpenGLLightingDef;
 #endif
 menu_t OP_SoundOptionsDef;
@@ -1144,9 +1145,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 {
 	{IT_STRING | IT_CALL,  NULL,   "Video Modes...",      M_VideoModeMenu,     10},
 
-#ifdef HWRENDER
-	{IT_SUBMENU|IT_STRING, NULL,   "OpenGL Options...",  &OP_OpenGLOptionsDef,    20},
-#endif
+	{IT_STRING|IT_CVAR,    NULL,   "Renderer",            &cv_renderer,        20},
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	{IT_STRING|IT_CVAR,      NULL, "Fullscreen",          &cv_fullscreen,    30},
@@ -1164,6 +1163,10 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Clear Before Redraw", &cv_homremoval, 120},
 	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    130},
 	{IT_STRING | IT_CVAR,    NULL, "FPS Cap",       &cv_fpscap, 140},
+
+#ifdef HWRENDER
+	{IT_STRING | IT_CALL, NULL,   "OpenGL Options...",   M_OpenGLOptionsMenu,    150},
+#endif
 };
 
 static menuitem_t OP_VideoModeMenu[] =
@@ -1792,6 +1795,14 @@ menu_t OP_MonitorToggleDef =
 };
 
 #ifdef HWRENDER
+static void M_OpenGLOptionsMenu(void)
+{
+	if (rendermode == render_opengl)
+		M_SetupNextMenu(&OP_OpenGLOptionsDef);
+	else
+		M_StartMessage(M_GetText("You must be in OpenGL mode\nto access this menu.\n\n(Press a key)\n"), NULL, MM_NOTHING);
+}
+
 menu_t OP_OpenGLOptionsDef = DEFAULTMENUSTYLE("M_VIDEO", OP_OpenGLOptionsMenu, &OP_VideoOptionsDef, 30, 30);
 #ifdef ALAM_LIGHTING
 menu_t OP_OpenGLLightingDef = DEFAULTMENUSTYLE("M_VIDEO", OP_OpenGLLightingMenu, &OP_OpenGLOptionsDef, 60, 40);
@@ -2902,11 +2913,11 @@ void M_Init(void)
 	quitmsg[QUIT3MSG5] = M_GetText("You'll be back to play soon, though...\n......right?\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG6] = M_GetText("Aww, is Egg Rock Zone too\ndifficult for you?\n\n(Press 'Y' to quit)");
 
-#ifdef HWRENDER
+/*#ifdef HWRENDER
 	// Permanently hide some options based on render mode
 	if (rendermode == render_soft)
 		OP_VideoOptionsMenu[1].status = IT_DISABLED;
-#endif
+#endif*/
 
 #ifndef NONET
 	CV_RegisterVar(&cv_serversort);
@@ -3005,19 +3016,19 @@ static void M_DrawThermo(INT32 x, INT32 y, consvar_t *cv)
 	centerlump[1] = W_GetNumForName("M_THERMM");
 	cursorlump = W_GetNumForName("M_THERMO");
 
-	V_DrawScaledPatch(xx, y, 0, p = W_CachePatchNum(leftlump,PU_CACHE));
+	V_DrawScaledPatch(xx, y, 0, p = W_CachePatchNum(leftlump,PU_PATCH));
 	xx += SHORT(p->width) - SHORT(p->leftoffset);
 	for (i = 0; i < 16; i++)
 	{
-		V_DrawScaledPatch(xx, y, V_WRAPX, W_CachePatchNum(centerlump[i & 1], PU_CACHE));
+		V_DrawScaledPatch(xx, y, V_WRAPX, W_CachePatchNum(centerlump[i & 1], PU_PATCH));
 		xx += 8;
 	}
-	V_DrawScaledPatch(xx, y, 0, W_CachePatchNum(rightlump, PU_CACHE));
+	V_DrawScaledPatch(xx, y, 0, W_CachePatchNum(rightlump, PU_PATCH));
 
 	xx = (cv->value - cv->PossibleValue[0].value) * (15*8) /
 		(cv->PossibleValue[1].value - cv->PossibleValue[0].value);
 
-	V_DrawScaledPatch((x + 8) + xx, y, 0, W_CachePatchNum(cursorlump, PU_CACHE));
+	V_DrawScaledPatch((x + 8) + xx, y, 0, W_CachePatchNum(cursorlump, PU_PATCH));
 }
 
 //  A smaller 'Thermo', with range given as percents (0-100)
@@ -3092,15 +3103,15 @@ void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
 	// draw left side
 	cx = x;
 	cy = y;
-	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_TL], PU_CACHE));
+	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_TL], PU_PATCH));
 	cy += boff;
-	p = W_CachePatchNum(viewborderlump[BRDR_L], PU_CACHE);
+	p = W_CachePatchNum(viewborderlump[BRDR_L], PU_PATCH);
 	for (n = 0; n < boxlines; n++)
 	{
 		V_DrawScaledPatch(cx, cy, V_WRAPY, p);
 		cy += step;
 	}
-	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_BL], PU_CACHE));
+	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_BL], PU_PATCH));
 
 	// draw middle
 	V_DrawFlatFill(x + boff, y + boff, width*step, boxlines*step, st_borderpatchnum);
@@ -3109,23 +3120,23 @@ void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
 	cy = y;
 	while (width > 0)
 	{
-		V_DrawScaledPatch(cx, cy, V_WRAPX, W_CachePatchNum(viewborderlump[BRDR_T], PU_CACHE));
-		V_DrawScaledPatch(cx, y + boff + boxlines*step, V_WRAPX, W_CachePatchNum(viewborderlump[BRDR_B], PU_CACHE));
+		V_DrawScaledPatch(cx, cy, V_WRAPX, W_CachePatchNum(viewborderlump[BRDR_T], PU_PATCH));
+		V_DrawScaledPatch(cx, y + boff + boxlines*step, V_WRAPX, W_CachePatchNum(viewborderlump[BRDR_B], PU_PATCH));
 		width--;
 		cx += step;
 	}
 
 	// draw right side
 	cy = y;
-	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_TR], PU_CACHE));
+	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_TR], PU_PATCH));
 	cy += boff;
-	p = W_CachePatchNum(viewborderlump[BRDR_R], PU_CACHE);
+	p = W_CachePatchNum(viewborderlump[BRDR_R], PU_PATCH);
 	for (n = 0; n < boxlines; n++)
 	{
 		V_DrawScaledPatch(cx, cy, V_WRAPY, p);
 		cy += step;
 	}
-	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_BR], PU_CACHE));
+	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_BR], PU_PATCH));
 */
 }
 
@@ -4090,6 +4101,27 @@ static void M_AddonsOptions(INT32 choice)
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make add-ons!"
 //#define LOCATIONSTRING2 "Visit \x88SRB2.ORG/MODS\x80 to get & make add-ons!"
 
+static void M_LoadAddonsPatches(void)
+{
+	addonsp[EXT_FOLDER] = W_CachePatchName("M_FFLDR", PU_PATCH);
+	addonsp[EXT_UP] = W_CachePatchName("M_FBACK", PU_PATCH);
+	addonsp[EXT_NORESULTS] = W_CachePatchName("M_FNOPE", PU_PATCH);
+	addonsp[EXT_TXT] = W_CachePatchName("M_FTXT", PU_PATCH);
+	addonsp[EXT_CFG] = W_CachePatchName("M_FCFG", PU_PATCH);
+	addonsp[EXT_WAD] = W_CachePatchName("M_FWAD", PU_PATCH);
+#ifdef USE_KART
+	addonsp[EXT_KART] = W_CachePatchName("M_FKART", PU_PATCH);
+#endif
+	addonsp[EXT_PK3] = W_CachePatchName("M_FPK3", PU_PATCH);
+	addonsp[EXT_SOC] = W_CachePatchName("M_FSOC", PU_PATCH);
+	addonsp[EXT_LUA] = W_CachePatchName("M_FLUA", PU_PATCH);
+	addonsp[NUM_EXT] = W_CachePatchName("M_FUNKN", PU_PATCH);
+	addonsp[NUM_EXT+1] = W_CachePatchName("M_FSEL", PU_PATCH);
+	addonsp[NUM_EXT+2] = W_CachePatchName("M_FLOAD", PU_PATCH);
+	addonsp[NUM_EXT+3] = W_CachePatchName("M_FSRCH", PU_PATCH);
+	addonsp[NUM_EXT+4] = W_CachePatchName("M_FSAVE", PU_PATCH);
+}
+
 static void M_Addons(INT32 choice)
 {
 	const char *pathname = ".";
@@ -4140,23 +4172,7 @@ static void M_Addons(INT32 choice)
 			W_UnlockCachedPatch(addonsp[i]);
 	}
 
-	addonsp[EXT_FOLDER] = W_CachePatchName("M_FFLDR", PU_STATIC);
-	addonsp[EXT_UP] = W_CachePatchName("M_FBACK", PU_STATIC);
-	addonsp[EXT_NORESULTS] = W_CachePatchName("M_FNOPE", PU_STATIC);
-	addonsp[EXT_TXT] = W_CachePatchName("M_FTXT", PU_STATIC);
-	addonsp[EXT_CFG] = W_CachePatchName("M_FCFG", PU_STATIC);
-	addonsp[EXT_WAD] = W_CachePatchName("M_FWAD", PU_STATIC);
-#ifdef USE_KART
-	addonsp[EXT_KART] = W_CachePatchName("M_FKART", PU_STATIC);
-#endif
-	addonsp[EXT_PK3] = W_CachePatchName("M_FPK3", PU_STATIC);
-	addonsp[EXT_SOC] = W_CachePatchName("M_FSOC", PU_STATIC);
-	addonsp[EXT_LUA] = W_CachePatchName("M_FLUA", PU_STATIC);
-	addonsp[NUM_EXT] = W_CachePatchName("M_FUNKN", PU_STATIC);
-	addonsp[NUM_EXT+1] = W_CachePatchName("M_FSEL", PU_STATIC);
-	addonsp[NUM_EXT+2] = W_CachePatchName("M_FLOAD", PU_STATIC);
-	addonsp[NUM_EXT+3] = W_CachePatchName("M_FSRCH", PU_STATIC);
-	addonsp[NUM_EXT+4] = W_CachePatchName("M_FSAVE", PU_STATIC);
+	M_LoadAddonsPatches();
 
 	MISC_AddonsDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MISC_AddonsDef);
@@ -4294,6 +4310,10 @@ static void M_DrawAddons(void)
 		M_DrawMessageMenu();
 		return;
 	}
+
+	// Jimita: Load addons menu patches.
+	if (needpatchrecache)
+		M_LoadAddonsPatches();
 
 	if (Playing())
 		V_DrawCenteredString(BASEVIDWIDTH/2, 5, warningflags, "Adding files mid-game may cause problems.");
@@ -5878,7 +5898,7 @@ static void M_DrawLevelStats(void)
 	V_DrawCenteredString(BASEVIDWIDTH/2, 24, V_YELLOWMAP, "PAGE 2 OF 2");
 
 	V_DrawString(72, 48, 0, va("x %d/%d", M_CountEmblems(), numemblems+numextraemblems));
-	V_DrawScaledPatch(40, 48-4, 0, W_CachePatchName("EMBLICON", PU_STATIC));
+	V_DrawScaledPatch(40, 48-4, 0, W_CachePatchName("EMBLICON", PU_PATCH));
 
 	M_DrawStatsMaps(statsLocation);
 }

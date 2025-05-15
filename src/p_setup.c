@@ -1420,7 +1420,6 @@ static void P_LoadRawSideDefs2(void *data)
 			case 606: //SoM: 4/4/2000: Just colormap transfer
 				// SoM: R_CreateColormap will only create a colormap in software mode...
 				// Perhaps we should just call it instead of doing the calculations here.
-				if (rendermode == render_soft || rendermode == render_none)
 				{
 					if (msd->toptexture[0] == '#' || msd->bottomtexture[0] == '#')
 					{
@@ -1443,11 +1442,6 @@ static void P_LoadRawSideDefs2(void *data)
 						else
 							sd->bottomtexture = num;
 					}
-					break;
-				}
-#ifdef HWRENDER
-				else
-				{
 					// for now, full support of toptexture only
 					if ((msd->toptexture[0] == '#' && msd->toptexture[1] && msd->toptexture[2] && msd->toptexture[3] && msd->toptexture[4] && msd->toptexture[5] && msd->toptexture[6])
 						|| (msd->bottomtexture[0] == '#' && msd->bottomtexture[1] && msd->bottomtexture[2] && msd->bottomtexture[3] && msd->bottomtexture[4] && msd->bottomtexture[5] && msd->bottomtexture[6]))
@@ -1499,28 +1493,8 @@ static void P_LoadRawSideDefs2(void *data)
 #undef ALPHA2INT
 #undef HEX2INT
 					}
-					else
-					{
-						if ((num = R_CheckTextureNumForName(msd->toptexture)) == -1)
-							sd->toptexture = 0;
-						else
-							sd->toptexture = num;
-
-						if ((num = R_CheckTextureNumForName(msd->midtexture)) == -1)
-							sd->midtexture = 0;
-						else
-							sd->midtexture = num;
-
-						if ((num = R_CheckTextureNumForName(msd->bottomtexture)) == -1)
-							sd->bottomtexture = 0;
-						else
-							sd->bottomtexture = num;
-					}
 					break;
 				}
-#else
-				break;
-#endif
 
 			case 413: // Change music
 			{
@@ -2967,20 +2941,14 @@ boolean P_SetupLevel(boolean skipprecip)
 	globalweather = mapheaderinfo[gamemap-1]->weather;
 
 #ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode != render_soft && rendermode != render_none)
-	{
-#ifdef ALAM_LIGHTING
-		// BP: reset light between levels (we draw preview frame lights on current frame)
-		HWR_ResetLights();
-#endif
-		// Correct missing sidedefs & deep water trick
-		HWR_CorrectSWTricks();
-		HWR_CreatePlanePolygons((INT32)numnodes - 1);
-
-			// Build the sky dome
-		HWR_ClearSkyDome();
-		HWR_BuildSkyDome();
-	}
+	// Jimita: Free extrasubsectors regardless of renderer.
+	// Maybe we're not in OpenGL anymore.
+	if (extrasubsectors)
+		free(extrasubsectors);
+	extrasubsectors = NULL;
+	// stuff like HWR_CreatePlanePolygons is called there
+	if (rendermode == render_opengl)
+		HWR_SetupLevel();
 #endif
 
 	// oh god I hope this helps
@@ -3122,10 +3090,8 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	// preload graphics
 #ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode != render_soft && rendermode != render_none)
-	{
+	if (rendermode == render_opengl)
 		HWR_PrepLevelCache(numtextures);
-	}
 #endif
 
 	P_MapEnd();
@@ -3184,6 +3150,25 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	return true;
 }
+
+#ifdef HWRENDER
+void HWR_SetupLevel(void)
+{
+#ifdef ALAM_LIGHTING
+	// BP: reset light between levels (we draw preview frame lights on current frame)
+	HWR_ResetLights();
+#endif
+	// Correct missing sidedefs & deep water trick
+	HWR_CorrectSWTricks();
+	// Jimita: Don't call this more than once!
+	if (!extrasubsectors)
+		HWR_CreatePlanePolygons((INT32)numnodes - 1);
+	
+	// Build the sky dome
+	HWR_ClearSkyDome();
+	HWR_BuildSkyDome();
+}
+#endif
 
 //
 // P_RunSOC
