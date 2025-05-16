@@ -4165,13 +4165,6 @@ static void M_Addons(INT32 choice)
 	else
 		dir_on[menudepthleft] = 0;
 
-	if (addonsp[0]) // never going to have some provided but not all, saves individually checking
-	{
-		size_t i;
-		for (i = 0; i < NUM_EXT+5; i++)
-			W_UnlockCachedPatch(addonsp[i]);
-	}
-
 	M_LoadAddonsPatches();
 
 	MISC_AddonsDef.prevMenu = currentMenu;
