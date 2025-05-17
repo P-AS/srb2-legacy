@@ -5112,7 +5112,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			if (flip)
 				flip = 0;
 			else
-				flip = 2 55;
+				flip = 255;
 		}
 	}
 	else
