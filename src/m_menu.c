@@ -2788,6 +2788,7 @@ void M_ClearMenus(boolean callexitmenufunc)
 	menuactive = false;
 
 	I_UpdateMouseGrab();
+	I_SetTextInputMode(false);
 }
 
 //
