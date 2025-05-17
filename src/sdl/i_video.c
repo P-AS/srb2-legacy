@@ -98,8 +98,10 @@ rendermode_t rendermode = render_none;
 
 boolean highcolor = false;
 
+static void Impl_SetVsync(void);
+
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = {"vid_wait", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_vidwait = {"vid_wait", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, Impl_SetVsync, 0, NULL, NULL, 0, 0, NULL};
 static consvar_t cv_stretch = {"stretch", "Off", CV_SAVE|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 static consvar_t cv_alwaysgrabmouse = {"alwaysgrabmouse", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -1919,4 +1921,13 @@ UINT32 I_GetRefreshRate(void)
 	// trouble querying mode over and over again.
 	return refresh_rate;
 }
+
+static void Impl_SetVsync(void)
+{
+#if SDL_VERSION_ATLEAST(2,0,18)
+	if (renderer)
+		SDL_RenderSetVSync(renderer, cv_vidwait.value);
+#endif
+}
+
 #endif
