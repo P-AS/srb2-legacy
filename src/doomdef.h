@@ -426,6 +426,8 @@ extern INT32 cv_debug;
 // Misc stuff for later...
 // =======================
 
+#define ANG2RAD(angle) ((float)((angle)*M_PI)/ANGLE_180)
+
 // Modifier key variables, accessible anywhere
 extern UINT8 shiftdown, ctrldown, altdown;
 extern boolean capslock;
