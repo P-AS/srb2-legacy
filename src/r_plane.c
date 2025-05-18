@@ -196,7 +196,7 @@ static void R_CalculatePlaneRipple(visplane_t *plane, INT32 y, fixed_t plheight,
 static void R_UpdatePlaneRipple(void)
 {
 	ds_waterofs = (leveltime & 1)*16384;
-	planeripple.offset = (leveltime * 140);
+	planeripple.offset = ((leveltime-1)*140) + ((rendertimefrac*140) / FRACUNIT);
 }
 #endif
 
