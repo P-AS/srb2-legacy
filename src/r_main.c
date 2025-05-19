@@ -1822,6 +1822,7 @@ void R_RenderPlayerView(player_t *player)
 void R_InitHardwareMode(void)
 {
 	//HWR_AddCommands();
+	HWR_Switch();
 	if (gamestate == GS_LEVEL)
 	{
 		HWR_SetupLevel();

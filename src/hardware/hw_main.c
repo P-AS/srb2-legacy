@@ -6276,6 +6276,17 @@ void HWR_Startup(void)
 	startupdone = true;
 }
 
+// --------------------------------------------------------------------------
+// Called after switching to the hardware renderer
+// --------------------------------------------------------------------------
+void HWR_Switch(void)
+{
+	// Set special states from CVARs
+	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
+	HWD.pfnSetSpecialState(HWD_SET_TEXTUREFILTERMODE, cv_grfiltermode.value);
+	HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_granisotropicmode.value);
+}
+
 
 // --------------------------------------------------------------------------
 // Free resources allocated by the hardware renderer
