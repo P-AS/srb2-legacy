@@ -350,7 +350,7 @@ void SCR_ChangeRenderer(void)
 	if (con_startup)
 	{
 		target_renderer = cv_renderer.value;
-		if (M_CheckParm("-opengl") && hwrenderloaded)
+		if (M_CheckParm("-opengl") && (hwrenderloaded == 1))
 			target_renderer = rendermode = render_opengl;
 		else if (M_CheckParm("-software"))
 			target_renderer = rendermode = render_soft;
