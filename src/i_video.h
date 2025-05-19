@@ -32,9 +32,13 @@ typedef enum
 	render_none = 3  // for dedicated server
 } rendermode_t;
 
-/**	\brief currect render mode
+/**	\brief current render mode
 */
 extern rendermode_t rendermode;
+
+/**	\brief hardware renderer loaded
+*/
+extern boolean hwrenderloaded;
 
 
 /**	\brief use highcolor modes if true
@@ -44,6 +48,9 @@ extern boolean highcolor;
 /**	\brief setup video mode
 */
 void I_StartupGraphics(void);
+
+/**	\brief setup hardware mode
+*/
 void I_StartupHardwareGraphics(void);
 
 /**	\brief restore old video mode
@@ -82,7 +89,7 @@ INT32 VID_GetModeForSize(INT32 w, INT32 h);
 
 	\param	modenum	video mode to set to
 
-	\return	currect video mode
+	\return	current video mode
 */
 INT32 VID_SetMode(INT32 modenum);
 void VID_CheckRenderer(void);

@@ -367,6 +367,8 @@ CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
 
 consvar_t cv_newgametype = {"newgametype", "Co-op", CV_HIDEN|CV_CALL, gametype_cons_t, Newgametype_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
+
+
 static CV_PossibleValue_t serversort_cons_t[] = {
 	{0,"Ping"},
 	{1,"Modified State"},
