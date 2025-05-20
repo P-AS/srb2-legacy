@@ -1386,11 +1386,17 @@ void D_SRB2Main(void)
 	// Jimita: Does the render mode need to change?
 	if ((setrenderneeded != 0) && (setrenderneeded != rendermode))
 	{
-		CONS_Printf("Switching the renderer...\n");
+		CONS_Printf(M_GetText("Switching the renderer...\n"));
+
+		// set needpatchflush / needpatchrecache true for D_CheckRendererState
 		needpatchflush = true;
 		needpatchrecache = true;
+
+		// Set cv_renderer to the new render mode
 		VID_CheckRenderer();
 		SCR_ChangeRendererCVars(setrenderneeded);
+
+		// check the renderer's state, and then clear setrenderneeded
 		D_CheckRendererState();
 		setrenderneeded = 0;
 	}

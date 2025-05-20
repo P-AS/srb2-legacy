@@ -265,6 +265,7 @@ static void M_AssignJoystick(INT32 choice);
 static void M_ChangeControl(INT32 choice);
 
 // Video & Sound
+static void M_VideoOptions(INT32 choice);
 menu_t OP_VideoOptionsDef, OP_VideoModeDef;
 #ifdef HWRENDER
 static void M_OpenGLOptionsMenu(void);
@@ -932,7 +933,7 @@ static menuitem_t OP_MainMenu[] =
 {
 	{IT_SUBMENU | IT_STRING, NULL, "Setup Controls...",     &OP_ControlsDef,      10},
 
-	{IT_SUBMENU | IT_STRING, NULL, "Video Options...",      &OP_VideoOptionsDef,  30},
+	{IT_CALL | IT_STRING, NULL, "Video Options...",      M_VideoOptions,  30},
 	{IT_SUBMENU | IT_STRING, NULL, "Sound Options...",      &OP_SoundOptionsDef,  40},
 	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",       &OP_DataOptionsDef,   50},
 
@@ -1143,6 +1144,12 @@ static menuitem_t OP_Mouse2OptionsMenu[] =
 	                      NULL, "Mouse Y Speed",    &cv_mouseysens2,      80},
 };
 
+enum
+{
+	op_video_resolution = 0,
+	op_video_renderer,
+};
+
 static menuitem_t OP_VideoOptionsMenu[] =
 {
 	{IT_STRING | IT_CALL,  NULL,   "Video Modes...",      M_VideoModeMenu,     10},
@@ -1170,6 +1177,19 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CALL, NULL,   "OpenGL Options...",   M_OpenGLOptionsMenu,    160},
 #endif
 };
+
+static void M_VideoOptions(INT32 choice)
+{
+	(void)choice;
+#ifdef HWRENDER
+	if (hwrenderloaded == -1)
+	{
+		OP_VideoOptionsMenu[op_video_renderer].status = (IT_DISABLED);
+	}
+
+#endif
+	M_SetupNextMenu(&OP_VideoOptionsDef);
+}
 
 static menuitem_t OP_VideoModeMenu[] =
 {

@@ -1470,7 +1470,7 @@ static SDL_bool Impl_CreateContext(void)
 {
 	// Renderer-specific stuff
 #ifdef HWRENDER
-	if (rendermode == render_opengl)
+	if ((rendermode == render_opengl) && (hwrenderloaded != -1))
 	{
 		if (!sdlglcontext)
 			sdlglcontext = SDL_GL_CreateContext(window);
@@ -1623,7 +1623,8 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
 	{
-		flags |= SDL_WINDOW_OPENGL;
+		if (hwrenderloaded != -1)
+			flags |= SDL_WINDOW_OPENGL;
 
 		// Without a 24-bit depth buffer many visuals are ruined by z-fighting.
 		// Some GPU drivers may give us a 16-bit depth buffer since the
@@ -1766,7 +1767,10 @@ void I_StartupGraphics(void)
 	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY>>1,SDL_DEFAULT_REPEAT_INTERVAL<<2);
 	VID_Command_ModeList_f();
 #ifdef HWRENDER
-	I_StartupHardwareGraphics();
+	if (M_CheckParm("-nogl"))
+		hwrenderloaded = -1; // Don't call SDL_GL_LoadLibrary
+	else
+		I_StartupHardwareGraphics();
 #endif
 	// Fury: we do window initialization after GL setup to allow
 	// SDL_GL_LoadLibrary to work well on Windows
@@ -1860,14 +1864,15 @@ void I_StartupHardwareGraphics(void)
 		HWD.pfnUnSetShader = hwSym("UnSetShader",NULL);
 		HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
 		HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
-		if (!HWD.pfnInit()) // let load the OpenGL library
+
+		hwrenderloaded = HWD.pfnInit() ? 1 : -1; // let load the OpenGL library
+
+		if (hwrenderloaded == -1)// let load the OpenGL library
 		{
 			rendermode = render_soft;
 			setrenderneeded = 0;
 		}
-		else
-		hwrenderloaded = 1;
-			glstartup = true;
+		glstartup = true;
 	}
 #endif
 }
