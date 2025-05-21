@@ -588,6 +588,10 @@ static void HWR_LoadMappedPatch(GLMipmap_t *grmip, GLPatch_t *gpatch)
 // -----------------+
 void HWR_GetPatch(GLPatch_t *gpatch)
 {
+
+	if (needpatchflush)
+		Z_FlushCachedPatches();
+
 	// is it in hardware cache
 	if (!gpatch->mipmap->downloaded && !gpatch->mipmap->grInfo.data)
 	{
@@ -614,6 +618,9 @@ void HWR_GetPatch(GLPatch_t *gpatch)
 void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap)
 {
 	GLMipmap_t *grmip, *newmip;
+
+	if (needpatchflush)
+		W_FlushCachedPatches();
 
 	if (colormap == colormaps || colormap == NULL)
 	{
@@ -768,6 +775,10 @@ static void HWR_CacheFadeMask(GLMipmap_t *grMipmap, lumpnum_t fademasklumpnum)
 void HWR_GetFadeMask(lumpnum_t fademasklumpnum)
 {
 	GLMipmap_t *grmip;
+
+
+	if (needpatchflush)
+		W_FlushCachedPatches();
 
 	grmip = HWR_GetCachedGLPatch(fademasklumpnum)->mipmap;
 

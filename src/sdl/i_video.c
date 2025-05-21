@@ -1525,7 +1525,8 @@ void VID_CheckGLLoaded(rendermode_t oldrender)
 
 void VID_CheckRenderer(void)
 {
-	SDL_bool rendererchanged = SDL_FALSE;
+	boolean rendererchanged = false;
+	boolean contextcreated = false;
 	rendermode_t oldrenderer = rendermode;
 
 	if (dedicated)
@@ -1534,21 +1535,51 @@ void VID_CheckRenderer(void)
 	if (setrenderneeded)
 	{
 		rendermode = setrenderneeded;
-		rendererchanged = SDL_TRUE;
+		rendererchanged = true;
 
 #ifdef HWRENDER
 		if (rendermode == render_opengl)
 		{
 			VID_CheckGLLoaded(oldrenderer);
+
 			// Initialise OpenGL before calling SDLSetMode!!!
-			if (vid_opengl_state != 1)
+			// This is because SDLSetMode calls OglSdlSurface.
+			if (vid_opengl_state == 0)
+			{
 				VID_StartupOpenGL();
+				// Loaded successfully!
+				if (vid_opengl_state == 1)
+				{
+					// Destroy the current window, if it exists.
+					if (window)
+					{
+						SDL_DestroyWindow(window);
+						window = NULL;
+					}
+
+					// Destroy the current window rendering context, if that also exists.
+					if (renderer)
+					{
+						SDL_DestroyRenderer(renderer);
+						renderer = NULL;
+					}
+
+					// Create a new window.
+					Impl_CreateWindow(USE_FULLSCREEN);
+
+					// From there, the OpenGL context was already created.
+					contextcreated = true;
+				}
+			}
 			else if (vid_opengl_state == -1)
-				rendererchanged = SDL_FALSE;
+				rendererchanged = false;
 		}
 #endif
 
-		Impl_CreateContext();
+		if (!contextcreated)
+			Impl_CreateContext();
+
+		setrenderneeded = 0;
 	}
 
 	SDLSetMode(vid.width, vid.height, USE_FULLSCREEN, (rendererchanged ? SDL_FALSE : SDL_TRUE));
@@ -1561,19 +1592,27 @@ void VID_CheckRenderer(void)
 			SDL_FreeSurface(bufSurface);
 			bufSurface = NULL;
 		}
+
+		if (rendererchanged)
+		{
 #ifdef HWRENDER
-		if (vid_opengl_state == 1) // Only if OpenGL ever loaded!
-			HWR_FreeTextureCache();
+			if (vid_opengl_state == 1) // Only if OpenGL ever loaded!
+				HWR_FreeTextureCache();
 #endif
-		SCR_SetDrawFuncs();
+			SCR_SetDrawFuncs();
+		}
 	}
 #ifdef HWRENDER
 	else if (rendermode == render_opengl)
-		R_InitHardwareMode();
+	{
+		if (rendererchanged)
+			R_InitHardwareMode();
+	}
 #else
 	(void)oldrenderer;
 #endif
 }
+
 
 INT32 VID_SetMode(INT32 modeNum)
 {
@@ -1620,7 +1659,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
 	{
-		if (vid_opengl_state != -1)
+		if (vid_opengl_state == 1)
 			flags |= SDL_WINDOW_OPENGL;
 
 		// Without a 24-bit depth buffer many visuals are ruined by z-fighting.
@@ -1765,8 +1804,8 @@ void I_StartupGraphics(void)
 	VID_Command_ModeList_f();
 #ifdef HWRENDER
 	if (M_CheckParm("-nogl"))
-		vid_opengl_state = -1; // Don't call SDL_GL_LoadLibrary
-	else
+		vid_opengl_state = -1; // Don't startup OpenGL
+	else if (chosenrendermode == render_opengl)
 		VID_StartupOpenGL();
 #endif
 	// Fury: we do window initialization after GL setup to allow
@@ -1827,6 +1866,7 @@ void VID_StartupOpenGL(void)
 	static boolean glstartup = false;
 	if (!glstartup)
 	{
+		CONS_Printf("VID_StartupOpenGL()...\n");
 		HWD.pfnInit             = hwSym("Init",NULL);
 		HWD.pfnFinishUpdate     = NULL;
 		HWD.pfnDraw2DLine       = hwSym("Draw2DLine",NULL);

@@ -1615,6 +1615,14 @@ void CON_Drawer(void)
 	if (!con_started || !graphics_started)
 		return;
 
+	
+	if (needpatchrecache)
+	{
+		W_FlushCachedPatches();
+		HU_LoadGraphics();
+	}
+		
+
 	if (con_recalc)
 	{
 		CON_RecalcSize();
