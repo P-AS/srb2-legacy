@@ -186,6 +186,7 @@ consvar_t cv_soniccd = {"soniccd", "Off", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NU
 consvar_t cv_allowmlook = {"allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_showhud = {"showhud", "Yes", CV_CALL,  CV_YesNo, R_SetViewSize, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_translucenthud = {"translucenthud", "10", CV_SAVE, translucenthud_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_uncappedhud = {"uncappedhud", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_translucency = {"translucency", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_drawdist = {"drawdist", "Infinite", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -419,6 +420,11 @@ angle_t R_PointToAngleEx(INT32 x2, INT32 y2, INT32 x1, INT32 y1)
 		(x1 = -x1) > (y1 = -y1) ? ANGLE_180+tantoangle[SlopeDivEx(y1,x1)] :    // octant 4
 		ANGLE_270-tantoangle[SlopeDivEx(x1,y1)] :                              // octant 5
 		0;
+}
+
+INT32 R_GetHudUncap(boolean menu)
+{
+	return cv_uncappedhud.value ? (menu ? (rendertimefrac & FRACMASK) : (rendertimefrac_unpaused & FRACMASK)) : 0; // Ternary operators are FUN -chromaticpipe
 }
 
 //
@@ -1882,6 +1888,7 @@ void R_RegisterEngineStuff(void)
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);
+	CV_RegisterVar(&cv_uncappedhud);
 
 	CV_RegisterVar(&cv_maxportals);
 
