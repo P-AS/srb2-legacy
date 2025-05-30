@@ -424,7 +424,7 @@ angle_t R_PointToAngleEx(INT32 x2, INT32 y2, INT32 x1, INT32 y1)
 
 INT32 R_GetHudUncap(boolean menu)
 {
-	return cv_uncappedhud.value ? (menu ? (rendertimefrac & FRACMASK) : (rendertimefrac_unpaused & FRACMASK)) : 0; // Ternary operators are FUN -chromaticpipe
+	return cv_uncappedhud.value ? ((menu) ? (rendertimefrac_unpaused & FRACMASK) : (rendertimefrac & FRACMASK) ) : 0; // Ternary operators are FUN -chromaticpipe
 }
 
 //
