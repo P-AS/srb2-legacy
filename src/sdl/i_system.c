@@ -217,7 +217,7 @@ static void JoyReset(SDLJoyInfo_t *JoySet)
 {
 	if (JoySet->dev)
 	{
-		SDL_JoystickClose(JoySet->dev);
+		SDL_GameControllerClose(JoySet->dev);
 	}
 	JoySet->dev = NULL;
 	JoySet->oldjoy = -1;
@@ -993,17 +993,15 @@ void I_JoyScale2(void)
 }
 
 // Cheat to get the device index for a joystick handle
-INT32 I_GetJoystickDeviceIndex(SDL_Joystick *dev)
+INT32 I_GetJoystickDeviceIndex(SDL_GameController *dev)
 {
-	INT32 i, count = SDL_NumJoysticks();
+	SDL_Joystick *joystick = NULL;
 
-	for (i = 0; dev && i < count; i++)
+	joystick = SDL_GameControllerGetJoystick(dev);
+	
+	if (joystick)
 	{
-		SDL_Joystick *test = SDL_JoystickOpen(i);
-		if (test && test == dev)
-			return i;
-		else if (JoyInfo.dev != test && JoyInfo2.dev != test)
-			SDL_JoystickClose(test);
+		return SDL_JoystickInstanceID(joystick);
 	}
 
 	return -1;
@@ -1108,15 +1106,10 @@ void I_GetJoystickEvents(void)
 	}
 #endif
 
-	for (i = JoyInfo.hats - 1; i >= 0; i--)
-	{
-		Uint8 hat = SDL_JoystickGetHat(JoyInfo.dev, i);
-
-		if (hat & SDL_HAT_UP   ) joyhats|=(UINT64)0x1<<(0 + 4*i);
-		if (hat & SDL_HAT_DOWN ) joyhats|=(UINT64)0x1<<(1 + 4*i);
-		if (hat & SDL_HAT_LEFT ) joyhats|=(UINT64)0x1<<(2 + 4*i);
-		if (hat & SDL_HAT_RIGHT) joyhats|=(UINT64)0x1<<(3 + 4*i);
-	}
+	joyhats |= SDL_GameControllerGetButton(JoyInfo.dev, SDL_CONTROLLER_BUTTON_DPAD_UP);
+	joyhats |= SDL_GameControllerGetButton(JoyInfo.dev, SDL_CONTROLLER_BUTTON_DPAD_DOWN) << 1;
+	joyhats |= SDL_GameControllerGetButton(JoyInfo.dev, SDL_CONTROLLER_BUTTON_DPAD_LEFT) << 2;
+	joyhats |= SDL_GameControllerGetButton(JoyInfo.dev, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) << 3;
 
 	if (joyhats != lastjoyhats)
 	{
@@ -1202,12 +1195,17 @@ void I_GetJoystickEvents(void)
 */
 static int joy_open(int joyindex)
 {
-	SDL_Joystick *newdev = NULL;
+	SDL_GameController *newdev = NULL;
 	int num_joy = 0;
 
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
 	{
 		CONS_Printf(M_GetText("Joystick subsystem not started\n"));
+		return -1;
+	}
+	if (SDL_WasInit(SDL_INIT_GAMECONTROLLER) == 0)
+	{
+		CONS_Printf(M_GetText("Game Controller subsystem not started\n"));
 		return -1;
 	}
 
@@ -1222,7 +1220,7 @@ static int joy_open(int joyindex)
 		return -1;
 	}
 
-	newdev = SDL_JoystickOpen(joyindex-1);
+	newdev = SDL_GameControllerOpen(joyindex-1);
 
 	// Handle the edge case where the device <-> joystick index assignment can change due to hotplugging
 	// This indexing is SDL's responsibility and there's not much we can do about it.
@@ -1237,8 +1235,8 @@ static int joy_open(int joyindex)
 	if (JoyInfo.dev)
 	{
 		if (JoyInfo.dev == newdev // same device, nothing to do
-			|| (newdev == NULL && SDL_JoystickGetAttached(JoyInfo.dev))) // we failed, but already have a working device
-			return JoyInfo.axises;
+			|| (newdev == NULL && SDL_GameControllerGetAttached(JoyInfo.dev))) // we failed, but already have a working device
+			return SDL_CONTROLLER_AXIS_MAX;
 		// Else, we're changing devices, so send neutral joy events
 		CONS_Debug(DBG_GAMELOGIC, "Joystick1 device is changing; resetting events...\n");
 		I_ShutdownJoystick();
@@ -1253,8 +1251,8 @@ static int joy_open(int joyindex)
 	}
 	else
 	{
-		CONS_Debug(DBG_GAMELOGIC, M_GetText("Joystick1: %s\n"), SDL_JoystickName(JoyInfo.dev));
-		JoyInfo.axises = SDL_JoystickNumAxes(JoyInfo.dev);
+		CONS_Debug(DBG_GAMELOGIC, M_GetText("Joystick1: %s\n"), SDL_GameControllerName(JoyInfo.dev));
+		JoyInfo.axises = SDL_CONTROLLER_AXIS_MAX;
 		if (JoyInfo.axises > JOYAXISSET*2)
 			JoyInfo.axises = JOYAXISSET*2;
 	/*		if (joyaxes<2)
@@ -1263,15 +1261,15 @@ static int joy_open(int joyindex)
 			return 0;
 		}*/
 
-		JoyInfo.buttons = SDL_JoystickNumButtons(JoyInfo.dev);
+		JoyInfo.buttons = SDL_CONTROLLER_BUTTON_MAX ; // dpad is 4 buttons
 		if (JoyInfo.buttons > JOYBUTTONS)
 			JoyInfo.buttons = JOYBUTTONS;
 
-		JoyInfo.hats = SDL_JoystickNumHats(JoyInfo.dev);
+		JoyInfo.hats = 4;
 		if (JoyInfo.hats > JOYHATS)
 			JoyInfo.hats = JOYHATS;
 
-		JoyInfo.balls = SDL_JoystickNumBalls(JoyInfo.dev);
+		JoyInfo.balls = 0;
 
 		//Joystick.bGamepadStyle = !stricmp(SDL_JoystickName(JoyInfo.dev), "pad");
 
@@ -1380,15 +1378,10 @@ void I_GetJoystick2Events(void)
 	}
 #endif
 
-	for (i = JoyInfo2.hats - 1; i >= 0; i--)
-	{
-		Uint8 hat = SDL_JoystickGetHat(JoyInfo2.dev, i);
-
-		if (hat & SDL_HAT_UP   ) joyhats|=(UINT64)0x1<<(0 + 4*i);
-		if (hat & SDL_HAT_DOWN ) joyhats|=(UINT64)0x1<<(1 + 4*i);
-		if (hat & SDL_HAT_LEFT ) joyhats|=(UINT64)0x1<<(2 + 4*i);
-		if (hat & SDL_HAT_RIGHT) joyhats|=(UINT64)0x1<<(3 + 4*i);
-	}
+	joyhats |= SDL_GameControllerGetButton(JoyInfo2.dev, SDL_CONTROLLER_BUTTON_DPAD_UP);
+	joyhats |= SDL_GameControllerGetButton(JoyInfo2.dev, SDL_CONTROLLER_BUTTON_DPAD_DOWN) << 1;
+	joyhats |= SDL_GameControllerGetButton(JoyInfo2.dev, SDL_CONTROLLER_BUTTON_DPAD_LEFT) << 2;
+	joyhats |= SDL_GameControllerGetButton(JoyInfo2.dev, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) << 3;
 
 	if (joyhats != lastjoy2hats)
 	{
@@ -1474,12 +1467,17 @@ void I_GetJoystick2Events(void)
 */
 static int joy_open2(int joyindex)
 {
-	SDL_Joystick *newdev = NULL;
+	SDL_GameController *newdev = NULL;
 	int num_joy = 0;
 
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
 	{
 		CONS_Printf(M_GetText("Joystick subsystem not started\n"));
+		return -1;
+	}
+	if (SDL_WasInit(SDL_INIT_GAMECONTROLLER) == 0)
+	{
+		CONS_Printf(M_GetText("Game Controller subsystem not started\n"));
 		return -1;
 	}
 
@@ -1494,7 +1492,7 @@ static int joy_open2(int joyindex)
 		return -1;
 	}
 
-	newdev = SDL_JoystickOpen(joyindex-1);
+	newdev = SDL_GameControllerOpen(joyindex-1);
 
 	// Handle the edge case where the device <-> joystick index assignment can change due to hotplugging
 	// This indexing is SDL's responsibility and there's not much we can do about it.
@@ -1509,8 +1507,8 @@ static int joy_open2(int joyindex)
 	if (JoyInfo2.dev)
 	{
 		if (JoyInfo2.dev == newdev // same device, nothing to do
-			|| (newdev == NULL && SDL_JoystickGetAttached(JoyInfo2.dev))) // we failed, but already have a working device
-			return JoyInfo.axises;
+			|| (newdev == NULL && SDL_GameControllerGetAttached(JoyInfo2.dev))) // we failed, but already have a working device
+			return SDL_CONTROLLER_AXIS_MAX;
 		// Else, we're changing devices, so send neutral joy events
 		CONS_Debug(DBG_GAMELOGIC, "Joystick2 device is changing; resetting events...\n");
 		I_ShutdownJoystick2();
@@ -1525,8 +1523,8 @@ static int joy_open2(int joyindex)
 	}
 	else
 	{
-		CONS_Debug(DBG_GAMELOGIC, M_GetText("Joystick2: %s\n"), SDL_JoystickName(JoyInfo2.dev));
-		JoyInfo2.axises = SDL_JoystickNumAxes(JoyInfo2.dev);
+		CONS_Debug(DBG_GAMELOGIC, M_GetText("Joystick2: %s\n"), SDL_GameControllerName(JoyInfo2.dev));
+		JoyInfo2.axises = SDL_CONTROLLER_AXIS_MAX;
 		if (JoyInfo2.axises > JOYAXISSET*2)
 			JoyInfo2.axises = JOYAXISSET*2;
 /*		if (joyaxes<2)
@@ -1535,15 +1533,15 @@ static int joy_open2(int joyindex)
 			return 0;
 		}*/
 
-		JoyInfo2.buttons = SDL_JoystickNumButtons(JoyInfo2.dev);
+		JoyInfo2.buttons = SDL_CONTROLLER_BUTTON_MAX ; // dpad is 4 buttons
 		if (JoyInfo2.buttons > JOYBUTTONS)
 			JoyInfo2.buttons = JOYBUTTONS;
 
-		JoyInfo2.hats = SDL_JoystickNumHats(JoyInfo2.dev);
+		JoyInfo2.hats = 4;
 		if (JoyInfo2.hats > JOYHATS)
 			JoyInfo2.hats = JOYHATS;
 
-		JoyInfo2.balls = SDL_JoystickNumBalls(JoyInfo2.dev);
+		JoyInfo2.balls = 0;
 
 		//Joystick.bGamepadStyle = !stricmp(SDL_JoystickName(JoyInfo2.dev), "pad");
 
@@ -1556,29 +1554,44 @@ static int joy_open2(int joyindex)
 //
 void I_InitJoystick(void)
 {
-	SDL_Joystick *newjoy = NULL;
+	SDL_GameController *newcontroller = NULL;
 
 	//I_ShutdownJoystick();
+	//SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
 	if (M_CheckParm("-nojoy"))
 		return;
+
+	if (M_CheckParm("-noxinput"))
+		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
+
+	if (M_CheckParm("-nohidapi"))
+		SDL_SetHintWithPriority("SDL_JOYSTICK_HIDAPI", "0", SDL_HINT_OVERRIDE);
 
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
 	{
 		CONS_Printf("I_InitJoystick()...\n");
-		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
+
 		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) == -1)
 		{
 			CONS_Printf(M_GetText("Couldn't initialize joystick: %s\n"), SDL_GetError());
 			return;
 		}
 	}
+	if (SDL_WasInit(SDL_INIT_GAMECONTROLLER) == 0)
+	{
+		if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == -1)
+		{
+			CONS_Printf(M_GetText("Couldn't initialize gamepads: %s\n"), SDL_GetError());
+			return;
+		}
+	}
 
 	if (cv_usejoystick.value)
-		newjoy = SDL_JoystickOpen(cv_usejoystick.value-1);
+		newcontroller = SDL_GameControllerOpen(cv_usejoystick.value-1);
 
-	if (newjoy && JoyInfo2.dev == newjoy) // don't override an active device
+	if (newcontroller && JoyInfo2.dev == newcontroller) // don't override an active device
 		cv_usejoystick.value = I_GetJoystickDeviceIndex(JoyInfo.dev) + 1;
-	else if (newjoy && joy_open(cv_usejoystick.value) != -1)
+	else if (newcontroller && joy_open(cv_usejoystick.value) != -1)
 	{
 		// SDL's device indexes are unstable, so cv_usejoystick may not match
 		// the actual device index. So let's cheat a bit and find the device's current index.
@@ -1593,35 +1606,43 @@ void I_InitJoystick(void)
 		joystick_started = 0;
 	}
 
-	if (JoyInfo.dev != newjoy && JoyInfo2.dev != newjoy)
-		SDL_JoystickClose(newjoy);
+	if (JoyInfo.dev != newcontroller && JoyInfo2.dev != newcontroller)
+		SDL_GameControllerClose(newcontroller);
 }
 
 void I_InitJoystick2(void)
 {
-	SDL_Joystick *newjoy = NULL;
+	SDL_GameController *newcontroller = NULL;
 
 	//I_ShutdownJoystick2();
+	//SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
 	if (M_CheckParm("-nojoy"))
 		return;
 
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
 	{
 		CONS_Printf("I_InitJoystick2()...\n");
-		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
 		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) == -1)
 		{
 			CONS_Printf(M_GetText("Couldn't initialize joystick: %s\n"), SDL_GetError());
 			return;
 		}
 	}
+	if (SDL_WasInit(SDL_INIT_GAMECONTROLLER) == 0)
+	{
+		if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == -1)
+		{
+			CONS_Printf(M_GetText("Couldn't initialize gamepads: %s\n"), SDL_GetError());
+			return;
+		}
+	}
 
 	if (cv_usejoystick2.value)
-		newjoy = SDL_JoystickOpen(cv_usejoystick2.value-1);
+		newcontroller = SDL_GameControllerOpen(cv_usejoystick2.value-1);
 
-	if (newjoy && JoyInfo.dev == newjoy) // don't override an active device
+	if (newcontroller && JoyInfo.dev == newcontroller) // don't override an active device
 		cv_usejoystick2.value = I_GetJoystickDeviceIndex(JoyInfo2.dev) + 1;
-	else if (newjoy && joy_open2(cv_usejoystick2.value) != -1)
+	else if (newcontroller && joy_open2(cv_usejoystick2.value) != -1)
 	{
 		// SDL's device indexes are unstable, so cv_usejoystick may not match
 		// the actual device index. So let's cheat a bit and find the device's current index.
@@ -1636,8 +1657,8 @@ void I_InitJoystick2(void)
 		joystick2_started = 0;
 	}
 
-	if (JoyInfo.dev != newjoy && JoyInfo2.dev != newjoy)
-		SDL_JoystickClose(newjoy);
+	if (JoyInfo.dev != newcontroller && JoyInfo2.dev != newcontroller)
+		SDL_GameControllerClose(newcontroller);
 }
 
 static void I_ShutdownInput(void)
@@ -1647,6 +1668,13 @@ static void I_ShutdownInput(void)
 	// Note these methods are internal to this file, not called elsewhere.
 	I_ShutdownJoystick();
 	I_ShutdownJoystick2();
+
+	if (SDL_WasInit(SDL_INIT_GAMECONTROLLER) == SDL_INIT_GAMECONTROLLER)
+	{
+		CONS_Printf("Shutting down gamecontroller system\n");
+		SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
+		I_OutputMsg("I_Joystick: SDL's Game Controller system has been shutdown\n");
+	}
 
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
 	{

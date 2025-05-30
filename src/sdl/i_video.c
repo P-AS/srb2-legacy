@@ -767,16 +767,17 @@ static void Impl_HandleMouseWheelEvent(SDL_MouseWheelEvent evt)
 	}
 }
 
-static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
+
+static void Impl_HandleControllerAxisEvent(SDL_ControllerAxisEvent evt)
 {
 	event_t event;
-	SDL_JoystickID joyid[2];
+	SDL_JoystickID joyid[4];
+	INT32 value;
 
 	// Determine the Joystick IDs for each current open joystick
-	joyid[0] = SDL_JoystickInstanceID(JoyInfo.dev);
-	joyid[1] = SDL_JoystickInstanceID(JoyInfo2.dev);
+	joyid[0] = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(JoyInfo.dev));
+	joyid[1] = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(JoyInfo2.dev));
 
-	evt.axis++;
 	event.data1 = event.data2 = event.data3 = INT32_MAX;
 
 	if (evt.which == joyid[0])
@@ -792,16 +793,35 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 	if (evt.axis > JOYAXISSET*2)
 		return;
 	//vaule
-	if (evt.axis%2)
+	value = SDLJoyAxis(evt.value, event.type);
+	switch (evt.axis)
 	{
-		event.data1 = evt.axis / 2;
-		event.data2 = SDLJoyAxis(evt.value, event.type);
-	}
-	else
-	{
-		evt.axis--;
-		event.data1 = evt.axis / 2;
-		event.data3 = SDLJoyAxis(evt.value, event.type);
+		case SDL_CONTROLLER_AXIS_LEFTX:
+			event.data1 = 0;
+			event.data2 = value;
+			break;
+		case SDL_CONTROLLER_AXIS_LEFTY:
+			event.data1 = 0;
+			event.data3 = value;
+			break;
+		case SDL_CONTROLLER_AXIS_RIGHTX:
+			event.data1 = 1;
+			event.data2 = value;
+			break;
+		case SDL_CONTROLLER_AXIS_RIGHTY:
+			event.data1 = 1;
+			event.data3 = value;
+			break;
+		case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+			event.data1 = 2;
+			event.data2 = value;
+			break;
+		case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+			event.data1 = 2;
+			event.data3 = value;
+			break;
+		default:
+			return;
 	}
 	D_PostEvent(&event);
 }
@@ -833,14 +853,23 @@ static void Impl_HandleJoystickHatEvent(SDL_JoyHatEvent evt)
 }
 #endif
 
-static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
+static void Impl_HandleControllerButtonEvent(SDL_ControllerButtonEvent evt, Uint32 type)
 {
 	event_t event;
 	SDL_JoystickID joyid[2];
 
 	// Determine the Joystick IDs for each current open joystick
-	joyid[0] = SDL_JoystickInstanceID(JoyInfo.dev);
-	joyid[1] = SDL_JoystickInstanceID(JoyInfo2.dev);
+	joyid[0] = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(JoyInfo.dev));
+	joyid[1] = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(JoyInfo2.dev));
+
+	if (evt.button == SDL_CONTROLLER_BUTTON_DPAD_UP
+		|| evt.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN
+		|| evt.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT
+		|| evt.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
+	{
+		// dpad buttons are mapped as the hat instead
+		return;
+	}
 
 	if (evt.which == joyid[0])
 	{
@@ -851,11 +880,11 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 		event.data1 = KEY_2JOY1;
 	}
 	else return;
-	if (type == SDL_JOYBUTTONUP)
+	if (type == SDL_CONTROLLERBUTTONUP)
 	{
 		event.type = ev_keyup;
 	}
-	else if (type == SDL_JOYBUTTONDOWN)
+	else if (type == SDL_CONTROLLERBUTTONDOWN)
 	{
 		event.type = ev_keydown;
 	}
@@ -879,7 +908,6 @@ static void Impl_HandleTextEvent(SDL_TextInputEvent evt)
 		// limit ourselves to ASCII for now, we can add UTF-8 support later
 		return;
 	}
-	event.data1 = evt.text[0];
 	D_PostEvent(&event);
 }
 
@@ -924,20 +952,20 @@ void I_GetEvent(void)
 				Impl_HandleMouseWheelEvent(evt.wheel);
 				break;
 			case SDL_JOYAXISMOTION:
-				Impl_HandleJoystickAxisEvent(evt.jaxis);
+				Impl_HandleControllerAxisEvent(evt.caxis);
 				break;
 #if 0
 			case SDL_JOYHATMOTION:
 				Impl_HandleJoystickHatEvent(evt.jhat)
 				break;
 #endif
-			case SDL_JOYBUTTONUP:
-			case SDL_JOYBUTTONDOWN:
-				Impl_HandleJoystickButtonEvent(evt.jbutton, evt.type);
+			case SDL_CONTROLLERBUTTONUP:
+			case SDL_CONTROLLERBUTTONDOWN:
+				Impl_HandleControllerButtonEvent(evt.cbutton, evt.type);
 				break;
-			case SDL_JOYDEVICEADDED:
+			case SDL_CONTROLLERDEVICEADDED:
 				{
-					SDL_Joystick *newjoy = SDL_JoystickOpen(evt.jdevice.which);
+					SDL_GameController *newcontroller = SDL_GameControllerOpen(evt.cdevice.which);
 
 					CONS_Debug(DBG_GAMELOGIC, "Joystick device index %d added\n", evt.jdevice.which + 1);
 
@@ -947,10 +975,10 @@ void I_GetEvent(void)
 					// 2. Set OTHERS' cv_usejoystickX.value to THEIR new device index, because it likely changed
 					//    * If device doesn't exist, switch cv_usejoystick back to default value (.string)
 					//      * BUT: If that default index is being occupied, use ANOTHER cv_usejoystick's default value!
-					if (newjoy && (!JoyInfo.dev || !SDL_JoystickGetAttached(JoyInfo.dev))
-						&& JoyInfo2.dev != newjoy) // don't override a currently active device
+					if (newcontroller && (!JoyInfo.dev || !SDL_GameControllerGetAttached(JoyInfo.dev))
+						&& JoyInfo2.dev != newcontroller) // don't override a currently active device
 					{
-						cv_usejoystick.value = evt.jdevice.which + 1;
+						cv_usejoystick.value = evt.cdevice.which + 1;
 
 						if (JoyInfo2.dev)
 							cv_usejoystick2.value = I_GetJoystickDeviceIndex(JoyInfo2.dev) + 1;
@@ -963,8 +991,8 @@ void I_GetEvent(void)
 						else // we tried...
 							cv_usejoystick2.value = 0;
 					}
-					else if (newjoy && (!JoyInfo2.dev || !SDL_JoystickGetAttached(JoyInfo2.dev))
-						&& JoyInfo.dev != newjoy) // don't override a currently active device
+					else if (newcontroller && (!JoyInfo2.dev || !SDL_GameControllerGetAttached(JoyInfo.dev))
+						&& JoyInfo.dev != newcontroller) // don't override a currently active device
 					{
 						cv_usejoystick2.value = evt.jdevice.which + 1;
 
@@ -1007,18 +1035,18 @@ void I_GetEvent(void)
 					if (currentMenu == &OP_JoystickSetDef)
 						M_SetupJoystickMenu(0);
 
-					if (JoyInfo.dev != newjoy && JoyInfo2.dev != newjoy)
-						SDL_JoystickClose(newjoy);
+					if (JoyInfo.dev != newcontroller && JoyInfo2.dev != newcontroller)
+						SDL_GameControllerClose(newcontroller);
 				}
 				break;
-			case SDL_JOYDEVICEREMOVED:
-				if (JoyInfo.dev && !SDL_JoystickGetAttached(JoyInfo.dev))
+			case SDL_CONTROLLERDEVICEREMOVED:
+				if (JoyInfo.dev && !SDL_GameControllerGetAttached(JoyInfo.dev))
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Joystick1 removed, device index: %d\n", JoyInfo.oldjoy);
 					I_ShutdownJoystick();
 				}
 
-				if (JoyInfo2.dev && !SDL_JoystickGetAttached(JoyInfo2.dev))
+				if (JoyInfo2.dev && !SDL_GameControllerGetAttached(JoyInfo2.dev))
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Joystick2 removed, device index: %d\n", JoyInfo2.oldjoy);
 					I_ShutdownJoystick2();
@@ -1119,9 +1147,9 @@ void I_OsPolling(void)
 
 	if (consolevent)
 		I_GetConsoleEvents();
-	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
+	if (SDL_WasInit(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) == (SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER))
 	{
-		SDL_JoystickUpdate();
+		SDL_GameControllerUpdate();
 		I_GetJoystickEvents();
 		I_GetJoystick2Events();
 	}
