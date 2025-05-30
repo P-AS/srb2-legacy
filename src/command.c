@@ -1810,6 +1810,48 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 	return true;
 }
 
+// Stealing code from gamepad refactor because why not!!
+static boolean CV_ConvertOldJoyAxisVars(consvar_t *v, const char *valstr)
+{
+	static struct {
+		const char *old;
+		const char *new;
+	} axis_names[] = {
+		{"X-Axis",    "Left X"},
+		{"Y-Axis",    "Left Y"},
+		{"X-Axis-",   "Left X-"},
+		{"Y-Axis-",   "Left Y-"},
+		{"X-Rudder",  "Right X"},
+		{"Y-Rudder",  "Right Y"},
+		{"X-Rudder-", "Right X-"},
+		{"Y-Rudder-", "Right Y-"},
+		{"Z-Axis",    "L Trigger"},
+		{"Z-Rudder",  "R Trigger"},
+		{"Z-Axis-",   "L Trigger"},
+		{"Z-Rudder-", "R Trigger"},
+		{NULL, NULL}
+	};
+
+	if (v->PossibleValue != joyaxis_cons_t)
+		return true;
+
+	for (unsigned i = 0;; i++)
+	{
+		if (axis_names[i].old == NULL)
+		{
+			CV_SetCVar(v, v->defaultvalue, false);
+			return false;
+		}
+		else if (!stricmp(valstr, axis_names[i].old))
+		{
+			CV_SetCVar(v, axis_names[i].new, false);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
 {
 	// True means allow the CV change, False means block it
@@ -1852,6 +1894,14 @@ static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
 		if (!CV_FilterJoyAxisVars(v, valstr))
 			return false;
 	}
+
+	if (GETMAJOREXECVERSION(cv_execversion.value) < 34) // 34 = 2.1.29
+	{
+		// axis defaults changed again to SDL game controllers
+		if (!CV_ConvertOldJoyAxisVars(v, valstr))
+			return false;
+	}
+
 	return true;
 }
 

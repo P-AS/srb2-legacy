@@ -1218,12 +1218,12 @@ void G_Controldefault(void)
 	gamecontrol[gc_jump       ][1] = KEY_JOY1+5; // RB
 	gamecontrol[gc_console    ][0] = KEY_CONSOLE;
 	gamecontrol[gc_pause      ][0] = 'p';
-	gamecontrol[gc_pause      ][1] = KEY_JOY1+6; // Back
+	gamecontrol[gc_pause      ][1] = KEY_JOY1+4; // Back
 	gamecontrol[gc_screenshot ][0] = KEY_F8;
 	gamecontrol[gc_screenshot ][1] = KEY_HAT1+1; // D-Pad Down
 	gamecontrol[gc_recordgif  ][0] = KEY_F9;
 	gamecontrol[gc_viewpoint  ][0] = KEY_F12;
-	gamecontrol[gc_systemmenu ][0] = KEY_JOY1+7; // Start
+	gamecontrol[gc_systemmenu ][0] = KEY_JOY1+6; // Start
 	gamecontrolbis[gc_weaponnext][0] = KEY_2JOY1+1; // B
 	gamecontrolbis[gc_weaponprev][0] = KEY_2JOY1+2; // X
 	gamecontrolbis[gc_tossflag  ][0] = KEY_2JOY1+0; // A
@@ -1376,20 +1376,41 @@ INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify)
 
 static INT32 G_FilterKeyByVersion(INT32 numctrl, INT32 keyidx, INT32 player, INT32 *keynum1, INT32 *keynum2, boolean *nestedoverride)
 {
-	// Special case: ignore KEY_PAUSE because it's hardcoded
-	if (keyidx == 0 && *keynum1 == KEY_PAUSE)
-	{
-		if (*keynum2 != KEY_PAUSE)
-		{
-			*keynum1 = *keynum2; // shift down keynum2 and continue
-			*keynum2 = 0;
-		}
-		else
-			return -1; // skip setting control
-	}
-	else if (keyidx == 1 && *keynum2 == KEY_PAUSE)
-		return -1; // skip setting control
+#if 1
+	(void)nestedoverride;
 
+	if (GETMAJOREXECVERSION(cv_execversion.value) < 10)
+	{
+		INT32 joybuttonbase = KEY_JOY1;
+
+		switch (player)
+		{
+			case 0:
+				joybuttonbase = KEY_JOY1;
+				break;
+			case 1:
+				joybuttonbase = KEY_2JOY1;
+				break;
+		}
+
+		// The face buttons match, so we don't need to rebind those.
+
+		if (keyidx == 1 && numctrl == gc_fire && *keynum2 == joybuttonbase + 4) // Xbox DInput LB
+		{
+			*keynum2 = joybuttonbase + 9; // SDL LEFTSHOULDER
+		}
+
+		// Pause and Systemmenu are only bound for P1
+		if (keyidx == 1 && player == 0 && numctrl == gc_pause && *keynum2 == joybuttonbase + 6) // Xbox DInput Back
+		{
+			*keynum2 = joybuttonbase + 4; // SDL BACK
+		}
+		if (keyidx == 0 && player == 0 && numctrl == gc_systemmenu && *keynum1 == joybuttonbase + 7) // Xbox DInput Start
+		{
+			*keynum1 = joybuttonbase + 6; // SDL START
+		}
+	}
+#else
 #if !defined (DC) && !defined (_PSP) && !defined (GP2X) && !defined (_NDS) && !defined(WMINPUT) && !defined(_WII)
 	if (GETMAJOREXECVERSION(cv_execversion.value) < 27 && ( // v2.1.22
 		numctrl == gc_weaponnext || numctrl == gc_weaponprev || numctrl == gc_tossflag ||
@@ -1483,6 +1504,7 @@ static INT32 G_FilterKeyByVersion(INT32 numctrl, INT32 keyidx, INT32 player, INT
 		else
 			return 0;
 	}
+#endif
 #endif
 
 	// All's good, so pass the keynum as-is
