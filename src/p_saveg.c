@@ -116,13 +116,16 @@ static void P_NetArchivePlayers(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		WRITESINT8(save_p, (SINT8)adminplayers[i]);
+
 		if (!playeringame[i])
 			continue;
 
 		flags = 0;
 
-		// no longer send ticcmds, player name, skin, or color
+		// no longer send ticcmds
 
+		WRITESTRINGN(save_p, player_names[i], MAXPLAYERNAME);
 		WRITEANGLE(save_p, players[i].aiming);
 		WRITEANGLE(save_p, players[i].awayviewaiming);
 		WRITEINT32(save_p, players[i].awayviewtics);
@@ -143,6 +146,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].flashpal);
 		WRITEUINT16(save_p, players[i].flashcount);
 
+		WRITEUINT8(save_p, players[i].skincolor);
+		WRITEINT32(save_p, players[i].skin);
 		WRITEUINT32(save_p, players[i].score);
 		WRITEFIXED(save_p, players[i].dashspeed);
 		WRITEINT32(save_p, players[i].dashtime);
@@ -288,6 +293,8 @@ static void P_NetUnArchivePlayers(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		adminplayers[i] = (INT32)READSINT8(save_p);
+
 		// Do NOT memset player struct to 0
 		// other areas may initialize data elsewhere
 		//memset(&players[i], 0, sizeof (player_t));
@@ -295,9 +302,8 @@ static void P_NetUnArchivePlayers(void)
 			continue;
 
 		// NOTE: sending tics should (hopefully) no longer be necessary
-		// sending player names, skin and color should not be necessary at all!
-		// (that data is handled in the server config now)
 
+		READSTRINGN(save_p, player_names[i], MAXPLAYERNAME);
 		players[i].aiming = READANGLE(save_p);
 		players[i].awayviewaiming = READANGLE(save_p);
 		players[i].awayviewtics = READINT32(save_p);
@@ -318,6 +324,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].flashpal = READUINT16(save_p);
 		players[i].flashcount = READUINT16(save_p);
 
+		players[i].skincolor = READUINT8(save_p);
+		players[i].skin = READINT32(save_p);
 		players[i].score = READUINT32(save_p);
 		players[i].dashspeed = READFIXED(save_p); // dashing speed
 		players[i].dashtime = READINT32(save_p); // dashing speed
@@ -3174,15 +3182,18 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 	playeringame[consoleplayer] = true;
 }
 
-static void P_NetArchiveMisc(void)
+static void P_NetArchiveMisc(boolean resending)
 {
 	UINT32 pig = 0;
 	INT32 i;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
+	if (resending)
+		WRITEUINT32(save_p, gametic);
 	WRITEINT16(save_p, gamemap);
 	WRITEINT16(save_p, gamestate);
+	WRITEINT16(save_p, gametype);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		pig |= (playeringame[i] != 0)<<i;
@@ -3233,13 +3244,16 @@ static void P_NetArchiveMisc(void)
 		WRITEUINT8(save_p, 0x2e);
 }
 
-static inline boolean P_NetUnArchiveMisc(void)
+static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
 	UINT32 pig;
 	INT32 i;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
+	
+	if (reloading)
+		gametic = READUINT32(save_p);
 
 	gamemap = READINT16(save_p);
 
@@ -3254,6 +3268,8 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	G_SetGamestate(READINT16(save_p));
 
+	gametype = READINT16(save_p);
+
 	pig = READUINT32(save_p);
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -3265,7 +3281,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	tokenlist = READUINT32(save_p);
 
-	if (!P_SetupLevel(true))
+	if (!P_SetupLevel(true, reloading))
 		return false;
 
 	// get the time
@@ -3318,14 +3334,14 @@ void P_SaveGame(void)
 	WRITEUINT8(save_p, 0x1d); // consistency marker
 }
 
-void P_SaveNetGame(void)
+void P_SaveNetGame(boolean resending)
 {
 	thinker_t *th;
 	mobj_t *mobj;
 	INT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
 
 	CV_SaveNetVars(&save_p);
-	P_NetArchiveMisc();
+	P_NetArchiveMisc(resending);
 
 	// Assign the mobjnumber for pointer tracking
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
@@ -3372,10 +3388,10 @@ boolean P_LoadGame(INT16 mapoverride)
 	return true;
 }
 
-boolean P_LoadNetGame(void)
+boolean P_LoadNetGame(boolean reloading)
 {
 	CV_LoadNetVars(&save_p);
-	if (!P_NetUnArchiveMisc())
+	if (!P_NetUnArchiveMisc(reloading))
 		return false;
 	P_NetUnArchivePlayers();
 	if (gamestate == GS_LEVEL)
