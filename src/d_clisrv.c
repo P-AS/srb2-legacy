@@ -3117,7 +3117,7 @@ static void HandlePlayerInfo(SINT8 node)
 
 static void PT_WillResendGamestate(void)
 {
-	char tmpsave[256];
+	char *tmpsave = Z_Malloc(512, PU_STATIC, NULL);
 
 	if (server || cl_redownloadinggamestate)
 		return;
@@ -3130,15 +3130,19 @@ static void PT_WillResendGamestate(void)
 
 	CONS_Printf(M_GetText("Reloading game state...\n"));
 
-	sprintf(tmpsave, "%s" PATHSEP TMPSAVENAME, srb2home);
+	snprintf(tmpsave, 512, "%s" PATHSEP TMPSAVENAME, srb2home);
 
 	// Don't get a corrupt savegame error because tmpsave already exists
 	if (FIL_FileExists(tmpsave) && unlink(tmpsave) == -1)
+	{
 		I_Error("Can't delete %s\n", tmpsave);
+		Z_Free(tmpsave);
+	}
 
 	CL_PrepareDownloadSaveGame(tmpsave);
 
 	cl_redownloadinggamestate = true;
+	Z_Free(tmpsave);
 }
 
 static void PT_CanReceiveGamestate(SINT8 node)
