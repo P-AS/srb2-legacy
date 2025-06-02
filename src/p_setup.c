@@ -78,6 +78,8 @@
 
 #include "p_slopes.h"
 
+boolean g_reloadinggamestate = false;
+
 //
 // Map MD5, calculated on level load.
 // Sent to clients in PT_SERVERINFO.
@@ -2708,6 +2710,7 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	boolean chase;
 
 	levelloading = true;
+	g_reloadinggamestate = reloadinggamestate;
 
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;

@@ -27,6 +27,7 @@ extern mapthing_t *deathmatchstarts[MAX_DM_STARTS];
 extern INT32 numdmstarts, numcoopstarts, numredctfstarts, numbluectfstarts;
 
 extern boolean levelloading;
+extern boolean g_reloadinggamestate;
 
 extern lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 //

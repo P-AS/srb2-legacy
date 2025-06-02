@@ -29,6 +29,7 @@
 #include "../m_argv.h"
 #include "../i_video.h"
 #include "../w_wad.h"
+#include "../p_setup.h"
 #include "hw_main.h"
 
 // --------------------------------------------------------------------------
@@ -587,7 +588,7 @@ static void loading_status(void)
 	char s[16];
 	int x, y;
 
-	if(!cv_glloadingscreen.value)
+	if(!cv_glloadingscreen.value || g_reloadinggamestate)
 		return;
 
 	I_OsPolling();
