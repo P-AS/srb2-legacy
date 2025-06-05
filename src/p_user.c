@@ -8746,7 +8746,10 @@ void P_PlayerThink(player_t *player)
 				player->playerstate = PST_REBORN;
 		}
 		if (player->playerstate == PST_REBORN)
+		{
+			LUAh_PlayerThink(player);
 			return;
+		}
 	}
 
 #ifdef SEENAMES
@@ -8858,7 +8861,10 @@ void P_PlayerThink(player_t *player)
 			player->lives = 0;
 
 			if (player->playerstate == PST_DEAD)
+			{	
+				LUAh_PlayerThink(player);
 				return;
+			}
 		}
 	}
 
@@ -8960,6 +8966,7 @@ void P_PlayerThink(player_t *player)
 	{
 		player->mo->flags2 &= ~MF2_SHADOW;
 		P_DeathThink(player);
+		LUAh_PlayerThink(player);
 
 		return;
 	}
@@ -9076,7 +9083,10 @@ void P_PlayerThink(player_t *player)
 		P_MovePlayer(player);
 
 	if (!player->mo)
+	{	
+		LUAh_PlayerThink(player);
 		return; // P_MovePlayer removed player->mo.
+	}
 
 	// Unset statis flags after moving.
 	// In other words, if you manually set stasis via code,
@@ -9250,6 +9260,8 @@ void P_PlayerThink(player_t *player)
 
 	player->pflags &= ~PF_SLIDING;
 
+	LUAh_PlayerThink(player);
+	
 /*
 //	Colormap verification
 	{
