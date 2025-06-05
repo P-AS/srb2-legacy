@@ -1603,6 +1603,11 @@ void P_DoPlayerExit(player_t *player)
 		player->pflags |= PF_JUMPED;
 		P_SetPlayerMobjState(player->mo, S_PLAY_ATK1);
 	}
+	else if (player->pflags & PF_STARTDASH)
+	{
+		player->pflags &= ~PF_STARTDASH;
+		P_SetPlayerMobjState(player->mo, S_PLAY_STND);
+	}
 	player->powers[pw_underwater] = 0;
 	player->powers[pw_spacetime] = 0;
 	P_RestoreMusic(player);
