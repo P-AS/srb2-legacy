@@ -4110,7 +4110,7 @@ static void M_DrawLevelSelectMenu(void)
 		lsoffs[1] = 0;
 
 	if (levelselect.rows[lsrow].maplist[lscol] > 0)
-		V_DrawScaledPatch(10+(lscol*hseperation) + lsoffs[1], vseperation-8, 0, patch);
+		V_DrawScaledPatch(50+(lscol*hseperation) + lsoffs[1], vseperation+10, 0, patch);
 		
 	W_UnlockCachedPatch(patch);
 }
