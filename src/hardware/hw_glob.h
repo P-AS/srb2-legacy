@@ -104,8 +104,8 @@ void HWR_GetFlat(lumpnum_t flatlumpnum);
 GLTexture_t *HWR_GetTexture(INT32 tex);
 void HWR_GetPatch(GLPatch_t *gpatch);
 void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap);
+void HWR_MakePatch(patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap);
 void HWR_UnlockCachedPatch(GLPatch_t *gpatch);
-GLPatch_t *HWR_GetPic(lumpnum_t lumpnum);
 void HWR_SetPalette(RGBA_t *palette);
 GLPatch_t *HWR_GetCachedGLPatchPwad(UINT16 wad, UINT16 lump);
 GLPatch_t *HWR_GetCachedGLPatch(lumpnum_t lumpnum);
@@ -120,6 +120,5 @@ extern consvar_t cv_grrounddown; // on/off
 
 extern INT32 patchformat;
 extern INT32 textureformat;
-extern boolean firetranslucent;
 
 #endif //_HW_GLOB_

@@ -112,11 +112,17 @@ extern camera_t camera, camera2;
 extern consvar_t cv_cam_dist, cv_cam_still, cv_cam_height;
 extern consvar_t cv_cam_speed, cv_cam_rotate, cv_cam_rotspeed;
 
+extern consvar_t cv_cam_orbit, cv_cam2_orbit;
+
+extern consvar_t cv_cam_adjust, cv_cam2_adjust;
+
 extern consvar_t cv_cam2_dist, cv_cam2_still, cv_cam2_height;
 extern consvar_t cv_cam2_speed, cv_cam2_rotate, cv_cam2_rotspeed;
 
 extern fixed_t t_cam_dist, t_cam_height, t_cam_rotate;
 extern fixed_t t_cam2_dist, t_cam2_height, t_cam2_rotate;
+
+extern consvar_t cv_viewroll, cv_quakeiiiarena, cv_quakeiv, cv_quakelive;
 
 fixed_t P_GetPlayerHeight(player_t *player);
 fixed_t P_GetPlayerSpinHeight(player_t *player);
@@ -220,9 +226,9 @@ void P_SceneryThinker(mobj_t *mobj);
 
 // This does not need to be added to Lua.
 // To test it in Lua, check mobj.valid
-FUNCINLINE static boolean ATTRINLINE PUREFUNC P_MobjWasRemoved(mobj_t *mobj)
+ATTRINLINE FUNCINLINE static boolean PUREFUNC P_MobjWasRemoved(mobj_t *mobj)
 {
-	if (mobj && mobj->thinker.function.acp1 == (actionf_p1)P_MobjThinker)
+	if (mobj && mobj->thinker.function == (actionf_p1)P_MobjThinker)
 		return false;
 	return true;
 }
@@ -285,14 +291,14 @@ extern player_t *stplyr; // for splitscreen correct palette changes and overlay
 extern INT32 var1;
 extern INT32 var2;
 
-boolean P_CheckMeleeRange(mobj_t *actor);
-boolean P_JetbCheckMeleeRange(mobj_t *actor);
-boolean P_FaceStabCheckMeleeRange(mobj_t *actor);
-boolean P_SkimCheckMeleeRange(mobj_t *actor);
-boolean P_CheckMissileRange(mobj_t *actor);
+boolean P_CheckMeleeRange(void *thing);
+boolean P_JetbCheckMeleeRange(void *thing);
+boolean P_FaceStabCheckMeleeRange(void *thing);
+boolean P_SkimCheckMeleeRange(void *thing);
+boolean P_CheckMissileRange(void *thing);
 
-void P_NewChaseDir(mobj_t *actor);
-boolean P_LookForPlayers(mobj_t *actor, boolean allaround, boolean tracer, fixed_t dist);
+void P_NewChaseDir(void *thing);
+boolean P_LookForPlayers(void *thing, boolean allaround, boolean tracer, fixed_t dist);
 
 //
 // P_MAP
@@ -326,7 +332,7 @@ void P_SetUnderlayPosition(mobj_t *thing);
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
-boolean P_Move(mobj_t *actor, fixed_t speed);
+boolean P_Move(void *thing, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 void P_SlideMove(mobj_t *mo);
@@ -424,4 +430,3 @@ void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 
 #endif // __P_LOCAL__
-

@@ -201,9 +201,9 @@ void LUA_LoadLump(UINT16 wad, UINT16 lump)
 	else // If it's not a .lua file, copy the lump name in too.
 	{
 		lumpinfo_t *lump_p = &wadfiles[wad]->lumpinfo[lump];
-		len += 1 + strlen(lump_p->name2); // length of file name, '|', and lump name
+		len += 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
 		name = malloc(len+1);
-		sprintf(name, "%s|%s", wadfiles[wad]->filename, lump_p->name2);
+		sprintf(name, "%s|%s", wadfiles[wad]->filename, lump_p->fullname);
 		name[len] = '\0';
 	}
 
@@ -1012,7 +1012,7 @@ void LUA_Archive(void)
 	}
 
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
-		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
+		if (th->function == (actionf_p1)P_MobjThinker)
 		{
 			// archive function will determine when to skip mobjs,
 			// and write mobjnum in otherwise.
@@ -1046,7 +1046,7 @@ void LUA_UnArchive(void)
 	do {
 		mobjnum = READUINT32(save_p); // read a mobjnum
 		for (th = thinkercap.next; th != &thinkercap; th = th->next)
-			if (th->function.acp1 == (actionf_p1)P_MobjThinker
+			if (th->function == (actionf_p1)P_MobjThinker
 			&& ((mobj_t *)th)->mobjnum == mobjnum) // find matching mobj
 				UnArchiveExtVars(th); // apply variables
 	} while(mobjnum != UINT32_MAX); // repeat until end of mobjs marker.

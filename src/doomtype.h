@@ -17,6 +17,8 @@
 #ifndef __DOOMTYPE__
 #define __DOOMTYPE__
 
+#include <stdbool.h>
+
 #if (defined (_WIN32) && !defined (_XBOX)) || (defined (_WIN32_WCE) && !defined (__GNUC__))
 //#define WIN32_LEAN_AND_MEAN
 #define RPC_NO_WINDOWS_H
@@ -198,27 +200,11 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 
 /* Boolean type definition */
 
-// \note __BYTEBOOL__ used to be set above if "macintosh" was defined,
-// if macintosh's version of boolean type isn't needed anymore, then isn't this macro pointless now?
-#ifndef __BYTEBOOL__
-	#define __BYTEBOOL__
-
-	//faB: clean that up !!
-	#if defined( _MSC_VER)  && (_MSC_VER >= 1800) // MSVC 2013 and forward
-		#include "stdbool.h"
-	#elif (defined (_WIN32) || (defined (_WIN32_WCE) && !defined (__GNUC__))) && !defined (_XBOX)
-		#define false   FALSE           // use windows types
-		#define true    TRUE
-		#define boolean BOOL
-	#elif defined(_NDS)
-		#define boolean bool
-	#elif defined(_PS3) // defined(__GNUC__)?
-		#include <stdbool.h>  //_bool_true_false_are_defined?
-		#define boolean bool
-	#else
-		typedef enum {false, true} boolean;
-	#endif
-#endif // __BYTEBOOL__
+#ifdef _WIN32
+#define boolean bool
+#else
+typedef bool boolean;
+#endif
 
 /* 7.18.2.1  Limits of exact-width integer types */
 

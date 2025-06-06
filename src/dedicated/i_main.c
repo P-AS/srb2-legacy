@@ -67,7 +67,6 @@ typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
 int main(int argc, char **argv)
 {
 	const char *logdir = NULL;
-	char logfile[MAX_WADPATH];
 	myargc = argc;
 	myargv = argv; /// \todo pull out path to exe from this string
 

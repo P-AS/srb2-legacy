@@ -47,18 +47,17 @@ void HWR_DrawPatch(GLPatch_t *gpatch, INT32 x, INT32 y, INT32 option);
 void HWR_DrawFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale, INT32 option, const UINT8 *colormap);
 void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
 void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, INT32 option, fixed_t scale, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
-void HWR_MakePatch (const patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap);
 void HWR_CreatePlanePolygons(INT32 bspnum);
 void HWR_CreateStaticLightmaps(INT32 bspnum);
 void HWR_PrepLevelCache(size_t pnumtextures);
 void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color);
 void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, UINT32 color, INT32 options);	// Lat: separate flags from color since color needs to be an uint to work right.
-void HWR_DrawPic(INT32 x,INT32 y,lumpnum_t lumpnum);
 
 UINT8 *HWR_GetScreenshot(void);
 boolean HWR_Screenshot(const char *pathname);
 
 void HWR_AddCommands(void);
+void HWR_AddSessionCommands(void);
 void HWR_CorrectSWTricks(void);
 void transform(float *cx, float *cy, float *cz);
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
@@ -94,7 +93,6 @@ extern consvar_t cv_grcoronas;
 extern consvar_t cv_grcoronasize;
 #endif
 extern consvar_t cv_grshaders;
-extern consvar_t cv_grfov;
 extern consvar_t cv_grmd2;
 extern consvar_t cv_grmodelinterpolation;
 extern consvar_t cv_grgammared;
@@ -113,6 +111,7 @@ extern consvar_t cv_glloadingscreen;
 extern consvar_t cv_grfakecontrast;
 extern consvar_t cv_grslopecontrast;
 extern consvar_t cv_grbatching;
+extern consvar_t cv_grwireframe;
 
 extern float gr_viewwidth, gr_viewheight, gr_baseviewwindowy;
 

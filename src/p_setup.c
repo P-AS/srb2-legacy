@@ -733,15 +733,6 @@ static void P_LoadRawSectors(UINT8 *data, size_t i)
 
 		ss->floorspeed = 0;
 		ss->ceilspeed = 0;
-
-#ifdef HWRENDER // ----- for special tricks with HW renderer -----
-		ss->pseudoSector = false;
-		ss->virtualFloor = false;
-		ss->virtualCeiling = false;
-		ss->sectorLines = NULL;
-		ss->stackList = NULL;
-		ss->lineoutLength = -1.0l;
-#endif // ----- end special tricks -----
 	}
 
 	// set the sky flat num
@@ -818,7 +809,7 @@ void P_ReloadRings(void)
 	// scan the thinkers to find rings/wings/hoops to unset
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
 	{
-		if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+		if (th->function != (actionf_p1)P_MobjThinker)
 			continue;
 
 		mo = (mobj_t *)th;
@@ -1518,6 +1509,8 @@ static void P_LoadRawSideDefs2(void *data)
 					}
 					break;
 				}
+#else
+				break;
 #endif
 
 			case 413: // Change music
@@ -2354,7 +2347,7 @@ void P_LoadThingsOnly(void)
 
 	for (think = thinkercap.next; think != &thinkercap; think = think->next)
 	{
-		if (think->function.acp1 != (actionf_p1)P_MobjThinker)
+		if (think->function != (actionf_p1)P_MobjThinker)
 			continue; // not a mobj thinker
 
 		mo = (mobj_t *)think;
@@ -2854,7 +2847,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skynum, true);
 
 	P_MakeMapMD5(lastloadedmaplumpnum, &mapmd5);
-    
+
 
 
 	// HACK ALERT: Cache the WAD, get the map data into the tables, free memory.
@@ -2971,8 +2964,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		// BP: reset light between levels (we draw preview frame lights on current frame)
 		HWR_ResetLights();
 #endif
-		// Correct missing sidedefs & deep water trick
-		HWR_CorrectSWTricks();
+
 		HWR_CreatePlanePolygons((INT32)numnodes - 1);
 
 			// Build the sky dome
@@ -3179,7 +3171,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		R_ResetViewInterpolation(0);
 		R_UpdateMobjInterpolators();
 	}
-	
+
 	return true;
 }
 

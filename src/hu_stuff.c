@@ -466,18 +466,18 @@ static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 
 	if (strlen(msg) > 4 && strnicmp(msg, "/pm", 3) == 0) // used /pm
 	{
-		// what we're gonna do now is check if the node exists
+		// what we're gonna do now is check if the player exists
 		// with that logic, characters 4 and 5 are our numbers:
 		const char *newmsg;
-		char nodenum[3+1];
-		INT32 spc = 1; // used if nodenum[1] is a space.
+		char playernum[3+1];
+		INT32 spc = 1; // used if playernum[1] is a space.
 
-		strncpy(nodenum, msg+3, sizeof(nodenum)-1);
+		strncpy(playernum, msg+3, sizeof(playernum)-1);
 		// check for undesirable characters in our "number"
-		if 	(((nodenum[0] < '0') || (nodenum[0] > '9')) || ((nodenum[1] < '0') || (nodenum[1] > '9')))
+		if 	(((playernum[0] < '0') || (playernum[0] > '9')) || ((playernum[1] < '0') || (playernum[1] > '9')))
 		{
 			// check if nodenum[1] is a space
-			if (nodenum[1] == ' ')
+			if (playernum[1] == ' ')
 				spc = 0;
 				// let it slide
 			else
@@ -496,7 +496,7 @@ static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 				}
 			}
 
-		target = atoi((const char*) nodenum); // turn that into a number
+		target = atoi((const char*) playernum); // turn that into a number
 		//CONS_Printf("%d\n", target);
 
 		// check for target player, if it doesn't exist then we can't send the message!
@@ -747,22 +747,36 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 				cstart = "\x80"; // White
 			else if (color <= SKINCOLOR_BLACK)
 				cstart = "\x86"; // Grey
+			else if (color <= SKINCOLOR_CYAN)
+				cstart = "\x88"; // Cyan/Sky
+			else if (color <= SKINCOLOR_TEAL)
+				cstart = "\x8E"; // Teal
+			else if (color <= SKINCOLOR_STEELBLUE)
+				cstart = "\x8C"; // Steel
 			else if (color <= SKINCOLOR_BLUE)
 				cstart = "\x84"; // Blue
-			else if (color <= SKINCOLOR_PEACH)
-				cstart = "\x87"; //... Orange???
+			else if (color <= SKINCOLOR_PEACH || color == SKINCOLOR_TAN)
+				cstart = "\x8F"; // Peach
+			else if (color == SKINCOLOR_ORANGE)
+				cstart = "\x87"; // Orange
 			else if (color == SKINCOLOR_PINK)
-				cstart = "\x85"; // Red.
+				cstart = "\x8D"; // Pink
+			else if (color == SKINCOLOR_LAVENDER)
+				cstart = "\x89"; // Lavender
 			else if (color <= SKINCOLOR_PURPLE)
 				cstart = "\x81"; // Purple
-			else if (color <= SKINCOLOR_ROSEWOOD)
+			else if (color <= SKINCOLOR_ORANGE || color == SKINCOLOR_ROSEWOOD || color == SKINCOLOR_BEIGE || color == SKINCOLOR_BROWN)
 				cstart = "\x87"; // Orange
-			else if (color <= SKINCOLOR_DARKRED)
+			else if (color <= SKINCOLOR_RED  || color == SKINCOLOR_DARKRED)
 				cstart = "\x85"; // Red
-			else if (color <= SKINCOLOR_OLIVE)
-				cstart = "\x83"; // green
-			else if (color <= SKINCOLOR_GOLD)
+			else if (color <= SKINCOLOR_NEONGREEN || color == SKINCOLOR_GREEN)
+				cstart = "\x83"; // Green
+			else if (color <= SKINCOLOR_ZIM || color == SKINCOLOR_OLIVE)
+				cstart = "\x8B"; // Yellow
+			else if (color <= SKINCOLOR_YELLOW)
 				cstart = "\x82"; // Yellow
+			else if (color <= SKINCOLOR_GOLD)
+				cstart = "\x8A"; // Yellow
         }
 		prefix = cstart;
 

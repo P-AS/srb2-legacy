@@ -55,6 +55,8 @@ static CV_PossibleValue_t fpscap_cons_t[] = {
 
 consvar_t cv_fpscap = {"fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+ps_metric_t ps_interp_frac = {0};
+ps_metric_t ps_interp_lag = {0};
 
 
 UINT32 R_GetFramerateCap(void)
@@ -202,7 +204,7 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 	if (rendermode == render_soft
 #ifdef HWRENDER
 		|| cv_grshearing.value == 1
-		|| (cv_grshearing.value == 2 && R_IsViewpointFirstPerson(player, skybox))
+		|| (cv_grshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))
 #endif
 		)
 	{
@@ -307,6 +309,8 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
+	(void)frac;
+	
 	out->x =  mobj->x;
 	out->y =  mobj->y;
 	out->z =  mobj->z;

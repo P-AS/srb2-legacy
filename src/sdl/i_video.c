@@ -98,8 +98,10 @@ rendermode_t rendermode = render_none;
 
 boolean highcolor = false;
 
+static void Impl_SetVsync(void);
+
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = {"vid_wait", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_vidwait = {"vid_wait", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, Impl_SetVsync, 0, NULL, NULL, 0, 0, NULL};
 static consvar_t cv_stretch = {"stretch", "Off", CV_SAVE|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 static consvar_t cv_alwaysgrabmouse = {"alwaysgrabmouse", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -580,6 +582,9 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 			break;
 		case SDL_WINDOWEVENT_MAXIMIZED:
 			break;
+		case SDL_WINDOWEVENT_MOVED:
+			window_x = evt.data1;
+			window_y = evt.data2;
 	}
 
 	if (mousefocus && kbfocus)
@@ -1529,7 +1534,14 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
+	{
 		flags |= SDL_WINDOW_OPENGL;
+
+		// Without a 24-bit depth buffer many visuals are ruined by z-fighting.
+		// Some GPU drivers may give us a 16-bit depth buffer since the
+		// default value for SDL_GL_DEPTH_SIZE is 16.
+		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	}
 #endif
 
 	// Create a window
@@ -1561,16 +1573,8 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 		flags = 0; // Use this to set SDL_RENDERER_* flags now
 		if (usesdl2soft)
 			flags |= SDL_RENDERER_SOFTWARE;
-
-	#if 0
-		// This shit is BROKEN.
-		// - The version of SDL we're using cannot toggle VSync at runtime. We'll need a new SDL version implemented to have this work properly.
-		// - cv_vidwait is initialized before config is loaded, so it's forced to default value at runtime, and forced off when switching. The config loading code would need restructured.
-		// - With both this & frame interpolation on, I_FinishUpdate takes x10 longer. At this point, it is simpler to use a standard FPS cap.
-		// So you can probably guess why I'm kinda over this, I'm just disabling it.
 		else if (cv_vidwait.value)
 			flags |= SDL_RENDERER_PRESENTVSYNC;
-	#endif
 
 		renderer = SDL_CreateRenderer(window, -1, flags);
 		if (renderer == NULL)
@@ -1777,6 +1781,7 @@ void I_StartupGraphics(void)
 		HWD.pfnSetBlend         = hwSym("SetBlend",NULL);
 		HWD.pfnClearBuffer      = hwSym("ClearBuffer",NULL);
 		HWD.pfnSetTexture       = hwSym("SetTexture",NULL);
+		HWD.pfnUpdateTexture    = hwSym("UpdateTexture",NULL);
 		HWD.pfnReadRect         = hwSym("ReadRect",NULL);
 		HWD.pfnGClipRect        = hwSym("GClipRect",NULL);
 		HWD.pfnClearMipMapCache = hwSym("ClearMipMapCache",NULL);
@@ -1908,4 +1913,13 @@ UINT32 I_GetRefreshRate(void)
 	// trouble querying mode over and over again.
 	return refresh_rate;
 }
+
+static void Impl_SetVsync(void)
+{
+#if SDL_VERSION_ATLEAST(2,0,18)
+	if (renderer)
+		SDL_RenderSetVSync(renderer, cv_vidwait.value);
+#endif
+}
+
 #endif

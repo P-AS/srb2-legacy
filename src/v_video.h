@@ -92,6 +92,14 @@ extern RGBA_t *pLocalPalette;
 #define V_REDMAP             0x00005000
 #define V_GRAYMAP            0x00006000
 #define V_ORANGEMAP          0x00007000
+#define V_SKYMAP             0x00008000
+#define V_LAVENDERMAP        0x00009000
+#define V_GOLDMAP            0x0000A000
+#define V_TEAMAP             0x0000B000
+#define V_STEELMAP           0x0000C000
+#define V_PINKMAP            0x0000D000
+#define V_TEALMAP            0x0000E000
+#define V_PEACHMAP           0x0000F000
 
 // use bits 17-20 for alpha transparency
 #define V_ALPHASHIFT         16
@@ -150,9 +158,6 @@ void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT8 skin
 // Draw a linear block of pixels into the view buffer.
 void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const UINT8 *src);
 
-// draw a pic_t, SCALED
-void V_DrawScaledPic (INT32 px1, INT32 py1, INT32 scrn, INT32 lumpnum);
-
 // fill a box with a single color
 void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c);
 void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c);
@@ -184,13 +189,38 @@ void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string
 
 // draw a string using the hu_font, 0.5x scale
 void V_DrawSmallString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredSmallString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *string);
 
 // draw a string using the tny_font
 void V_DrawThinString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *string);
 
+// draw a string using the tny_font, 0.5x scale
+void V_DrawSmallThinString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredSmallThinString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedSmallThinString(INT32 x, INT32 y, INT32 option, const char *string);
+
+// draw a string using the hu_font at fixed_t coordinates
 void V_DrawStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawCenteredStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawRightAlignedStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+
+// draw a string using the hu_font at fixed_t coordinates, 0.5x scale
+void V_DrawSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawCenteredSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawRightAlignedSmallStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+
+// draw a string using the tny_font at fixed_t coordinates
+void V_DrawThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+
+// draw a string using the tny_font at fixed_t coordinates, 0.5x scale
+void V_DrawSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawCenteredSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawRightAlignedSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
 
 // Draw tall nums, used for menu, HUD, intermission
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);
@@ -209,6 +239,8 @@ INT32 V_StringWidth(const char *string, INT32 option);
 INT32 V_SmallStringWidth(const char *string, INT32 option);
 // Find string width from tny_font chars
 INT32 V_ThinStringWidth(const char *string, INT32 option);
+// Find string width from tny_font chars, 0.5x scale
+INT32 V_SmallThinStringWidth(const char *string, INT32 option);
 
 void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param);
 

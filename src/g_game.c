@@ -46,7 +46,7 @@
 #include "lua_hook.h"
 #include "b_bot.h"
 #include "m_cond.h" // condition sets
-#include "md5.h" // demo checksums 
+#include "md5.h" // demo checksums
 #include "r_fps.h" // Uncapped
 
 
@@ -780,7 +780,7 @@ const char *G_BuildMapName(INT32 map)
 	I_Assert(map > 0);
 	I_Assert(map <= NUMMAPS);
 
-	if (map < 100)
+	if (map < 100 && map >= 0)
 		sprintf(&mapname[3], "%.2d", map);
 	else
 	{
@@ -2538,7 +2538,7 @@ void G_ChangePlayerReferences(mobj_t *oldmo, mobj_t *newmo)
 	// scan all thinkers
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
 	{
-		if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+		if (th->function != (actionf_p1)P_MobjThinker)
 			continue;
 
 		mo2 = (mobj_t *)th;
@@ -4279,7 +4279,7 @@ void G_ConsGhostTic(void)
 				mobj = NULL;
 				for (th = thinkercap.next; th != &thinkercap; th = th->next)
 				{
-					if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+					if (th->function != (actionf_p1)P_MobjThinker)
 						continue;
 					mobj = (mobj_t *)th;
 					if (mobj->type == (mobjtype_t)type && mobj->x == x && mobj->y == y && mobj->z == z)
@@ -5557,7 +5557,7 @@ void G_DoPlayMetal(void)
 	// find metal sonic
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
 	{
-		if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+		if (th->function != (actionf_p1)P_MobjThinker)
 			continue;
 
 		mo = (mobj_t *)th;
@@ -5831,4 +5831,3 @@ INT32 G_TicsToMilliseconds(tic_t tics)
 {
 	return (INT32)((tics%TICRATE) * (1000.00f/TICRATE));
 }
-

@@ -419,10 +419,14 @@ extern INT32 cv_debug;
 #define DBG_MEMORY      0x0200
 #define DBG_SETUP       0x0400
 #define DBG_LUA         0x0800
+#define DBG_VIEWMORPH   0x2000
+
 
 // =======================
 // Misc stuff for later...
 // =======================
+
+#define ANG2RAD(angle) ((float)((angle)*M_PI)/ANGLE_180)
 
 // Modifier key variables, accessible anywhere
 extern UINT8 shiftdown, ctrldown, altdown;
@@ -552,11 +556,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 
 
-/// Hardware renderer: OpenGL
+/// OpenGL shaders
 #define GL_SHADERS
-
-// WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) (FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)
-
 
 #endif // __DOOMDEF__

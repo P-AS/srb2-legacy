@@ -74,6 +74,8 @@ boolean deh_loaded = false;
 static int dbg_line;
 
 static boolean gamedataadded = false;
+static boolean titlechanged = false;
+static boolean introchanged = false;
 
 #ifdef DELFILE
 typedef struct undehacked_s
@@ -1676,8 +1678,8 @@ Next frame = 200
   */
 typedef struct
 {
-	actionf_t action; ///< Function pointer corresponding to the actual action.
-	const char *name; ///< Name of the action in ALL CAPS.
+	actionf_p1 action; ///< Function pointer corresponding to the actual action.
+	const char *name;  ///< Name of the action in ALL CAPS.
 } actionpointer_t;
 
 /** Array mapping action names to action functions.
@@ -1685,195 +1687,195 @@ typedef struct
   */
 static actionpointer_t actionpointers[] =
 {
-	{{A_Explode},              "A_EXPLODE"},
-	{{A_Pain},                 "A_PAIN"},
-	{{A_Fall},                 "A_FALL"},
-	{{A_MonitorPop},           "A_MONITORPOP"},
-	{{A_Look},                 "A_LOOK"},
-	{{A_Chase},                "A_CHASE"},
-	{{A_FaceStabChase},        "A_FACESTABCHASE"},
-	{{A_FaceTarget},           "A_FACETARGET"},
-	{{A_FaceTracer},           "A_FACETRACER"},
-	{{A_Scream},               "A_SCREAM"},
-	{{A_BossDeath},            "A_BOSSDEATH"},
-	{{A_CustomPower},          "A_CUSTOMPOWER"},
-	{{A_GiveWeapon},           "A_GIVEWEAPON"},
-	{{A_RingShield},           "A_RINGSHIELD"},
-	{{A_RingBox},              "A_RINGBOX"},
-	{{A_Invincibility},        "A_INVINCIBILITY"},
-	{{A_SuperSneakers},        "A_SUPERSNEAKERS"},
-	{{A_BunnyHop},             "A_BUNNYHOP"},
-	{{A_BubbleSpawn},          "A_BUBBLESPAWN"},
-	{{A_FanBubbleSpawn},       "A_FANBUBBLESPAWN"},
-	{{A_BubbleRise},           "A_BUBBLERISE"},
-	{{A_BubbleCheck},          "A_BUBBLECHECK"},
-	{{A_AwardScore},           "A_AWARDSCORE"},
-	{{A_ExtraLife},            "A_EXTRALIFE"},
-	{{A_BombShield},           "A_BOMBSHIELD"},
-	{{A_JumpShield},           "A_JUMPSHIELD"},
-	{{A_WaterShield},          "A_WATERSHIELD"},
-	{{A_ForceShield},          "A_FORCESHIELD"},
-	{{A_PityShield},           "A_PITYSHIELD"},
-	{{A_GravityBox},           "A_GRAVITYBOX"},
-	{{A_ScoreRise},            "A_SCORERISE"},
-	{{A_ParticleSpawn},        "A_PARTICLESPAWN"},
-	{{A_AttractChase},         "A_ATTRACTCHASE"},
-	{{A_DropMine},             "A_DROPMINE"},
-	{{A_FishJump},             "A_FISHJUMP"},
-	{{A_ThrownRing},           "A_THROWNRING"},
-	{{A_SetSolidSteam},        "A_SETSOLIDSTEAM"},
-	{{A_UnsetSolidSteam},      "A_UNSETSOLIDSTEAM"},
-	{{A_SignPlayer},           "A_SIGNPLAYER"},
-	{{A_OverlayThink},         "A_OVERLAYTHINK"},
-	{{A_JetChase},             "A_JETCHASE"},
-	{{A_JetbThink},            "A_JETBTHINK"},
-	{{A_JetgThink},            "A_JETGTHINK"},
-	{{A_JetgShoot},            "A_JETGSHOOT"},
-	{{A_ShootBullet},          "A_SHOOTBULLET"},
-	{{A_MinusDigging},         "A_MINUSDIGGING"},
-	{{A_MinusPopup},           "A_MINUSPOPUP"},
-	{{A_MinusCheck},           "A_MINUSCHECK"},
-	{{A_ChickenCheck},         "A_CHICKENCHECK"},
-	{{A_MouseThink},           "A_MOUSETHINK"},
-	{{A_DetonChase},           "A_DETONCHASE"},
-	{{A_CapeChase},            "A_CAPECHASE"},
-	{{A_RotateSpikeBall},      "A_ROTATESPIKEBALL"},
-	{{A_SlingAppear},          "A_SLINGAPPEAR"},
-	{{A_MaceRotate},           "A_MACEROTATE"},
-	{{A_UnidusBall},           "A_UNIDUSBALL"},
-	{{A_RockSpawn},            "A_ROCKSPAWN"},
-	{{A_SetFuse},              "A_SETFUSE"},
-	{{A_CrawlaCommanderThink}, "A_CRAWLACOMMANDERTHINK"},
-	{{A_SmokeTrailer},         "A_SMOKETRAILER"},
-	{{A_RingExplode},          "A_RINGEXPLODE"},
-	{{A_OldRingExplode},       "A_OLDRINGEXPLODE"},
-	{{A_MixUp},                "A_MIXUP"},
-	{{A_RecyclePowers},        "A_RECYCLEPOWERS"},
-	{{A_Boss1Chase},           "A_BOSS1CHASE"},
-	{{A_FocusTarget},          "A_FOCUSTARGET"},
-	{{A_Boss2Chase},           "A_BOSS2CHASE"},
-	{{A_Boss2Pogo},            "A_BOSS2POGO"},
-	{{A_BossZoom},             "A_BOSSZOOM"},
-	{{A_BossScream},           "A_BOSSSCREAM"},
-	{{A_Boss2TakeDamage},      "A_BOSS2TAKEDAMAGE"},
-	{{A_Boss7Chase},           "A_BOSS7CHASE"},
-	{{A_GoopSplat},            "A_GOOPSPLAT"},
-	{{A_Boss2PogoSFX},         "A_BOSS2POGOSFX"},
-	{{A_Boss2PogoTarget},      "A_BOSS2POGOTARGET"},
-	{{A_BossJetFume},          "A_BOSSJETFUME"},
-	{{A_EggmanBox},            "A_EGGMANBOX"},
-	{{A_TurretFire},           "A_TURRETFIRE"},
-	{{A_SuperTurretFire},      "A_SUPERTURRETFIRE"},
-	{{A_TurretStop},           "A_TURRETSTOP"},
-	{{A_JetJawRoam},           "A_JETJAWROAM"},
-	{{A_JetJawChomp},          "A_JETJAWCHOMP"},
-	{{A_PointyThink},          "A_POINTYTHINK"},
-	{{A_CheckBuddy},           "A_CHECKBUDDY"},
-	{{A_HoodThink},            "A_HOODTHINK"},
-	{{A_ArrowCheck},           "A_ARROWCHECK"},
-	{{A_SnailerThink},         "A_SNAILERTHINK"},
-	{{A_SharpChase},           "A_SHARPCHASE"},
-	{{A_SharpSpin},            "A_SHARPSPIN"},
-	{{A_VultureVtol},          "A_VULTUREVTOL"},
-	{{A_VultureCheck},         "A_VULTURECHECK"},
-	{{A_SkimChase},            "A_SKIMCHASE"},
-	{{A_1upThinker},           "A_1UPTHINKER"},
-	{{A_SkullAttack},          "A_SKULLATTACK"},
-	{{A_LobShot},              "A_LOBSHOT"},
-	{{A_FireShot},             "A_FIRESHOT"},
-	{{A_SuperFireShot},        "A_SUPERFIRESHOT"},
-	{{A_BossFireShot},         "A_BOSSFIRESHOT"},
-	{{A_Boss7FireMissiles},    "A_BOSS7FIREMISSILES"},
-	{{A_Boss1Laser},           "A_BOSS1LASER"},
-	{{A_Boss4Reverse},         "A_BOSS4REVERSE"},
-	{{A_Boss4SpeedUp},         "A_BOSS4SPEEDUP"},
-	{{A_Boss4Raise},           "A_BOSS4RAISE"},
-	{{A_SparkFollow},          "A_SPARKFOLLOW"},
-	{{A_BuzzFly},              "A_BUZZFLY"},
-	{{A_GuardChase},           "A_GUARDCHASE"},
-	{{A_EggShield},            "A_EGGSHIELD"},
-	{{A_SetReactionTime},      "A_SETREACTIONTIME"},
-	{{A_Boss1Spikeballs},      "A_BOSS1SPIKEBALLS"},
-	{{A_Boss3TakeDamage},      "A_BOSS3TAKEDAMAGE"},
-	{{A_Boss3Path},            "A_BOSS3PATH"},
-	{{A_LinedefExecute},       "A_LINEDEFEXECUTE"},
-	{{A_PlaySeeSound},         "A_PLAYSEESOUND"},
-	{{A_PlayAttackSound},      "A_PLAYATTACKSOUND"},
-	{{A_PlayActiveSound},      "A_PLAYACTIVESOUND"},
-	{{A_SpawnObjectAbsolute},  "A_SPAWNOBJECTABSOLUTE"},
-	{{A_SpawnObjectRelative},  "A_SPAWNOBJECTRELATIVE"},
-	{{A_ChangeAngleRelative},  "A_CHANGEANGLERELATIVE"},
-	{{A_ChangeAngleAbsolute},  "A_CHANGEANGLEABSOLUTE"},
-	{{A_PlaySound},            "A_PLAYSOUND"},
-	{{A_FindTarget},           "A_FINDTARGET"},
-	{{A_FindTracer},           "A_FINDTRACER"},
-	{{A_SetTics},              "A_SETTICS"},
-	{{A_SetRandomTics},        "A_SETRANDOMTICS"},
-	{{A_ChangeColorRelative},  "A_CHANGECOLORRELATIVE"},
-	{{A_ChangeColorAbsolute},  "A_CHANGECOLORABSOLUTE"},
-	{{A_MoveRelative},         "A_MOVERELATIVE"},
-	{{A_MoveAbsolute},         "A_MOVEABSOLUTE"},
-	{{A_Thrust},               "A_THRUST"},
-	{{A_ZThrust},              "A_ZTHRUST"},
-	{{A_SetTargetsTarget},     "A_SETTARGETSTARGET"},
-	{{A_SetObjectFlags},       "A_SETOBJECTFLAGS"},
-	{{A_SetObjectFlags2},      "A_SETOBJECTFLAGS2"},
-	{{A_RandomState},          "A_RANDOMSTATE"},
-	{{A_RandomStateRange},     "A_RANDOMSTATERANGE"},
-	{{A_DualAction},           "A_DUALACTION"},
-	{{A_RemoteAction},         "A_REMOTEACTION"},
-	{{A_ToggleFlameJet},       "A_TOGGLEFLAMEJET"},
-	{{A_OrbitNights},          "A_ORBITNIGHTS"},
-	{{A_GhostMe},              "A_GHOSTME"},
-	{{A_SetObjectState},       "A_SETOBJECTSTATE"},
-	{{A_SetObjectTypeState},   "A_SETOBJECTTYPESTATE"},
-	{{A_KnockBack},            "A_KNOCKBACK"},
-	{{A_PushAway},             "A_PUSHAWAY"},
-	{{A_RingDrain},            "A_RINGDRAIN"},
-	{{A_SplitShot},            "A_SPLITSHOT"},
-	{{A_MissileSplit},         "A_MISSILESPLIT"},
-	{{A_MultiShot},            "A_MULTISHOT"},
-	{{A_InstaLoop},            "A_INSTALOOP"},
-	{{A_Custom3DRotate},       "A_CUSTOM3DROTATE"},
-	{{A_SearchForPlayers},     "A_SEARCHFORPLAYERS"},
-	{{A_CheckRandom},          "A_CHECKRANDOM"},
-	{{A_CheckTargetRings},     "A_CHECKTARGETRINGS"},
-	{{A_CheckRings},           "A_CHECKRINGS"},
-	{{A_CheckTotalRings},      "A_CHECKTOTALRINGS"},
-	{{A_CheckHealth},          "A_CHECKHEALTH"},
-	{{A_CheckRange},           "A_CHECKRANGE"},
-	{{A_CheckHeight},          "A_CHECKHEIGHT"},
-	{{A_CheckTrueRange},       "A_CHECKTRUERANGE"},
-	{{A_CheckThingCount},      "A_CHECKTHINGCOUNT"},
-	{{A_CheckAmbush},          "A_CHECKAMBUSH"},
-	{{A_CheckCustomValue},     "A_CHECKCUSTOMVALUE"},
-	{{A_CheckCusValMemo},      "A_CHECKCUSVALMEMO"},
-	{{A_SetCustomValue},       "A_SETCUSTOMVALUE"},
-	{{A_UseCusValMemo},        "A_USECUSVALMEMO"},
-	{{A_RelayCustomValue},     "A_RELAYCUSTOMVALUE"},
-	{{A_CusValAction},         "A_CUSVALACTION"},
-	{{A_ForceStop},            "A_FORCESTOP"},
-	{{A_ForceWin},             "A_FORCEWIN"},
-	{{A_SpikeRetract},         "A_SPIKERETRACT"},
-	{{A_InfoState},            "A_INFOSTATE"},
-	{{A_Repeat},               "A_REPEAT"},
-	{{A_SetScale},             "A_SETSCALE"},
-	{{A_RemoteDamage},         "A_REMOTEDAMAGE"},
-	{{A_HomingChase},          "A_HOMINGCHASE"},
-	{{A_TrapShot},             "A_TRAPSHOT"},
-	{{A_VileTarget},           "A_VILETARGET"},
-	{{A_VileAttack},           "A_VILEATTACK"},
-	{{A_VileFire},             "A_VILEFIRE"},
-	{{A_BrakChase},            "A_BRAKCHASE"},
-	{{A_BrakFireShot},         "A_BRAKFIRESHOT"},
-	{{A_BrakLobShot},          "A_BRAKLOBSHOT"},
-	{{A_NapalmScatter},        "A_NAPALMSCATTER"},
-	{{A_SpawnFreshCopy},       "A_SPAWNFRESHCOPY"},
+	{A_Explode,              "A_EXPLODE"},
+	{A_Pain,                 "A_PAIN"},
+	{A_Fall,                 "A_FALL"},
+	{A_MonitorPop,           "A_MONITORPOP"},
+	{A_Look,                 "A_LOOK"},
+	{A_Chase,                "A_CHASE"},
+	{A_FaceStabChase,        "A_FACESTABCHASE"},
+	{A_FaceTarget,           "A_FACETARGET"},
+	{A_FaceTracer,           "A_FACETRACER"},
+	{A_Scream,               "A_SCREAM"},
+	{A_BossDeath,            "A_BOSSDEATH"},
+	{A_CustomPower,          "A_CUSTOMPOWER"},
+	{A_GiveWeapon,           "A_GIVEWEAPON"},
+	{A_RingShield,           "A_RINGSHIELD"},
+	{A_RingBox,              "A_RINGBOX"},
+	{A_Invincibility,        "A_INVINCIBILITY"},
+	{A_SuperSneakers,        "A_SUPERSNEAKERS"},
+	{A_BunnyHop,             "A_BUNNYHOP"},
+	{A_BubbleSpawn,          "A_BUBBLESPAWN"},
+	{A_FanBubbleSpawn,       "A_FANBUBBLESPAWN"},
+	{A_BubbleRise,           "A_BUBBLERISE"},
+	{A_BubbleCheck,          "A_BUBBLECHECK"},
+	{A_AwardScore,           "A_AWARDSCORE"},
+	{A_ExtraLife,            "A_EXTRALIFE"},
+	{A_BombShield,           "A_BOMBSHIELD"},
+	{A_JumpShield,           "A_JUMPSHIELD"},
+	{A_WaterShield,          "A_WATERSHIELD"},
+	{A_ForceShield,          "A_FORCESHIELD"},
+	{A_PityShield,           "A_PITYSHIELD"},
+	{A_GravityBox,           "A_GRAVITYBOX"},
+	{A_ScoreRise,            "A_SCORERISE"},
+	{A_ParticleSpawn,        "A_PARTICLESPAWN"},
+	{A_AttractChase,         "A_ATTRACTCHASE"},
+	{A_DropMine,             "A_DROPMINE"},
+	{A_FishJump,             "A_FISHJUMP"},
+	{A_ThrownRing,           "A_THROWNRING"},
+	{A_SetSolidSteam,        "A_SETSOLIDSTEAM"},
+	{A_UnsetSolidSteam,      "A_UNSETSOLIDSTEAM"},
+	{A_SignPlayer,           "A_SIGNPLAYER"},
+	{A_OverlayThink,         "A_OVERLAYTHINK"},
+	{A_JetChase,             "A_JETCHASE"},
+	{A_JetbThink,            "A_JETBTHINK"},
+	{A_JetgThink,            "A_JETGTHINK"},
+	{A_JetgShoot,            "A_JETGSHOOT"},
+	{A_ShootBullet,          "A_SHOOTBULLET"},
+	{A_MinusDigging,         "A_MINUSDIGGING"},
+	{A_MinusPopup,           "A_MINUSPOPUP"},
+	{A_MinusCheck,           "A_MINUSCHECK"},
+	{A_ChickenCheck,         "A_CHICKENCHECK"},
+	{A_MouseThink,           "A_MOUSETHINK"},
+	{A_DetonChase,           "A_DETONCHASE"},
+	{A_CapeChase,            "A_CAPECHASE"},
+	{A_RotateSpikeBall,      "A_ROTATESPIKEBALL"},
+	{A_SlingAppear,          "A_SLINGAPPEAR"},
+	{A_MaceRotate,           "A_MACEROTATE"},
+	{A_UnidusBall,           "A_UNIDUSBALL"},
+	{A_RockSpawn,            "A_ROCKSPAWN"},
+	{A_SetFuse,              "A_SETFUSE"},
+	{A_CrawlaCommanderThink, "A_CRAWLACOMMANDERTHINK"},
+	{A_SmokeTrailer,         "A_SMOKETRAILER"},
+	{A_RingExplode,          "A_RINGEXPLODE"},
+	{A_OldRingExplode,       "A_OLDRINGEXPLODE"},
+	{A_MixUp,                "A_MIXUP"},
+	{A_RecyclePowers,        "A_RECYCLEPOWERS"},
+	{A_Boss1Chase,           "A_BOSS1CHASE"},
+	{A_FocusTarget,          "A_FOCUSTARGET"},
+	{A_Boss2Chase,           "A_BOSS2CHASE"},
+	{A_Boss2Pogo,            "A_BOSS2POGO"},
+	{A_BossZoom,             "A_BOSSZOOM"},
+	{A_BossScream,           "A_BOSSSCREAM"},
+	{A_Boss2TakeDamage,      "A_BOSS2TAKEDAMAGE"},
+	{A_Boss7Chase,           "A_BOSS7CHASE"},
+	{A_GoopSplat,            "A_GOOPSPLAT"},
+	{A_Boss2PogoSFX,         "A_BOSS2POGOSFX"},
+	{A_Boss2PogoTarget,      "A_BOSS2POGOTARGET"},
+	{A_BossJetFume,          "A_BOSSJETFUME"},
+	{A_EggmanBox,            "A_EGGMANBOX"},
+	{A_TurretFire,           "A_TURRETFIRE"},
+	{A_SuperTurretFire,      "A_SUPERTURRETFIRE"},
+	{A_TurretStop,           "A_TURRETSTOP"},
+	{A_JetJawRoam,           "A_JETJAWROAM"},
+	{A_JetJawChomp,          "A_JETJAWCHOMP"},
+	{A_PointyThink,          "A_POINTYTHINK"},
+	{A_CheckBuddy,           "A_CHECKBUDDY"},
+	{A_HoodThink,            "A_HOODTHINK"},
+	{A_ArrowCheck,           "A_ARROWCHECK"},
+	{A_SnailerThink,         "A_SNAILERTHINK"},
+	{A_SharpChase,           "A_SHARPCHASE"},
+	{A_SharpSpin,            "A_SHARPSPIN"},
+	{A_VultureVtol,          "A_VULTUREVTOL"},
+	{A_VultureCheck,         "A_VULTURECHECK"},
+	{A_SkimChase,            "A_SKIMCHASE"},
+	{A_1upThinker,           "A_1UPTHINKER"},
+	{A_SkullAttack,          "A_SKULLATTACK"},
+	{A_LobShot,              "A_LOBSHOT"},
+	{A_FireShot,             "A_FIRESHOT"},
+	{A_SuperFireShot,        "A_SUPERFIRESHOT"},
+	{A_BossFireShot,         "A_BOSSFIRESHOT"},
+	{A_Boss7FireMissiles,    "A_BOSS7FIREMISSILES"},
+	{A_Boss1Laser,           "A_BOSS1LASER"},
+	{A_Boss4Reverse,         "A_BOSS4REVERSE"},
+	{A_Boss4SpeedUp,         "A_BOSS4SPEEDUP"},
+	{A_Boss4Raise,           "A_BOSS4RAISE"},
+	{A_SparkFollow,          "A_SPARKFOLLOW"},
+	{A_BuzzFly,              "A_BUZZFLY"},
+	{A_GuardChase,           "A_GUARDCHASE"},
+	{A_EggShield,            "A_EGGSHIELD"},
+	{A_SetReactionTime,      "A_SETREACTIONTIME"},
+	{A_Boss1Spikeballs,      "A_BOSS1SPIKEBALLS"},
+	{A_Boss3TakeDamage,      "A_BOSS3TAKEDAMAGE"},
+	{A_Boss3Path,            "A_BOSS3PATH"},
+	{A_LinedefExecute,       "A_LINEDEFEXECUTE"},
+	{A_PlaySeeSound,         "A_PLAYSEESOUND"},
+	{A_PlayAttackSound,      "A_PLAYATTACKSOUND"},
+	{A_PlayActiveSound,      "A_PLAYACTIVESOUND"},
+	{A_SpawnObjectAbsolute,  "A_SPAWNOBJECTABSOLUTE"},
+	{A_SpawnObjectRelative,  "A_SPAWNOBJECTRELATIVE"},
+	{A_ChangeAngleRelative,  "A_CHANGEANGLERELATIVE"},
+	{A_ChangeAngleAbsolute,  "A_CHANGEANGLEABSOLUTE"},
+	{A_PlaySound,            "A_PLAYSOUND"},
+	{A_FindTarget,           "A_FINDTARGET"},
+	{A_FindTracer,           "A_FINDTRACER"},
+	{A_SetTics,              "A_SETTICS"},
+	{A_SetRandomTics,        "A_SETRANDOMTICS"},
+	{A_ChangeColorRelative,  "A_CHANGECOLORRELATIVE"},
+	{A_ChangeColorAbsolute,  "A_CHANGECOLORABSOLUTE"},
+	{A_MoveRelative,         "A_MOVERELATIVE"},
+	{A_MoveAbsolute,         "A_MOVEABSOLUTE"},
+	{A_Thrust,               "A_THRUST"},
+	{A_ZThrust,              "A_ZTHRUST"},
+	{A_SetTargetsTarget,     "A_SETTARGETSTARGET"},
+	{A_SetObjectFlags,       "A_SETOBJECTFLAGS"},
+	{A_SetObjectFlags2,      "A_SETOBJECTFLAGS2"},
+	{A_RandomState,          "A_RANDOMSTATE"},
+	{A_RandomStateRange,     "A_RANDOMSTATERANGE"},
+	{A_DualAction,           "A_DUALACTION"},
+	{A_RemoteAction,         "A_REMOTEACTION"},
+	{A_ToggleFlameJet,       "A_TOGGLEFLAMEJET"},
+	{A_OrbitNights,          "A_ORBITNIGHTS"},
+	{A_GhostMe,              "A_GHOSTME"},
+	{A_SetObjectState,       "A_SETOBJECTSTATE"},
+	{A_SetObjectTypeState,   "A_SETOBJECTTYPESTATE"},
+	{A_KnockBack,            "A_KNOCKBACK"},
+	{A_PushAway,             "A_PUSHAWAY"},
+	{A_RingDrain,            "A_RINGDRAIN"},
+	{A_SplitShot,            "A_SPLITSHOT"},
+	{A_MissileSplit,         "A_MISSILESPLIT"},
+	{A_MultiShot,            "A_MULTISHOT"},
+	{A_InstaLoop,            "A_INSTALOOP"},
+	{A_Custom3DRotate,       "A_CUSTOM3DROTATE"},
+	{A_SearchForPlayers,     "A_SEARCHFORPLAYERS"},
+	{A_CheckRandom,          "A_CHECKRANDOM"},
+	{A_CheckTargetRings,     "A_CHECKTARGETRINGS"},
+	{A_CheckRings,           "A_CHECKRINGS"},
+	{A_CheckTotalRings,      "A_CHECKTOTALRINGS"},
+	{A_CheckHealth,          "A_CHECKHEALTH"},
+	{A_CheckRange,           "A_CHECKRANGE"},
+	{A_CheckHeight,          "A_CHECKHEIGHT"},
+	{A_CheckTrueRange,       "A_CHECKTRUERANGE"},
+	{A_CheckThingCount,      "A_CHECKTHINGCOUNT"},
+	{A_CheckAmbush,          "A_CHECKAMBUSH"},
+	{A_CheckCustomValue,     "A_CHECKCUSTOMVALUE"},
+	{A_CheckCusValMemo,      "A_CHECKCUSVALMEMO"},
+	{A_SetCustomValue,       "A_SETCUSTOMVALUE"},
+	{A_UseCusValMemo,        "A_USECUSVALMEMO"},
+	{A_RelayCustomValue,     "A_RELAYCUSTOMVALUE"},
+	{A_CusValAction,         "A_CUSVALACTION"},
+	{A_ForceStop,            "A_FORCESTOP"},
+	{A_ForceWin,             "A_FORCEWIN"},
+	{A_SpikeRetract,         "A_SPIKERETRACT"},
+	{A_InfoState,            "A_INFOSTATE"},
+	{A_Repeat,               "A_REPEAT"},
+	{A_SetScale,             "A_SETSCALE"},
+	{A_RemoteDamage,         "A_REMOTEDAMAGE"},
+	{A_HomingChase,          "A_HOMINGCHASE"},
+	{A_TrapShot,             "A_TRAPSHOT"},
+	{A_VileTarget,           "A_VILETARGET"},
+	{A_VileAttack,           "A_VILEATTACK"},
+	{A_VileFire,             "A_VILEFIRE"},
+	{A_BrakChase,            "A_BRAKCHASE"},
+	{A_BrakFireShot,         "A_BRAKFIRESHOT"},
+	{A_BrakLobShot,          "A_BRAKLOBSHOT"},
+	{A_NapalmScatter,        "A_NAPALMSCATTER"},
+	{A_SpawnFreshCopy,       "A_SPAWNFRESHCOPY"},
 
-	{{NULL},                   "NONE"},
+	{NULL,                   "NONE"},
 
 	// This NULL entry must be the last in the list
-	{{NULL},                   NULL},
+	{NULL,                   NULL},
 };
 
 static void readframe(MYFILE *f, INT32 num)
@@ -1961,7 +1963,7 @@ static void readframe(MYFILE *f, INT32 num)
 
 				for (z = 0; actionpointers[z].name; z++)
 				{
-					if (actionpointers[z].action.acv == states[num].action.acv)
+					if (actionpointers[z].action == states[num].action)
 					{
 						DEH_WriteUndoline(word1, actionpointers[z].name, UNDO_NONE);
 						break;
@@ -1977,8 +1979,6 @@ static void readframe(MYFILE *f, INT32 num)
 						if (fastcmp(actiontocompare, actionpointers[z].name))
 						{
 							states[num].action = actionpointers[z].action;
-							states[num].action.acv = actionpointers[z].action.acv; // assign
-							states[num].action.acp1 = actionpointers[z].action.acp1;
 							found = true;
 							break;
 						}
@@ -3025,16 +3025,19 @@ static void readmaincfg(MYFILE *f)
 				// range check, you morons.
 				if (introtoplay > 128)
 					introtoplay = 128;
+				introchanged = true;
 			}
 			else if (fastcmp(word, "LOOPTITLE"))
 			{
 				DEH_WriteUndoline(word, va("%d", looptitle), UNDO_NONE);
 				looptitle = (value || word2[0] == 'T' || word2[0] == 'Y');
+				titlechanged = true;
 			}
 			else if (fastcmp(word, "TITLESCROLLSPEED"))
 			{
 				DEH_WriteUndoline(word, va("%d", titlescrollspeed), UNDO_NONE);
 				titlescrollspeed = get_number(word2);
+				titlechanged = true;
 			}
 			else if (fastcmp(word, "CREDITSCUTSCENE"))
 			{
@@ -3053,16 +3056,19 @@ static void readmaincfg(MYFILE *f)
 			{
 				DEH_WriteUndoline(word, va("%d", numDemos), UNDO_NONE);
 				numDemos = (UINT8)get_number(word2);
+				titlechanged = true;
 			}
 			else if (fastcmp(word, "DEMODELAYTIME"))
 			{
 				DEH_WriteUndoline(word, va("%d", demoDelayTime), UNDO_NONE);
 				demoDelayTime = get_number(word2);
+				titlechanged = true;
 			}
 			else if (fastcmp(word, "DEMOIDLETIME"))
 			{
 				DEH_WriteUndoline(word, va("%d", demoIdleTime), UNDO_NONE);
 				demoIdleTime = get_number(word2);
+				titlechanged = true;
 			}
 			else if (fastcmp(word, "USE1UPSOUND"))
 			{
@@ -3111,6 +3117,7 @@ static void readmaincfg(MYFILE *f)
 			{
 				DEH_WriteUndoline(word, "0", UNDO_TODO); /// \todo
 				P_ResetData(value);
+				titlechanged = true;
 			}
 			else if (fastcmp(word, "CUSTOMVERSION"))
 			{
@@ -3328,7 +3335,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 	for (i = 0; i < NUMSFX; i++)
 		savesfxnames[i] = S_sfx[i].name;
 
-	gamedataadded = false;
+	gamedataadded = titlechanged = introchanged = false;
 
 	// it doesn't test the version of SRB2 and version of dehacked file
 	dbg_line = -1; // start at -1 so the first line is 0.
@@ -3698,6 +3705,23 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 
 	if (gamedataadded)
 		G_LoadGameData();
+
+
+	if (gamestate == GS_TITLESCREEN)
+	{
+			if (introchanged)
+			{
+				menuactive = false;
+				I_UpdateMouseGrab();
+				COM_BufAddText("playintro");
+			}
+			else if (titlechanged)
+			{
+				menuactive = false;
+				I_UpdateMouseGrab();
+				COM_BufAddText("exitgame"); // Command_ExitGame_f() but delayed
+			}
+	}
 
 	dbg_line = -1;
 	if (deh_num_warning)
@@ -7709,13 +7733,13 @@ static inline int lib_freeslot(lua_State *L)
 // Arguments: mobj_t actor, int var1, int var2
 static inline int lib_action(lua_State *L)
 {
-	actionf_t *action = lua_touserdata(L,lua_upvalueindex(1));
+	actionf_p1 *action = lua_touserdata(L,lua_upvalueindex(1));
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L,1,META_MOBJ));
 	var1 = (INT32)luaL_optinteger(L,2,0);
 	var2 = (INT32)luaL_optinteger(L,3,0);
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
-	action->acp1(actor);
+	(*action)(actor);
 	return 0;
 }
 
@@ -8123,11 +8147,11 @@ int LUA_SOCLib(lua_State *L)
 
 const char *LUA_GetActionName(void *action)
 {
-	actionf_t *act = (actionf_t *)action;
+	actionf_p1 *act = (actionf_p1 *)action;
 	size_t z;
 	for (z = 0; actionpointers[z].name; z++)
 	{
-		if (actionpointers[z].action.acv == act->acv)
+		if (actionpointers[z].action == *act)
 			return actionpointers[z].name;
 	}
 	return NULL;
@@ -8142,8 +8166,6 @@ void LUA_SetActionByName(void *state, const char *actiontocompare)
 		if (fasticmp(actiontocompare, actionpointers[z].name))
 		{
 			st->action = actionpointers[z].action;
-			st->action.acv = actionpointers[z].action.acv; // assign
-			st->action.acp1 = actionpointers[z].action.acp1;
 			return;
 		}
 	}

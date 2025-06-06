@@ -41,8 +41,8 @@
 
 #define DL_HIGH_QUALITY
 //#define STATICLIGHT  //Hurdler: TODO!
-//#define LIGHTMAPFLAGS  (PF_Masked|PF_Clip|PF_NoAlphaTest)  // debug see overdraw
-#define LIGHTMAPFLAGS (PF_Modulated|PF_Additive|PF_Clip)
+//#define LIGHTMAPFLAGS  (PF_Masked|PF_NoAlphaTest)  // debug see overdraw
+#define LIGHTMAPFLAGS (PF_Modulated|PF_Additive)
 
 #ifdef ALAM_LIGHTING
 static dynlights_t view_dynlights[2]; // 2 players in splitscreen mode
@@ -928,7 +928,7 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gr_vissprite_t *spr)
 
 		HWR_GetPic(coronalumpnum);  /// \todo use different coronas
 
-		HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_Clip | PF_Corona | PF_NoDepthTest);
+		HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_Corona | PF_NoDepthTest);
 	}
 }
 #endif
@@ -1008,7 +1008,7 @@ void HWR_DrawCoronas(void)
 		light[3].y = cy+size*1.33f;
 		light[3].s = 0.0f;   light[3].t = 1.0f;
 
-		HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_Clip | PF_NoDepthTest | PF_Corona);
+		HWD.pfnDrawPolygon (&Surf, light, 4, PF_Modulated | PF_Additive | PF_NoDepthTest | PF_Corona);
 	}
 }
 #endif
@@ -1290,7 +1290,7 @@ static void HWR_SearchLightsInMobjs(void)
 	for (th = thinkercap.next; th != &thinkercap; th = th->next)
 	{
 		// a mobj ?
-		if (th->function.acp1 == (actionf_p1)P_MobjThinker)
+		if (th->function == (actionf_p1)P_MobjThinker)
 			HWR_AddMobjLights((mobj_t *)th);
 	}
 }

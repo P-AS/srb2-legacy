@@ -411,7 +411,7 @@ INT32 EV_DoCeiling(line_t *line, ceiling_e type)
 		ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
 		P_AddThinker(&ceiling->thinker);
 		sec->ceilingdata = ceiling;
-		ceiling->thinker.function.acp1 = (actionf_p1)T_MoveCeiling;
+		ceiling->thinker.function = (actionf_p1)T_MoveCeiling;
 		ceiling->sector = sec;
 		ceiling->crush = false;
 		ceiling->sourceline = (INT32)(line-lines);
@@ -636,7 +636,7 @@ INT32 EV_DoCrush(line_t *line, ceiling_e type)
 		ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
 		P_AddThinker(&ceiling->thinker);
 		sec->ceilingdata = ceiling;
-		ceiling->thinker.function.acp1 = (actionf_p1)T_CrushCeiling;
+		ceiling->thinker.function = (actionf_p1)T_CrushCeiling;
 		ceiling->sector = sec;
 		ceiling->crush = true;
 		ceiling->sourceline = (INT32)(line-lines);
@@ -688,4 +688,3 @@ INT32 EV_DoCrush(line_t *line, ceiling_e type)
 	}
 	return rtn;
 }
-

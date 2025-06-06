@@ -106,6 +106,8 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 // platform independant focus loss
 UINT8 window_notinfocus = false;
+INT32 window_x;
+INT32 window_y;
 
 //
 // DEMO LOOP
@@ -230,17 +232,17 @@ void D_ProcessEvents(void)
 // added comment : there is a wipe eatch change of the gamestate
 gamestate_t wipegamestate = GS_LEVEL;
 
-static boolean D_Display(void)
+static void D_Display(void)
 {
 	boolean forcerefresh = false;
 	static boolean wipe = false;
 	INT32 wipedefindex = 0;
 
 	if (dedicated)
-		return false;
+		return;
 
 	if (nodrawers)
-		return false; // for comparative timing/profiling
+		return; // for comparative timing/profiling
 
 
 	// check for change of screen size (video mode)
@@ -249,6 +251,10 @@ static boolean D_Display(void)
 
 	if (vid.recalc)
 		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
+
+	
+	if (rendermode == render_soft && !splitscreen)
+		R_CheckViewMorph();
 
 	// change the view size if needed
 	if (setsizeneeded)
@@ -398,6 +404,9 @@ static boolean D_Display(void)
 			// Image postprocessing effect
 			if (rendermode == render_soft)
 			{
+				if (!splitscreen)
+					R_ApplyViewMorph();
+					
 				if (postimgtype)
 					V_DoPostProcessor(0, postimgtype, postimgparam);
 				if (postimgtype2)
@@ -516,9 +525,10 @@ static boolean D_Display(void)
 			M_DrawPerfStats();
 		}
 
-		return true; // Do I_FinishUpdate in the main loop
+		PS_START_TIMING(ps_swaptime);
+		I_FinishUpdate(); // page flip or blit buffer
+		PS_STOP_TIMING(ps_swaptime);
 	}
-	return false;
 }
 
 
@@ -536,7 +546,6 @@ void D_SRB2Loop(void)
 
 	boolean interp = false;
 	boolean doDisplay = false;
-	boolean screenUpdate = false;
 
 	if (dedicated)
 		server = true;
@@ -623,7 +632,7 @@ void D_SRB2Loop(void)
 #endif
 
 		interp = R_UsingFrameInterpolation() && !dedicated;
-		doDisplay = screenUpdate = false;
+		doDisplay = false;
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -679,6 +688,11 @@ void D_SRB2Loop(void)
 		{
 			renderdeltatics = FLOAT_TO_FIXED(deltatics);
 
+			// I looked at the possibility of putting in a float drawer for
+			// perfstats and it's very complicated, so we'll just do this instead...
+			ps_interp_frac.value.p = (precise_t)((FIXED_TO_FLOAT(g_time.timefrac)) * 1000.0f);
+			ps_interp_lag.value.p = (precise_t)((deltasecs) * 1000.0f);
+
 			if (!(paused || P_AutoPause()) && deltatics < 1.0 && !hu_stopped)
 			{
 				rendertimefrac = g_time.timefrac;
@@ -687,19 +701,27 @@ void D_SRB2Loop(void)
 			{
 				rendertimefrac = FRACUNIT;
 			}
+			rendertimefrac_unpaused = g_time.timefrac;
 		}
 		else
 		{
 			renderdeltatics = realtics * FRACUNIT;
 			rendertimefrac = FRACUNIT;
+			rendertimefrac_unpaused = FRACUNIT;
 		}
 
 		if (interp || doDisplay)
 		{
-			screenUpdate = D_Display();
+			D_Display();
 		}
 
-		// consoleplayer -> displayplayer (hear sounds from viewpoint)
+		// Only take screenshots after drawing.
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot)
+			M_DoScreenShot();
+
+		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
 
 #ifdef HW3SOUND
@@ -708,15 +730,6 @@ void D_SRB2Loop(void)
 
 		LUA_Step();
 
-
-		// I_FinishUpdate is now here instead of D_Display,
-		// because it synchronizes it more closely with the frame counter.
-		if (screenUpdate == true)
-		{
-			PS_START_TIMING(ps_swaptime);
-			I_FinishUpdate(); // page flip or blit buffer
-			PS_STOP_TIMING(ps_swaptime);
-		}
 
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
@@ -760,6 +773,9 @@ void D_AdvanceDemo(void)
 void D_StartTitle(void)
 {
 	INT32 i;
+
+	S_StopMusic();
+	
 	if (netgame)
 	{
 		if (gametype == GT_COOP)
@@ -1274,6 +1290,13 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
+
+#ifdef HWRENDER
+	// Lactozilla: Add every hardware mode CVAR and CCMD.
+	// Has to be done before the configuration file loads,
+	// but after the OpenGL library loads.
+	HWR_AddCommands();
+#endif
 
 	//--------------------------------------------------------- CONSOLE
 	// setup loading screen

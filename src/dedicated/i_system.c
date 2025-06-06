@@ -743,6 +743,12 @@ INT32 I_GetKey (void)
 	return rc;
 }
 
+void I_CursedWindowMovement (int xd, int yd)
+{
+	(void)xd;
+	(void)yd;
+}
+
 //
 // I_JoyScale
 //

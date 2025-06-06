@@ -78,18 +78,18 @@ void HWR_AddTransparentPolyobjectFloor(lumpnum_t lumpnum, polyobj_t *polysector,
 static void CV_grmodellighting_OnChange(void);
 static void CV_filtermode_ONChange(void);
 static void CV_anisotropic_ONChange(void);
-static void CV_grFov_OnChange(void);
+static void CV_Gammaxxx_ONChange(void);
 // ==========================================================================
 //                                          3D ENGINE COMMANDS & CONSOLE VARS
 // ==========================================================================
 
-static CV_PossibleValue_t grfov_cons_t[] = {{0, "MIN"}, {179*FRACUNIT, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t grfiltermode_cons_t[]= {{HWD_SET_TEXTUREFILTER_POINTSAMPLED, "Nearest"},
 	{HWD_SET_TEXTUREFILTER_BILINEAR, "Bilinear"}, {HWD_SET_TEXTUREFILTER_TRILINEAR, "Trilinear"},
 	{HWD_SET_TEXTUREFILTER_MIXED1, "Linear_Nearest"},
 	{HWD_SET_TEXTUREFILTER_MIXED2, "Nearest_Linear"},
 	{HWD_SET_TEXTUREFILTER_MIXED3, "Nearest_Mipmap"},
 	{0, NULL}};
+
 CV_PossibleValue_t granisotropicmode_cons_t[] = {{1, "MIN"}, {16, "MAX"}, {0, NULL}};
 
 CV_PossibleValue_t glloadingscreen_cons_t[] = {{0, "OFF"}, {1, "2.1.0-2.1.4"}, {2, "Pre 2.1"},  {0, NULL}};
@@ -101,6 +101,25 @@ consvar_t cv_grshaders = {"gr_shaders", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, 
 
 consvar_t cv_grfakecontrast = {"gr_fakecontrast", "Smooth", CV_SAVE, grfakecontrast_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grslopecontrast = {"gr_slopecontrast", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
+static CV_PossibleValue_t grgamma_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t grmodelinterpolation_cons_t[] = {{0, "Off"}, {1, "Sometimes"}, {2, "Always"}, {0, NULL}};
+
+consvar_t cv_grfovchange = {"gr_fovchange", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grgammared = {"gr_gammared", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
+                           CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grgammagreen = {"gr_gammagreen", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
+                             CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grgammablue = {"gr_gammablue", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
+                            CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
+
+#ifdef ALAM_LIGHTING
+consvar_t cv_grdynamiclighting = {"gr_dynamiclighting", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grstaticlighting  = {"gr_staticlighting", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grcoronas = {"gr_coronas", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grcoronasize = {"gr_coronasize", "1", CV_SAVE| CV_FLOAT, 0, NULL, 0, NULL, NULL, 0, 0, NULL};
+#endif
+
 
 boolean drawsky = true;
 
@@ -114,7 +133,6 @@ static consvar_t cv_grbeta = {"gr_beta", "0", 0, CV_Unsigned, NULL, 0, NULL, NUL
 
 static float HWRWipeCounter = 1.0f;
 consvar_t cv_grrounddown = {"gr_rounddown", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grfov = {"gr_fov", "90", CV_FLOAT|CV_CALL|CV_SAVE, grfov_cons_t, CV_grFov_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 // Unfortunately, this can no longer be saved..
 consvar_t cv_grfiltermode = {"gr_filtermode", "Nearest", CV_CALL|CV_SAVE, grfiltermode_cons_t,
@@ -127,29 +145,44 @@ consvar_t cv_grsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, 
 
 consvar_t cv_grbatching = {"gr_batching", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_grwireframe = {"gr_wireframe", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 consvar_t cv_grmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_grshearing = {"gr_shearing", "Off", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_glloadingscreen = {"glloadingscreen", "Off", CV_SAVE, glloadingscreen_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
+consvar_t cv_grmd2 = {"gr_md2", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grmodelinterpolation = {"gr_modelinterpolation", "Sometimes", CV_SAVE, grmodelinterpolation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grskydome = {"gr_skydome", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 
 static void CV_filtermode_ONChange(void)
 {
+  if (rendermode == render_opengl)
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREFILTERMODE, cv_grfiltermode.value);
 }
 
 static void CV_anisotropic_ONChange(void)
 {
+  if (rendermode == render_opengl)
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_granisotropicmode.value);
 }
 
 static void CV_grmodellighting_OnChange(void)
 {
-	if (rendermode == render_opengl)
+  if (rendermode == render_opengl)
 		HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
 }
 
+// change the palette directly to see the change
+static void CV_Gammaxxx_ONChange(void)
+{
+	if (rendermode == render_opengl)
+		V_SetPalette(0);
+}
 
 // ==========================================================================
 //                                                               VIEW GLOBALS
@@ -254,6 +287,11 @@ ps_metric_t ps_hw_batchdrawtime = {0};
 static boolean HWR_UseShader(void)
 {
 	return (cv_grshaders.value && gr_shadersavailable);
+}
+
+static boolean HWR_IsWireframeMode(void)
+{
+	return (cv_grwireframe.value /*&& cv_debug*/); // Wireframe at any time
 }
 
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap)
@@ -459,7 +497,8 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, boolean is
 
 	INT32 shader = SHADER_DEFAULT;
 
-	
+	(void)sector; ///@TODO remove shitty unused variable
+	(void)fogplane; ///@TODO remove shitty unused variable
 
 	// no convex poly were generated for this subsector
 	if (!xsub->planepoly)
@@ -713,8 +752,7 @@ static void HWR_RenderSkyPlane(extrasubsector_t *xsub, fixed_t fixedheight)
 		v3d->z = pv->y;
 	}
 
-	HWD.pfnDrawPolygon(NULL, planeVerts, nrPlaneVerts,
-	 PF_Clip|PF_Invisible|PF_NoTexture|PF_Occlude);
+	HWD.pfnDrawPolygon(NULL, planeVerts, nrPlaneVerts, PF_Invisible|PF_NoTexture|PF_Occlude);
 }
 #endif //polysky
 
@@ -831,7 +869,7 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 
 	HWR_Lighting(pSurf, lightlevel, wallcolormap);
 
-	
+
 	if (HWR_UseShader())
 	{
 		shader = SHADER_WALL;
@@ -850,7 +888,7 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 
 	//Hurdler: for better dynamic light in dark area, we should draw the light first
 	//         and then the wall all that with the right blending func
-	//HWD.pfnDrawPolygon(pSurf, trVerts, 4, PF_Additive|PF_Modulated|PF_Occlude|PF_Clip);
+	//HWD.pfnDrawPolygon(pSurf, trVerts, 4, PF_Additive|PF_Modulated|PF_Occlude);
 #endif
 }
 
@@ -1118,7 +1156,7 @@ static void HWR_DrawSkyWall(FOutVector *wallVerts, FSurfaceInfo *Surf, fixed_t b
 	// set top/bottom coords
 	wallVerts[2].y = wallVerts[3].y = FIXED_TO_FLOAT(top); // No real way to find the correct height of this
 	wallVerts[0].y = wallVerts[1].y = FIXED_TO_FLOAT(bottom); // worldlow/bottom because it needs to cover up the lower thok barrier wall
-	HWR_ProjectWall(wallVerts, Surf, PF_Invisible|PF_Clip|PF_NoTexture, 255, NULL);
+	HWR_ProjectWall(wallVerts, Surf, PF_Invisible|PF_NoTexture, 255, NULL);
 	// PF_Invisible so it's not drawn into the colour buffer
 	// PF_NoTexture for no texture
 	// PF_Occlude is set in HWR_ProjectWall to draw into the depth buffer
@@ -2439,8 +2477,8 @@ static void HWR_AddLine(seg_t * line)
 	v2y = FLOAT_TO_FIXED(((polyvertex_t *)gr_curline->pv2)->y);
 
 	// OPTIMIZE: quickly reject orthogonal back sides.
-	angle1 = R_PointToAngle(v1x, v1y);
-	angle2 = R_PointToAngle(v2x, v2y);
+	angle1 = R_PointToAngle64(v1x, v1y);
+	angle2 = R_PointToAngle64(v2x, v2y);
 
 #ifdef NEWCLIP
 	 // PrBoom: Back side, i.e. backface culling - read: endAngle >= startAngle!
@@ -2690,8 +2728,8 @@ static boolean HWR_CheckBBox(const fixed_t *bspcoord)
 	py2 = bspcoord[checkcoord[boxpos][3]];
 
 #ifdef NEWCLIP
-	angle1 = R_PointToAngle(px1, py1);
-	angle2 = R_PointToAngle(px2, py2);
+	angle1 = R_PointToAngle64(px1, py1);
+	angle2 = R_PointToAngle64(px2, py2);
 	return gld_clipper_SafeCheckRange(angle2, angle1);
 #else
 	// check clip list for an open space
@@ -2944,10 +2982,10 @@ static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, boolean isceiling, 
 	if (blendmode & PF_Translucent)
 	{
 		Surf.PolyColor.s.alpha = (UINT8)alpha;
-		blendmode |= PF_Modulated|PF_Occlude|PF_Clip;
+		blendmode |= PF_Modulated|PF_Occlude;
 	}
 	else
-		blendmode |= PF_Masked|PF_Modulated|PF_Clip;
+		blendmode |= PF_Masked|PF_Modulated;
 
 	if (HWR_UseShader())
 	{
@@ -3094,46 +3132,22 @@ static void HWR_Subsector(size_t num)
 	//gr_cursectorlight.blue  = light;
 	//gr_cursectorlight.alpha = light;
 
-// ----- for special tricks with HW renderer -----
-	if (gr_frontsector->pseudoSector)
-	{
-		cullFloorHeight = locFloorHeight = gr_frontsector->virtualFloorheight;
-		cullCeilingHeight = locCeilingHeight = gr_frontsector->virtualCeilingheight;
-	}
-	else if (gr_frontsector->virtualFloor)
-	{
-		///@TODO Is this whole virtualFloor mess even useful? I don't think it even triggers ever.
-		cullFloorHeight = locFloorHeight = gr_frontsector->virtualFloorheight;
-		if (gr_frontsector->virtualCeiling)
-			cullCeilingHeight = locCeilingHeight = gr_frontsector->virtualCeilingheight;
-		else
-			cullCeilingHeight = locCeilingHeight = gr_frontsector->ceilingheight;
-	}
-	else if (gr_frontsector->virtualCeiling)
-	{
-		cullCeilingHeight = locCeilingHeight = gr_frontsector->virtualCeilingheight;
-		cullFloorHeight   = locFloorHeight   = gr_frontsector->floorheight;
-	}
-	else
-	{
-		cullFloorHeight   = locFloorHeight   = gr_frontsector->floorheight;
-		cullCeilingHeight = locCeilingHeight = gr_frontsector->ceilingheight;
+	cullFloorHeight   = locFloorHeight   = gr_frontsector->floorheight;
+	cullCeilingHeight = locCeilingHeight = gr_frontsector->ceilingheight;
 
 
-		if (gr_frontsector->f_slope)
-		{
-			cullFloorHeight = P_GetZAt(gr_frontsector->f_slope, viewx, viewy);
-			locFloorHeight = P_GetZAt(gr_frontsector->f_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
-		}
-
-		if (gr_frontsector->c_slope)
-		{
-			cullCeilingHeight = P_GetZAt(gr_frontsector->c_slope, viewx, viewy);
-			locCeilingHeight = P_GetZAt(gr_frontsector->c_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
-		}
+	if (gr_frontsector->f_slope)
+	{
+		cullFloorHeight = P_GetZAt(gr_frontsector->f_slope, viewx, viewy);
+		locFloorHeight = P_GetZAt(gr_frontsector->f_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
 	}
-// ----- end special tricks -----
 
+	if (gr_frontsector->c_slope)
+	{
+		cullCeilingHeight = P_GetZAt(gr_frontsector->c_slope, viewx, viewy);
+		locCeilingHeight = P_GetZAt(gr_frontsector->c_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
+	}	
+	
 	if (gr_frontsector->ffloors)
 	{
 		boolean anyMoved = gr_frontsector->moved;
@@ -3684,7 +3698,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	float offset = 0;
 	pslope_t *floorslope;
 	fixed_t slopez;
-	FBITFIELD blendmode = PF_Translucent|PF_Modulated|PF_Clip;
+	FBITFIELD blendmode = PF_Translucent|PF_Modulated;
 	INT32 shader = SHADER_DEFAULT;
 
 	R_GetShadowZ(spr->mobj, &floorslope);
@@ -3877,7 +3891,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 		{
 			shader = SHADER_NONE;
 			blendmode |= PF_ColorMapped;
-		}	
+		}
 		HWR_ProcessPolygon(&sSurf, swallVerts, 4, blendmode, shader, false);
 	}
 }
@@ -4038,7 +4052,7 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 				baseWallVerts[i].z += (gr_viewy - baseWallVerts[i].z)*distfact;
 				baseWallVerts[i].y += (gr_viewz - baseWallVerts[i].y)*distfact;
 		}
-	}	
+	}
 
 	realtop = top = baseWallVerts[3].y;
 	realbot = bot = baseWallVerts[0].y;
@@ -4506,96 +4520,44 @@ static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 // --------------------------------------------------------------------------
 // Sort vissprites by distance
 // --------------------------------------------------------------------------
-static gr_vissprite_t gr_vsprsortedhead;
+
+gr_vissprite_t* gr_vsprorder[MAXVISSPRITES];
+
+// For more correct transparency the transparent sprites would need to be
+// sorted and drawn together with transparent surfaces.
+static int CompareVisSprites(const void *p1, const void *p2)
+{
+	gr_vissprite_t* spr1 = *(gr_vissprite_t*const*)p1;
+	gr_vissprite_t* spr2 = *(gr_vissprite_t*const*)p2;
+	int idiff;
+	float fdiff;
+
+	// make transparent sprites last
+	// "boolean to int"
+
+	int transparency1 = (spr1->mobj->flags2 & MF2_SHADOW) || (spr1->mobj->frame & FF_TRANSMASK);
+	int transparency2 = (spr2->mobj->flags2 & MF2_SHADOW) || (spr2->mobj->frame & FF_TRANSMASK);
+	idiff = transparency1 - transparency2;
+	if (idiff != 0) return idiff;
+
+	fdiff = spr2->tz - spr1->tz;// this order seems correct when checking with apitrace. Back to front.
+	if (fabsf(fdiff) < 1.0E-36f)
+		return spr1->dispoffset - spr2->dispoffset;// smallest dispoffset first if sprites are at (almost) same location.
+	else if (fdiff > 0)
+		return 1;
+	else
+		return -1;
+}
+
 
 static void HWR_SortVisSprites(void)
 {
 	UINT32 i;
-	gr_vissprite_t *ds, *dsprev, *dsnext, *dsfirst;
-	gr_vissprite_t *best = NULL;
-	gr_vissprite_t unsorted;
-	float bestdist = 0.0f;
-	INT32 bestdispoffset = 0;
-
-	if (!gr_visspritecount)
-		return;
-
-	dsfirst = HWR_GetVisSprite(0);
-
-	for (i = 0, dsnext = dsfirst, ds = NULL; i < gr_visspritecount; i++)
-	{
-		dsprev = ds;
-		ds = dsnext;
-		if (i < gr_visspritecount - 1) dsnext = HWR_GetVisSprite(i + 1);
-
-		ds->next = dsnext;
-		ds->prev = dsprev;
-	}
-
-	// Fix first and last. ds still points to the last one after the loop
-	dsfirst->prev = &unsorted;
-	unsorted.next = dsfirst;
-	if (ds)
-		ds->next = &unsorted;
-	unsorted.prev = ds;
-
-	// pull the vissprites out by scale
-	gr_vsprsortedhead.next = gr_vsprsortedhead.prev = &gr_vsprsortedhead;
 	for (i = 0; i < gr_visspritecount; i++)
 	{
-		best = NULL;
-		for (ds = unsorted.next; ds != &unsorted; ds = ds->next)
-		{
-			if (!best || ds->tz > bestdist)
-			{
-				bestdist = ds->tz;
-				bestdispoffset = ds->dispoffset;
-				best = ds;
-			}
-			// order visprites of same scale by dispoffset, smallest first
-			else if (fabsf(ds->tz - bestdist) < 1.0E-36f && ds->dispoffset < bestdispoffset)
-			{
-				bestdispoffset = ds->dispoffset;
-				best = ds;
-			}
-		}
-		if (best)
-		{
-			best->next->prev = best->prev;
-			best->prev->next = best->next;
-			best->next = &gr_vsprsortedhead;
-			best->prev = gr_vsprsortedhead.prev;
-		}
-		gr_vsprsortedhead.prev->next = best;
-		gr_vsprsortedhead.prev = best;
+		gr_vsprorder[i] = HWR_GetVisSprite(i);
 	}
-
-	// Sryder:	Oh boy, while it's nice having ALL the sprites sorted properly, it fails when we bring MD2's into the
-	//			mix and they want to be translucent. So let's place all the translucent sprites and MD2's AFTER
-	//			everything else, but still ordered of course, the depth buffer can handle the opaque ones plenty fine.
-	//			We just need to move all translucent ones to the end in order
-	// TODO:	Fully sort all sprites and MD2s with walls and floors, this part will be unnecessary after that
-	best = gr_vsprsortedhead.next;
-	for (i = 0; i < gr_visspritecount; i++)
-	{
-		if ((best->mobj->flags2 & MF2_SHADOW) || (best->mobj->frame & FF_TRANSMASK))
-		{
-			if (best == gr_vsprsortedhead.next)
-			{
-				gr_vsprsortedhead.next = best->next;
-			}
-			best->prev->next = best->next;
-			best->next->prev = best->prev;
-			best->prev = gr_vsprsortedhead.prev;
-			gr_vsprsortedhead.prev->next = best;
-			gr_vsprsortedhead.prev = best;
-			ds = best;
-			best = best->next;
-			ds->next = &gr_vsprsortedhead;
-		}
-		else
-			best = best->next;
-	}
+	qsort(gr_vsprorder, gr_visspritecount, sizeof(gr_vissprite_t*), CompareVisSprites);
 }
 
 // A drawnode is something that points to a 3D floor, 3D side, or masked
@@ -4916,35 +4878,28 @@ HWR_RenderPlane(NULL, sortnode[sortindex[i]].plane->xsub, sortnode[sortindex[i]]
 // added the stransform so they can be switched as drawing happenes so MD2s and sprites are sorted correctly with each other
 static void HWR_DrawSprites(void)
 {
-	if (gr_visspritecount > 0)
+	UINT32 i;
+	for (i = 0; i < gr_visspritecount; i++)
 	{
-		gr_vissprite_t *spr;
-
-		// draw all vissprites back to front
-		for (spr = gr_vsprsortedhead.next;
-		     spr != &gr_vsprsortedhead;
-		     spr = spr->next)
-		{
-#ifdef HWPRECIP
-			if (spr->precip)
-				HWR_DrawPrecipitationSprite(spr);
-			else
-#endif
-				if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
-				{
-					if (!cv_grmd2.value || md2_playermodels[(skin_t*)spr->mobj->skin-skins].notfound || md2_playermodels[(skin_t*)spr->mobj->skin-skins].scale < 0.0f)
-						HWR_DrawSprite(spr);
-					else
-						HWR_DrawMD2(spr);
-				}
+		gr_vissprite_t *spr = gr_vsprorder[i];
+		if (spr->precip)
+			HWR_DrawPrecipitationSprite(spr);
+		else
+			if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
+			{
+				// 8/1/19: Only don't display player models if no default SPR_PLAY is found.
+				if (!cv_grmd2.value || ((md2_playermodels[(skin_t*)spr->mobj->skin-skins].notfound || md2_playermodels[(skin_t*)spr->mobj->skin-skins].scale < 0.0f) && (md2_models[SPR_PLAY].notfound || md2_models[SPR_PLAY].scale < 0.0f)))
+					HWR_DrawSprite(spr);
 				else
-				{
-					if (!cv_grmd2.value || md2_models[spr->mobj->sprite].notfound || md2_models[spr->mobj->sprite].scale < 0.0f)
-						HWR_DrawSprite(spr);
-					else
-						HWR_DrawMD2(spr);
-				}
-		}
+					HWR_DrawMD2(spr);
+			}
+			else
+			{
+				if (!cv_grmd2.value || md2_models[spr->mobj->sprite].notfound || md2_models[spr->mobj->sprite].scale < 0.0f)
+					HWR_DrawSprite(spr);
+				else
+					HWR_DrawMD2(spr);
+			}
 	}
 }
 
@@ -5508,12 +5463,15 @@ void HWR_BuildSkyDome(void)
 
 static void HWR_DrawSkyBackground(player_t *player)
 {
+	if (HWR_IsWireframeMode())
+		return;
+
 	HWD.pfnSetBlend(PF_Translucent|PF_NoDepthTest|PF_Modulated);
 
 	if (cv_grskydome.value)
 	{
 		FTransform dometransform;
-		const float fpov = FIXED_TO_FLOAT(cv_grfov.value+player->fovadd);
+		const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
 		postimg_t *type;
 
 		if (splitscreen && player == &players[secondarydisplayplayer])
@@ -5538,6 +5496,12 @@ static void HWR_DrawSkyBackground(player_t *player)
 		dometransform.scalez = 1;
 		dometransform.fovxangle = fpov; // Tails
 		dometransform.fovyangle = fpov; // Tails
+		if (player->viewrollangle != 0)
+		{
+			fixed_t rol = AngleFixed(player->viewrollangle);
+			dometransform.rollangle = FIXED_TO_FLOAT(rol);
+			dometransform.roll = true;
+		}
 		dometransform.splitscreen = splitscreen;
 
 		HWR_GetTexture(texturetranslation[skytexture]);
@@ -5706,7 +5670,7 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 {
 	// 1 = always on
 	// 2 = chasecam only
-	if (cv_grshearing.value == 1 || (cv_grshearing.value == 2 && R_IsViewpointFirstPerson(player, skybox)))
+	if (cv_grshearing.value == 1 || (cv_grshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox)))
 	{
 		fixed_t fixedaiming = AIMINGTODY(aimingangle);
 		trans->viewaiming = FIXED_TO_FLOAT(fixedaiming) * ((float)vid.width / vid.height) / ((float)BASEVIDWIDTH / BASEVIDHEIGHT);
@@ -5729,7 +5693,7 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 // ==========================================================================
 void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 {
-	const float fpov = FIXED_TO_FLOAT(cv_grfov.value+player->fovadd);
+	const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
 	postimg_t *type;
 
 	if (splitscreen && player == &players[secondarydisplayplayer])
@@ -5802,6 +5766,12 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
+	if (player->viewrollangle != 0)
+	{
+		fixed_t rol = AngleFixed(player->viewrollangle);
+		atransform.rollangle = FIXED_TO_FLOAT(rol);
+		atransform.roll = true;
+	}
 	atransform.splitscreen = splitscreen;
 
 	gr_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
@@ -5841,6 +5811,9 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	HWD.pfnSetSpecialState(HWD_SET_SHADERS, cv_grshaders.value);
 	HWD.pfnSetShader(0);
 
+	if (HWR_IsWireframeMode())
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 1);
+
 	validcount++;
 
 	if (cv_grbatching.value)
@@ -5857,7 +5830,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 		viewangle = localaiming2;
 
 	// Handle stuff when you are looking farther up or down.
-	if ((gr_aimingangle || cv_grfov.value+player->fovadd > 90*FRACUNIT))
+	if ((gr_aimingangle || cv_fov.value+player->fovadd > 90*FRACUNIT))
 	{
 		dup_viewangle += ANGLE_90;
 		HWR_ClearClipSegs();
@@ -5908,6 +5881,10 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	}
 
 
+
+	if (HWR_IsWireframeMode())
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 0);
+
 	HWD.pfnSetTransform(NULL);
 	HWD.pfnUnSetShader();
 
@@ -5925,7 +5902,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 // ==========================================================================
 void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 {
-	const float fpov = FIXED_TO_FLOAT(cv_grfov.value+player->fovadd);
+	const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
 	postimg_t *type;
 
 	const boolean skybox = (skyboxmo[0] && cv_skybox.value); // True if there's a skybox object and skyboxes are on
@@ -6018,6 +5995,12 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
+	if (player->viewrollangle != 0)
+	{
+		fixed_t rol = AngleFixed(player->viewrollangle);
+		atransform.rollangle = FIXED_TO_FLOAT(rol);
+		atransform.roll = true;
+	}
 	atransform.splitscreen = splitscreen;
 
 	gr_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
@@ -6059,6 +6042,10 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	HWD.pfnSetSpecialState(HWD_SET_SHADERS, cv_grshaders.value);
 	HWD.pfnSetShader(0);
 
+
+	if (HWR_IsWireframeMode())
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 1);
+
 	ps_numbspcalls.value.i = 0;
 	ps_numpolyobjects.value.i = 0;
 	PS_START_TIMING(ps_bsptime);
@@ -6080,7 +6067,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 		viewangle = localaiming2;
 
 	// Handle stuff when you are looking farther up or down.
-	if ((gr_aimingangle || cv_grfov.value+player->fovadd > 90*FRACUNIT))
+	if ((gr_aimingangle || cv_fov.value+player->fovadd > 90*FRACUNIT))
 	{
 		dup_viewangle += ANGLE_90;
 		HWR_ClearClipSegs();
@@ -6136,6 +6123,9 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	}
 
 
+	if (HWR_IsWireframeMode())
+		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 0);
+
 	HWD.pfnSetTransform(NULL);
 	HWD.pfnUnSetShader();
 
@@ -6156,11 +6146,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 // ==========================================================================
 
 
-static void CV_grFov_OnChange(void)
-{
-	if ((netgame || multiplayer) && !cv_debug && cv_grfov.value != 90*FRACUNIT)
-		CV_Set(&cv_grfov, cv_grfov.defaultvalue);
-}
 
 static void Command_GrStats_f(void)
 {
@@ -6172,9 +6157,6 @@ static void Command_GrStats_f(void)
 }
 
 
-// **************************************************************************
-//                                                            3D ENGINE SETUP
-// **************************************************************************
 
 // --------------------------------------------------------------------------
 // Add hardware engine commands & consvars
@@ -6183,18 +6165,32 @@ static void Command_GrStats_f(void)
 void HWR_AddCommands(void)
 {
 	CV_RegisterVar(&cv_grrounddown);
-	CV_RegisterVar(&cv_grfov);
 	CV_RegisterVar(&cv_grfiltermode);
 	CV_RegisterVar(&cv_granisotropicmode);
 	CV_RegisterVar(&cv_grcorrecttricks);
 	CV_RegisterVar(&cv_grsolvetjoin);
 	CV_RegisterVar(&cv_grbatching);
+	CV_RegisterVar(&cv_grwireframe);
 	CV_RegisterVar(&cv_grmodellighting);
 	CV_RegisterVar(&cv_glloadingscreen);
 	CV_RegisterVar(&cv_grshearing);
 	CV_RegisterVar(&cv_grshaders);
 	CV_RegisterVar(&cv_grfakecontrast);
 	CV_RegisterVar(&cv_grslopecontrast);
+	CV_RegisterVar(&cv_grgammablue);
+	CV_RegisterVar(&cv_grgammagreen);
+	CV_RegisterVar(&cv_grgammared);
+	CV_RegisterVar(&cv_grfovchange);
+#ifdef ALAM_LIGHTING
+	CV_RegisterVar(&cv_grstaticlighting);
+	CV_RegisterVar(&cv_grdynamiclighting);
+	CV_RegisterVar(&cv_grcoronas);
+	CV_RegisterVar(&cv_grcoronasize);
+#endif
+	CV_RegisterVar(&cv_grmd2);
+	CV_RegisterVar(&cv_grmodelinterpolation);
+	CV_RegisterVar(&cv_grspritebillboarding);
+	CV_RegisterVar(&cv_grskydome);
 }
 
 static inline void HWR_AddEngineCommands(void)
@@ -6406,7 +6402,7 @@ void HWR_DoPostProcessor(player_t *player)
 
 		Surf.PolyColor.s.alpha = 0xc0; // match software mode
 
-		HWD.pfnDrawPolygon(&Surf, v, 4, PF_Modulated|PF_Additive|PF_NoTexture|PF_NoDepthTest|PF_Clip|PF_NoZClip);
+		HWD.pfnDrawPolygon(&Surf, v, 4, PF_Modulated|PF_Additive|PF_NoTexture|PF_NoDepthTest);
 	}
 
 	// Capture the screen for intermission and screen waving
@@ -6421,7 +6417,7 @@ void HWR_DoPostProcessor(player_t *player)
 	{
 		// 10 by 10 grid. 2 coordinates (xy)
 		float v[SCREENVERTS][SCREENVERTS][2];
-		static double disStart = 0;
+		float disStart = (leveltime-1) + FIXED_TO_FLOAT(rendertimefrac);
 		UINT8 x, y;
 		INT32 WAVELENGTH;
 		INT32 AMPLITUDE;
@@ -6431,7 +6427,7 @@ void HWR_DoPostProcessor(player_t *player)
 		if (*type == postimg_water)
 		{
 			WAVELENGTH = 5; // Lower is longer
-			AMPLITUDE = 20; // Lower is bigger
+			AMPLITUDE = 40; // Lower is bigger
 			FREQUENCY = 8; // Lower is faster
 		}
 		else
@@ -6451,8 +6447,6 @@ void HWR_DoPostProcessor(player_t *player)
 			}
 		}
 		HWD.pfnPostImgRedraw(v);
-		if (!(paused || P_AutoPause()))
-		disStart += FIXED_TO_FLOAT(renderdeltatics);
 
 
 		// Capture the screen again for screen waving on the intermission

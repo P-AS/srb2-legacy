@@ -106,7 +106,7 @@ void Command_Numthinkers_f(void)
 
 	for (think = thinkercap.next; think != &thinkercap; think = think->next)
 	{
-		if (think->function.acp1 != action)
+		if (think->function != action)
 			continue;
 
 		count++;
@@ -143,7 +143,7 @@ void Command_CountMobjs_f(void)
 
 			for (th = thinkercap.next; th != &thinkercap; th = th->next)
 			{
-				if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+				if (th->function != (actionf_p1)P_MobjThinker)
 					continue;
 
 				if (((mobj_t *)th)->type == i)
@@ -163,7 +163,7 @@ void Command_CountMobjs_f(void)
 
 		for (th = thinkercap.next; th != &thinkercap; th = th->next)
 		{
-			if (th->function.acp1 != (actionf_p1)P_MobjThinker)
+			if (th->function != (actionf_p1)P_MobjThinker)
 				continue;
 
 			if (((mobj_t *)th)->type == i)
@@ -196,7 +196,7 @@ void P_AddThinker(thinker_t *thinker)
 
 	thinker->references = 0;    // killough 11/98: init reference counter to 0
 
-	thinker->cachable = (thinker->function.acp1 == (actionf_p1)P_MobjThinker);
+	thinker->cachable = (thinker->function == (actionf_p1)P_MobjThinker);
 }
 
 //
@@ -232,16 +232,17 @@ void P_RemoveThinkerDelayed(void *pthinker)
 			(next->prev = currentthinker = thinker->prev)->next = next;
 		}
 		R_DestroyLevelInterpolators(thinker);
-	if (thinker->cachable == true)
-	{
-		// put cachable thinkers in the mobj cache, so we can avoid allocations
-		((mobj_t *)thinker)->hnext = mobjcache;
-		mobjcache = (mobj_t *)thinker;
-	}
-	else
-	{
-		Z_Free(thinker);
-	}
+
+		if (thinker->cachable == true)
+		{
+			// put cachable thinkers in the mobj cache, so we can avoid allocations
+			((mobj_t *)thinker)->hnext = mobjcache;
+			mobjcache = (mobj_t *)thinker;
+		}
+		else
+		{
+			Z_Free(thinker);
+		}
 	}
 }
 
@@ -260,7 +261,7 @@ void P_RemoveThinkerDelayed(void *pthinker)
 void P_RemoveThinker(thinker_t *thinker)
 {
 	LUA_InvalidateUserdata(thinker);
-	thinker->function.acp1 = P_RemoveThinkerDelayed;
+	thinker->function = P_RemoveThinkerDelayed;
 }
 
 /*
@@ -310,8 +311,8 @@ static inline void P_RunThinkers(void)
 {
 	for (currentthinker = thinkercap.next; currentthinker != &thinkercap; currentthinker = currentthinker->next)
 	{
-		if (currentthinker->function.acp1)
-			currentthinker->function.acp1(currentthinker);
+		if (currentthinker->function)
+			currentthinker->function(currentthinker);
 	}
 }
 
@@ -579,7 +580,7 @@ static inline void P_DoCTFStuff(void)
 //
 void P_Ticker(boolean run)
 {
-	INT32 i; 
+	INT32 i;
 
 
 	//Increment jointime even if paused.
@@ -610,7 +611,7 @@ void P_Ticker(boolean run)
 	P_MapStart();
 
 	if (run)
-	{ 
+	{
 		R_UpdateMobjInterpolators();
 		if (demorecording)
 			G_WriteDemoTiccmd(&players[consoleplayer].cmd, 0);
@@ -646,7 +647,7 @@ void P_Ticker(boolean run)
 		P_EmeraldManager(); // Power stone mode
 
 	if (run)
-	{	
+	{
 		PS_START_TIMING(ps_thinkertime);
 		P_RunThinkers();
 		PS_STOP_TIMING(ps_thinkertime);
@@ -712,10 +713,19 @@ void P_Ticker(boolean run)
 			quake.x = M_RandomRange(-ir,ir);
 			quake.y = M_RandomRange(-ir,ir);
 			quake.z = M_RandomRange(-ir,ir);
+			if(cv_quakelive.value && !cv_fullscreen.value)
+				I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
+			ir >>= 2;
+			ir = M_RandomRange(-ir,ir);
+			if (ir < 0)
+				ir = ANGLE_MAX - FixedAngle(-ir);
+			else
+				ir = FixedAngle(ir);
+			quake.roll = ir;
 			--quake.time;
 		}
 		else
-			quake.x = quake.y = quake.z = 0;
+			quake.x = quake.y = quake.z = quake.roll = 0;
 
 		if (metalplayback)
 			G_ReadMetalTic(metalplayback);
@@ -728,7 +738,7 @@ void P_Ticker(boolean run)
 		if (modeattacking)
 			G_GhostTicker();
 	}
- 
+
  	if (run)
 	{
 		R_UpdateLevelInterpolators();
@@ -765,9 +775,9 @@ void P_Ticker(boolean run)
 		}
 	}
 
-	P_MapEnd(); 
+	P_MapEnd();
 
-	
+
 
 
 //	Z_CheckMemCleanup();
@@ -818,7 +828,7 @@ void P_PreTicker(INT32 frames)
 
 		P_UpdateSpecials();
 		P_RespawnSpecials();
-		
+
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();
 		R_ResetViewInterpolation(0);
@@ -826,4 +836,3 @@ void P_PreTicker(INT32 frames)
 		P_MapEnd();
 	}
 }
-

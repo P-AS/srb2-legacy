@@ -442,7 +442,7 @@ void SCR_DisplayTicRate(void)
 		V_DrawString(vid.width-(40*vid.dupx), h-(8*vid.dupy),
 			ticcntcolor|V_NOSCALESTART, va("%02d/%02u", totaltics, TICRATE));
 	}
-		lasttic = ontic;
+	lasttic = ontic;
 }
 
 void SCR_DisplayLocalPing(void)
