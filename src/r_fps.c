@@ -222,6 +222,7 @@ void R_InterpolateView(fixed_t frac)
 	// might want to recalculate the view sector every frame instead...
 	viewplayer = newview->player;
 	viewsector = R_PointInSubsector(viewx, viewy)->sector;
+	viewsky = newview->sky;
 
 	// well, this ain't pretty
 	if (newview == &sky1view_new || newview == &sky2view_new)
