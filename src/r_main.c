@@ -1287,7 +1287,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 	//newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	//viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(player, false, R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+	R_InterpolateView(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 }
 
 void R_SkyboxFrame(player_t *player)
@@ -1523,10 +1523,10 @@ void R_SkyboxFrame(player_t *player)
 	else
 		newview->sector = R_PointInSubsector(viewx, viewy)->sector;
 
-	//viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
-	//viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
+	//newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
+	//newview->cos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(player, true, R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+	R_InterpolateView(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 
 }
 

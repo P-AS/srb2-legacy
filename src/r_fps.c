@@ -120,17 +120,17 @@ static size_t interpolated_mobjs_capacity = 0;
 
 
 
-fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac)
+static fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac)
 {
 	return from + FixedMul(frac, to - from);
 }
 
-angle_t R_LerpAngle(angle_t from, angle_t to, fixed_t frac)
+static angle_t R_LerpAngle(angle_t from, angle_t to, fixed_t frac)
 {
 	return from + FixedMul(frac, to - from);
 }
 
-static vector2_t *R_LerpVector2(const vector2_t *from, const vector2_t *to, fixed_t frac, vector2_t *out)
+/*static vector2_t *R_LerpVector2(const vector2_t *from, const vector2_t *to, fixed_t frac, vector2_t *out)
 {
 	FV2_SubEx(to, from, out);
 	FV2_MulEx(out, frac, out);
@@ -144,24 +144,54 @@ static vector3_t *R_LerpVector3(const vector3_t *from, const vector3_t *to, fixe
 	FV3_MulEx(out, frac, out);
 	FV3_AddEx(from, out, out);
 	return out;
+}*/
+
+// recalc necessary stuff for mouseaiming
+// slopes are already calculated for the full possible view (which is 4*viewheight).
+// 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
+static void R_SetupFreelook(player_t *player, boolean skybox)
+{
+#ifndef HWRENDER
+	(void)player;
+	(void)skybox;
+#endif
+
+	// clip it in the case we are looking a hardware 90 degrees full aiming
+	// (lmps, network and use F12...)
+	if (rendermode == render_soft
+#ifdef HWRENDER
+		|| (rendermode == render_opengl
+			&& (cv_grshearing.value == 1
+			|| (cv_grshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
+#endif
+		)
+	{
+		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
+	}
+
+	centeryfrac = (viewheight/2)<<FRACBITS;
+
+	if (rendermode == render_soft)
+		centeryfrac += FixedMul(AIMINGTODY(aimingangle), FixedDiv(viewwidth<<FRACBITS, BASEVIDWIDTH<<FRACBITS));
+
+	centery = FixedInt(FixedRound(centeryfrac));
+
+	if (rendermode == render_soft)
+		yslope = &yslopetab[viewheight*8 - centery];
 }
 
-// taken from r_main.c
+#undef AIMINGTODY
 
-
-void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
+void R_InterpolateView(fixed_t frac)
 {
 	viewvars_t* prevview = oldview;
-	INT32 dy = 0;
+	boolean skybox = 0;
 	UINT8 i;
 
 	if (FIXED_TO_FLOAT(frac) < 0)
 		frac = 0;
 	if (frac > FRACUNIT)
 		frac = FRACUNIT;
-
-
-
 
 	if (viewcontext == VIEWCONTEXT_SKY1 || viewcontext == VIEWCONTEXT_PLAYER1)
 	{
@@ -178,16 +208,12 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 		prevview = newview;
 	}
 
+	viewx = R_LerpFixed(prevview->x, newview->x, frac);
+	viewy = R_LerpFixed(prevview->y, newview->y, frac);
+	viewz = R_LerpFixed(prevview->z, newview->z, frac);
 
-	viewx =  R_LerpFixed(prevview->x, newview->x, frac);
-	viewy =  R_LerpFixed(prevview->y, newview->y, frac);
-	viewz =  R_LerpFixed(prevview->z, newview->z, frac);
-
-	viewangle   =  R_LerpAngle(prevview->angle, newview->angle, frac);
-	aimingangle =  R_LerpAngle(prevview->aim, newview->aim, frac);
-
-
-
+	viewangle = R_LerpAngle(prevview->angle, newview->angle, frac);
+	aimingangle = R_LerpAngle(prevview->aim, newview->aim, frac);
 
 	viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
@@ -196,30 +222,14 @@ void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac)
 	// might want to recalculate the view sector every frame instead...
 	viewplayer = newview->player;
 	viewsector = R_PointInSubsector(viewx, viewy)->sector;
-	viewsky = newview->sky;
 
-
-	// clip it in the case we are looking a hardware 90 degrees full aiming
-	// (lmps, network and use F12...)
-	if (rendermode == render_soft
-#ifdef HWRENDER
-		|| cv_grshearing.value == 1
-		|| (cv_grshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))
-#endif
-		)
+	// well, this ain't pretty
+	if (newview == &sky1view_new || newview == &sky2view_new)
 	{
-		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
+		skybox = 1;
 	}
 
-	if (rendermode == render_soft)
-	{
-		dy = (AIMINGTODY(aimingangle)>>FRACBITS) * viewwidth/BASEVIDWIDTH;
-		yslope = &yslopetab[viewheight*8 - (viewheight/2 + dy)];
-	}
-
-	centery = (viewheight/2) + dy;
-	centeryfrac = centery<<FRACBITS;
-
+	R_SetupFreelook(newview->player, skybox);
 }
 
 void R_UpdateViewInterpolation(void)
@@ -298,13 +308,9 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 	out->z =  R_LerpFixed(mobj->old_z, mobj->z, frac);
 	out->angle = mobj->resetinterp ? mobj->angle : R_LerpAngle(mobj->old_angle, mobj->angle, frac);
 	if (mobj->scale == mobj->old_scale) // Tiny optimisation - scale is usually unchanging, so let's skip a lerp
-	{
 		out->scale = mobj->scale;
-	}
 	else
-	{
 		out->scale = R_LerpFixed(mobj->old_scale, mobj->scale, frac);
-	}
 }
 
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
@@ -519,7 +525,7 @@ void R_CreateInterpolator_Polyobj(thinker_t *thinker, polyobj_t *polyobj)
 	interp->polyobj.oldcy = interp->polyobj.bakcy = polyobj->centerPt.y;
 }
 
-void R_CreateInterpolator_DynSlope(thinker_t *thinker, pslope_t *slope)
+/*void R_CreateInterpolator_DynSlope(thinker_t *thinker, pslope_t *slope)
 {
 	levelinterpolator_t *interp = CreateInterpolator(LVLINTERP_DynSlope, thinker);
 	interp->dynslope.slope = slope;
@@ -531,7 +537,7 @@ void R_CreateInterpolator_DynSlope(thinker_t *thinker, pslope_t *slope)
 	FV2_Copy(&interp->dynslope.bakd, &slope->d);
 
 	interp->dynslope.oldzdelta = interp->dynslope.bakzdelta = slope->zdelta;
-}
+}*/
 
 
 void R_InitializeLevelInterpolators(void)
@@ -577,7 +583,7 @@ static void UpdateLevelInterpolatorState(levelinterpolator_t *interp)
 		interp->polyobj.bakcx = interp->polyobj.polyobj->centerPt.x;
 		interp->polyobj.bakcy = interp->polyobj.polyobj->centerPt.y;
 		break;
-    case LVLINTERP_DynSlope:
+    /*case LVLINTERP_DynSlope:
 		FV3_Copy(&interp->dynslope.oldo, &interp->dynslope.bako);
 		FV2_Copy(&interp->dynslope.oldd, &interp->dynslope.bakd);
 		interp->dynslope.oldzdelta = interp->dynslope.bakzdelta;
@@ -585,7 +591,7 @@ static void UpdateLevelInterpolatorState(levelinterpolator_t *interp)
 		FV3_Copy(&interp->dynslope.bako, &interp->dynslope.slope->o);
 		FV2_Copy(&interp->dynslope.bakd, &interp->dynslope.slope->d);
 		interp->dynslope.bakzdelta = interp->dynslope.slope->zdelta;
-		break;
+		break;*/
 	}
 }
 
@@ -663,11 +669,11 @@ void R_ApplyLevelInterpolators(fixed_t frac)
 			interp->polyobj.polyobj->centerPt.x = R_LerpFixed(interp->polyobj.oldcx, interp->polyobj.bakcx, frac);
 			interp->polyobj.polyobj->centerPt.y = R_LerpFixed(interp->polyobj.oldcy, interp->polyobj.bakcy, frac);
 			break;
-        case LVLINTERP_DynSlope:
+        /*case LVLINTERP_DynSlope:
 			R_LerpVector3(&interp->dynslope.oldo, &interp->dynslope.bako, frac, &interp->dynslope.slope->o);
 			R_LerpVector2(&interp->dynslope.oldd, &interp->dynslope.bakd, frac, &interp->dynslope.slope->d);
 			interp->dynslope.slope->zdelta = R_LerpFixed(interp->dynslope.oldzdelta, interp->dynslope.bakzdelta, frac);
-			break;
+			break;*/
 
 		}
 	}
@@ -717,11 +723,11 @@ void R_RestoreLevelInterpolators(void)
 			interp->polyobj.polyobj->centerPt.x = interp->polyobj.bakcx;
 			interp->polyobj.polyobj->centerPt.y = interp->polyobj.bakcy;
 			break;
-        case LVLINTERP_DynSlope:
+        /*case LVLINTERP_DynSlope:
 			FV3_Copy(&interp->dynslope.slope->o, &interp->dynslope.bako);
 			FV2_Copy(&interp->dynslope.slope->d, &interp->dynslope.bakd);
 			interp->dynslope.slope->zdelta = interp->dynslope.bakzdelta;
-			break;
+			break;*/
 		}
 	}
 }

@@ -1458,6 +1458,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_y = mobj->old_y2;
 	ghost->old_z = mobj->old_z2;
 	ghost->old_angle = mobj->old_angle2;
+	ghost->old_scale = mobj->old_scale2;
 
 	return ghost;
 }
