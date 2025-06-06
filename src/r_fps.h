@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2014 by Sonic Team Junior.
+// Copyright (C) 1999-2019 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -48,7 +48,8 @@ typedef struct {
 	angle_t aim;
 } viewvars_t;
 
-
+//extern viewvars_t oldview;
+extern viewvars_t *newview;
 
 typedef struct {
 	fixed_t x;
@@ -65,7 +66,7 @@ typedef enum {
 	LVLINTERP_SectorScroll,
 	LVLINTERP_SideScroll,
 	LVLINTERP_Polyobj,
-	LVLINTERP_DynSlope,
+	//LVLINTERP_DynSlope,
 } levelinterpolator_type_e;
 // Tagged union of a level interpolator
 typedef struct levelinterpolator_s {
@@ -95,32 +96,34 @@ typedef struct levelinterpolator_s {
 			size_t vertices_size;
 			fixed_t oldcx, oldcy, bakcx, bakcy;
 		} polyobj;
-        struct {
+        /*struct {
 			pslope_t *slope;
 			vector3_t oldo, bako;
 			vector2_t oldd, bakd;
 			fixed_t oldzdelta, bakzdelta;
-		} dynslope;
+		} dynslope;*/
 	};
 } levelinterpolator_t;
 
 
-//extern viewvars_t oldview;
-extern viewvars_t *newview;
 
-void R_InterpolateView(player_t *player, boolean skybox, fixed_t frac);
+// Interpolates the current view variables (r_state.h) against the selected view context in R_SetViewContext
+void R_InterpolateView(fixed_t frac);
+// Buffer the current new views into the old views. Call once after each real tic.
 void R_UpdateViewInterpolation(void);
-void R_SetViewContext(enum viewcontext_e _viewcontext);
+// Reset the view states (e.g. after level load) so R_InterpolateView doesn't interpolate invalid data
 void R_ResetViewInterpolation(UINT8 p);
+// Set the current view context (the viewvars pointed to by newview)
+void R_SetViewContext(enum viewcontext_e _viewcontext);
+
+// Evaluate the interpolated mobj state for the given mobj
 void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out);
+// Evaluate the interpolated mobj state for the given precipmobj
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out);
 
 void R_CreateInterpolator_SectorPlane(thinker_t *thinker, sector_t *sector, boolean ceiling);
-
 void R_CreateInterpolator_SectorScroll(thinker_t *thinker, sector_t *sector, boolean ceiling);
-
 void R_CreateInterpolator_SideScroll(thinker_t *thinker, side_t *side);
-
 void R_CreateInterpolator_Polyobj(thinker_t *thinker, polyobj_t *polyobj);
 
 
@@ -148,9 +151,5 @@ void R_RemoveMobjInterpolator(mobj_t *mobj);
 void R_UpdateMobjInterpolators(void);
 void R_ResetMobjInterpolationState(mobj_t *mobj);
 void R_ResetPrecipitationMobjInterpolationState(precipmobj_t *mobj);
-
-
-fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac);
-angle_t R_LerpAngle(angle_t from, angle_t to, fixed_t frac);
 
 #endif

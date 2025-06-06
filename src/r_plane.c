@@ -160,6 +160,47 @@ void R_PortalRestoreClipValues(INT32 start, INT32 end, INT16 *ceil, INT16 *floor
 }
 
 //
+// Water ripple effect!!
+// Needs the height of the plane, and the vertical position of the span.
+// Sets planeripple.xfrac and planeripple.yfrac, added to ds_xfrac and ds_yfrac, if the span is not tilted.
+//
+
+#ifndef NOWATER
+INT32 ds_bgofs;
+INT32 ds_waterofs;
+
+struct
+{
+	INT32 offset;
+	fixed_t xfrac, yfrac;
+	boolean active;
+} planeripple;
+
+static void R_CalculatePlaneRipple(visplane_t *plane, INT32 y, fixed_t plheight, boolean calcfrac)
+{
+	fixed_t distance = FixedMul(plheight, yslope[y]);
+	const INT32 yay = (planeripple.offset + (distance>>9)) & 8191;
+
+	// ripples da water texture
+	ds_bgofs = FixedDiv(FINESINE(yay), (1<<12) + (distance>>11))>>FRACBITS;
+
+	if (calcfrac)
+	{
+		angle_t angle = (plane->viewangle + plane->plangle)>>ANGLETOFINESHIFT;
+		angle = (angle + 2048) & 8191; // 90 degrees
+		planeripple.xfrac = FixedMul(FINECOSINE(angle), (ds_bgofs<<FRACBITS));
+		planeripple.yfrac = FixedMul(FINESINE(angle), (ds_bgofs<<FRACBITS));
+	}
+}
+
+static void R_UpdatePlaneRipple(void)
+{
+	ds_waterofs = (leveltime & 1)*16384;
+	planeripple.offset = ((leveltime-1)*140) + ((rendertimefrac*140) / FRACUNIT);
+}
+#endif
+
+//
 // R_MapPlane
 //
 // Uses global vars:
@@ -171,13 +212,6 @@ void R_PortalRestoreClipValues(INT32 start, INT32 end, INT16 *ceil, INT16 *floor
 //  viewsin
 //  viewcos
 //  viewheight
-
-#ifndef NOWATER
-static INT32 bgofs;
-static INT32 wtofs=0;
-static INT32 waterofs;
-static boolean itswater;
-#endif
 
 #ifndef NOWATER
 static void R_DrawTranslucentWaterSpan_8(void)
@@ -200,13 +234,13 @@ static void R_DrawTranslucentWaterSpan_8(void)
 	// bit per power of two (obviously)
 	// Ok, because I was able to eliminate the variable spot below, this function is now FASTER
 	// than the original span renderer. Whodathunkit?
-	xposition = ds_xfrac << nflatshiftup; yposition = (ds_yfrac + waterofs) << nflatshiftup;
+	xposition = ds_xfrac << nflatshiftup; yposition = (ds_yfrac + ds_waterofs) << nflatshiftup;
 	xstep = ds_xstep << nflatshiftup; ystep = ds_ystep << nflatshiftup;
 
 	source = ds_source;
 	colormap = ds_colormap;
 	dest = ylookup[ds_y] + columnofs[ds_x1];
-	dsrc = screens[1] + (ds_y+bgofs)*vid.width + ds_x1;
+	dsrc = screens[1] + (ds_y+ds_bgofs)*vid.width + ds_x1;
 	count = ds_x2 - ds_x1 + 1;
 
 	while (count >= 8)
@@ -261,7 +295,7 @@ static void R_DrawTranslucentWaterSpan_8(void)
 void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 {
 	angle_t angle, planecos, planesin;
-	fixed_t distance, span;
+	fixed_t distance = 0, span;
 	size_t pindex;
 
 #ifdef RANGECHECK
@@ -269,65 +303,81 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 		I_Error("R_MapPlane: %d, %d at %d", x1, x2, y);
 #endif
 
-	// from r_splats's R_RenderFloorSplat
-	if (x1 >= vid.width) x1 = vid.width - 1;
+	if (x1 >= vid.width)
+		x1 = vid.width - 1;
 
-	angle = (currentplane->viewangle + currentplane->plangle)>>ANGLETOFINESHIFT;
-	planecos = FINECOSINE(angle);
-	planesin = FINESINE(angle);
-
-	if (planeheight != cachedheight[y])
-	{
-		cachedheight[y] = planeheight;
-		distance = cacheddistance[y] = FixedMul(planeheight, yslope[y]);
-		ds_xstep = cachedxstep[y] = FixedMul(distance, basexscale);
-		ds_ystep = cachedystep[y] = FixedMul(distance, baseyscale);
-
-		if ((span = abs(centery-y)))
+	if (!currentplane->slope)
 		{
-			ds_xstep = cachedxstep[y] = FixedMul(planesin, planeheight) / span;
-			ds_ystep = cachedystep[y] = FixedMul(planecos, planeheight) / span;
+			angle = (currentplane->viewangle + currentplane->plangle)>>ANGLETOFINESHIFT;
+			planecos = FINECOSINE(angle);
+			planesin = FINESINE(angle);
+	
+			if (planeheight != cachedheight[y])
+			{
+				cachedheight[y] = planeheight;
+				cacheddistance[y] = distance = FixedMul(planeheight, yslope[y]);
+				span = abs(centery - y);
+	
+				if (span) // don't divide by zero
+				{
+					ds_xstep = FixedMul(planesin, planeheight) / span;
+					ds_ystep = FixedMul(planecos, planeheight) / span;
+				}
+				else
+				{
+					ds_xstep = FixedMul(distance, basexscale);
+					ds_ystep = FixedMul(distance, baseyscale);
+				}
+	
+				cachedxstep[y] = ds_xstep;
+				cachedystep[y] = ds_ystep;
+			}
+			else
+			{
+				distance = cacheddistance[y];
+				ds_xstep = cachedxstep[y];
+				ds_ystep = cachedystep[y];
+			}
+	
+			ds_xfrac = xoffs + FixedMul(planecos, distance) + (x1 - centerx) * ds_xstep;
+			ds_yfrac = yoffs - FixedMul(planesin, distance) + (x1 - centerx) * ds_ystep;
+		}	
+
+	#ifndef NOWATER
+	if (planeripple.active)
+	{
+		// Needed for ds_bgofs
+		R_CalculatePlaneRipple(currentplane, y, planeheight, (!currentplane->slope));
+
+		if (currentplane->slope)
+		{
+			ds_sup = &ds_su[y];
+			ds_svp = &ds_sv[y];
+			ds_szp = &ds_sz[y];
 		}
-	}
-	else
-	{
-		distance = cacheddistance[y];
-		ds_xstep = cachedxstep[y];
-		ds_ystep = cachedystep[y];
-	}
+		else
+		{
+			ds_xfrac += planeripple.xfrac;
+			ds_yfrac += planeripple.yfrac;
+		}
 
-	ds_xfrac = xoffs + FixedMul(planecos, distance) + (x1 - centerx) * ds_xstep;
-	ds_yfrac = yoffs - FixedMul(planesin, distance) + (x1 - centerx) * ds_ystep;
-
-#ifndef NOWATER
-	if (itswater)
-	{
-		const INT32 yay = (wtofs + (distance>>9) ) & 8191;
-		// ripples da water texture
-		bgofs = FixedDiv(FINESINE(yay), (1<<12) + (distance>>11))>>FRACBITS;
-		angle = (currentplane->viewangle + currentplane->plangle + xtoviewangle[x1])>>ANGLETOFINESHIFT;
-
-		angle = (angle + 2048) & 8191;  // 90 degrees
-		ds_xfrac += FixedMul(FINECOSINE(angle), (bgofs<<FRACBITS));
-		ds_yfrac += FixedMul(FINESINE(angle), (bgofs<<FRACBITS));
-
-		if (y+bgofs>=viewheight)
-			bgofs = viewheight-y-1;
-		if (y+bgofs<0)
-			bgofs = -y;
+		if ((y + ds_bgofs) >= viewheight)
+			ds_bgofs = viewheight-y-1;
+		if ((y + ds_bgofs) < 0)
+			ds_bgofs = -y;
 	}
 #endif
-
-	pindex = distance >> LIGHTZSHIFT;
-	if (pindex >= MAXLIGHTZ)
-		pindex = MAXLIGHTZ - 1;
 
 
 	if (currentplane->slope)
 		ds_colormap = colormaps;
 	else
-
-	ds_colormap = planezlight[pindex];
+	{
+		pindex = distance >> LIGHTZSHIFT;
+		if (pindex >= MAXLIGHTZ)
+			pindex = MAXLIGHTZ - 1;
+		ds_colormap = planezlight[pindex];
+	}
 
 	if (currentplane->extra_colormap)
 		ds_colormap = currentplane->extra_colormap->colormap + (ds_colormap - colormaps);
@@ -701,10 +751,104 @@ void R_DrawPlanes(void)
 		}
 	}
 #ifndef NOWATER
-	waterofs = (leveltime & 1)*16384;
-	wtofs = leveltime * 140;
+	R_UpdatePlaneRipple();
 #endif
 }
+
+// Potentially override other stuff for now cus we're mean. :< But draw a slope plane!
+// I copied ZDoom's code and adapted it to SRB2... -Red
+void R_CalculateSlopeVectors(pslope_t *slope, fixed_t planeviewx, fixed_t planeviewy, fixed_t planeviewz, fixed_t planexscale, fixed_t planeyscale, fixed_t planexoffset, fixed_t planeyoffset, angle_t planeviewangle, angle_t planeangle, float fudge)
+{
+	floatv3_t p, m, n;
+	float ang;
+	float vx, vy, vz;
+	float xscale = FIXED_TO_FLOAT(planexscale);
+	float yscale = FIXED_TO_FLOAT(planeyscale);
+	// compiler complains when P_GetSlopeZAt is used in FLOAT_TO_FIXED directly
+	// use this as a temp var to store P_GetSlopeZAt's return value each time
+	fixed_t temp;
+
+	vx = FIXED_TO_FLOAT(planeviewx+planexoffset);
+	vy = FIXED_TO_FLOAT(planeviewy-planeyoffset);
+	vz = FIXED_TO_FLOAT(planeviewz);
+
+	temp = P_GetZAt(slope, planeviewx, planeviewy);
+	zeroheight = FIXED_TO_FLOAT(temp);
+
+	// p is the texture origin in view space
+	// Don't add in the offsets at this stage, because doing so can result in
+	// errors if the flat is rotated.
+	ang = ANG2RAD(ANGLE_270 - planeviewangle);
+	p.x = vx * cos(ang) - vy * sin(ang);
+	p.z = vx * sin(ang) + vy * cos(ang);
+	temp = P_GetZAt(slope, -planexoffset, planeyoffset);
+	p.y = FIXED_TO_FLOAT(temp) - vz;
+
+	// m is the v direction vector in view space
+	ang = ANG2RAD(ANGLE_180 - (planeviewangle + planeangle));
+	m.x = yscale * cos(ang);
+	m.z = yscale * sin(ang);
+
+	// n is the u direction vector in view space
+	n.x = xscale * sin(ang);
+	n.z = -xscale * cos(ang);
+
+	ang = ANG2RAD(planeangle);
+	temp = P_GetZAt(slope, planeviewx + yscale * FLOAT_TO_FIXED(sin(ang)), planeviewy + yscale * FLOAT_TO_FIXED(cos(ang)));
+	m.y = FIXED_TO_FLOAT(temp) - zeroheight;
+	temp = P_GetZAt(slope, planeviewx + xscale * FLOAT_TO_FIXED(cos(ang)), planeviewy - xscale * FLOAT_TO_FIXED(sin(ang)));
+	n.y = FIXED_TO_FLOAT(temp) - zeroheight;
+
+	m.x /= fudge;
+	m.y /= fudge;
+	m.z /= fudge;
+
+	n.x *= fudge;
+	n.y *= fudge;
+	n.z *= fudge;
+
+	// Eh. I tried making this stuff fixed-point and it exploded on me. Here's a macro for the only floating-point vector function I recall using.
+#define CROSS(d, v1, v2) \
+d->x = (v1.y * v2.z) - (v1.z * v2.y);\
+d->y = (v1.z * v2.x) - (v1.x * v2.z);\
+d->z = (v1.x * v2.y) - (v1.y * v2.x)
+		CROSS(ds_sup, p, m);
+		CROSS(ds_svp, p, n);
+		CROSS(ds_szp, m, n);
+#undef CROSS
+
+	ds_sup->z *= focallengthf;
+	ds_svp->z *= focallengthf;
+	ds_szp->z *= focallengthf;
+
+	// Premultiply the texture vectors with the scale factors
+#define SFMULT 65536.f
+	ds_sup->x *= (SFMULT * (1<<nflatshiftup));
+	ds_sup->y *= (SFMULT * (1<<nflatshiftup));
+	ds_sup->z *= (SFMULT * (1<<nflatshiftup));
+	ds_svp->x *= (SFMULT * (1<<nflatshiftup));
+	ds_svp->y *= (SFMULT * (1<<nflatshiftup));
+	ds_svp->z *= (SFMULT * (1<<nflatshiftup));
+#undef SFMULT
+}
+
+static void R_SetSlopePlaneVectors(visplane_t *pl, INT32 y, fixed_t xoff, fixed_t yoff, float fudge)
+{
+	if (ds_su == NULL)
+		ds_su = Z_Malloc(sizeof(*ds_su) * vid.height, PU_STATIC, NULL);
+	if (ds_sv == NULL)
+		ds_sv = Z_Malloc(sizeof(*ds_sv) * vid.height, PU_STATIC, NULL);
+	if (ds_sz == NULL)
+		ds_sz = Z_Malloc(sizeof(*ds_sz) * vid.height, PU_STATIC, NULL);
+
+	ds_sup = &ds_su[y];
+	ds_svp = &ds_sv[y];
+	ds_szp = &ds_sz[y];
+
+	R_CalculateSlopeVectors(pl->slope, pl->viewx, pl->viewy, pl->viewz, FRACUNIT, FRACUNIT, xoff, yoff, pl->viewangle, pl->plangle, fudge);
+}
+
+
 
 void R_DrawSinglePlane(visplane_t *pl)
 {
@@ -718,7 +862,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 		return;
 
 #ifndef NOWATER
-	itswater = false;
+	planeripple.active = false;
 #endif
 	spanfunc = basespanfunc;
 
@@ -807,11 +951,11 @@ void R_DrawSinglePlane(visplane_t *pl)
 		else light = (pl->lightlevel >> LIGHTSEGSHIFT);
 
 #ifndef NOWATER
-		if (pl->ffloor->flags & FF_RIPPLE && !pl->slope)
+	if (pl->ffloor->flags & FF_RIPPLE)
 		{
 			INT32 top, bottom;
 
-			itswater = true;
+			planeripple.active = true;
 			if (spanfunc == R_DrawTranslucentSpan_8)
 			{
 				spanfunc = R_DrawTranslucentWaterSpan_8;
@@ -911,16 +1055,10 @@ void R_DrawSinglePlane(visplane_t *pl)
 		light = 0;
 
 
-	if (pl->slope) {
-		// Potentially override other stuff for now cus we're mean. :< But draw a slope plane!
-		// I copied ZDoom's code and adapted it to SRB2... -Red
-		floatv3_t p, m, n;
-		float ang;
-		float vx, vy, vz;
-		float fudge;
-		// compiler complains when P_GetZAt is used in FLOAT_TO_FIXED directly
-		// use this as a temp var to store P_GetZAt's return value each time
-		fixed_t temp;
+	if (pl->slope)
+	{
+		float fudgecanyon = 0;
+
 
 		xoffs &= ((1 << (32-nflatshiftup))-1);
 		yoffs &= ((1 << (32-nflatshiftup))-1);
@@ -929,76 +1067,38 @@ void R_DrawSinglePlane(visplane_t *pl)
 		yoffs += (pl->slope->o.y + (1 << (31-nflatshiftup))) & ~((1 << (32-nflatshiftup))-1);
 
 		// Okay, look, don't ask me why this works, but without this setup there's a disgusting-looking misalignment with the textures. -Red
-		fudge = ((1<<nflatshiftup)+1.0f)/(1<<nflatshiftup);
+		fudgecanyon = ((1<<nflatshiftup)+1.0f)/(1<<nflatshiftup);
 
-		xoffs = (fixed_t)(xoffs*fudge);
-		yoffs = (fixed_t)(yoffs/fudge);
+		xoffs = (fixed_t)(xoffs*fudgecanyon);
+		yoffs = (fixed_t)(yoffs/fudgecanyon);
 
-		vx = FIXED_TO_FLOAT(pl->viewx+xoffs);
-		vy = FIXED_TO_FLOAT(pl->viewy-yoffs);
-		vz = FIXED_TO_FLOAT(pl->viewz);
+		ds_sup = &ds_su[0];
+		ds_svp = &ds_sv[0];
+		ds_szp = &ds_sz[0];
 
-		temp = P_GetZAt(pl->slope, pl->viewx, pl->viewy);
-		zeroheight = FIXED_TO_FLOAT(temp);
+#ifndef NOWATER
+	if (planeripple.active)
+		{
+			fixed_t plheight = abs(P_GetZAt(pl->slope, pl->viewx, pl->viewy) - pl->viewz);
 
-#define ANG2RAD(angle) ((float)((angle)*M_PI)/ANGLE_180)
+			R_PlaneBounds(pl);
 
-		// p is the texture origin in view space
-		// Don't add in the offsets at this stage, because doing so can result in
-		// errors if the flat is rotated.
-		ang = ANG2RAD(ANGLE_270 - pl->viewangle);
-		p.x = vx * cos(ang) - vy * sin(ang);
-		p.z = vx * sin(ang) + vy * cos(ang);
-		temp = P_GetZAt(pl->slope, -xoffs, yoffs);
-		p.y = FIXED_TO_FLOAT(temp) - vz;
+			for (x = pl->high; x < pl->low; x++)
+			{
+				R_CalculatePlaneRipple(pl, x, plheight, true);
+				R_SetSlopePlaneVectors(pl, x, (xoffs + planeripple.xfrac), (yoffs + planeripple.yfrac), fudgecanyon);
+			}
+		}
+		else
+#endif
+		R_SetSlopePlaneVectors(pl, 0, xoffs, yoffs, fudgecanyon);
 
-		// m is the v direction vector in view space
-		ang = ANG2RAD(ANGLE_180 - (pl->viewangle + pl->plangle));
-		m.x = cos(ang);
-		m.z = sin(ang);
-
-		// n is the u direction vector in view space
-		n.x = sin(ang);
-		n.z = -cos(ang);
-
-		ang = ANG2RAD(pl->plangle);
-		temp = P_GetZAt(pl->slope, pl->viewx + FLOAT_TO_FIXED(sin(ang)), pl->viewy + FLOAT_TO_FIXED(cos(ang)));
-		m.y = FIXED_TO_FLOAT(temp) - zeroheight;
-		temp = P_GetZAt(pl->slope, pl->viewx + FLOAT_TO_FIXED(cos(ang)), pl->viewy - FLOAT_TO_FIXED(sin(ang)));
-		n.y = FIXED_TO_FLOAT(temp) - zeroheight;
-
-		m.x /= fudge;
-		m.y /= fudge;
-		m.z /= fudge;
-
-		n.x *= fudge;
-		n.y *= fudge;
-		n.z *= fudge;
-
-		// Eh. I tried making this stuff fixed-point and it exploded on me. Here's a macro for the only floating-point vector function I recall using.
-#define CROSS(d, v1, v2) \
-   d.x = (v1.y * v2.z) - (v1.z * v2.y);\
-   d.y = (v1.z * v2.x) - (v1.x * v2.z);\
-   d.z = (v1.x * v2.y) - (v1.y * v2.x)
-		CROSS(ds_su, p, m);
-		CROSS(ds_sv, p, n);
-		CROSS(ds_sz, m, n);
-#undef CROSS
-
-		ds_su.z *= focallengthf;
-		ds_sv.z *= focallengthf;
-		ds_sz.z *= focallengthf;
-
-		// Premultiply the texture vectors with the scale factors
-#define SFMULT 65536.f*(1<<nflatshiftup)
-		ds_su.x *= SFMULT;
-		ds_su.y *= SFMULT;
-		ds_su.z *= SFMULT;
-		ds_sv.x *= SFMULT;
-		ds_sv.y *= SFMULT;
-		ds_sv.z *= SFMULT;
-#undef SFMULT
-
+		
+#ifndef NOWATER
+		if (spanfunc == R_DrawTranslucentWaterSpan_8)
+			spanfunc = R_DrawTiltedTranslucentWaterSpan_8;
+		else
+#endif
 		if (spanfunc == R_DrawTranslucentSpan_8)
 			spanfunc = R_DrawTiltedTranslucentSpan_8;
 		else if (spanfunc == splatfunc)

@@ -3635,6 +3635,15 @@ static void HandleServerInfo(SINT8 node)
 
 	SL_InsertServer(&netbuffer->u.serverinfo, node);
 }
+
+static void HandlePlayerInfo(SINT8 node)
+{
+	(void)node;
+
+	INT32 i;
+	for (i = 0; i < MAXPLAYERS; i++)
+		playerinfo[i] = netbuffer->u.playerinfo[i];
+}
 #endif
 
 /** Handles a packet received from a node that isn't in game
@@ -3822,6 +3831,10 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 		case PT_CLIENTCMD:
 			break; // This is not an "unknown packet"
+
+		case PT_PLAYERINFO: 
+			HandlePlayerInfo(node);
+		break; 
 
 		case PT_SERVERTICS:
 			// Do not remove my own server (we have just get a out of order packet)
@@ -4327,8 +4340,8 @@ FILESTAMP
 		}
 #endif
 
-		if (netbuffer->packettype == PT_PLAYERINFO)
-			continue; // We do nothing with PLAYERINFO, that's for the MS browser.
+		/*if (netbuffer->packettype == PT_PLAYERINFO)
+			continue; // We do nothing with PLAYERINFO, that's for the MS browser.*/
 
 		// Packet received from someone already playing
 		if (nodeingame[node])

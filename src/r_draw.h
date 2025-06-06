@@ -57,7 +57,8 @@ extern INT32 dc_texheight;
 extern INT32 ds_y, ds_x1, ds_x2;
 extern lighttable_t *ds_colormap;
 extern fixed_t ds_xfrac, ds_yfrac, ds_xstep, ds_ystep;
-extern UINT8 *ds_source; // start of a 64*64 tile image
+extern INT32 ds_waterofs, ds_bgofs;
+extern UINT8 *ds_source; // points to the start of a flat
 extern UINT8 *ds_transmap;
 
 
@@ -65,8 +66,9 @@ typedef struct {
 	float x, y, z;
 } floatv3_t;
 
-extern pslope_t *ds_slope; // Current slope being used
-extern floatv3_t ds_su, ds_sv, ds_sz; // Vectors for... stuff?
+// Vectors for Software's tilted slope drawers
+extern floatv3_t *ds_su, *ds_sv, *ds_sz;
+extern floatv3_t *ds_sup, *ds_svp, *ds_szp;
 extern float focallengthf, zeroheight;
 
 
@@ -111,6 +113,7 @@ void R_InitTranslationTables(void);
 UINT8* R_GetTranslationColormap(INT32 skinnum, skincolors_t color, UINT8 flags);
 void R_FlushTranslationColormapCache(void);
 UINT8 R_GetColorByName(const char *name);
+extern UINT8 colortranslations[MAXTRANSLATIONS][16];
 
 // Custom player skin translation
 void R_InitViewBuffer(INT32 width, INT32 height);
@@ -140,6 +143,9 @@ void R_DrawSpan_8(void);
 void R_CalcTiltedLighting(fixed_t start, fixed_t end);
 void R_DrawTiltedSpan_8(void);
 void R_DrawTiltedTranslucentSpan_8(void);
+#ifndef NOWATER
+void R_DrawTiltedTranslucentWaterSpan_8(void);
+#endif
 void R_DrawTiltedSplat_8(void);
 void R_DrawSplat_8(void);
 void R_DrawTranslucentSplat_8(void);

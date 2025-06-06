@@ -10,5 +10,4 @@ hw_batching.c
 hw_clip.c
 hw_md2.c
 hw_cache.c
-hw_trick.c
 r_opengl/r_opengl.c

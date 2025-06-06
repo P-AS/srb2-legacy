@@ -32,6 +32,10 @@ extern fixed_t fovtan;
 // WARNING: a should be unsigned but to add with 2048, it isn't!
 #define AIMINGTODY(a) FixedDiv((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160), fovtan)
 
+
+#define MINFOV 60
+#define MAXFOV 179
+
 extern size_t validcount, linecount, loopcount, framecount; 
 
 // The fraction of a tic being drawn (for interpolation between two tics)
@@ -42,6 +46,8 @@ extern fixed_t rendertimefrac_unpaused;
 extern fixed_t renderdeltatics;
 // The current render is a new logical tic
 extern boolean renderisnewtic;
+
+INT32 R_GetHudUncap(boolean menu);
 
 
 
@@ -133,7 +139,7 @@ extern ps_metric_t ps_numpolyobjects;
 // REFRESH - the actual rendering functions.
 //
 
-extern consvar_t cv_showhud, cv_translucenthud;
+extern consvar_t cv_showhud, cv_translucenthud, cv_uncappedhud;
 extern consvar_t cv_homremoval;
 extern consvar_t cv_chasecam, cv_chasecam2;
 extern consvar_t cv_flipcam, cv_flipcam2;
@@ -141,13 +147,9 @@ extern consvar_t cv_shadow, cv_shadowoffs;
 extern consvar_t cv_ffloorclip;
 extern consvar_t cv_translucency;
 extern consvar_t cv_precipdensity, cv_drawdist, cv_drawdist_nights, cv_drawdist_precip;
-extern consvar_t cv_fov;
+extern consvar_t cv_fov, cv_fovchange;
 extern consvar_t cv_skybox;
 extern consvar_t cv_tailspickup; 
-
-// Uncapped Framerate
-
-
 
 
 // Called by startup code.
@@ -163,6 +165,8 @@ void R_ApplyViewMorph(void);
 
 // do it (sometimes explicitly called)
 void R_ExecuteSetViewSize(void);
+
+fixed_t R_GetPlayerFov(player_t *player);
 
 void R_SkyboxFrame(player_t *player);
 
