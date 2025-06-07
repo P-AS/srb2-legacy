@@ -1162,16 +1162,16 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
 							 NULL, "Saturation",          &cv_globalsaturation, 60},   
     {IT_SUBMENU|IT_STRING, NULL, "Advanced Color Settings...", &OP_ColorOptionsDef, 70},
-	{IT_STRING | IT_CVAR,    NULL, "Draw Distance",       &cv_drawdist, 80},
-	{IT_STRING | IT_CVAR,    NULL, "NiGHTS Draw Dist",    &cv_drawdist_nights, 90},
-	{IT_STRING | IT_CVAR,    NULL, "Precip Draw Dist",    &cv_drawdist_precip, 100},
-	{IT_STRING | IT_CVAR,    NULL, "Precip Density",      &cv_precipdensity, 110},
+	{IT_STRING | IT_CVAR,    NULL, "Draw Distance",       &cv_drawdist, 85},
+	{IT_STRING | IT_CVAR,    NULL, "NiGHTS Draw Dist",    &cv_drawdist_nights, 95},
+	{IT_STRING | IT_CVAR,    NULL, "Precip Draw Dist",    &cv_drawdist_precip, 105},
+	{IT_STRING | IT_CVAR,    NULL, "Precip Density",      &cv_precipdensity, 115},
 
-	{IT_STRING | IT_CVAR,    NULL, "Show FPS",            &cv_ticrate,    120},
-	{IT_STRING | IT_CVAR,    NULL, "Show TPS",            &cv_tpscounter,    130},
-	{IT_STRING | IT_CVAR,    NULL, "Clear Before Redraw", &cv_homremoval, 140},
-	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    150},
-	{IT_STRING | IT_CVAR,    NULL, "FPS Cap",       &cv_fpscap, 160},
+	{IT_STRING | IT_CVAR,    NULL, "Show FPS",            &cv_ticrate,    125},
+	{IT_STRING | IT_CVAR,    NULL, "Show TPS",            &cv_tpscounter,    135},
+	{IT_STRING | IT_CVAR,    NULL, "Clear Before Redraw", &cv_homremoval, 145},
+	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    155},
+	{IT_STRING | IT_CVAR,    NULL, "FPS Cap",       &cv_fpscap, 165},
 };
 
 static menuitem_t OP_ColorOptionsMenu[] =
@@ -8447,6 +8447,16 @@ static void M_DrawColorMenu(void)
 	x = currentMenu->x;
 	y = currentMenu->y;
 
+	V_DrawFill(19       , y-4, 47, 1, 128);
+	V_DrawFill(19+(  47), y-4, 47, 1, 104);
+	V_DrawFill(19+(2*47), y-4, 47, 1, 184);
+	V_DrawFill(19+(3*47), y-4, 47, 1, 247);
+	V_DrawFill(19+(4*47), y-4, 47, 1, 249);
+	V_DrawFill(19+(5*47), y-4, 46, 1, 193);
+
+	V_DrawFill(300, y-4, 1, 1, 26);
+	V_DrawFill(19, y-3, 282, 1, 26);
+
 	if ((currentMenu->menuitems[itemOn].alphaKey*2 - currentMenu->menuitems[0].alphaKey*2) <= scrollareaheight)
 		tempcentery = currentMenu->y - currentMenu->menuitems[0].alphaKey*2;
 	else if ((currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 - currentMenu->menuitems[itemOn].alphaKey*2) <= scrollareaheight)
@@ -8509,6 +8519,13 @@ static void M_DrawColorMenu(void)
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_SLIDER:
+								// draws the little arrows on the left and right
+								// to indicate that it is changeable
+								if (i == itemOn)
+								{
+									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
+								}
 								M_DrawSlider(x, y, cv);
 							case IT_CV_NOPRINT: // color use this
 							case IT_CV_INVISSLIDER: // monitor toggles use this
@@ -8524,6 +8541,13 @@ static void M_DrawColorMenu(void)
 								y += 16;
 								break;
 							default:
+								// draws the little arrows on the left and right
+								// to indicate that it is changeable
+								if (i == itemOn)
+								{
+									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
+								}
 								V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
 								break;
@@ -8539,8 +8563,6 @@ static void M_DrawColorMenu(void)
 				break;
 			case IT_HEADERTEXT:
 				V_DrawString(x-16, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
-				//V_DrawFill(19, y, 281, 9, currentMenu->menuitems[i+1].alphaKey);
-				//V_DrawFill(300, y, 1, 9, 26);
 				//M_DrawLevelPlatterHeader(y - (lsheadingheight - 12), currentMenu->menuitems[i].text, false);
 				break;
 		}
