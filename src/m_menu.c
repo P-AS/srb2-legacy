@@ -3297,8 +3297,8 @@ static void M_DrawGenericMenu(void)
 								// to indicate that it is changeable
 								if (i == itemOn)
 								{
-									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
-									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
 								}
 								M_DrawSlider(x, y, cv);
 							case IT_CV_NOPRINT: // color use this
@@ -3317,8 +3317,8 @@ static void M_DrawGenericMenu(void)
 								// to indicate that it is changeable
 								if (i == itemOn)
 								{
-									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
-									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
 								}
 								V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0), y,
 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
@@ -3589,8 +3589,8 @@ static void M_DrawCenteredMenu(void)
 								// to indicate that it is changeable
 								if (i == itemOn)
 								{
-									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
-									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
 								}
 								M_DrawSlider(x, y, cv);
 							case IT_CV_NOPRINT: // color use this
@@ -3608,8 +3608,8 @@ static void M_DrawCenteredMenu(void)
 								// to indicate that it is changeable
 								if (i == itemOn)
 								{
-									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
-									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
 								}
 								V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0), y,
 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
@@ -8044,8 +8044,8 @@ static void M_DrawGenericScrollMenu(void)
 								// to indicate that it is changeable
 								if (i == itemOn)
 								{
-									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
-									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
 								}
 								M_DrawSlider(x, y, cv);
 							case IT_CV_NOPRINT: // color use this
@@ -8064,8 +8064,8 @@ static void M_DrawGenericScrollMenu(void)
 								// to indicate that it is changeable
 								if (i == itemOn)
 								{
-									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "<");
-									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, ">");
+									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
+									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
 								}
 								V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0), y,
 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
