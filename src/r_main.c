@@ -162,7 +162,10 @@ static CV_PossibleValue_t precipdensity_cons_t[] = {{0, "None"}, {1, "Light"}, {
 static CV_PossibleValue_t translucenthud_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t maxportals_cons_t[] = {{0, "MIN"}, {12, "MAX"}, {0, NULL}}; // lmao rendering 32 portals, you're a card
 static CV_PossibleValue_t homremoval_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Flash"}, {0, NULL}};
-static CV_PossibleValue_t fov_cons_t[] = {{60*FRACUNIT, "MIN"}, {179*FRACUNIT, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t fov_cons_t[] = {{MINFOV*FRACUNIT, "MIN"}, {MAXFOV*FRACUNIT, "MAX"}, {0, NULL}};
+
+
+static void R_SetFov(fixed_t playerfov);
 
 static void Fov_OnChange(void);
 static void ChaseCam_OnChange(void);
@@ -186,6 +189,7 @@ consvar_t cv_soniccd = {"soniccd", "Off", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NU
 consvar_t cv_allowmlook = {"allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_showhud = {"showhud", "Yes", CV_CALL,  CV_YesNo, R_SetViewSize, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_translucenthud = {"translucenthud", "10", CV_SAVE, translucenthud_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_uncappedhud = {"uncappedhud", "Yes", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_translucency = {"translucency", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_drawdist = {"drawdist", "Infinite", CV_SAVE, drawdist_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -196,7 +200,8 @@ consvar_t cv_precipdensity = {"precipdensity", "Moderate", CV_SAVE, precipdensit
 // Okay, whoever said homremoval causes a performance hit should be shot.
 consvar_t cv_homremoval = {"homremoval", "No", CV_SAVE, homremoval_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_fov = {"fov", "90", CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_fovchange = {"fovchange", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_maxportals = {"maxportals", "2", CV_SAVE, maxportals_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -243,10 +248,6 @@ void SplitScreen_OnChange(void)
 
 static void Fov_OnChange(void)
 {
-	// Shouldn't be needed with render parity?
-	//if ((netgame || multiplayer) && !cv_debug && cv_fov.value != 90*FRACUNIT)
-	//	CV_Set(&cv_fov, cv_fov.defaultvalue);
-
 	R_SetViewSize();
 }
 
@@ -419,6 +420,11 @@ angle_t R_PointToAngleEx(INT32 x2, INT32 y2, INT32 x1, INT32 y1)
 		(x1 = -x1) > (y1 = -y1) ? ANGLE_180+tantoangle[SlopeDivEx(y1,x1)] :    // octant 4
 		ANGLE_270-tantoangle[SlopeDivEx(x1,y1)] :                              // octant 5
 		0;
+}
+
+INT32 R_GetHudUncap(boolean menu)
+{
+	return cv_uncappedhud.value ? ((menu) ? (rendertimefrac_unpaused & FRACMASK) : (rendertimefrac & FRACMASK) ) : 0; // Ternary operators are FUN -chromaticpipe
 }
 
 //
@@ -917,12 +923,10 @@ void R_SetViewSize(void)
 //
 void R_ExecuteSetViewSize(void)
 {
-	fixed_t dy;
 	INT32 i;
 	INT32 j;
 	INT32 level;
 	INT32 startmapl;
-	angle_t fov;
 
 	setsizeneeded = false;
 
@@ -945,17 +949,11 @@ void R_ExecuteSetViewSize(void)
 	centerxfrac = centerx<<FRACBITS;
 	centeryfrac = centery<<FRACBITS;
 
-	fov = FixedAngle(cv_fov.value/2) + ANGLE_90;
-	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
-	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
-		fovtan = 17*fovtan/10;
-
-	projection = projectiony = FixedDiv(centerxfrac, fovtan);
+	R_SetFov(cv_fov.value);
 
 
 	R_InitViewBuffer(scaledviewwidth, viewheight);
 
-	R_InitTextureMapping();
 
 #ifdef HWRENDER
 	if (rendermode != render_soft)
@@ -966,20 +964,18 @@ void R_ExecuteSetViewSize(void)
 	for (i = 0; i < viewwidth; i++)
 		screenheightarray[i] = (INT16)viewheight;
 
-	// setup sky scaling
-	R_SetSkyScale();
 
-	// planes
 	if (rendermode == render_soft)
 	{
-		// this is only used for planes rendering in software mode
-		j = viewheight*16;
-		for (i = 0; i < j; i++)
-		{
-			dy = ((i - viewheight*8)<<FRACBITS) + FRACUNIT/2;
-			dy = FixedMul(abs(dy), fovtan);
-			yslopetab[i] = FixedDiv(centerx*FRACUNIT, dy);
-		}
+		if (ds_su)
+			Z_Free(ds_su);
+		if (ds_sv)
+			Z_Free(ds_sv);
+		if (ds_sz)
+			Z_Free(ds_sz);
+
+		ds_su = ds_sv = ds_sz = NULL;
+		ds_sup = ds_svp = ds_szp = NULL;
 	}
 
 	memset(scalelight, 0xFF, sizeof(scalelight));
@@ -1010,10 +1006,42 @@ void R_ExecuteSetViewSize(void)
 
 	am_recalc = true;
 }
+fixed_t R_GetPlayerFov(player_t *player)
+{
+	fixed_t fov = cv_fov.value + player->fovadd;
+	return max(MINFOV*FRACUNIT, min(fov, MAXFOV*FRACUNIT));
+}
+
+static void R_SetFov(fixed_t playerfov)
+{
+	angle_t fov = FixedAngle(playerfov/2) + ANGLE_90;
+	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
+	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
+		fovtan = 17*fovtan/10;
+
+	// this is only used for planes rendering in software mode
+	INT32 j = viewheight*16;
+	for (INT32 i = 0; i < j; i++)
+	{
+		fixed_t dy = (i - viewheight*8)<<FRACBITS;
+		dy = FixedMul(abs(dy), fovtan);
+		yslopetab[i] = FixedDiv(centerx*FRACUNIT, dy);
+	}
+
+	projection = projectiony = FixedDiv(centerxfrac, fovtan);
+
+	R_InitTextureMapping();
+
+	// setup sky scaling
+	R_SetSkyScale();
+}
 
 //
 // R_Init
 //
+
+static fixed_t viewfov[2];
+
 
 void R_Init(void)
 {
@@ -1148,9 +1176,6 @@ subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y)
 
 static mobj_t *viewmobj;
 
-
-
-
 void R_SetupFrame(player_t *player, boolean skybox)
 {
 	camera_t *thiscam;
@@ -1271,7 +1296,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 	//newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	//viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(player, false, R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+	R_InterpolateView(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 }
 
 void R_SkyboxFrame(player_t *player)
@@ -1507,10 +1532,10 @@ void R_SkyboxFrame(player_t *player)
 	else
 		newview->sector = R_PointInSubsector(viewx, viewy)->sector;
 
-	//viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
-	//viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
+	//newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
+	//newview->cos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(player, true, R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+	R_InterpolateView(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 
 }
 
@@ -1704,6 +1729,19 @@ void R_RenderPlayerView(player_t *player)
 	}
 	PS_STOP_TIMING(ps_skyboxtime);
 
+	fixed_t fov = R_GetPlayerFov(player);
+
+	if (player == &players[displayplayer] && viewfov[0] != fov)
+	{
+		viewfov[0] = fov;
+		R_SetFov(fov);
+	}
+	else if (player == &players[secondarydisplayplayer] && viewfov[1] != fov)
+	{
+		viewfov[1] = fov;
+		R_SetFov(fov);
+	}
+
 	R_SetupFrame(player, skybox);
 	skyVisible = false;
 	framecount++;
@@ -1872,6 +1910,7 @@ void R_RegisterEngineStuff(void)
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);
+	CV_RegisterVar(&cv_uncappedhud);
 
 	CV_RegisterVar(&cv_maxportals);
 

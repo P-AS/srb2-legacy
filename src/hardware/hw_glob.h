@@ -76,6 +76,7 @@ typedef struct gr_vissprite_s
 	boolean flip;
 	UINT8 translucency;       //alpha level 0-255
 	mobj_t *mobj;
+	float scale;
 	boolean precip; // Tails 08-25-2002
 	boolean vflip;
    //Hurdler: 25/04/2000: now support colormap in hardware mode

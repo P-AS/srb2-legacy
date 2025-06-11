@@ -733,15 +733,6 @@ static void P_LoadRawSectors(UINT8 *data, size_t i)
 
 		ss->floorspeed = 0;
 		ss->ceilspeed = 0;
-
-#ifdef HWRENDER // ----- for special tricks with HW renderer -----
-		ss->pseudoSector = false;
-		ss->virtualFloor = false;
-		ss->virtualCeiling = false;
-		ss->sectorLines = NULL;
-		ss->stackList = NULL;
-		ss->lineoutLength = -1.0l;
-#endif // ----- end special tricks -----
 	}
 
 	// set the sky flat num
@@ -2973,8 +2964,7 @@ boolean P_SetupLevel(boolean skipprecip)
 		// BP: reset light between levels (we draw preview frame lights on current frame)
 		HWR_ResetLights();
 #endif
-		// Correct missing sidedefs & deep water trick
-		HWR_CorrectSWTricks();
+
 		HWR_CreatePlanePolygons((INT32)numnodes - 1);
 
 			// Build the sky dome

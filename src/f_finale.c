@@ -223,9 +223,7 @@ static void F_SkyScroll(INT32 scrollspeed)
 
 	pat = W_CachePatchName("TITLESKY", PU_CACHE);
 
-	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width) + FixedInt((rendertimefrac_unpaused-FRACUNIT) * scrollspeed) / 16;
-
-
+	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width) + (FixedInt((R_GetHudUncap(true)-FRACUNIT) * scrollspeed)/16);
 
  if (rendermode != render_none)
 	{ // if only software rendering could be this simple and retarded
