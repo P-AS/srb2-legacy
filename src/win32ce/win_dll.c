@@ -95,7 +95,7 @@ static loadfunc_t hwdFuncTable[] = {
 	{"_Init@4",            &hwdriver.pfnInit},
 	{"_Shutdown@0",        &hwdriver.pfnShutdown},
 	{"_GetModeList@8",     &hwdriver.pfnGetModeList},
-	{"_SetPalette@8",      &hwdriver.pfnSetPalette},
+	{"_SetPalette@4",      &hwdriver.pfnSetPalette},
 	{"_FinishUpdate@4",    &hwdriver.pfnFinishUpdate},
 	{"_Draw2DLine@12",     &hwdriver.pfnDraw2DLine},
 	{"_DrawPolygon@16",    &hwdriver.pfnDrawPolygon},

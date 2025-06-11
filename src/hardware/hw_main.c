@@ -78,7 +78,6 @@ void HWR_AddTransparentPolyobjectFloor(lumpnum_t lumpnum, polyobj_t *polysector,
 static void CV_grmodellighting_OnChange(void);
 static void CV_filtermode_ONChange(void);
 static void CV_anisotropic_ONChange(void);
-static void CV_Gammaxxx_ONChange(void);
 // ==========================================================================
 //                                          3D ENGINE COMMANDS & CONSOLE VARS
 // ==========================================================================
@@ -102,15 +101,7 @@ consvar_t cv_grshaders = {"gr_shaders", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, 
 consvar_t cv_grfakecontrast = {"gr_fakecontrast", "Smooth", CV_SAVE, grfakecontrast_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grslopecontrast = {"gr_slopecontrast", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-static CV_PossibleValue_t grgamma_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t grmodelinterpolation_cons_t[] = {{0, "Off"}, {1, "Sometimes"}, {2, "Always"}, {0, NULL}};
-
-consvar_t cv_grgammared = {"gr_gammared", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
-                           CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grgammagreen = {"gr_gammagreen", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
-                             CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grgammablue = {"gr_gammablue", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
-                            CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
 
 #ifdef ALAM_LIGHTING
 consvar_t cv_grdynamiclighting = {"gr_dynamiclighting", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -174,13 +165,6 @@ static void CV_grmodellighting_OnChange(void)
 {
   if (rendermode == render_opengl)
 		HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
-}
-
-// change the palette directly to see the change
-static void CV_Gammaxxx_ONChange(void)
-{
-	if (rendermode == render_opengl)
-		V_SetPalette(0);
 }
 
 // ==========================================================================
@@ -6119,9 +6103,6 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_grshaders);
 	CV_RegisterVar(&cv_grfakecontrast);
 	CV_RegisterVar(&cv_grslopecontrast);
-	CV_RegisterVar(&cv_grgammablue);
-	CV_RegisterVar(&cv_grgammagreen);
-	CV_RegisterVar(&cv_grgammared);
 #ifdef ALAM_LIGHTING
 	CV_RegisterVar(&cv_grstaticlighting);
 	CV_RegisterVar(&cv_grdynamiclighting);

@@ -267,7 +267,7 @@ static void M_ChangeControl(INT32 choice);
 // Video & Sound
 menu_t OP_VideoOptionsDef, OP_VideoModeDef, OP_ColorOptionsDef;
 #ifdef HWRENDER
-menu_t OP_OpenGLOptionsDef, OP_OpenGLColorDef, OP_OpenGLLightingDef;
+menu_t OP_OpenGLOptionsDef, OP_OpenGLLightingDef;
 #endif
 menu_t OP_SoundOptionsDef;
 menu_t OP_SoundAdvancedDef;
@@ -310,9 +310,6 @@ static void M_DrawControl(void);
 static void M_DrawVideoMode(void);
 static void M_DrawColorMenu(void);
 static void M_DrawMonitorToggles(void);
-#ifdef HWRENDER
-static void M_OGL_DrawColorMenu(void);
-#endif
 #ifndef NONET
 static void M_DrawConnectMenu(void);
 static void M_DrawMPMainMenu(void);
@@ -1238,9 +1235,8 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 	{IT_STRING|IT_CVAR,         NULL, "Sky Dome",    &cv_grskydome,            120},
 	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", &cv_glloadingscreen, 130},
 
-	{IT_SUBMENU|IT_STRING,      NULL, "Gamma...",        &OP_OpenGLColorDef,        150},
 #ifdef ALAM_LIGHTING
-	{IT_SUBMENU|IT_STRING,      NULL, "Lighting...",     &OP_OpenGLLightingDef,     160},
+	{IT_SUBMENU|IT_STRING,      NULL, "Lighting...",     &OP_OpenGLLightingDef,     150},
 #endif
 };
 
@@ -1253,14 +1249,6 @@ static menuitem_t OP_OpenGLLightingMenu[] =
 	{IT_STRING|IT_CVAR, NULL, "Static lighting",  &cv_grstaticlighting,  30},
 };
 #endif
-
-
-static menuitem_t OP_OpenGLColorMenu[] =
-{
-	{IT_STRING|IT_CVAR|IT_CV_SLIDER, NULL, "red",   &cv_grgammared,   10},
-	{IT_STRING|IT_CVAR|IT_CV_SLIDER, NULL, "green", &cv_grgammagreen, 20},
-	{IT_STRING|IT_CVAR|IT_CV_SLIDER, NULL, "blue",  &cv_grgammablue,  30},
-};
 #endif
 
 static menuitem_t OP_SoundOptionsMenu[] =
@@ -1859,17 +1847,6 @@ menu_t OP_OpenGLOptionsDef = DEFAULTMENUSTYLE("M_VIDEO", OP_OpenGLOptionsMenu, &
 #ifdef ALAM_LIGHTING
 menu_t OP_OpenGLLightingDef = DEFAULTMENUSTYLE("M_VIDEO", OP_OpenGLLightingMenu, &OP_OpenGLOptionsDef, 60, 40);
 #endif
-menu_t OP_OpenGLColorDef =
-{
-	"M_VIDEO",
-	sizeof (OP_OpenGLColorMenu)/sizeof (menuitem_t),
-	&OP_OpenGLOptionsDef,
-	OP_OpenGLColorMenu,
-	M_OGL_DrawColorMenu,
-	60, 40,
-	0,
-	NULL
-};
 #endif
 menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE("M_DATA", OP_DataOptionsMenu, &OP_MainDef, 60, 30);
 menu_t OP_ScreenshotOptionsDef = DEFAULTSCROLLMENUSTYLE("M_DATA", OP_ScreenshotOptionsMenu, &OP_DataOptionsDef, 30, 30);
@@ -8742,24 +8719,3 @@ static void M_QuitSRB2(INT32 choice)
 	(void)choice;
 	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
 }
-
-#ifdef HWRENDER
-// =====================================================================
-// OpenGL specific options
-// =====================================================================
-
-// =====================
-// M_OGL_DrawColorMenu()
-// =====================
-static void M_OGL_DrawColorMenu(void)
-{
-	INT32 mx, my;
-
-	mx = currentMenu->x;
-	my = currentMenu->y;
-	M_DrawGenericMenu(); // use generic drawer for cursor, items and title
-	V_DrawString(mx, my + currentMenu->menuitems[0].alphaKey - 10,
-		V_YELLOWMAP, "Gamma correction");
-}
-
-#endif
