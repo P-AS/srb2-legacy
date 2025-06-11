@@ -548,7 +548,7 @@ static void readPlayer(MYFILE *f, INT32 num)
 					goto done;
 				DEH_WriteUndoline(word, &description[num].picname[0], UNDO_NONE);
 				PlayerMenu[num].status = IT_CALL;
-				strncpy(description[num].picname, word2, sizeof(description[num].picname));
+				memcpy(description[num].picname, word2, sizeof(description[num].picname));
 			}
 			else if (fastcmp(word, "STATUS"))
 			{
@@ -1206,7 +1206,7 @@ static void readlevelheader(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "SKYNUM"))
 				mapheaderinfo[num-1]->skynum = (INT16)i;
 			else if (fastcmp(word, "INTERSCREEN"))
-				strncpy(mapheaderinfo[num-1]->interscreen, word2, sizeof(mapheaderinfo[num-1]->interscreen)-1);
+				memcpy(mapheaderinfo[num-1]->interscreen, word2, sizeof(mapheaderinfo[num-1]->interscreen));
 			else if (fastcmp(word, "PRECUTSCENENUM"))
 				mapheaderinfo[num-1]->precutscenenum = (UINT8)i;
 			else if (fastcmp(word, "CUTSCENENUM"))
