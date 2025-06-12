@@ -1681,7 +1681,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	mobj_t *thing;
 	precipmobj_t *precipthing; // Tails 08-25-2002
 	INT32 lightnum;
-	fixed_t limit_dist, nights_limit_dist;
+	fixed_t limit_dist, hoop_limit_dist;
 
 	if (rendermode != render_soft)
 		return;
@@ -1713,10 +1713,10 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	// Handle all things in sector.
 	// If a limit exists, handle things a tiny bit different.
 	limit_dist = (fixed_t)(cv_drawdist.value) << FRACBITS;
-	nights_limit_dist = (fixed_t)(cv_drawdist_nights.value) << FRACBITS;
+	hoop_limit_dist = (fixed_t)(cv_drawdist_nights.value) << FRACBITS;
 	for (thing = sec->thinglist; thing; thing = thing->snext)
 	{
-		if (R_ThingVisibleWithinDist(thing, limit_dist, nights_limit_dist))
+		if (R_ThingVisibleWithinDist(thing, limit_dist, hoop_limit_dist))
 			R_ProjectSprite(thing);
 	}
 
@@ -2434,7 +2434,7 @@ boolean R_ThingVisible (mobj_t *thing)
 
 boolean R_ThingVisibleWithinDist (mobj_t *thing,
 		fixed_t      limit_dist,
-		fixed_t nights_limit_dist)
+		fixed_t hoop_limit_dist)
 {
 	fixed_t approx_dist;
 
@@ -2443,10 +2443,9 @@ boolean R_ThingVisibleWithinDist (mobj_t *thing,
 
 	approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
 
-	if ((maptol & TOL_NIGHTS)) // if (thing->sprite == SPR_HOOP), doing this instead because in 2.1, NiGHTs controls the culling *all things* and not just hoops 
-							   // It also has the side effect of making it so that cv_drawdist has no effect in NiGHTs levels				 
+	if (thing->sprite == SPR_HOOP) // Cull only hoops, makes cv_drawdist work in NiGHTs levels and also culls hoops outside of NiGHTs levels
 	{
-		if (nights_limit_dist && approx_dist > nights_limit_dist)
+		if (hoop_limit_dist && approx_dist > hoop_limit_dist)
 			return false;
 	}
 	else

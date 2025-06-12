@@ -4911,7 +4911,7 @@ static void HWR_AddSprites(sector_t *sec)
 #ifdef HWPRECIP
 	precipmobj_t *precipthing;
 #endif
-	fixed_t limit_dist, nights_limit_dist;
+	fixed_t limit_dist, hoop_limit_dist;
 
 	// BSP is traversed by subsector.
 	// A sector might have been split into several
@@ -4929,10 +4929,10 @@ static void HWR_AddSprites(sector_t *sec)
 	// Handle all things in sector.
 	// If a limit exists, handle things a tiny bit different.
 	limit_dist = (fixed_t)(cv_drawdist.value) << FRACBITS;
-	nights_limit_dist = (fixed_t)(cv_drawdist_nights.value) << FRACBITS;
+	hoop_limit_dist = (fixed_t)(cv_drawdist_nights.value) << FRACBITS;
 	for (thing = sec->thinglist; thing; thing = thing->snext)
 	{
-		if (R_ThingVisibleWithinDist(thing, limit_dist, nights_limit_dist))
+		if (R_ThingVisibleWithinDist(thing, limit_dist, hoop_limit_dist))
 			HWR_ProjectSprite(thing);
 	}
 
