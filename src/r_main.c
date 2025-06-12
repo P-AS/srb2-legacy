@@ -1244,7 +1244,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		newview->z = player->viewz;
 
 		r_viewmobj = player->mo;
-		I_Assert(viewmobj != NULL);
+		I_Assert(r_viewmobj != NULL);
 
 		newview->aim = player->aiming;
 		newview->angle = r_viewmobj->angle;
