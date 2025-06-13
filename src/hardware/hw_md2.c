@@ -870,6 +870,15 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, con
 	Z_ChangeTag(newmip->grInfo.data, PU_HWRCACHE_UNLOCKED);
 }
 
+static boolean HWR_CanInterpolateModel(mobj_t *mobj, model_t *model)
+{
+	if (!cv_grmodelinterpolation.value)
+		return false;
+	else if (cv_grmodelinterpolation.value == 2)
+		return true;
+	return model->interpolate[(mobj->frame & FF_FRAMEMASK)];
+}
+
 
 // -----------------+
 // HWR_DrawMD2      : Draw MD2
@@ -890,8 +899,6 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, con
 	res?
 	run?
 	*/
-#define NORMALFOG 0x00000000
-#define FADEFOG 0x19000000
 void HWR_DrawMD2(gr_vissprite_t *spr)
 {
 	FSurfaceInfo Surf;
@@ -1055,7 +1062,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		frame = (spr->mobj->frame & FF_FRAMEMASK) % md2->model->meshes[0].numFrames;
 
 #ifdef USE_MODEL_NEXTFRAME
-		if ((cv_grmodelinterpolation.value == 1 && tics <= durs) || cv_grmodelinterpolation.value == 2 )
+		if (HWR_CanInterpolateModel(spr->mobj, md2->model) && tics <= durs)
 		{
 			// frames are handled differently for states with FF_ANIMATE, so get the next frame differently for the interpolation
 			if (spr->mobj->frame & FF_ANIMATE)

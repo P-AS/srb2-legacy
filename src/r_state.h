@@ -88,6 +88,7 @@ extern boolean viewsky, skyVisible;
 extern boolean skyVisible1, skyVisible2; // saved values of skyVisible for P1 and P2, for splitscreen
 extern sector_t *viewsector;
 extern player_t *viewplayer;
+extern mobj_t *r_viewmobj;
 extern UINT8 portalrender;
 extern sector_t *portalcullsector;
 extern line_t *portalclipline;
