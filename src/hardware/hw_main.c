@@ -4946,13 +4946,6 @@ static void HWR_AddSprites(sector_t *sec)
 				HWR_ProjectPrecipitationSprite(precipthing);
 		}
 	}
-	else
-	{
-		// Draw everything in sector, no checks
-		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
-			if (!(precipthing->precipflags & PCF_INVISIBLE))
-				HWR_ProjectPrecipitationSprite(precipthing);
-	}
 #endif
 }
 
