@@ -4247,7 +4247,7 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 	INT32 shader = SHADER_DEFAULT;
 
 	if (spr->mobj)
-		this_scale = FIXED_TO_FLOAT(spr->mobj->scale);
+		this_scale = spr->scale;
 	if (hires)
 		this_scale = this_scale * FIXED_TO_FLOAT(((skin_t *)spr->mobj->skin)->highresscale);
 
@@ -4340,8 +4340,6 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 		HWR_DrawSpriteShadow(spr, gpatch, this_scale);
 	}
 
-
-
 	// Let dispoffset work first since this adjust each vertex
 	HWR_RotateSpritePolyToAim(spr, wallVerts);
 
@@ -4372,7 +4370,7 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 		if (!(spr->mobj->frame & FF_FULLBRIGHT))
 			lightlevel = sector->lightlevel;
 
-	HWR_Lighting(&Surf, lightlevel, colormap);
+		HWR_Lighting(&Surf, lightlevel, colormap);
 
 	}
 
@@ -4913,7 +4911,7 @@ static void HWR_AddSprites(sector_t *sec)
 #ifdef HWPRECIP
 	precipmobj_t *precipthing;
 #endif
-	fixed_t approx_dist, limit_dist;
+	fixed_t limit_dist, hoop_limit_dist;
 
 	// BSP is traversed by subsector.
 	// A sector might have been split into several
@@ -4930,27 +4928,12 @@ static void HWR_AddSprites(sector_t *sec)
 
 	// Handle all things in sector.
 	// If a limit exists, handle things a tiny bit different.
-	if ((limit_dist = (fixed_t)((maptol & TOL_NIGHTS) ? cv_drawdist_nights.value : cv_drawdist.value) << FRACBITS))
+	limit_dist = (fixed_t)(cv_drawdist.value) << FRACBITS;
+	hoop_limit_dist = (fixed_t)(cv_drawdist_nights.value) << FRACBITS;
+	for (thing = sec->thinglist; thing; thing = thing->snext)
 	{
-		for (thing = sec->thinglist; thing; thing = thing->snext)
-		{
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
-				continue;
-
-			approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
-
-			if (approx_dist > limit_dist)
-				continue;
-
+		if (R_ThingVisibleWithinDist(thing, limit_dist, hoop_limit_dist))
 			HWR_ProjectSprite(thing);
-		}
-	}
-	else
-	{
-		// Draw everything in sector, no checks
-		for (thing = sec->thinglist; thing; thing = thing->snext)
-			if (!(thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW))
-				HWR_ProjectSprite(thing);
 	}
 
 #ifdef HWPRECIP
@@ -4959,15 +4942,8 @@ static void HWR_AddSprites(sector_t *sec)
 	{
 		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
 		{
-			if (precipthing->precipflags & PCF_INVISIBLE)
-				continue;
-
-			approx_dist = P_AproxDistance(viewx-precipthing->x, viewy-precipthing->y);
-
-			if (approx_dist > limit_dist)
-				continue;
-
-			HWR_ProjectPrecipitationSprite(precipthing);
+			if (R_PrecipThingVisible(precipthing, limit_dist))
+				HWR_ProjectPrecipitationSprite(precipthing);
 		}
 	}
 	else
@@ -4997,6 +4973,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	float gz, gzt;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
+	md2_t *md2;
 	size_t lumpoff;
 	unsigned rot;
 	UINT8 flip;
@@ -5029,8 +5006,20 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	tz = (tr_x * gr_viewcos) + (tr_y * gr_viewsin);
 
 	// thing is behind view plane?
-	if (tz < ZCLIP_PLANE && (!cv_grmd2.value || md2_models[thing->sprite].notfound == true)) //Yellow: Only MD2's dont disappear
-		return;
+
+	if (tz < ZCLIP_PLANE)
+	{
+		if (cv_grmd2.value) //Yellow: Only MD2's dont disappear
+		{
+			if (thing->skin && thing->sprite == SPR_PLAY)
+				md2 = &md2_playermodels[( (skin_t *)thing->skin - skins )];
+			else
+				md2 = &md2_models[thing->sprite];
+
+			if (md2->notfound || md2->scale < 0.0f)
+				return;
+		}
+	}
 
 	// The above can stay as it works for cutting sprites that are too close
 	tr_x = FIXED_TO_FLOAT(interp.x);
@@ -5153,6 +5142,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	vis->patchlumpnum = sprframe->lumppat[rot];
 	vis->flip = flip;
 	vis->mobj = thing;
+	vis->scale = this_scale;
 
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	if ((vis->mobj->flags & MF_BOSS) && (vis->mobj->flags2 & MF2_FRET) && (leveltime & 1)) // Bosses "flash"

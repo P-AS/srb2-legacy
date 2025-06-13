@@ -1157,7 +1157,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
 	                         NULL, "Brightness",          &cv_usegamma,      50},
 	{IT_STRING | IT_CVAR,    NULL, "Draw Distance",       &cv_drawdist, 60},
-	{IT_STRING | IT_CVAR,    NULL, "NiGHTS Draw Dist",    &cv_drawdist_nights, 70},
+	{IT_STRING | IT_CVAR,    NULL, "NiGHTS Hoop Draw Dist",    &cv_drawdist_nights, 70},
 	{IT_STRING | IT_CVAR,    NULL, "Precip Draw Dist",    &cv_drawdist_precip, 80},
 	{IT_STRING | IT_CVAR,    NULL, "Precip Density",      &cv_precipdensity, 90},
 
@@ -1762,7 +1762,7 @@ menu_t OP_JoystickSetDef =
 	NULL
 };
 
-menu_t OP_VideoOptionsDef = DEFAULTMENUSTYLE("M_VIDEO", OP_VideoOptionsMenu, &OP_MainDef, 60, 30);
+menu_t OP_VideoOptionsDef = DEFAULTMENUSTYLE("M_VIDEO", OP_VideoOptionsMenu, &OP_MainDef, 30, 30);
 menu_t OP_VideoModeDef =
 {
 	"M_VIDEO",
