@@ -12,7 +12,8 @@ Based off [bitten2up/Kart-Public/android](https://github.com/bitten2up/Kart-Publ
      - Works, but remapping might be required. This is the recommended way to play this port.
 - [x] Keyboard controls
 - [ ] Touch controls
-     - Not planned. It wouldn't play very well anyway. Note that you can use touch the move the camera like you would with a mouse.
+     - Not planned. It wouldn't play very well anyway.
+     - Note that you can use touch to move the camera like you would with a mouse.
 - [x] On-screen keyboard for text input
      - Somewhat buggy, it sometimes appears when it shouldn't
 - [x] Netplay
