@@ -1082,7 +1082,8 @@ void HWR_DL_AddLight(gr_vissprite_t *spr, GLPatch_t *patch)
 	}
 }
 
-static GLPatch_t lightmappatch;
+static GLMipmap_t lightmappatchmipmap;
+static GLPatch_t lightmappatch = { .mipmap = &lightmappatchmipmap };
 
 void HWR_InitLight(void)
 {
