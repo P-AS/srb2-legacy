@@ -4967,6 +4967,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			if (md2->notfound || md2->scale < 0.0f)
 				return;
 		}
+		else
+			return;
 	}
 
 	// The above can stay as it works for cutting sprites that are too close
