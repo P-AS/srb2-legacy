@@ -555,7 +555,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// OpenGL shaders
 #define GL_SHADERS
 
-// OpenGL Lighting Features:
-//#define ALAM_LIGHTING // TODO make it work properly with shaders
+// Here once lied the corpse of ALAM_LIGHTING
 
 #endif // __DOOMDEF__
