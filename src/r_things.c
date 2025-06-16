@@ -1681,7 +1681,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	mobj_t *thing;
 	precipmobj_t *precipthing; // Tails 08-25-2002
 	INT32 lightnum;
-	fixed_t approx_dist, limit_dist;
+	fixed_t limit_dist, hoop_limit_dist;
 
 	if (rendermode != render_soft)
 		return;
@@ -1712,27 +1712,12 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 
 	// Handle all things in sector.
 	// If a limit exists, handle things a tiny bit different.
-	if ((limit_dist = (fixed_t)((maptol & TOL_NIGHTS) ? cv_drawdist_nights.value : cv_drawdist.value) << FRACBITS))
+	limit_dist = (fixed_t)(cv_drawdist.value) << FRACBITS;
+	hoop_limit_dist = (fixed_t)(cv_drawdist_nights.value) << FRACBITS;
+	for (thing = sec->thinglist; thing; thing = thing->snext)
 	{
-		for (thing = sec->thinglist; thing; thing = thing->snext)
-		{
-			if (thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW)
-				continue;
-
-			approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
-
-			if (approx_dist > limit_dist)
-				continue;
-
+		if (R_ThingVisibleWithinDist(thing, limit_dist, hoop_limit_dist))
 			R_ProjectSprite(thing);
-		}
-	}
-	else
-	{
-		// Draw everything in sector, no checks
-		for (thing = sec->thinglist; thing; thing = thing->snext)
-			if (!(thing->sprite == SPR_NULL || thing->flags2 & MF2_DONTDRAW))
-				R_ProjectSprite(thing);
 	}
 
 	// Someone seriously wants infinite draw distance for precipitation?
@@ -1740,15 +1725,8 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	{
 		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
 		{
-			if (precipthing->precipflags & PCF_INVISIBLE)
-				continue;
-
-			approx_dist = P_AproxDistance(viewx-precipthing->x, viewy-precipthing->y);
-
-			if (approx_dist > limit_dist)
-				continue;
-
-			R_ProjectPrecipitationSprite(precipthing);
+			if (R_PrecipThingVisible(precipthing, limit_dist))
+				R_ProjectPrecipitationSprite(precipthing);
 		}
 	}
 	else
@@ -2443,6 +2421,56 @@ void R_ClipSprites(void)
 		}
 	}
 }
+
+/* Check if thing may be drawn from our current view. */
+boolean R_ThingVisible (mobj_t *thing)
+{
+	return (!(
+				thing->sprite == SPR_NULL ||
+				( thing->flags2 & (MF2_DONTDRAW) ) ||
+				thing == r_viewmobj
+	));
+}
+
+boolean R_ThingVisibleWithinDist (mobj_t *thing,
+		fixed_t      limit_dist,
+		fixed_t hoop_limit_dist)
+{
+	fixed_t approx_dist;
+
+	if (! R_ThingVisible(thing))
+		return false;
+
+	approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
+
+	if (thing->sprite == SPR_HOOP) // Cull only hoops, makes cv_drawdist work in NiGHTs levels and also culls hoops outside of NiGHTs levels
+	{
+		if (hoop_limit_dist && approx_dist > hoop_limit_dist)
+			return false;
+	}
+	else
+	{
+		if (limit_dist && approx_dist > limit_dist)
+			return false;
+	}
+
+	return true;
+}
+
+/* Check if precipitation may be drawn from our current view. */
+boolean R_PrecipThingVisible (precipmobj_t *precipthing,
+		fixed_t limit_dist)
+{
+	fixed_t approx_dist;
+
+	if (( precipthing->precipflags & PCF_INVISIBLE ))
+		return false;
+
+	approx_dist = P_AproxDistance(viewx-precipthing->x, viewy-precipthing->y);
+
+	return ( approx_dist <= limit_dist );
+}
+
 
 //
 // R_DrawMasked

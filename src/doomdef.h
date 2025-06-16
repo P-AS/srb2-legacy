@@ -16,8 +16,6 @@
 #define __DOOMDEF__
 
 
-// OpenGL Lighting Features:
-//#define ALAM_LIGHTING // TODO make it work properly with shaders
 
 // Sound system select
 // This should actually be in the makefile,
@@ -559,5 +557,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 /// OpenGL shaders
 #define GL_SHADERS
+
+// Here once lied the corpse of ALAM_LIGHTING
 
 #endif // __DOOMDEF__

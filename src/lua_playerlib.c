@@ -132,9 +132,7 @@ enum player_e
 	player_spectator,
 	player_bot,
 	player_jointime,
-#ifdef HWRENDER
 	player_fovadd,
-#endif
 };
 
 static const char *const player_opt[] = {
@@ -247,9 +245,7 @@ static const char *const player_opt[] = {
 	"spectator",
 	"bot",
 	"jointime",
-#ifdef HWRENDER
 	"fovadd",
-#endif
 	NULL,
 };
 
@@ -683,11 +679,9 @@ static int player_get(lua_State *L)
 	case player_jointime:
 		lua_pushinteger(L, plr->jointime);
 		break;
-#ifdef HWRENDER
 	case player_fovadd:
 		lua_pushfixed(L, plr->fovadd);
 		break;
-#endif
 	default:
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
@@ -1068,11 +1062,9 @@ static int player_set(lua_State *L)
 	case player_jointime:
 		plr->jointime = (tic_t)luaL_checkinteger(L, 3);
 		break;
-#ifdef HWRENDER
 	case player_fovadd:
 		plr->fovadd = luaL_checkfixed(L, 3);
 		break;
-#endif
 	default:
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
