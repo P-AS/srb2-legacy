@@ -41,6 +41,7 @@
 #include "dehacked.h"
 #include "d_clisrv.h"
 #include "r_defs.h"
+#include "r_data.h"
 #include "i_time.h"
 #include "i_system.h"
 #include "md5.h"
@@ -867,8 +868,11 @@ void W_UnloadWadFile(UINT16 num)
 	lumpcache = delwad->lumpcache;
 	numwadfiles--;
 #ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
+	if (rendermode == render_opengl)
+	{
+		HWR_FreeColormaps();
 		HWR_FreeTextureCache();
+	}
 	M_AATreeFree(delwad->hwrcache);
 #endif
 	if (*lumpcache)
@@ -1589,7 +1593,6 @@ void *W_CacheLumpNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 
 void *W_CacheLumpNum(lumpnum_t lumpnum, INT32 tag)
 {
-
 	return W_CacheLumpNumPwad(WADFILENUM(lumpnum),LUMPNUM(lumpnum),tag);
 }
 
@@ -1670,11 +1673,29 @@ void *W_CacheLumpName(const char *name, INT32 tag)
 // Cache a patch into heap memory, convert the patch format as necessary
 //
 
+void W_FlushCachedPatches(void)
+{
+	if (needpatchflush)
+	{
+		Z_FreeTag(PU_CACHE);
+		Z_FreeTag(PU_PATCH);
+		Z_FreeTag(PU_HUDGFX);
+		Z_FreeTag(PU_HWRPATCHINFO);
+		Z_FreeTag(PU_HWRPATCHCOLMIPMAP);
+		Z_FreeTag(PU_HWRCACHE);
+		Z_FreeTags(PU_HWRCACHE_UNLOCKED, PU_HWRPATCHINFO_UNLOCKED);
+	}
+	needpatchflush = false;
+}
+
 // Software-only compile cache the data without conversion
 #ifdef HWRENDER
 static inline void *W_CachePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 {
 	GLPatch_t *grPatch;
+
+	if (needpatchflush)
+		W_FlushCachedPatches();
 
 	if (rendermode == render_soft || rendermode == render_none)
 		return W_CacheLumpNumPwad(wad, lump, tag);

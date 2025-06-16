@@ -89,7 +89,7 @@ boolean LoadGL(void)
 		CONS_Alert(CONS_ERROR, "Could not load OpenGL Library: %s\n"
 					"Falling back to Software mode.\n", SDL_GetError());
 		if (!M_CheckParm ("-OGLlib"))
-			CONS_Printf("If you know what is the OpenGL library's name, use -OGLlib\n");
+			CONS_Alert(CONS_ERROR, "If you know what is the OpenGL library's name, use -OGLlib\n");
 		return 0;
 	}
 #endif

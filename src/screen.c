@@ -53,6 +53,7 @@ void (*twosmultipatchtransfunc)(void); // for cols with transparent pixels AND t
 // ------------------
 viddef_t vid;
 INT32 setmodeneeded; //video mode change needed if > 0 (the mode number to set + 1)
+UINT8 setrenderneeded = 0;
 
 static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
 
@@ -68,7 +69,11 @@ consvar_t cv_scr_depth = {"scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NUL
 #endif
 consvar_t cv_renderview = {"renderview", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-static void SCR_ChangeFullscreen (void);
+static void SCR_ActuallyChangeRenderer(void);
+static CV_PossibleValue_t cv_renderer_t[] = {{1, "Software"}, {2, "OpenGL"}, {0, NULL}};
+consvar_t cv_renderer = {"renderer", "Software", CV_SAVE|CV_CALL, cv_renderer_t, SCR_ChangeRenderer, 0, NULL, NULL, 0, 0, NULL};
+
+static void SCR_ChangeFullscreen(void);
 
 consvar_t cv_fullscreen = {"fullscreen", "Yes", CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen, 0, NULL, NULL, 0, 0, NULL};
 
@@ -83,19 +88,8 @@ UINT8 *scr_borderpatch; // flat used to fill the reduced view borders set at ST_
 
 //  Short and Tall sky drawer, for the current color mode
 void (*walldrawerfunc)(void);
-
-void SCR_SetMode(void)
+void SCR_SetDrawFuncs(void)
 {
-	if (dedicated)
-		return;
-
-	if (!setmodeneeded || WipeInAction)
-		return; // should never happen and don't change it during a wipe, BAD!
-
-	VID_SetMode(--setmodeneeded);
-
-	V_SetPalette(0);
-
 	//
 	//  setup the right draw routines for either 8bpp or 16bpp
 	//
@@ -131,8 +125,38 @@ void SCR_SetMode(void)
 	if (SCR_IsAspectCorrect(vid.width, vid.height))
 		CONS_Alert(CONS_WARNING, M_GetText("Resolution is not aspect-correct!\nUse a multiple of %dx%d\n"), BASEVIDWIDTH, BASEVIDHEIGHT);
 #endif*/
+
+	wallcolfunc = walldrawerfunc;
+}
+
+void SCR_SetMode(void)
+{
+	if (dedicated)
+		return;
+
+	if (!(setmodeneeded || setrenderneeded) || WipeInAction)
+		return; // should never happen and don't change it during a wipe, BAD!
+
+	// Jimita
+	if (setrenderneeded)
+	{
+		needpatchflush = true;
+		needpatchrecache = true;
+		VID_CheckRenderer();
+		if (!setmodeneeded)
+			VID_SetMode(vid.modenum);
+	}
+
+	if (setmodeneeded)
+		VID_SetMode(--setmodeneeded);
+
+	V_SetPalette(0);
+
+	SCR_SetDrawFuncs();
+
 	// set the apprpriate drawer for the sky (tall or INT16)
 	setmodeneeded = 0;
+	setrenderneeded = 0;
 }
 
 // do some initial settings for the game loading screen
@@ -277,6 +301,8 @@ void SCR_CheckDefaultMode(void)
 		// see note above
 		setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
 	}
+
+	SCR_ActuallyChangeRenderer();
 }
 
 // sets the modenum as the new default video mode to be saved in the config file
@@ -304,6 +330,66 @@ void SCR_ChangeFullscreen(void)
 	}
 	return;
 #endif
+}
+
+static int target_renderer = 0;
+
+void SCR_ActuallyChangeRenderer(void)
+{
+	setrenderneeded = target_renderer;
+
+#ifdef HWRENDER
+	// Well, it didn't even load anyway.
+	if ((vid_opengl_state == -1) && (setrenderneeded == render_opengl))
+	{
+		if (M_CheckParm("-nogl"))
+			CONS_Alert(CONS_ERROR, "OpenGL rendering was disabled!\n");
+		else
+			CONS_Alert(CONS_ERROR, "OpenGL never loaded\n");
+		setrenderneeded = 0;
+		return;
+	}
+#endif
+
+	// setting the same renderer twice WILL crash your game, so let's not, please
+	if (rendermode == setrenderneeded)
+		setrenderneeded = 0;
+}
+
+// Jimita
+void SCR_ChangeRenderer(void)
+{
+	setrenderneeded = 0;
+
+	if (con_startup)
+	{
+		target_renderer = cv_renderer.value;
+#ifdef HWRENDER
+		if (M_CheckParm("-opengl") && (vid_opengl_state == 1))
+			target_renderer = rendermode = render_opengl;
+		else 
+#endif	
+		if (M_CheckParm("-software"))
+			target_renderer = rendermode = render_soft;
+		// set cv_renderer back
+		SCR_ChangeRendererCVars(rendermode);
+		return;
+	}
+
+	if (cv_renderer.value == 1)
+		target_renderer = render_soft;
+	else if (cv_renderer.value == 2)
+		target_renderer = render_opengl;
+	SCR_ActuallyChangeRenderer();
+}
+
+void SCR_ChangeRendererCVars(INT32 mode)
+{
+	// set cv_renderer back
+	if (mode == render_soft)
+		CV_StealthSetValue(&cv_renderer, 1);
+	else if (mode == render_opengl)
+		CV_StealthSetValue(&cv_renderer, 2);
 }
 
 boolean SCR_IsAspectCorrect(INT32 width, INT32 height)

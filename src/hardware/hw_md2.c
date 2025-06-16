@@ -533,7 +533,7 @@ void HWR_InitMD2(void)
 			}
 		}
 		// no sprite/player skin name found?!?
-		CONS_Printf("Unknown sprite/player skin %s detected in md2.dat\n", name);
+		//CONS_Printf("Unknown sprite/player skin %s detected in md2.dat\n", name);
 md2found:
 		// move on to next line...
 		continue;
@@ -1040,7 +1040,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		else
 		{
 			// Sprite
-			gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
+			gpatch = W_CachePatchNum(spr->patchlumpnum, PU_PATCH);
 			HWR_GetMappedPatch(gpatch, spr->colormap);
 		}
 

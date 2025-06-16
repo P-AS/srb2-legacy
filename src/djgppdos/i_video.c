@@ -331,3 +331,5 @@ void I_StartupGraphics(void)
 	graphics_started = true;
 
 }
+
+void VID_StartupOpenGL(void) {}

@@ -436,7 +436,7 @@ void Z_FreeTags(INT32 lowtag, INT32 hightag)
   * \param iterfunc The iterator function.
   */
 void Z_IterateTags(INT32 lowtag, INT32 hightag, boolean (*iterfunc)(void *))
-{
+{ 
 	memblock_t *block, *next;
 
 	if (!iterfunc)
@@ -454,6 +454,26 @@ void Z_IterateTags(INT32 lowtag, INT32 hightag, boolean (*iterfunc)(void *))
 				Z_Free(mem);
 		}
 	}
+}
+
+// for renderer switching, free a bunch of stuff
+boolean needpatchflush = false;
+boolean needpatchrecache = false;
+
+// flush all patches from memory
+// (also frees memory tagged with PU_CACHE)
+// (which are not necessarily patches but I don't care)
+void Z_FlushCachedPatches(void)
+{
+	CONS_Debug(DBG_RENDER, "Z_FlushCachedPatches()...\n");
+	Z_FreeTag(PU_CACHE);
+	Z_FreeTag(PU_PATCH);
+	Z_FreeTag(PU_HUDGFX);
+	Z_FreeTag(PU_HWRPATCHINFO);
+	Z_FreeTag(PU_HWRPATCHCOLMIPMAP);
+	Z_FreeTag(PU_HWRCACHE);
+	Z_FreeTag(PU_HWRCACHE_UNLOCKED);
+	Z_FreeTag(PU_HWRPATCHINFO_UNLOCKED);
 }
 
 // -----------------
