@@ -59,8 +59,6 @@ const char *GetPalette(void);
 
 extern RGBA_t *pLocalPalette;
 
-void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
-
 // Retrieve the ARGB value from a palette color index
 #define V_GetColor(color) (pLocalPalette[color&0xFF])
 
