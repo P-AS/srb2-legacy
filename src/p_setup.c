@@ -3145,12 +3145,6 @@ boolean P_SetupLevel(boolean skipprecip)
 #ifdef HWRENDER
 void HWR_SetupLevel(void)
 {
-#ifdef ALAM_LIGHTING
-	// BP: reset light between levels (we draw preview frame lights on current frame)
-	HWR_ResetLights();
-#endif
-	// Correct missing sidedefs & deep water trick
-	HWR_CorrectSWTricks();
 	// Jimita: Don't call this more than once!
 	if (!extrasubsectors)
 		HWR_CreatePlanePolygons((INT32)numnodes - 1);
