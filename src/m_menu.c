@@ -1175,6 +1175,9 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",   &cv_homremoval,           75},
 	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",         &cv_vidwait,              80},
 	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",               &cv_fpscap,               85},
+#ifdef HWRENDER
+	{IT_CALL | IT_STRING, NULL, "OpenGL Options...",         M_OpenGLOptionsMenu, 95},
+#endif
 };
 
 static menuitem_t OP_ColorOptionsMenu[] =
@@ -8430,140 +8433,6 @@ static void M_DrawVideoMode(void)
 		W_CachePatchName("M_CURSOR", PU_PATCH)); 
 }
 
-// Just M_DrawGenericScrollMenu but showing a backing behind the headers.
-static void M_DrawColorMenu(void)
-{
-	INT32 x, y, i, max, tempcentery, cursory = 0;
-
-	// DRAW MENU
-	x = currentMenu->x;
-	y = currentMenu->y;
-
-	V_DrawFill(19       , y-4, 47, 1, 128);
-	V_DrawFill(19+(  47), y-4, 47, 1, 104);
-	V_DrawFill(19+(2*47), y-4, 47, 1, 184);
-	V_DrawFill(19+(3*47), y-4, 47, 1, 247);
-	V_DrawFill(19+(4*47), y-4, 47, 1, 249);
-	V_DrawFill(19+(5*47), y-4, 46, 1, 193);
-
-	V_DrawFill(300, y-4, 1, 1, 26);
-	V_DrawFill(19, y-3, 282, 1, 26);
-
-	if ((currentMenu->menuitems[itemOn].alphaKey*2 - currentMenu->menuitems[0].alphaKey*2) <= scrollareaheight)
-		tempcentery = currentMenu->y - currentMenu->menuitems[0].alphaKey*2;
-	else if ((currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 - currentMenu->menuitems[itemOn].alphaKey*2) <= scrollareaheight)
-		tempcentery = currentMenu->y - currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 + 2*scrollareaheight;
-	else
-		tempcentery = currentMenu->y - currentMenu->menuitems[itemOn].alphaKey*2 + scrollareaheight;
-
-	for (i = 0; i < currentMenu->numitems; i++)
-	{
-		if (currentMenu->menuitems[i].status != IT_DISABLED && currentMenu->menuitems[i].alphaKey*2 + tempcentery >= currentMenu->y)
-			break;
-	}
-
-	for (max = currentMenu->numitems; max > 0; max--)
-	{
-		if (currentMenu->menuitems[max].status != IT_DISABLED && currentMenu->menuitems[max-1].alphaKey*2 + tempcentery <= (currentMenu->y + 2*scrollareaheight))
-			break;
-	}
-
-	if (i)
-		V_DrawCharacter(currentMenu->x - 16, y - (skullAnimCounter / 5),
-			'\x1A' |V_YELLOWMAP, false); // up arrow
-	if (max != currentMenu->numitems)
-		V_DrawCharacter(currentMenu->x - 16, y + (SMALLLINEHEIGHT * (controlheight - 1)) + (skullAnimCounter / 5) + (skullAnimCounter / 5),
-			'\x1B' |V_YELLOWMAP, false); // down arrowow
-
-	// draw title (or big pic)
-	M_DrawMenuTitle();
-
-	for (; i < max; i++)
-	{
-		y = currentMenu->menuitems[i].alphaKey*2 + tempcentery;
-		if (i == itemOn)
-			cursory = y;
-		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
-		{
-			case IT_PATCH:
-			case IT_DYBIGSPACE:
-			case IT_BIGSLIDER:
-			case IT_STRING2:
-			case IT_DYLITLSPACE:
-			case IT_GRAYPATCH:
-			case IT_TRANSTEXT2:
-				// unsupported
-				break;
-			case IT_NOTHING:
-				break;
-			case IT_STRING:
-			case IT_WHITESTRING:
-				if (i != itemOn && (currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-					V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
-				else
-					V_DrawString(x, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
-
-				// Cvar specific handling
-				switch (currentMenu->menuitems[i].status & IT_TYPE)
-					case IT_CVAR:
-					{
-						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
-						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
-						{
-							case IT_CV_SLIDER:
-								// draws the little arrows on the left and right
-								// to indicate that it is changeable
-								if (i == itemOn)
-								{
-									V_DrawString(BASEVIDWIDTH - x - SLIDER_WIDTH - 6 - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
-									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
-								}
-								M_DrawSlider(x, y, cv);
-							case IT_CV_NOPRINT: // color use this
-							case IT_CV_INVISSLIDER: // monitor toggles use this
-								break;
-							case IT_CV_STRING:
-								if (y + 12 > (currentMenu->y + 2*scrollareaheight))
-									break;
-								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
-										'_' | 0x80, false);
-								y += 16;
-								break;
-							default:
-								// draws the little arrows on the left and right
-								// to indicate that it is changeable
-								if (i == itemOn)
-								{
-									V_DrawString(BASEVIDWIDTH - x - V_StringWidth(cv->string, 0) - ((skullAnimCounter < 4) ? 9 : 8), y, V_YELLOWMAP, "\x1C");
-									V_DrawString(BASEVIDWIDTH - x + ((skullAnimCounter < 4) ? 5 : 4), y, V_YELLOWMAP, "\x1D");
-								}
-								V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
-									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
-								break;
-						}
-						break;
-					}
-					break;
-			case IT_TRANSTEXT:
-				V_DrawString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
-				break;
-			case IT_QUESTIONMARKS:
-				V_DrawString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
-				break;
-			case IT_HEADERTEXT:
-				V_DrawString(x-16, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
-				//M_DrawLevelPlatterHeader(y - (lsheadingheight - 12), currentMenu->menuitems[i].text, false);
-				break;
-		}
-	}
-
-	// DRAW THE SKULL CURSOR
-	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
-		W_CachePatchName("M_CURSOR", PU_CACHE));
-}
 
 // Just M_DrawGenericScrollMenu but showing a backing behind the headers.
 static void M_DrawColorMenu(void)
