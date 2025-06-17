@@ -1,17 +1,12 @@
-// Emacs style mode select   -*- C++ -*-
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-//
+// Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2019 by Sonic Team Junior.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief hardware renderer, using the standard HardWareRender driver DLL for SRB2
@@ -111,13 +106,6 @@ consvar_t cv_grgammagreen = {"gr_gammagreen", "127", CV_SAVE|CV_CALL, grgamma_co
                              CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grgammablue = {"gr_gammablue", "127", CV_SAVE|CV_CALL, grgamma_cons_t,
                             CV_Gammaxxx_ONChange, 0, NULL, NULL, 0, 0, NULL};
-
-#ifdef ALAM_LIGHTING
-consvar_t cv_grdynamiclighting = {"gr_dynamiclighting", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grstaticlighting  = {"gr_staticlighting", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grcoronas = {"gr_coronas", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grcoronasize = {"gr_coronasize", "1", CV_SAVE| CV_FLOAT, 0, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
 
 
 boolean drawsky = true;
@@ -704,11 +692,6 @@ if (PolyFlags & (PF_Translucent|PF_Fog))
 	}
 
 	HWR_ProcessPolygon(&Surf, planeVerts, nrPlaneVerts, PolyFlags, shader, false);
-
-#ifdef ALAM_LIGHTING
-	// add here code for dynamic lighting on planes
-	HWR_PlaneLighting(planeVerts, nrPlaneVerts);
-#endif
 }
 
 #ifdef POLYSKY
@@ -880,14 +863,6 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 #ifdef WALLSPLATS
 	if (gr_curline->linedef->splats && cv_splats.value)
 		HWR_DrawSegsSplats(pSurf);
-#endif
-#ifdef ALAM_LIGHTING
-	//Hurdler: TDOD: do static lighting using gr_curline->lm
-	HWR_WallLighting(wallVerts);
-
-	//Hurdler: for better dynamic light in dark area, we should draw the light first
-	//         and then the wall all that with the right blending func
-	//HWD.pfnDrawPolygon(pSurf, trVerts, 4, PF_Additive|PF_Modulated|PF_Occlude);
 #endif
 }
 
@@ -3449,9 +3424,6 @@ static boolean HWR_CheckHackBBox(fixed_t *bb)
 }
 #endif
 
-// BP: big hack for a test in lighning ref : 1249753487AB
-fixed_t *hwbbox;
-
 static void HWR_RenderBSPNode(INT32 bspnum)
 {
 	node_t *bsp;
@@ -3465,13 +3437,10 @@ static void HWR_RenderBSPNode(INT32 bspnum)
 
 		// Decide which side the view point is on.
 		side = R_PointOnSide(viewx, viewy, bsp);
-		// BP: big hack for a test in lighning ref : 1249753487AB
-		hwbbox = bsp->bbox[side^1];
 		// Recursively divide front space.
 		HWR_RenderBSPNode(bsp->children[side]);
 
 		// Possibly divide back space.
-
 		if (!HWR_CheckBBox(bsp->bbox[side^1]))
 			return;
 
@@ -3985,10 +3954,6 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 	if (cv_shadow.value // Shadows enabled
 		&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
 		&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
-#ifdef ALAM_LIGHTING
-		&& !(t_lspr[spr->mobj->sprite]->type // Things with dynamic lights have no shadow.
-		&& (!spr->mobj->player || spr->mobj->player->powers[pw_super])) // Except for non-super players.
-#endif
 		&& (spr->mobj->z >= spr->mobj->floorz)) // Without this, your shadow shows on the floor, even after you die and fall through the ground.
 	{
 		////////////////////
@@ -4271,12 +4236,6 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 
 	gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
 
-#ifdef ALAM_LIGHTING
-	if (!(spr->mobj->flags2 & MF2_DEBRIS) && (spr->mobj->sprite != SPR_PLAY ||
-	 (spr->mobj->player && spr->mobj->player->powers[pw_super])))
-		HWR_DL_AddLight(spr, gpatch);
-#endif
-
 	// create the sprite billboard
 	//
 	//  3--2
@@ -4328,10 +4287,6 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 	if (cv_shadow.value // Shadows enabled
 		&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
 		&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
-#ifdef ALAM_LIGHTING
-		&& !(t_lspr[spr->mobj->sprite]->type // Things with dynamic lights have no shadow.
-		&& (!spr->mobj->player || spr->mobj->player->powers[pw_super])) // Except for non-super players.
-#endif
 		&& (spr->mobj->z >= spr->mobj->floorz)) // Without this, your shadow shows on the floor, even after you die and fall through the ground.
 	{
 		////////////////////
@@ -4946,13 +4901,6 @@ static void HWR_AddSprites(sector_t *sec)
 				HWR_ProjectPrecipitationSprite(precipthing);
 		}
 	}
-	else
-	{
-		// Draw everything in sector, no checks
-		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
-			if (!(precipthing->precipflags & PCF_INVISIBLE))
-				HWR_ProjectPrecipitationSprite(precipthing);
-	}
 #endif
 }
 
@@ -5019,6 +4967,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			if (md2->notfound || md2->scale < 0.0f)
 				return;
 		}
+		else
+			return;
 	}
 
 	// The above can stay as it works for cutting sprites that are too close
@@ -5542,7 +5492,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 
 		dimensionmultiply = ((float)textures[texturetranslation[skytexture]]->width/256.0f);
 
-		v[0].s = v[3].s = (-1.0f * angle) / ((ANGLE_90-1)*dimensionmultiply); // left
+		v[0].s = v[3].s = (-1.0f * angle) / (((float)ANGLE_90-1.0f)*dimensionmultiply); // left
 		v[2].s = v[1].s = v[0].s + (1.0f/dimensionmultiply); // right (or left + 1.0f)
 		// use +angle and -1.0f above instead if you wanted old backwards behavior
 
@@ -5696,9 +5646,6 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 		stplyr = player;
 		ST_doPaletteStuff();
 		stplyr = saved_player;
-#ifdef ALAM_LIGHTING
-		HWR_SetLights(viewnumber);
-#endif
 	}
 
 	// note: sets viewangle, viewx, viewy, viewz
@@ -5817,12 +5764,6 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	// Check for new console commands.
 	NetUpdate();
 
-#ifdef ALAM_LIGHTING
-	//14/11/99: Hurdler: moved here because it doesn't work with
-	// subsector, see other comments;
-	HWR_ResetLights();
-#endif
-
 	// Draw MD2 and sprites
 
 	HWR_SortVisSprites();
@@ -5897,9 +5838,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 		stplyr = player;
 		ST_doPaletteStuff();
 		stplyr = saved_player;
-#ifdef ALAM_LIGHTING
-		HWR_SetLights(viewnumber);
-#endif
 	}
 
 	// note: sets viewangle, viewx, viewy, viewz
@@ -6027,12 +5965,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	// Check for new console commands.
 	NetUpdate();
 
-#ifdef ALAM_LIGHTING
-	//14/11/99: Hurdler: moved here because it doesn't work with
-	// subsector, see other comments;
-	HWR_ResetLights();
-#endif
-
 	// Draw MD2 and sprites
 	ps_numsprites.value.i = gr_visspritecount;
 	PS_START_TIMING(ps_hw_spritesorttime);
@@ -6113,12 +6045,6 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_grgammablue);
 	CV_RegisterVar(&cv_grgammagreen);
 	CV_RegisterVar(&cv_grgammared);
-#ifdef ALAM_LIGHTING
-	CV_RegisterVar(&cv_grstaticlighting);
-	CV_RegisterVar(&cv_grdynamiclighting);
-	CV_RegisterVar(&cv_grcoronas);
-	CV_RegisterVar(&cv_grcoronasize);
-#endif
 	CV_RegisterVar(&cv_grmd2);
 	CV_RegisterVar(&cv_grmodelinterpolation);
 	CV_RegisterVar(&cv_grspritebillboarding);
@@ -6162,10 +6088,6 @@ void HWR_Startup(void)
 		HWR_InitTextureCache();
 
 		HWR_InitMD2();
-
-#ifdef ALAM_LIGHTING
-		HWR_InitLight();
-#endif
 
 
 	HWR_LoadAllCustomShaders();
@@ -6288,10 +6210,6 @@ void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend,
 #ifdef WALLSPLATS
 	if (gr_curline->linedef->splats && cv_splats.value)
 		HWR_DrawSegsSplats(pSurf);
-#endif
-#ifdef ALAM_LIGHTING
-	//Hurdler: TODO: do static lighting using gr_curline->lm
-	HWR_WallLighting(wallVerts);
 #endif
 }
 
