@@ -1226,6 +1226,7 @@ static menuitem_t OP_ResolutionMenu[] =
 	{IT_STRING | IT_CVAR,                NULL, "Use Native Resolution",      &cv_nativeres,         40},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Scale Divider",              &cv_nativeresdiv,      50},
 	{IT_STRING | IT_CVAR,                NULL, "Scale Comparison",           &cv_nativerescompare,  60},
+	{IT_STRING | IT_CVAR,                NULL, "Adjust Field Of View",       &cv_nativeresfov,      70},
 };
 #endif 
 
@@ -8289,6 +8290,7 @@ static void M_ResolutionMenu(INT32 choice)
 #endif
 }
 
+#ifdef NATIVESCREENRES
 static void M_DrawResolutionString(INT32 y)
 {
 	V_DrawRightAlignedString(BASEVIDWIDTH - currentMenu->x, y,
@@ -8296,7 +8298,7 @@ static void M_DrawResolutionString(INT32 y)
 		va("%dx%d", vid.width, vid.height));
 }
 
-#ifdef NATIVESCREENRES
+
 static void M_DrawResolutionOptions(void)
 {
 	M_DrawGenericMenu();
