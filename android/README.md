@@ -19,7 +19,7 @@ Based off [bitten2up/Kart-Public/android](https://github.com/bitten2up/Kart-Publ
 - [x] Netplay
 - [ ] Logs
 - [x] Addon support
-- [ ] Custom resolutions
+- [x] Native Resolutions
 - [x] Correct app icon
 - [ ] Non-hardcoded CMake
 - [ ] SAF support
