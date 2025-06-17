@@ -173,7 +173,7 @@ include Makefile.d/versions.mk
 
 
 ifdef NATIVESCREENRES
-opts:=-DNATIVESCREENRES
+opts+=-DNATIVESCREENRES
 endif
 
 ifdef DEBUGMODE
