@@ -38,8 +38,6 @@ UINT8 *screens[5];
 // screens[3] = fade screen start
 // screens[4] = fade screen end, postimage tempoarary buffer
 
-
-
 static CV_PossibleValue_t ticrate_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
 static CV_PossibleValue_t tpscounter_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
 consvar_t cv_ticrate = { "showfps", "No", CV_SAVE, ticrate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
@@ -85,9 +83,6 @@ static CV_PossibleValue_t constextsize_cons_t[] = {
 	{0, NULL}};
 static void CV_constextsize_OnChange(void);
 consvar_t cv_constextsize = {"con_textsize", "Medium", CV_SAVE|CV_CALL, constextsize_cons_t, CV_constextsize_OnChange, 0, NULL, NULL, 0, 0, NULL};
-
-
-
 
 // local copy of the palette for V_GetColor()
 RGBA_t *pLocalPalette = NULL;
@@ -284,8 +279,6 @@ static boolean InitCube(void)
 	return true;
 }
 
-
- 
 /*
 So it turns out that the way gamma was implemented previously, the default
 colour profile of the game was messed up. Since this bad decision has been

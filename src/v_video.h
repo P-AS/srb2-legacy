@@ -27,7 +27,6 @@
 
 extern UINT8 *screens[5];
 
-
 extern consvar_t cv_ticrate, cv_tpscounter, cv_allcaps, cv_constextsize, \
 cv_globalgamma, cv_globalsaturation, \
 cv_rhue, cv_yhue, cv_ghue, cv_chue, cv_bhue, cv_mhue,\
@@ -252,4 +251,3 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 	size_t destrowbytes);
 
 #endif
-
