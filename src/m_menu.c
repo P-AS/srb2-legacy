@@ -1156,7 +1156,12 @@ static menuitem_t OP_VideoOptionsMenu[] =
 {
 	{IT_STRING | IT_CALL,  NULL,   "Video Modes...",      M_VideoModeMenu,          5},
 
-	{IT_STRING|IT_CVAR,    NULL,   "Renderer",             &cv_renderer,         10},
+#ifdef HWRENDER
+	{IT_STRING | IT_CVAR, NULL, "Renderer",                     &cv_renderer,        10},
+#else
+	{IT_TRANSTEXT | IT_PAIR, "Renderer", "Software",            &cv_renderer,           10},
+#endif
+
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	{IT_STRING|IT_CVAR,    NULL,   "Fullscreen",          &cv_fullscreen,           15},
@@ -1231,7 +1236,9 @@ static void M_VideoOptions(INT32 choice)
 #ifdef HWRENDER
 	if (vid_opengl_state == -1)
 	{
-		OP_VideoOptionsMenu[op_video_renderer].status = (IT_DISABLED);
+		OP_VideoOptionsMenu[op_video_renderer].status = (IT_TRANSTEXT | IT_PAIR);
+		OP_VideoOptionsMenu[op_video_renderer].patch = "Renderer";
+		OP_VideoOptionsMenu[op_video_renderer].text = "Software";
 	}
 
 #endif
@@ -2213,7 +2220,7 @@ static void M_NextOpt(void)
 			itemOn = 0;
 		else
 			itemOn++;
-	} while (oldItemOn != itemOn && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SPACE);
+	} while (oldItemOn != itemOn && ( (currentMenu->menuitems[itemOn].status & IT_TYPE) & IT_SPACE ));
 	M_UpdateItemOn();
 }
 
@@ -2227,7 +2234,7 @@ static void M_PrevOpt(void)
 			itemOn = currentMenu->numitems - 1;
 		else
 			itemOn--;
-	} while (oldItemOn != itemOn && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SPACE);
+	} while (oldItemOn != itemOn && ( (currentMenu->menuitems[itemOn].status & IT_TYPE) & IT_SPACE ));
 	M_UpdateItemOn();
 }
 
@@ -2884,11 +2891,11 @@ void M_SetupNextMenu(menu_t *menudef)
 
 	// the curent item can be disabled,
 	// this code go up until an enabled item found
-	if ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SPACE)
+	if (( (currentMenu->menuitems[itemOn].status & IT_TYPE) & IT_SPACE ))
 	{
 		for (i = 0; i < currentMenu->numitems; i++)
 		{
-			if ((currentMenu->menuitems[i].status & IT_TYPE) != IT_SPACE)
+			if (!( (currentMenu->menuitems[i].status & IT_TYPE) & IT_SPACE ))
 			{
 				itemOn = i;
 				M_UpdateItemOn();
@@ -8144,7 +8151,18 @@ static void M_DrawGenericScrollMenu(void)
 					}
 					break;
 			case IT_TRANSTEXT:
-				V_DrawString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
+				switch (currentMenu->menuitems[i].status & IT_TYPE)
+				{
+					case IT_PAIR:
+						V_DrawString(x, y,
+								V_TRANSLUCENT, currentMenu->menuitems[i].patch);
+						V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
+								V_TRANSLUCENT, currentMenu->menuitems[i].text);
+						break;
+					default:
+						V_DrawString(x, y,
+								V_TRANSLUCENT, currentMenu->menuitems[i].text);
+				}
 				break;
 			case IT_QUESTIONMARKS:
 				V_DrawString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
