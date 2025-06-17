@@ -935,6 +935,7 @@ void readskincolor(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "INVCOLOR"))
 			{
+				CONS_Printf("%s", word2);
 				UINT16 v = (UINT16)get_number(word2);
 				if (v < numskincolors)
 					skincolors[num].invcolor = v;
@@ -6942,6 +6943,54 @@ static const char *const HUDITEMS_LIST[] = {
 	"LAP"
 };
 
+const char *COLOR_ENUMS[] = {
+	"NONE",
+	
+	"WHITE",
+	"SILVER",
+	"GREY",
+	"BLACK",
+	"CYAN",
+	"TEAL",
+	"STEELBLUE",
+	"BLUE",
+	"PEACH",
+	"TAN",
+	"PINK",
+	"LAVENDER",
+	"PURPLE",
+	"ORANGE",
+	"ROSEWOOD",
+	"BEIGE",
+	"BROWN",
+	"RED",
+	"DARKRED",
+	"NEONGREEN",
+	"GREEN",
+	"ZIM",
+	"OLIVE",
+	"YELLOW",
+	"GOLD",
+
+	"SUPER1"
+	"SUPER2",
+	"SUPER3",
+	"SUPER4",
+	"SUPER5",
+
+	"TSUPER1",
+	"TSUPER2",
+	"TSUPER3",
+	"TSUPER4",
+	"TSUPER5",
+
+	"KSUPER1",
+	"KSUPER2",
+	"KSUPER3",
+	"KSUPER4",
+	"KSUPER5"
+};
+
 struct {
 	const char *n;
 	// has to be able to hold both fixed_t and angle_t, so drastic measure!!
@@ -7537,8 +7586,8 @@ static hudnum_t get_huditem(const char *word)
 	return HUD_LIVESNAME;
 }
 
-static skincolornum_t get_skincolor(const char *word)
-{ // Returns the value of SKINCOLOR_ enumerations
+skincolornum_t get_skincolor(const char *word)
+{
 	skincolornum_t i;
 	if (*word >= '0' && *word <= '9')
 		return atoi(word);
@@ -7942,6 +7991,7 @@ static inline int lib_getenum(lua_State *L)
 	}
 	else if (fastncmp("SKINCOLOR_",word,10)) {
 		p = word+10;
+		CONS_Printf("%s", p);
 		for (i = 0; i < NUMCOLORFREESLOTS; i++) {
 			if (!FREE_SKINCOLORS[i])
 				break;
@@ -7950,11 +8000,13 @@ static inline int lib_getenum(lua_State *L)
 				return 1;
 			}
 		}
-		for (i = 0; i < numskincolors; i++)
-			if (fastcmp(p, skincolors[i].name)) {
+		for (i = 0; i < SKINCOLOR_FIRSTFREESLOT; i++)
+		{
+			if (fastcmp(p, COLOR_ENUMS[i])) {
 				lua_pushinteger(L, i);
 				return 1;
 			}
+		}
 		if (mathlib) return luaL_error(L, "skincolor '%s' could not be found.\n", word);
 		return 0;
 	}
