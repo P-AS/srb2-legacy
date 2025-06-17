@@ -116,6 +116,7 @@ INT32 window_y;
 static const char *pagename = "MAP1PIC";
 static char *startupwadfiles[MAX_WADFILES];
 
+UINT16 numskincolors;
 boolean devparm = false; // started game with -devparm
 
 boolean singletics = false; // timedemo
@@ -1241,7 +1242,10 @@ void D_SRB2Main(void)
 	// Setup character tables
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
-
+	
+	// load colors
+	M_InitSkincolors();
+	
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
 	if (!W_InitMultipleFiles(startupwadfiles))

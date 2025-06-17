@@ -617,11 +617,11 @@ void D_RegisterServerCommands(void)
 void D_RegisterClientCommands(void)
 {
 	INT32 i;
-
+	
 	for (i = 0; i < MAXSKINCOLORS; i++)
 	{
 		Color_cons_t[i].value = i;
-		Color_cons_t[i].strvalue = Color_Names[i];
+		Color_cons_t[i].strvalue = skincolors[i].name;
 	}
 	Color_cons_t[MAXSKINCOLORS].value = 0;
 	Color_cons_t[MAXSKINCOLORS].strvalue = NULL;
@@ -1406,7 +1406,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 		SetPlayerName(playernum, name);
 
 	// set color
-	p->skincolor = color % MAXSKINCOLORS;
+	p->skincolor = color % numskincolors;
 	if (p->mo)
 		p->mo->color = (UINT8)p->skincolor;
 

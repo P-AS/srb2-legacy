@@ -635,7 +635,7 @@ spritemd2found:
 	fclose(f);
 }
 
-static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, skincolors_t color)
+static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, skincolornum_t color)
 {
 	UINT16 w = gpatch->width, h = gpatch->height;
 	UINT32 size = w*h;
@@ -830,7 +830,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 	return;
 }
 
-static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, const UINT8 *colormap, skincolors_t color)
+static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, const UINT8 *colormap, skincolornum_t color)
 {
 	// mostly copied from HWR_GetMappedPatch, hence the similarities and comment
 	GLMipmap_t *grmip, *newmip;
@@ -1039,11 +1039,11 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 
 		if (gpatch && gpatch->mipmap->grInfo.format) // else if meant that if a texture couldn't be loaded, it would just end up using something else's texture
 		{
-			if ((skincolors_t)spr->mobj->color != SKINCOLOR_NONE &&
+			if ((skincolornum_t)spr->mobj->color != SKINCOLOR_NONE &&
 				md2->blendgrpatch && ((GLPatch_t *)md2->blendgrpatch)->mipmap->grInfo.format
 				&& gpatch->width == ((GLPatch_t *)md2->blendgrpatch)->width && gpatch->height == ((GLPatch_t *)md2->blendgrpatch)->height)
 			{
-				HWR_GetBlendedTexture(gpatch, (GLPatch_t *)md2->blendgrpatch, spr->colormap, (skincolors_t)spr->mobj->color);
+				HWR_GetBlendedTexture(gpatch, (GLPatch_t *)md2->blendgrpatch, spr->colormap, (skincolornum_t)spr->mobj->color);
 			}
 			else
 			{
