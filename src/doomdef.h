@@ -572,4 +572,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 // Here once lied the corpse of ALAM_LIGHTING
 
+/// Android Port: Native Resolution support
+//#define NATIVESCREENRES
+
 #endif // __DOOMDEF__

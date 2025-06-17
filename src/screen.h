@@ -148,6 +148,12 @@ extern INT32 scr_bpp;
 extern UINT8 *scr_borderpatch; // patch used to fill the view borders
 
 extern consvar_t cv_scr_width, cv_scr_height, cv_scr_depth, cv_renderview, cv_fullscreen;
+
+#ifdef NATIVESCREENRES
+extern consvar_t cv_nativeres;
+extern consvar_t cv_nativeresdiv, cv_nativerescompare;
+#endif
+
 // wait for page flipping to end or not
 extern consvar_t cv_vidwait;
 

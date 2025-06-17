@@ -257,6 +257,7 @@ menu_t OP_ControlsDef;
 menu_t OP_P1ControlsDef, OP_P2ControlsDef, OP_MouseOptionsDef;
 menu_t OP_Mouse2OptionsDef, OP_Joystick1Def, OP_Joystick2Def;
 static void M_VideoModeMenu(INT32 choice);
+static void M_ResolutionMenu(INT32 choice);
 static void M_Setup1PControlsMenu(INT32 choice);
 static void M_Setup2PControlsMenu(INT32 choice);
 static void M_Setup1PJoystickMenu(INT32 choice);
@@ -266,6 +267,9 @@ static void M_ChangeControl(INT32 choice);
 
 // Video & Sound
 menu_t OP_VideoOptionsDef, OP_VideoModeDef;
+#ifdef NATIVESCREENRES
+menu_t OP_ResolutionDef;
+#endif // NATIVESCREENRES
 #ifdef HWRENDER
 menu_t OP_OpenGLOptionsDef, OP_OpenGLColorDef;
 #endif
@@ -308,6 +312,9 @@ static void M_DrawNightsAttackMenu(void);
 static void M_DrawSetupChoosePlayerMenu(void);
 static void M_DrawControl(void);
 static void M_DrawVideoMode(void);
+#ifdef NATIVESCREENRES
+static void M_DrawResolutionOptions(void);
+#endif
 static void M_DrawMonitorToggles(void);
 #ifdef HWRENDER
 static void M_OGL_DrawColorMenu(void);
@@ -1144,7 +1151,7 @@ static menuitem_t OP_Mouse2OptionsMenu[] =
 
 static menuitem_t OP_VideoOptionsMenu[] =
 {
-	{IT_STRING | IT_CALL,  NULL,   "Video Modes...",      M_VideoModeMenu,     10},
+	{IT_STRING | IT_CALL,  NULL,   "Video Modes...",      M_ResolutionMenu,     10},
 
 #ifdef HWRENDER
 	{IT_SUBMENU|IT_STRING, NULL,   "OpenGL Options...",  &OP_OpenGLOptionsDef,    20},
@@ -1167,6 +1174,18 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Vertical Sync",       &cv_vidwait,    130},
 	{IT_STRING | IT_CVAR,    NULL, "FPS Cap",       &cv_fpscap, 140},
 };
+
+#ifdef NATIVESCREENRES
+static menuitem_t OP_ResolutionMenu[] =
+{
+	{IT_STRING | IT_CALL,                NULL, "Video Mode List...",         M_VideoModeMenu,       20},
+	{IT_WHITESTRING | IT_SPACE,          NULL, "Current Resolution",         NULL,                  10},
+
+	{IT_STRING | IT_CVAR,                NULL, "Use Native Resolution",      &cv_nativeres,         40},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Scale Divider",              &cv_nativeresdiv,      50},
+	{IT_STRING | IT_CVAR,                NULL, "Scale Comparison",           &cv_nativerescompare,  60},
+};
+#endif
 
 static menuitem_t OP_VideoModeMenu[] =
 {
@@ -1753,13 +1772,31 @@ menu_t OP_VideoModeDef =
 {
 	"M_VIDEO",
 	1,
+#ifdef NATIVESCREENRES
+	&OP_ResolutionDef,
+#else
 	&OP_VideoOptionsDef,
+#endif
 	OP_VideoModeMenu,
 	M_DrawVideoMode,
 	48, 26,
 	0,
 	NULL
 };
+
+#ifdef NATIVESCREENRES
+menu_t OP_ResolutionDef =
+{
+	"M_VIDEO",
+	sizeof(OP_ResolutionMenu) / sizeof(menuitem_t),
+	&OP_VideoOptionsDef,
+	OP_ResolutionMenu,
+	M_DrawResolutionOptions,
+	35, 30,
+	0,
+	NULL
+};
+#endif
 menu_t OP_SoundOptionsDef = DEFAULTMENUSTYLE("M_SOUND", OP_SoundOptionsMenu, &OP_MainDef, 60, 30);
 menu_t OP_SoundAdvancedDef = DEFAULTMENUSTYLE("M_SOUND", OP_SoundAdvancedMenu, &OP_SoundOptionsDef, 30, 30);
 menu_t OP_GameOptionsDef = DEFAULTMENUSTYLE("M_GAME", OP_GameOptionsMenu, &OP_MainDef, 30, 30);
@@ -8200,6 +8237,31 @@ static void M_ChangeControl(INT32 choice)
 
 static modedesc_t modedescs[MAXMODEDESCS];
 
+static void M_ResolutionMenu(INT32 choice)
+{
+#ifdef NATIVESCREENRES
+	(void)choice;
+	M_SetupNextMenu(&OP_ResolutionDef);
+#else
+	M_VideoModeMenu(choice);
+#endif
+}
+
+static void M_DrawResolutionString(INT32 y)
+{
+	V_DrawRightAlignedString(BASEVIDWIDTH - currentMenu->x, y,
+	(SCR_IsAspectCorrect(vid.width, vid.height) ? V_GREENMAP : V_YELLOWMAP),
+		va("%dx%d", vid.width, vid.height));
+}
+
+#ifdef NATIVESCREENRES
+static void M_DrawResolutionOptions(void)
+{
+	M_DrawGenericMenu();
+	M_DrawResolutionString(currentMenu->y+currentMenu->menuitems[1].alphaKey);
+}
+#endif
+
 static void M_VideoModeMenu(INT32 choice)
 {
 	INT32 i, j, vdup, nummodes, width, height;
@@ -8409,7 +8471,12 @@ static void M_HandleVideoMode(INT32 ch)
 				vidm_testingmode = 15*TICRATE;
 				vidm_previousmode = vid.modenum;
 				if (!setmodeneeded) // in case the previous setmode was not finished
+				{
+#ifdef NATIVESCREENRES
+					CV_StealthSetValue(&cv_nativeres, false);
+#endif
 					setmodeneeded = modedescs[vidm_selected].modenum + 1;
+				}
 			}
 			break;
 

@@ -171,6 +171,11 @@ include Makefile.d/platform.mk
 include Makefile.d/features.mk
 include Makefile.d/versions.mk
 
+
+ifdef NATIVESCREENRES
+opts:=-DNATIVESCREENRES
+endif
+
 ifdef DEBUGMODE
 makedir:=$(makedir)/debug
 endif
