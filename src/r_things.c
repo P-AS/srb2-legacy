@@ -2560,6 +2560,7 @@ static void Sk_SetDefaultValue(skin_t *skin)
 
 	skin->starttranscolor = 160;
 	skin->prefcolor = SKINCOLOR_GREEN;
+	skin->supercolor = SKINCOLOR_SUPER1;
 
 	skin->normalspeed = 36<<FRACBITS;
 	skin->runspeed = 28<<FRACBITS;
@@ -2934,9 +2935,10 @@ void R_AddSkins(UINT16 wadnum)
 			// custom translation table
 			else if (!stricmp(stoken, "startcolor"))
 				skin->starttranscolor = atoi(value);
-
 			else if (!stricmp(stoken, "prefcolor"))
 				skin->prefcolor = R_GetColorByName(value);
+			else if (!stricmp(stoken, "supercolor"))
+				skin->supercolor = R_GetSuperColorByName(value);
 			else if (!stricmp(stoken, "jumpfactor"))
 				skin->jumpfactor = FLOAT_TO_FIXED(atof(value));
 			else if (!stricmp(stoken, "highresscale"))

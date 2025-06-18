@@ -85,7 +85,8 @@ static inline void P_ArchivePlayer(void)
 //
 static inline void P_UnArchivePlayer(void)
 {
-	savedata.skincolor = READUINT8(save_p);
+	// TODO compat
+	savedata.skincolor = READUINT16(save_p);
 	savedata.skin = READUINT8(save_p);
 
 	savedata.score = READINT32(save_p);
@@ -97,6 +98,7 @@ static inline void P_UnArchivePlayer(void)
 		savedata.botskin = READUINT8(save_p);
 		if (savedata.botskin-1 >= numskins)
 			savedata.botskin = 0;
+		// TODO compat
 		savedata.botcolor = READUINT8(save_p);
 	}
 	else
@@ -2104,6 +2106,7 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->cvmem = READINT32(save_p);
 	if (diff2 & MD2_SKIN)
 		mobj->skin = &skins[READUINT8(save_p)];
+	// TODO compat
 	if (diff2 & MD2_COLOR)
 		mobj->color = READUINT8(save_p);
 	if (diff2 & MD2_EXTVAL1)

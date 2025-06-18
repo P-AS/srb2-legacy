@@ -1180,12 +1180,12 @@ static void SendNameAndColor(void)
 			CV_StealthSetValue(&cv_playercolor, skincolor_blueteam);
 	}
 
-	// never allow the color "none"
-	if (!cv_playercolor.value)
+	// never allow inaccessible colors
+	if (!cv_playercolor.value || !skincolors[cv_playercolor.value].accessible)
 	{
-		if (players[consoleplayer].skincolor)
+		if (players[consoleplayer].skincolor && skincolors[cv_playercolor.value].accessible)
 			CV_StealthSetValue(&cv_playercolor, players[consoleplayer].skincolor);
-		else if (skins[players[consoleplayer].skin].prefcolor)
+		else if (skins[players[consoleplayer].skin].prefcolor && skincolors[skins[players[consoleplayer].skin].prefcolor].accessible)
 			CV_StealthSetValue(&cv_playercolor, skins[players[consoleplayer].skin].prefcolor);
 		else
 			CV_StealthSet(&cv_playercolor, cv_playercolor.defaultvalue);
@@ -1233,10 +1233,10 @@ static void SendNameAndColor(void)
 			{
 				CV_StealthSetValue(&cv_playercolor, skins[cv_skin.value].prefcolor);
 
-				players[consoleplayer].skincolor = (cv_playercolor.value&0x1F) % MAXSKINCOLORS;
+				players[consoleplayer].skincolor = (cv_playercolor.value) % numskincolors;
 
 				if (players[consoleplayer].mo)
-					players[consoleplayer].mo->color = (UINT8)players[consoleplayer].skincolor;
+					players[consoleplayer].mo->color = (UINT16)players[consoleplayer].skincolor;
 			}
 		}
 		else
@@ -1300,12 +1300,12 @@ static void SendNameAndColor2(void)
 			CV_StealthSetValue(&cv_playercolor2, skincolor_blueteam);
 	}
 
-	// never allow the color "none"
-	if (!cv_playercolor2.value)
+	// never allow inaccessible colors
+	if (!cv_playercolor2.value || !skincolors[cv_playercolor2.value].accessible)
 	{
-		if (players[secondplaya].skincolor)
+		if (players[secondplaya].skincolor && skincolors[cv_playercolor2.value].accessible)
 			CV_StealthSetValue(&cv_playercolor2, players[secondplaya].skincolor);
-		else if (skins[players[secondplaya].skin].prefcolor)
+		else if (skins[players[secondplaya].skin].prefcolor && skincolors[skins[players[secondplaya].skin].prefcolor].accessible)
 			CV_StealthSetValue(&cv_playercolor2, skins[players[secondplaya].skin].prefcolor);
 		else
 			CV_StealthSet(&cv_playercolor2, cv_playercolor2.defaultvalue);
@@ -1357,7 +1357,7 @@ static void SendNameAndColor2(void)
 			{
 				CV_StealthSetValue(&cv_playercolor2, skins[players[secondplaya].skin].prefcolor);
 
-				players[secondplaya].skincolor = (cv_playercolor2.value&0x1F) % MAXSKINCOLORS;
+				players[secondplaya].skincolor = (cv_playercolor2.value) % numskincolors;
 
 				if (players[secondplaya].mo)
 					players[secondplaya].mo->color = players[secondplaya].skincolor;
@@ -1380,7 +1380,8 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 {
 	player_t *p = &players[playernum];
 	char name[MAXPLAYERNAME+1];
-	UINT8 color, skin;
+	UINT8 color;
+	UINT8 skin;
 
 #ifdef PARANOIA
 	if (playernum < 0 || playernum > MAXPLAYERS)
@@ -1408,7 +1409,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	// set color
 	p->skincolor = color % numskincolors;
 	if (p->mo)
-		p->mo->color = (UINT8)p->skincolor;
+		p->mo->color = p->skincolor;
 
 	// normal player colors
 	if (server && (p != &players[consoleplayer] && p != &players[secondarydisplayplayer]))

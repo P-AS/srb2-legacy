@@ -5441,6 +5441,7 @@ static void M_ReadSavegameInfo(UINT32 slot)
 
 	// P_UnArchivePlayer()
 	CHECKPOS
+	// TODO, compatibility with this
 	savegameinfo[slot].skincolor = READUINT8(save_p);
 	CHECKPOS
 	savegameinfo[slot].skinnum = READUINT8(save_p);
@@ -5460,6 +5461,7 @@ static void M_ReadSavegameInfo(UINT32 slot)
 		if (savegameinfo[slot].botskin-1 >= numskins)
 			savegameinfo[slot].botskin = 0;
 		CHECKPOS
+		// TODO compat this
 		savegameinfo[slot].botcolor = READUINT8(save_p); // because why not.
 	}
 	else
@@ -7373,7 +7375,7 @@ static consvar_t *setupm_cvskin;
 static consvar_t *setupm_cvcolor;
 static consvar_t *setupm_cvname;
 static INT32      setupm_fakeskin;
-static INT32      setupm_fakecolor;
+static UINT8     setupm_fakecolor;
 
 static void M_DrawSetupMultiPlayerMenu(void)
 {

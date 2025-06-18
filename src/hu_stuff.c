@@ -597,6 +597,45 @@ static void Command_CSay_f(void)
 }
 static tic_t stop_spamming[MAXPLAYERS];
 
+static const char *GetChatColorFromSkinColor(INT32 skincolor)
+{
+	const char *textcolor = NULL;
+	UINT16 chatcolor = skincolors[skincolor].chatcolor;
+	if (!chatcolor || chatcolor%0x1000)
+		textcolor = "\x80";
+	else if (chatcolor == V_PURPLEMAP)
+		textcolor = "\x81";
+	else if (chatcolor == V_YELLOWMAP)
+		textcolor = "\x82";
+	else if (chatcolor == V_GREENMAP)
+		textcolor = "\x83";
+	else if (chatcolor == V_BLUEMAP)
+		textcolor = "\x84";
+	else if (chatcolor == V_REDMAP)
+		textcolor = "\x85";
+	else if (chatcolor == V_GRAYMAP)
+		textcolor = "\x86";
+	else if (chatcolor == V_ORANGEMAP)
+		textcolor = "\x87";
+	else if (chatcolor == V_SKYMAP)
+		textcolor = "\x88";
+	else if (chatcolor == V_LAVENDERMAP)
+		textcolor = "\x89";
+	else if (chatcolor == V_GOLDMAP)
+		textcolor = "\x8A";
+	else if (chatcolor == V_TEAMAP)
+		textcolor = "\x8B";
+	else if (chatcolor == V_STEELMAP)
+		textcolor = "\x8C";
+	else if (chatcolor == V_PINKMAP)
+		textcolor = "\x8D";
+	else if (chatcolor == V_TEALMAP)
+		textcolor = "\x8E";
+	else if (chatcolor == V_PEACHMAP)
+		textcolor = "\x8F";
+	return textcolor;
+}
+
 /** Receives a message, processing an ::XD_SAY command.
   * \sa DoSayCommand
   * \author Graue <graue@oceanbase.org>
@@ -739,44 +778,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		}
 		else
         {
-			const UINT8 color = players[playernum].skincolor;
-
-			cstart = "\x83";
-
-			if (color <= SKINCOLOR_SILVER)
-				cstart = "\x80"; // White
-			else if (color <= SKINCOLOR_BLACK)
-				cstart = "\x86"; // Grey
-			else if (color <= SKINCOLOR_CYAN)
-				cstart = "\x88"; // Cyan/Sky
-			else if (color <= SKINCOLOR_TEAL)
-				cstart = "\x8E"; // Teal
-			else if (color <= SKINCOLOR_STEELBLUE)
-				cstart = "\x8C"; // Steel
-			else if (color <= SKINCOLOR_BLUE)
-				cstart = "\x84"; // Blue
-			else if (color <= SKINCOLOR_PEACH || color == SKINCOLOR_TAN)
-				cstart = "\x8F"; // Peach
-			else if (color == SKINCOLOR_ORANGE)
-				cstart = "\x87"; // Orange
-			else if (color == SKINCOLOR_PINK)
-				cstart = "\x8D"; // Pink
-			else if (color == SKINCOLOR_LAVENDER)
-				cstart = "\x89"; // Lavender
-			else if (color <= SKINCOLOR_PURPLE)
-				cstart = "\x81"; // Purple
-			else if (color <= SKINCOLOR_ORANGE || color == SKINCOLOR_ROSEWOOD || color == SKINCOLOR_BEIGE || color == SKINCOLOR_BROWN)
-				cstart = "\x87"; // Orange
-			else if (color <= SKINCOLOR_RED  || color == SKINCOLOR_DARKRED)
-				cstart = "\x85"; // Red
-			else if (color <= SKINCOLOR_NEONGREEN || color == SKINCOLOR_GREEN)
-				cstart = "\x83"; // Green
-			else if (color <= SKINCOLOR_ZIM || color == SKINCOLOR_OLIVE)
-				cstart = "\x8B"; // Yellow
-			else if (color <= SKINCOLOR_YELLOW)
-				cstart = "\x82"; // Yellow
-			else if (color <= SKINCOLOR_GOLD)
-				cstart = "\x8A"; // Yellow
+			cstart = GetChatColorFromSkinColor(players[playernum].skincolor);
         }
 		prefix = cstart;
 

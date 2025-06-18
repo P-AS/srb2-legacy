@@ -54,6 +54,7 @@ extern UINT8 ultimatemode; // was sk_insane
 extern gameaction_t gameaction;
 
 extern boolean botingame;
-extern UINT8 botskin, botcolor;
+extern UINT8 botskin;
+extern UINT8 botcolor;
 
 #endif //__G_STATE__

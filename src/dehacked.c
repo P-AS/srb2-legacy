@@ -935,7 +935,6 @@ void readskincolor(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "INVCOLOR"))
 			{
-				CONS_Printf("%s", word2);
 				UINT16 v = (UINT16)get_number(word2);
 				if (v < numskincolors)
 					skincolors[num].invcolor = v;
@@ -6988,7 +6987,8 @@ const char *COLOR_ENUMS[] = {
 	"KSUPER2",
 	"KSUPER3",
 	"KSUPER4",
-	"KSUPER5"
+	"KSUPER5",
+	NULL
 };
 
 struct {
@@ -7586,7 +7586,7 @@ static hudnum_t get_huditem(const char *word)
 	return HUD_LIVESNAME;
 }
 
-skincolornum_t get_skincolor(const char *word)
+static skincolornum_t get_skincolor(const char *word)
 {
 	skincolornum_t i;
 	if (*word >= '0' && *word <= '9')
@@ -7600,7 +7600,7 @@ skincolornum_t get_skincolor(const char *word)
 			return SKINCOLOR_FIRSTFREESLOT+i;
 	}
 	for (i = 0; i < numskincolors; i++)
-		if (fastcmp(word, skincolors[i].name))
+		if (fastcmp(word, COLOR_ENUMS[i]))
 			return i;
 	deh_warning("Couldn't find skincolor named 'SKINCOLOR_%s'",word);
 	return SKINCOLOR_GREEN;
@@ -7614,10 +7614,11 @@ fixed_t get_number(const char *word)
 
 void DEH_Check(void)
 {
-#if defined(_DEBUG) || defined(PARANOIA)
+#if defined(_DEBUG) || defined(PARANOIA) || defined(initfreeslots)
 	const size_t dehstates = sizeof(STATE_LIST)/sizeof(const char*);
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
 	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
+	const size_t dehcolors = sizeof(COLOR_ENUMS)/sizeof(const char*);
 
 	if (dehstates != S_FIRSTFREESLOT)
 		I_Error("You forgot to update the Dehacked states list, you dolt!\n(%d states defined, versus %s in the Dehacked list)\n", S_FIRSTFREESLOT, sizeu1(dehstates));
@@ -7627,6 +7628,9 @@ void DEH_Check(void)
 
 	if (dehpowers != NUMPOWERS)
 		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d powers defined, versus %s in the Dehacked list)\n", NUMPOWERS, sizeu1(dehpowers));
+	
+	if (dehcolors != SKINCOLOR_FIRSTFREESLOT)
+		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", SKINCOLOR_FIRSTFREESLOT, sizeu1(dehcolors));
 #endif
 }
 

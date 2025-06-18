@@ -315,6 +315,15 @@ UINT8 R_GetColorByName(const char *name)
 	return 0;
 }
 
+UINT16 R_GetSuperColorByName(const char *name)
+{
+	UINT16 color;
+	for (color = FIRSTSUPERCOLOR; color < numskincolors; color++)
+		if (!stricmp(skincolors[color].name, name))
+			return color;
+	return 0;
+}
+
 // ==========================================================================
 //               COMMON DRAWER FOR 8 AND 16 BIT COLOR MODES
 // ==========================================================================
