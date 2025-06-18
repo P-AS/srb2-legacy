@@ -208,8 +208,6 @@ consvar_t cv_fovchange = {"fovchange", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, 
 consvar_t cv_maxportals = {"maxportals", "2", CV_SAVE, maxportals_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 
-
-
 void SplitScreen_OnChange(void)
 {
 	if (!cv_debug && netgame)
@@ -1008,6 +1006,7 @@ void R_ExecuteSetViewSize(void)
 
 	am_recalc = true;
 }
+
 fixed_t R_GetPlayerFov(player_t *player)
 {
 	fixed_t fov = cv_fov.value + player->fovadd;

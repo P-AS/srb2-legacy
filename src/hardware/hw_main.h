@@ -49,6 +49,8 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, UINT32 color, INT32
 UINT8 *HWR_GetScreenshot(void);
 boolean HWR_Screenshot(const char *pathname);
 
+float HWR_GetPlayerFov(player_t *player);
+
 void HWR_AddCommands(void);
 void HWR_AddSessionCommands(void);
 void HWR_CorrectSWTricks(void);
@@ -66,8 +68,6 @@ void HWR_DrawScreenFinalTexture(int width, int height);
 // This stuff is put here so MD2's can use them
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
-
-
 
 boolean HWR_CompileShaders(void);
 
