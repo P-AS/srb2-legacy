@@ -140,6 +140,12 @@ static boolean cl_packetmissed;
 // here it is for the secondary local player (splitscreen)
 static UINT8 mynode; // my address pointofview server
 
+
+static boolean addonlist_show = false;
+static boolean addonlist_toggle_tapped = false;
+static INT32 addonlist_scroll = 0;
+static INT32 addonlist_scroll_time = 0;
+
 static UINT8 localtextcmd[MAXTEXTCMD];
 static UINT8 localtextcmd2[MAXTEXTCMD]; // splitscreen
 static tic_t neededtic;
@@ -1117,6 +1123,122 @@ static void CV_LoadPlayerNames(UINT8 **p)
 	}
 }
 
+static void CL_DrawPlayerList(void)
+{
+	V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Players");
+	V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i / %i", serverlist[joinnode].info.numberofplayer, serverlist[joinnode].info.maxplayer));
+
+	INT32 i;
+	INT32 count = 0;
+	INT32 x = 14;
+	INT32 y = 84;
+	INT32 statuscolor = 1;
+	char player_name[MAXPLAYERNAME+1];
+	if (serverlist[joinnode].info.numberofplayer > 0)
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playerinfo[i].node < 255)
+			{
+				strncpy(player_name, playerinfo[i].name, MAXPLAYERNAME);
+				player_name[MAXPLAYERNAME] = '\0';
+
+				V_DrawThinString(x + 10, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, player_name);
+				
+				if (playerinfo[i].team == 0) { statuscolor = 184; } // playing
+				if (playerinfo[i].data & 0x20) { statuscolor = 86; } // tag IT
+				if (playerinfo[i].team == 1) { statuscolor = 128; } // ctf red team
+				if (playerinfo[i].team == 2) { statuscolor = 232; } // ctf blue team
+				if (playerinfo[i].team == 255) { statuscolor = 16; } // spectator or non-team
+				
+				V_DrawFill(x, y, 7, 7, 31);
+				V_DrawFill(x, y, 6, 6, statuscolor);
+				
+				y += 9;
+				count++;
+				if ((count == 11) || (count == 22))
+				{
+					x += 104;
+					y = 84;
+				}
+			}
+}
+
+static void CL_DrawAddonList(void)
+{
+	V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Addons");
+
+	INT32 i;
+	INT32 count = 0;
+	INT32 x = 14;
+	INT32 y = 84;
+	boolean small_mode = fileneedednum <= 11;
+	char file_name[MAX_WADPATH+1];
+
+#define maxcharlen (20 + 3)
+#define charsonside 10
+
+	for (i = addonlist_scroll; i < fileneedednum; i++)
+	{
+		if (i & 1)
+			V_DrawFill(x,y-1, (small_mode) ? 292 : 146, 9, 236);
+		
+		fileneeded_t addon_file = fileneeded[i];
+		strncpy(file_name, addon_file.filename, MAX_WADPATH);
+
+		if ((UINT8)(strlen(file_name) + 1) > maxcharlen && !small_mode)
+			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80: %.*s...%s", i + 1, charsonside, file_name, file_name + strlen(file_name) - ((charsonside + 1))) );
+		else
+		{
+			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80: %s", i + 1, file_name));
+			if (small_mode)
+			{
+				const char *filesize_str;
+				if (addon_file.totalsize >= 1024*1024)
+					filesize_str = va(" %.2fMiB", (double)addon_file.totalsize / (1024*1024));
+				else if (addon_file.totalsize < 1024)
+					filesize_str = va(" %4uB", addon_file.totalsize);
+				else
+					filesize_str = va(" %.2fKiB", (double)addon_file.totalsize / 1024);
+				V_DrawRightAlignedThinString(x + 292, y, V_YELLOWMAP|V_ALLOWLOWERCASE, filesize_str);
+			}
+		}
+
+		y += 9;
+		count++;
+		if (count == 11)
+		{
+			x = BASEVIDWIDTH/2;
+			y = 84;
+		}
+
+		if (count == 22)
+			break;
+	}
+
+	UINT32 totalsize = 0;
+	for (INT32 j = 0; j < fileneedednum; j++)
+		totalsize += fileneeded[j].totalsize;
+
+	const char *totalsize_str;
+	if (totalsize >= 1024*1024)
+		totalsize_str = va("%.2fMiB total", (double)totalsize / (1024*1024));
+	else if (totalsize < 1024)
+		totalsize_str = va("%4uB total", totalsize);
+	else
+		totalsize_str = va("%.2fKiB total", (double)totalsize / 1024);
+	V_DrawRightAlignedThinString(BASEVIDWIDTH - 22, 74, V_YELLOWMAP|V_ALLOWLOWERCASE, totalsize_str);
+
+	if (fileneedednum >= 22)
+	{
+		if (addonlist_scroll)
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 10, 74, V_YELLOWMAP, "\x1A");
+		if (addonlist_scroll != fileneedednum-22)
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 10, y-9, V_YELLOWMAP, "\x1B");
+	}
+#undef maxcharlen
+#undef charsonside
+}
+
+
 #ifdef CLIENT_LOADINGSCREEN
 //
 // CL_DrawConnectionStatus
@@ -1132,7 +1254,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 	// Draw the bottom box.
 	M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press ESC to abort");
+	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP|V_ALLOWLOWERCASE, "Press ESC to abort");
 
 	if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_VIEWSERVER)
 	{
@@ -1172,7 +1294,7 @@ static inline void CL_DrawConnectionStatus(void)
 				cltext = M_GetText("Connecting to server...");
 				break;
 		}
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP, cltext);
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP|V_ALLOWLOWERCASE, cltext);
 	}
 	else
 	{
@@ -1205,48 +1327,19 @@ static inline void CL_DrawConnectionStatus(void)
 
 			V_DrawFill(8, 72, BASEVIDWIDTH - 16, 112, 239);
 
-			// why i did this
-			V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Players");
-			V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i / %i", serverlist[joinnode].info.numberofplayer, serverlist[joinnode].info.maxplayer));
-
-			INT32 i;
-			INT32 count = 0;
-			INT32 x = 14;
-			INT32 y = 84;
-			INT32 statuscolor = 1;
-			char player_name[MAXPLAYERNAME+1];
-			if (serverlist[joinnode].info.numberofplayer > 0)
-			{
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (playerinfo[i].node < 255)
-					{
-						strncpy(player_name, playerinfo[i].name, MAXPLAYERNAME);
-						V_DrawThinString(x + 10, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, player_name);
-
-						if (playerinfo[i].team == 0) { statuscolor = 184; } // playing
-						if (playerinfo[i].data & 0x20) { statuscolor = 86; } // tag IT
-						if (playerinfo[i].team == 1) { statuscolor = 128; } // ctf red team
-						if (playerinfo[i].team == 2) { statuscolor = 232; } // ctf blue team
-						if (playerinfo[i].team == 255) { statuscolor = 16; } // spectator or non-team
-
-						V_DrawFill(x, y, 7, 7, 31);
-						V_DrawFill(x, y, 6, 6, statuscolor);
-
-						y += 9;
-						count++;
-						if ((count == 11) || (count == 22))
-						{
-							x += 104;
-							y = 84;
-						}
-					}
-				}
-			}
+			if (addonlist_show)
+				CL_DrawAddonList();
+			else
+				CL_DrawPlayerList();
 
 			// Buttons
 			V_DrawFill(8, BASEVIDHEIGHT - 14, BASEVIDWIDTH - 16, 12, 239);
 			V_DrawThinString(16, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sESC%s] = Abort", "\x82", "\x80"));
+
+
+			if (fileneedednum > 0)
+				V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 11, V_ALLOWLOWERCASE, va("[""\x82""SPACE""\x80""] = %s", 
+					(addonlist_show ? "Players" : "Addons")));
 			V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sENTER%s] = Join", "\x82", "\x80"));
 		}
 		else if (lastfilenum != -1)
@@ -1279,15 +1372,15 @@ static inline void CL_DrawConnectionStatus(void)
 				strncpy(tempname, filename, sizeof(tempname)-1);
 			}
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP,
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP|V_ALLOWLOWERCASE,
 				va(M_GetText("Downloading \"%s\""), tempname));
-			V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
+			V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE|V_ALLOWLOWERCASE,
 				va(" %4uK/%4uK",fileneeded[lastfilenum].currentsize>>10,file->totalsize>>10));
-			V_DrawRightAlignedString(BASEVIDWIDTH/2+128, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
+			V_DrawRightAlignedString(BASEVIDWIDTH/2+128, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE|V_ALLOWLOWERCASE,
 				va("%3.1fK/s ", ((double)getbps)/1024));
 		}
 		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP,
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP|V_ALLOWLOWERCASE,
 				M_GetText("Waiting to download files..."));
 	}
 }
@@ -2054,7 +2147,77 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				cl_mode = CL_CHECKFILES;
 			else if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 				cl_mode = CL_ABORTED;
+
+			
+			if (gamekeydown[KEY_SPACE] && fileneedednum)
+			{
+				if (!addonlist_toggle_tapped)
+				{
+					addonlist_show = !addonlist_show;
+					S_StartSound(NULL, sfx_menu1);
+				}
+				addonlist_toggle_tapped = true;
+			}
+			else if (!(addonlist_show && fileneedednum > 22))
+				addonlist_toggle_tapped = false;
+			
+			if (addonlist_show && fileneedednum > 22)
+			{
+				if (gamekeydown[KEY_DOWNARROW])
+				{
+					if (!addonlist_toggle_tapped || addonlist_scroll_time >= TICRATE>>1)
+					{
+						if (addonlist_scroll != fileneedednum - 22)
+						{
+							addonlist_scroll++;
+							S_StartSound(NULL, sfx_menu1);
+						}
+						if (addonlist_scroll > fileneedednum - 22)
+							addonlist_scroll = fileneedednum - 22;
+						if (!addonlist_toggle_tapped)
+							addonlist_scroll_time = 0;
+					}
+					addonlist_toggle_tapped = true;
+					addonlist_scroll_time++;
+				}
+				else if (gamekeydown[KEY_UPARROW])
+				{
+					if (!addonlist_toggle_tapped || addonlist_scroll_time >= TICRATE>>1)
+					{
+						if (addonlist_scroll)
+						{
+							addonlist_scroll--;
+							S_StartSound(NULL, sfx_menu1);
+						}
+						if (addonlist_scroll < 0)
+							addonlist_scroll = 0;
+						if (!addonlist_toggle_tapped)
+							addonlist_scroll_time = 0;
+					}
+					addonlist_toggle_tapped = true;
+					addonlist_scroll_time++;
+				}
+				else if (!gamekeydown[KEY_SPACE])
+				{
+					addonlist_toggle_tapped = false;
+					addonlist_scroll_time = 0;
+				}
+			}
+			else
+			{
+				addonlist_scroll = 0;
+				addonlist_scroll_time = 0;
+			}
 		}
+		else
+		{
+			addonlist_show = false;
+			addonlist_toggle_tapped = false;
+			addonlist_scroll = 0;
+			addonlist_scroll_time = 0;
+		}
+
+		
 
 		if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 		{
