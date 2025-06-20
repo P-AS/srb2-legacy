@@ -1334,13 +1334,13 @@ static inline void CL_DrawConnectionStatus(void)
 
 			// Buttons
 			V_DrawFill(8, BASEVIDHEIGHT - 14, BASEVIDWIDTH - 16, 12, 239);
-			V_DrawThinString(16, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sESC%s] = Abort", "\x82", "\x80"));
+			V_DrawThinString(16, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sESC/B%s] = Abort", "\x82", "\x80"));
 
 
 			if (fileneedednum > 0)
-				V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 11, V_ALLOWLOWERCASE, va("[""\x82""SPACE""\x80""] = %s", 
+				V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 11, V_ALLOWLOWERCASE, va("[""\x82""SPACE/X""\x80""] = %s", 
 					(addonlist_show ? "Players" : "Addons")));
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sENTER%s] = Join", "\x82", "\x80"));
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sENTER/A%s] = Join", "\x82", "\x80"));
 		}
 		else if (lastfilenum != -1)
 		{
@@ -2149,7 +2149,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				cl_mode = CL_ABORTED;
 
 			
-			if (gamekeydown[KEY_SPACE] && fileneedednum)
+			if ((gamekeydown[KEY_SPACE] || key == KEY_JOY1+2) && fileneedednum)
 			{
 				if (!addonlist_toggle_tapped)
 				{
@@ -2163,7 +2163,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			
 			if (addonlist_show && fileneedednum > 22)
 			{
-				if (gamekeydown[KEY_DOWNARROW])
+				if ((gamekeydown[KEY_DOWNARROW] || key == KEY_HAT1+1))
 				{
 					if (!addonlist_toggle_tapped || addonlist_scroll_time >= TICRATE>>1)
 					{
@@ -2180,7 +2180,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 					addonlist_toggle_tapped = true;
 					addonlist_scroll_time++;
 				}
-				else if (gamekeydown[KEY_UPARROW])
+				else if ((gamekeydown[KEY_UPARROW || key == KEY_HAT1]))
 				{
 					if (!addonlist_toggle_tapped || addonlist_scroll_time >= TICRATE>>1)
 					{
@@ -2197,7 +2197,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 					addonlist_toggle_tapped = true;
 					addonlist_scroll_time++;
 				}
-				else if (!gamekeydown[KEY_SPACE])
+				else if (!(gamekeydown[KEY_SPACE] || key == KEY_JOY1+6))
 				{
 					addonlist_toggle_tapped = false;
 					addonlist_scroll_time = 0;
