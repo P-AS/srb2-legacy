@@ -1888,6 +1888,7 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_drawdist_nights);
 	CV_RegisterVar(&cv_drawdist_precip);
 	CV_RegisterVar(&cv_fov);
+	CV_RegisterVar(&cv_fovchange);
 
 	CV_RegisterVar(&cv_chasecam);
 	CV_RegisterVar(&cv_chasecam2);
