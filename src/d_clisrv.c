@@ -1126,7 +1126,10 @@ static void CV_LoadPlayerNames(UINT8 **p)
 static void CL_DrawPlayerList(void)
 {
 	V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Players");
-	V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i / %i", serverlist[joinnode].info.numberofplayer, serverlist[joinnode].info.maxplayer));
+	if (serverlist[joinnode].info.numberofplayer > 0)
+		V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i / %i", serverlist[joinnode].info.numberofplayer, serverlist[joinnode].info.maxplayer));
+	else
+		V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Empty");
 
 	INT32 i;
 	INT32 count = 0;
@@ -1164,53 +1167,44 @@ static void CL_DrawPlayerList(void)
 
 static void CL_DrawAddonList(void)
 {
-	V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Addons");
+V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Addons");
 
 	INT32 i;
 	INT32 count = 0;
 	INT32 x = 14;
 	INT32 y = 84;
-	boolean small_mode = fileneedednum <= 11;
 	char file_name[MAX_WADPATH+1];
 
-#define maxcharlen (20 + 3)
-#define charsonside 10
+#define filenumcount 11
+#define maxcharlen (30 + 3)
+#define charsonside 15
 
 	for (i = addonlist_scroll; i < fileneedednum; i++)
 	{
 		if (i & 1)
-			V_DrawFill(x,y-1, (small_mode) ? 292 : 146, 9, 236);
+			V_DrawFill(x, y - 1, 292, 9, 236);
 		
 		fileneeded_t addon_file = fileneeded[i];
 		strncpy(file_name, addon_file.filename, MAX_WADPATH);
 
-		if ((UINT8)(strlen(file_name) + 1) > maxcharlen && !small_mode)
-			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80: %.*s...%s", i + 1, charsonside, file_name, file_name + strlen(file_name) - ((charsonside + 1))) );
+		if ((UINT8)(strlen(file_name) + 1) > maxcharlen)
+			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80 %.*s...%s", i + 1, charsonside, file_name, file_name + strlen(file_name) - ((charsonside + 1))) );
 		else
-		{
-			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80: %s", i + 1, file_name));
-			if (small_mode)
-			{
-				const char *filesize_str;
-				if (addon_file.totalsize >= 1024*1024)
-					filesize_str = va(" %.2fMiB", (double)addon_file.totalsize / (1024*1024));
-				else if (addon_file.totalsize < 1024)
-					filesize_str = va(" %4uB", addon_file.totalsize);
-				else
-					filesize_str = va(" %.2fKiB", (double)addon_file.totalsize / 1024);
-				V_DrawRightAlignedThinString(x + 292, y, V_YELLOWMAP|V_ALLOWLOWERCASE, filesize_str);
-			}
-		}
+			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80 %s", i + 1, file_name));
+
+		const char *filesize_str;
+		if (addon_file.totalsize >= 1024*1024)
+			filesize_str = va(" %.2fMiB", (double)addon_file.totalsize / (1024*1024));
+		else if (addon_file.totalsize < 1024)
+			filesize_str = va(" %4uB", addon_file.totalsize);
+		else
+			filesize_str = va(" %.2fKiB", (double)addon_file.totalsize / 1024);
+		V_DrawRightAlignedThinString(BASEVIDWIDTH - x - 2, y, V_YELLOWMAP|V_ALLOWLOWERCASE, filesize_str);
 
 		y += 9;
 		count++;
-		if (count == 11)
-		{
-			x = BASEVIDWIDTH/2;
-			y = 84;
-		}
 
-		if (count == 22)
+		if (count == filenumcount)
 			break;
 	}
 
@@ -1220,20 +1214,23 @@ static void CL_DrawAddonList(void)
 
 	const char *totalsize_str;
 	if (totalsize >= 1024*1024)
-		totalsize_str = va("%.2fMiB total", (double)totalsize / (1024*1024));
+		totalsize_str = va("%.2fMiB", (double)totalsize / (1024*1024));
 	else if (totalsize < 1024)
-		totalsize_str = va("%4uB total", totalsize);
+		totalsize_str = va("%4uB", totalsize);
 	else
-		totalsize_str = va("%.2fKiB total", (double)totalsize / 1024);
-	V_DrawRightAlignedThinString(BASEVIDWIDTH - 22, 74, V_YELLOWMAP|V_ALLOWLOWERCASE, totalsize_str);
+		totalsize_str = va("%.2fKiB", (double)totalsize / 1024);
+	V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_YELLOWMAP|V_ALLOWLOWERCASE, totalsize_str);
 
-	if (fileneedednum >= 22)
+
+	if (fileneedednum >= filenumcount)
 	{
+		INT32 ccstime = I_GetTime();
 		if (addonlist_scroll)
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 10, 74, V_YELLOWMAP, "\x1A");
-		if (addonlist_scroll != fileneedednum-22)
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 10, y-9, V_YELLOWMAP, "\x1B");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 8, 84 - ((ccstime % 9) / 5), V_YELLOWMAP, "\x1A");
+		if (addonlist_scroll != (fileneedednum - filenumcount))
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 8, (84 + 90) + ((ccstime % 9) / 5), V_YELLOWMAP, "\x1B");
 	}
+#undef filenumcount
 #undef maxcharlen
 #undef charsonside
 }
@@ -1308,17 +1305,31 @@ static inline void CL_DrawConnectionStatus(void)
 			patch_t *current_map = W_LumpExists(map) ? W_CachePatchName(map, PU_CACHE) : W_CachePatchName("BLANKLVL", PU_CACHE);
 			V_DrawSmallScaledPatch(10, 18, 0, current_map);
 
+			UINT32 ping = (UINT32)serverlist[joinnode].info.time;
+			const char *pingcolor = "\x85";
+			if (ping < 128)
+				pingcolor = "\x83";
+			else if (ping < 256)
+
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 18, V_ALLOWLOWERCASE, va("%s%ums", pingcolor, ping));
+
 			V_DrawThinString(12 + 80, 38, V_ALLOWLOWERCASE, va("%s", serverlist[joinnode].info.maptitle));
 			V_DrawThinString(12 + 80, 48, V_ALLOWLOWERCASE, va("%s", Gametype_Names[serverlist[joinnode].info.gametype]));
 
 			if (fileneedednum > 0)
 			{
-				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_ORANGEMAP, va("%i Addons", fileneedednum));
+				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i Addons", fileneedednum));
 			}
 			else
 			{
-				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_YELLOWMAP, "Vanilla");
+				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_GREENMAP, "Vanilla");
 			}
+
+
+			if (serverlist[joinnode].info.isdedicated)
+				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 58, V_ALLOWLOWERCASE|V_ORANGEMAP, "Dedicated");
+			else
+				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 58, V_ALLOWLOWERCASE|V_GREENMAP, "Listen");
 
 			if (serverlist[joinnode].info.cheatsenabled)
 			{
@@ -2147,9 +2158,8 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				cl_mode = CL_CHECKFILES;
 			else if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 				cl_mode = CL_ABORTED;
-
 			
-			if ((gamekeydown[KEY_SPACE] || key == KEY_JOY1+2) && fileneedednum)
+			if ((key == KEY_SPACE || key == KEY_JOY1+2) && fileneedednum)
 			{
 				if (!addonlist_toggle_tapped)
 				{
@@ -2158,29 +2168,29 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				}
 				addonlist_toggle_tapped = true;
 			}
-			else if (!(addonlist_show && fileneedednum > 22))
+			else if (!(addonlist_show && fileneedednum > 11))
 				addonlist_toggle_tapped = false;
 			
-			if (addonlist_show && fileneedednum > 22)
+			if (addonlist_show && fileneedednum > 11)
 			{
-				if ((gamekeydown[KEY_DOWNARROW] || key == KEY_HAT1+1))
+				if ((key == KEY_DOWNARROW || key == KEY_HAT1+1))
 				{
 					if (!addonlist_toggle_tapped || addonlist_scroll_time >= TICRATE>>1)
 					{
-						if (addonlist_scroll != fileneedednum - 22)
+						if (addonlist_scroll != fileneedednum - 11)
 						{
 							addonlist_scroll++;
 							S_StartSound(NULL, sfx_menu1);
 						}
-						if (addonlist_scroll > fileneedednum - 22)
-							addonlist_scroll = fileneedednum - 22;
+						if (addonlist_scroll > fileneedednum - 11)
+							addonlist_scroll = fileneedednum - 11;
 						if (!addonlist_toggle_tapped)
 							addonlist_scroll_time = 0;
 					}
 					addonlist_toggle_tapped = true;
 					addonlist_scroll_time++;
 				}
-				else if ((gamekeydown[KEY_UPARROW || key == KEY_HAT1]))
+				else if ((key == KEY_UPARROW || key == KEY_HAT1))
 				{
 					if (!addonlist_toggle_tapped || addonlist_scroll_time >= TICRATE>>1)
 					{
@@ -2197,7 +2207,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 					addonlist_toggle_tapped = true;
 					addonlist_scroll_time++;
 				}
-				else if (!(gamekeydown[KEY_SPACE] || key == KEY_JOY1+6))
+				else if (!(key == KEY_SPACE || key == KEY_JOY1+6))
 				{
 					addonlist_toggle_tapped = false;
 					addonlist_scroll_time = 0;
