@@ -1167,7 +1167,7 @@ static void CL_DrawPlayerList(void)
 
 static void CL_DrawAddonList(void)
 {
-V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Addons");
+	V_DrawString(12, 74, V_ALLOWLOWERCASE|V_YELLOWMAP, "Addons");
 
 	INT32 i;
 	INT32 count = 0;
