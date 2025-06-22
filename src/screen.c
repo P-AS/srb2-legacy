@@ -411,7 +411,7 @@ void SCR_DisplayTicRate(void)
 	{
 		switch (cv_fpssize.value)
 		{
-		case 0:
+			case 0:
 				V_DrawRightAlignedString(vid.width, h,
 					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
 				break;
@@ -433,7 +433,7 @@ void SCR_DisplayTicRate(void)
 	else if (cv_ticrate.value == 1) // full counter
 	{
 		const char *drawnstr;
-		INT32 width; 
+		INT32 width;
 
 		// The highest assignable cap is < 1000, so 3 characters is fine.
 		if (cap > 0)
@@ -445,7 +445,7 @@ void SCR_DisplayTicRate(void)
 		{
 			case 0:
 				width = V_StringWidth(drawnstr, V_NOSCALESTART);
-				V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
+				V_DrawString(vid.width - ((7 * 6 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
 					V_YELLOWMAP|V_NOSCALESTART, "FPS: ");
 				V_DrawString(vid.width - width, h,
 					fpscntcolor|V_NOSCALESTART, drawnstr);
@@ -500,7 +500,7 @@ void SCR_DisplayTicRate(void)
 		switch (cv_fpssize.value)
 		{
 			case 0:
-				V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
+				V_DrawString(vid.width - ((7 * 6 * vid.dupx) + V_StringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
 					V_YELLOWMAP|V_NOSCALESTART, "TPS: ");
 				V_DrawRightAlignedString(vid.width, h-hstep,
 					ticcntcolor|V_NOSCALESTART, va("%d/%u", totaltics, TICRATE));
