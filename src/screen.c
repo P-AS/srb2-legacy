@@ -380,6 +380,7 @@ void SCR_DisplayTicRate(void)
 	tic_t i;
 	tic_t ontic = I_GetTime();
 	tic_t totaltics = 0;
+	INT32 width;
 
 	if (gamestate == GS_NULL)
 		return;
@@ -412,17 +413,28 @@ void SCR_DisplayTicRate(void)
 		switch (cv_fpssize.value)
 		{
 			case 0:
-				V_DrawRightAlignedString(vid.width, h,
+			{
+				width = vid.dupx*V_StringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
+				V_DrawString(vid.width-width, h,
 					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
 				break;
+			}
+
 			case 1:
-				V_DrawRightAlignedThinString(vid.width, h,
+			{
+				width = vid.dupx*V_ThinStringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
+				V_DrawThinString(vid.width-width, h,
 					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
 				break;
+			}
+
 			case 2:
-				V_DrawRightAlignedSmallString(vid.width, h,
+			{
+				width = vid.dupx*V_SmallStringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
+				V_DrawSmallString(vid.width-width, h,
 					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
 				break;
+			}
 		}
 
 		if (cv_fpssize.value == 2)
@@ -433,7 +445,6 @@ void SCR_DisplayTicRate(void)
 	else if (cv_ticrate.value == 1) // full counter
 	{
 		const char *drawnstr;
-		INT32 width;
 
 		// The highest assignable cap is < 1000, so 3 characters is fine.
 		if (cap > 0)
@@ -444,26 +455,34 @@ void SCR_DisplayTicRate(void)
 		switch (cv_fpssize.value)
 		{
 			case 0:
-				width = V_StringWidth(drawnstr, V_NOSCALESTART);
-				V_DrawString(vid.width - ((7 * 6 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
-					V_YELLOWMAP|V_NOSCALESTART, "FPS: ");
+			{
+				width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
+				V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
+						V_YELLOWMAP|V_NOSCALESTART, "FPS:");
 				V_DrawString(vid.width - width, h,
-					fpscntcolor|V_NOSCALESTART, drawnstr);
+						fpscntcolor|V_NOSCALESTART, drawnstr);
 				break;
+			}
+
 			case 1:
-				width = V_ThinStringWidth(drawnstr, V_NOSCALESTART);
-				V_DrawThinString(vid.width - ((7 * 4 * vid.dupx) + V_ThinStringWidth("FPS: ", V_NOSCALESTART)), h,
-					V_YELLOWMAP|V_NOSCALESTART, "FPS: ");
+			{
+				width = vid.dupx*V_ThinStringWidth(drawnstr, V_NOSCALESTART); //same here
+				V_DrawThinString((vid.width - 92 * vid.dupx + V_ThinStringWidth("FPS: ", V_NOSCALESTART)), h,
+						V_YELLOWMAP|V_NOSCALESTART, "FPS:");
 				V_DrawThinString(vid.width - width, h,
-					fpscntcolor|V_NOSCALESTART, drawnstr);
+						fpscntcolor|V_NOSCALESTART, drawnstr);
 				break;
+			}
+
 			case 2:
-				width = V_SmallStringWidth(drawnstr, V_NOSCALESTART);
-				V_DrawSmallString(vid.width - ((7 * 4 * vid.dupx) + V_SmallStringWidth("FPS: ", V_NOSCALESTART)), h,
-					V_YELLOWMAP|V_NOSCALESTART, "FPS: ");
+			{
+				width = vid.dupx*V_SmallStringWidth(drawnstr, V_NOSCALESTART); //same here
+				V_DrawSmallString((vid.width - 92 * vid.dupx + V_SmallStringWidth("FPS: ", V_NOSCALESTART)), h,
+						V_YELLOWMAP|V_NOSCALESTART, "FPS:");
 				V_DrawSmallString(vid.width - width, h,
-					fpscntcolor|V_NOSCALESTART, drawnstr);
+						fpscntcolor|V_NOSCALESTART, drawnstr);
 				break;
+			}
 		}
 
 		if (cv_fpssize.value == 2)
@@ -477,48 +496,67 @@ void SCR_DisplayTicRate(void)
 		switch (cv_fpssize.value)
 		{
 			case 0:
-				V_DrawRightAlignedString(vid.width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%d", totaltics));
+			{
+				width = vid.dupx*V_StringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
+				V_DrawString(vid.width-width, h-hstep,
+					ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
 				break;
+			}
 
 			case 1:
-				V_DrawRightAlignedThinString(vid.width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%d", totaltics));
+			{
+				width = vid.dupx*V_ThinStringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
+				V_DrawThinString(vid.width-width, h-hstep,
+					ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
 				break;
+			}
 
 			case 2:
-				V_DrawRightAlignedSmallString(vid.width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%d", totaltics));
+			{
+				width = vid.dupx*V_SmallStringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
+				V_DrawSmallString(vid.width-width, h-hstep,
+					ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
 				break;
+			}
 		}
 	}
 	else if (cv_tpscounter.value == 1) // full counter
 	{
+		const char *drawnstr = va("%02d/%02d", totaltics, TICRATE);
 
 		// The highest assignable cap is < 1000, so 3 characters is fine.
 
 		switch (cv_fpssize.value)
 		{
 			case 0:
-				V_DrawString(vid.width - ((7 * 6 * vid.dupx) + V_StringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART, "TPS: ");
-				V_DrawRightAlignedString(vid.width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%d/%u", totaltics, TICRATE));
+			{
+				width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
+				V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
+					V_YELLOWMAP|V_NOSCALESTART, "TPS:");
+				V_DrawString(vid.width-width, h-hstep,
+					ticcntcolor|V_NOSCALESTART, drawnstr);
 				break;
+			}
 
 			case 1:
-				V_DrawThinString(vid.width - ((7 * 4 * vid.dupx) + V_ThinStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART, "TPS: ");
-				V_DrawRightAlignedThinString(vid.width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%d/%u", totaltics, TICRATE));
+			{
+				width = vid.dupx*V_ThinStringWidth(drawnstr, V_NOSCALESTART); //same here
+				V_DrawThinString((vid.width - 92 * vid.dupx + V_ThinStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
+					V_YELLOWMAP|V_NOSCALESTART, "TPS:");
+				V_DrawThinString(vid.width-width, h-hstep,
+					ticcntcolor|V_NOSCALESTART, drawnstr);
 				break;
+			}
 
 			case 2:
-				V_DrawSmallString(vid.width - ((7 * 4 * vid.dupx) + V_SmallStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART, "TPS: ");
-				V_DrawRightAlignedSmallString(vid.width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%d/%u", totaltics, TICRATE));
+			{
+				width = vid.dupx*V_SmallStringWidth(drawnstr, V_NOSCALESTART); //same here
+				V_DrawSmallString((vid.width - 92 * vid.dupx + V_SmallStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
+					V_YELLOWMAP|V_NOSCALESTART, "TPS:");
+				V_DrawSmallString(vid.width-width, h-hstep,
+					ticcntcolor|V_NOSCALESTART, drawnstr);
 				break;
+			}
 		}
 	}
 	lasttic = ontic;
