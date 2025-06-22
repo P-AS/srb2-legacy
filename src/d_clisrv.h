@@ -463,6 +463,7 @@ typedef enum
 extern boolean server;
 #define client (!server)
 extern boolean dedicated; // For dedicated server
+extern tic_t neededtic;
 extern UINT16 software_MAXPACKETLENGTH;
 extern boolean acceptnewnode;
 extern SINT8 servernode;

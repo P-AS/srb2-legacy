@@ -378,7 +378,7 @@ void SCR_DisplayTicRate(void)
 	double fps = round(averageFPS);
 	INT32 hstep = 0;
 	tic_t i;
-	tic_t ontic = I_GetTime();
+	tic_t ontic = (netgame && client) ? (gametic + (neededtic - gametic)) : I_GetTime();
 	tic_t totaltics = 0;
 	INT32 width;
 
