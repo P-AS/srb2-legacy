@@ -2465,6 +2465,9 @@ INT32 V_StringWidth(const char *string, INT32 option)
 			w += (charwidth ? charwidth : SHORT(hu_font[c]->width));
 	}
 
+	if (option & V_NOSCALESTART)
+		w *= vid.dupx;
+
 	return w;
 }
 
@@ -2504,6 +2507,9 @@ INT32 V_SmallStringWidth(const char *string, INT32 option)
 			w += (charwidth ? charwidth : SHORT(hu_font[c]->width)/2);
 	}
 
+	if (option & V_NOSCALESTART)
+		w *= vid.dupx;
+
 	return w;
 }
 
@@ -2542,6 +2548,9 @@ INT32 V_ThinStringWidth(const char *string, INT32 option)
 		else
 			w += (charwidth ? charwidth : SHORT(tny_font[c]->width));
 	}
+
+	if (option & V_NOSCALESTART)
+		w *= vid.dupx;
 
 	return w;
 }
