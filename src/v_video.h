@@ -81,8 +81,6 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_MONOSPACE          0x00000C00 // Don't do width checks on characters, all characters 8 width
 
 // use bits 13-16 for colors
-// though we only have 7 colors now, perhaps we can introduce
-// more as needed later
 #define V_CHARCOLORSHIFT     12
 #define V_CHARCOLORMASK      0x0000F000
 // for simplicity's sake, shortcuts to specific colors
@@ -99,7 +97,7 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_TEAMAP             0x0000B000
 #define V_STEELMAP           0x0000C000
 #define V_PINKMAP            0x0000D000
-#define V_TEALMAP            0x0000E000
+#define V_BROWNMAP           0x0000E000
 #define V_PEACHMAP           0x0000F000
 
 // use bits 17-20 for alpha transparency
