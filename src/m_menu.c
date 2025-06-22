@@ -5441,7 +5441,8 @@ static void M_ReadSavegameInfo(UINT32 slot)
 	// P_UnArchivePlayer()
 	CHECKPOS
 	// TODO, compatibility with this
-	(void)READUINT16(save_p);
+	(void)READUINT8(save_p);
+	savegameinfo[slot].skincolor = skins[savegameinfo[slot].skinnum].prefcolor;
 	CHECKPOS
 	savegameinfo[slot].skinnum = READUINT8(save_p);
 
