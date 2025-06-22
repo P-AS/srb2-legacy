@@ -454,7 +454,7 @@ void SCR_DisplayTicRate(void)
 
 		switch (cv_fpssize.value)
 		{
-			case 0: 
+			case 0:
 			{
 				width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
 				V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
@@ -568,7 +568,7 @@ void SCR_DisplayLocalPing(void)
 	if (cv_showping.value)
 	{
 		INT32 dispy;
-		
+
 		if(cv_tpscounter.value)
 			dispy = 172;
 		else
