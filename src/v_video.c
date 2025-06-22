@@ -42,6 +42,8 @@ static CV_PossibleValue_t ticrate_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Comp
 static CV_PossibleValue_t tpscounter_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
 consvar_t cv_ticrate = { "showfps", "No", CV_SAVE, ticrate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 consvar_t cv_tpscounter = { "showtps", "No", CV_SAVE, tpscounter_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+static CV_PossibleValue_t fpssize_cons_t[] = { {0, "Normal"}, {1, "Thin"}, {2, "Small"}, {0, NULL} };
+consvar_t cv_fpssize = { "fpssize", "Normal", CV_SAVE, fpssize_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 
 static void CV_palette_OnChange(void);
 
@@ -2463,6 +2465,9 @@ INT32 V_StringWidth(const char *string, INT32 option)
 			w += (charwidth ? charwidth : SHORT(hu_font[c]->width));
 	}
 
+	if (option & V_NOSCALESTART)
+		w *= vid.dupx;
+
 	return w;
 }
 
@@ -2502,6 +2507,9 @@ INT32 V_SmallStringWidth(const char *string, INT32 option)
 			w += (charwidth ? charwidth : SHORT(hu_font[c]->width)/2);
 	}
 
+	if (option & V_NOSCALESTART)
+		w *= vid.dupx;
+
 	return w;
 }
 
@@ -2540,6 +2548,9 @@ INT32 V_ThinStringWidth(const char *string, INT32 option)
 		else
 			w += (charwidth ? charwidth : SHORT(tny_font[c]->width));
 	}
+
+	if (option & V_NOSCALESTART)
+		w *= vid.dupx;
 
 	return w;
 }

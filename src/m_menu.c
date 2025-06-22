@@ -1164,9 +1164,10 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,  NULL, "Precip Density",        &cv_precipdensity,        60},
 	{IT_STRING | IT_CVAR,  NULL, "Show FPS",              &cv_ticrate,              65},
 	{IT_STRING | IT_CVAR,  NULL, "Show TPS",              &cv_tpscounter,           70},
-	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",   &cv_homremoval,           75},
-	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",         &cv_vidwait,              80},
-	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",               &cv_fpscap,               85},
+	{IT_STRING | IT_CVAR,  NULL, "FPS/TPS Counter Size",  &cv_fpssize,              75},
+	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",   &cv_homremoval,           80},
+	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",         &cv_vidwait,              85},
+	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",               &cv_fpscap,               90},
 };
 
 static menuitem_t OP_ColorOptionsMenu[] =
@@ -7296,7 +7297,7 @@ static void M_HandleConnectIP(INT32 choice)
 			}
 			if (!shiftdown) // Shift+Delete is used for something else.
 				break;
-				
+
 			/* FALLTHRU */
 
 		default:
@@ -7312,7 +7313,7 @@ static void M_HandleConnectIP(INT32 choice)
 					case 'V': // ctrl+v, pasting
 					{
 						const char *paste = I_ClipboardPaste();
-						
+
 						if (paste != NULL) {
 							strncat(setupm_ip, paste, 28-1 - l); // Concat the ip field with clipboard
 							if (strlen(paste) != 0) // Don't play sound if nothing was pasted
@@ -7346,7 +7347,7 @@ static void M_HandleConnectIP(INT32 choice)
 					case KEY_INS: // shift+insert, pasting
 						{
 							const char *paste = I_ClipboardPaste();
-							
+
 							if (paste != NULL) {
 								strncat(setupm_ip, paste, 28-1 - l); // Concat the ip field with clipboard
 								if (strlen(paste) != 0) // Don't play sound if nothing was pasted
