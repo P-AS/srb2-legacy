@@ -2596,7 +2596,6 @@ boolean M_Responder(event_t *ev)
 			}
 			else
 				M_ClearMenus(true);
-
 			return true;
 
 		case KEY_BACKSPACE:
@@ -5442,7 +5441,7 @@ static void M_ReadSavegameInfo(UINT32 slot)
 	// P_UnArchivePlayer()
 	CHECKPOS
 	// TODO, compatibility with this
-	savegameinfo[slot].skincolor = READUINT8(save_p);
+	(void)READUINT16(save_p);
 	CHECKPOS
 	savegameinfo[slot].skinnum = READUINT8(save_p);
 

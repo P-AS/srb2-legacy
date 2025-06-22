@@ -66,7 +66,7 @@ static inline void P_ArchivePlayer(void)
 	if (pllives < 3) // Bump up to 3 lives if the player
 		pllives = 3; // has less than that.
 
-	WRITEUINT8(save_p, player->skincolor);
+	WRITEUINT16(save_p, player->skincolor);
 	WRITEUINT8(save_p, player->skin);
 
 	WRITEUINT32(save_p, player->score);

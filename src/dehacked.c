@@ -2959,22 +2959,22 @@ static void readmaincfg(MYFILE *f)
 			else if (fastcmp(word, "REDTEAM"))
 			{
 				DEH_WriteUndoline(word, va("%d", skincolor_redteam), UNDO_NONE);
-				skincolor_redteam = (UINT8)get_number(word2);
+				skincolor_redteam = (UINT16)get_number(word2);
 			}
 			else if (fastcmp(word, "BLUETEAM"))
 			{
 				DEH_WriteUndoline(word, va("%d", skincolor_blueteam), UNDO_NONE);
-				skincolor_blueteam = (UINT8)get_number(word2);
+				skincolor_blueteam = (UINT16)get_number(word2);
 			}
 			else if (fastcmp(word, "REDRING"))
 			{
 				DEH_WriteUndoline(word, va("%d", skincolor_redring), UNDO_NONE);
-				skincolor_redring = (UINT8)get_number(word2);
+				skincolor_redring = (UINT16)get_number(word2);
 			}
 			else if (fastcmp(word, "BLUERING"))
 			{
 				DEH_WriteUndoline(word, va("%d", skincolor_bluering), UNDO_NONE);
-				skincolor_bluering = (UINT8)get_number(word2);
+				skincolor_bluering = (UINT16)get_number(word2);
 			}
 			else if (fastcmp(word, "INVULNTICS"))
 			{
@@ -6942,7 +6942,7 @@ static const char *const HUDITEMS_LIST[] = {
 	"LAP"
 };
 
-const char *COLOR_ENUMS[] = {
+static const char *COLOR_ENUMS[] = {
 	"NONE",
 	
 	"WHITE",

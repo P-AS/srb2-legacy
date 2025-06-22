@@ -48,6 +48,7 @@
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "r_fps.h" // Uncapped
+#include "dehacked.h"
 
 
 gameaction_t gameaction;
@@ -56,7 +57,7 @@ UINT8 ultimatemode = false;
 
 boolean botingame;
 UINT8 botskin;
-UINT8 botcolor;
+UINT16 botcolor;
 
 JoyType_t Joystick;
 JoyType_t Joystick2;
@@ -127,10 +128,10 @@ INT16 sstage_end;
 boolean looptitle = false;
 boolean useNightsSS = false;
 
-UINT8 skincolor_redteam = SKINCOLOR_RED;
-UINT8 skincolor_blueteam = SKINCOLOR_BLUE;
-UINT8 skincolor_redring = SKINCOLOR_RED;
-UINT8 skincolor_bluering = SKINCOLOR_STEELBLUE;
+UINT16 skincolor_redteam = SKINCOLOR_RED;
+UINT16 skincolor_blueteam = SKINCOLOR_BLUE;
+UINT16 skincolor_redring = SKINCOLOR_RED;
+UINT16 skincolor_bluering = SKINCOLOR_STEELBLUE;
 
 tic_t countdowntimer = 0;
 boolean countdowntimeup = false;
@@ -257,7 +258,7 @@ static struct {
 	UINT8 flags; // EZT flags
 
 	// EZT_COLOR
-	UINT8 color, lastcolor;
+	UINT16 color, lastcolor;
 
 	// EZT_SCALE
 	fixed_t scale, lastscale;
@@ -272,7 +273,7 @@ static struct {
 typedef struct demoghost {
 	UINT8 checksum[16];
 	UINT8 *buffer, *p;
-	UINT8 color;
+	UINT16 color;
 	UINT16 version;
 	mobj_t oldmo, *mo;
 	struct demoghost *next;
@@ -4016,13 +4017,13 @@ void G_GhostAddColor(ghostcolor_t color)
 {
 	if (!demorecording || !(demoflags & DF_GHOST))
 		return;
-	if (ghostext.lastcolor == (UINT8)color)
+	if (ghostext.lastcolor == (UINT16)color)
 	{
 		ghostext.flags &= ~EZT_COLOR;
 		return;
 	}
 	ghostext.flags |= EZT_COLOR;
-	ghostext.color = (UINT8)color;
+	ghostext.color = (UINT16)color;
 }
 
 void G_GhostAddScale(fixed_t scale)
@@ -4157,7 +4158,7 @@ void G_WriteGhostTic(mobj_t *ghost)
 		WRITEUINT8(demo_p,ghostext.flags);
 		if (ghostext.flags & EZT_COLOR)
 		{
-			WRITEUINT8(demo_p,ghostext.color);
+			WRITEUINT16(demo_p,ghostext.color);
 			ghostext.lastcolor = ghostext.color;
 		}
 		if (ghostext.flags & EZT_SCALE)
@@ -4251,7 +4252,7 @@ void G_ConsGhostTic(void)
 	{ // But wait, there's more!
 		ziptic = READUINT8(demo_p);
 		if (ziptic & EZT_COLOR)
-			demo_p += (demoversion<DEMOVERSION) ? 1 : sizeof(UINT8);
+			demo_p += (demoversion<DEMOVERSION) ? 1 : sizeof(UINT16);
 		if (ziptic & EZT_SCALE)
 			demo_p += sizeof(fixed_t);
 		if (ziptic & EZT_HIT)
@@ -4497,7 +4498,7 @@ void G_GhostTicker(void)
 			g->mo->color += abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4);
 			break;
 		case GHC_INVINCIBLE: // Mario invincibility (P_CheckInvincibilityTimer)
-			g->mo->color = (UINT8)(leveltime % FIRSTSUPERCOLOR);
+			g->mo->color = (UINT16)(leveltime % FIRSTSUPERCOLOR);
 			break;
 		default:
 			break;
@@ -5511,10 +5512,10 @@ void G_AddGhost(char *defdemoname)
 
 	// Set color
 	gh->mo->color = ((skin_t*)gh->mo->skin)->prefcolor;
-	for (i = 0; i < MAXSKINCOLORS; i++)
+	for (i = 0; i < numskincolors; i++)
 		if (!stricmp(skincolors[i].name,color))
 		{
-			gh->mo->color = (UINT8)i;
+			gh->mo->color = (UINT16)i;
 			break;
 		}
 	gh->oldmo.color = gh->mo->color;

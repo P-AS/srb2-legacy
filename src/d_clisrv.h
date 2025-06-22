@@ -173,7 +173,7 @@ typedef struct
 	SINT8 xtralife;
 	SINT8 pity;
 
-	UINT8 skincolor;
+	UINT16 skincolor;
 	INT32 skin;
 	// Just in case Lua does something like
 	// modify these at runtime
@@ -281,7 +281,7 @@ typedef struct
 
 	// 0xFF == not in game; else player skin num
 	UINT8 playerskins[MAXPLAYERS];
-	UINT8 playercolor[MAXPLAYERS];
+	UINT16 playercolor[MAXPLAYERS];
 
 	UINT8 gametype;
 	UINT8 modifiedgame;
@@ -372,7 +372,7 @@ typedef struct
 {
 	char name[MAXPLAYERNAME+1];
 	UINT8 skin;
-	UINT8 color;
+	UINT16 color;
 	UINT32 pflags;
 	UINT32 score;
 	UINT8 ctfteam;

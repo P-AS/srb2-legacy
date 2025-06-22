@@ -234,7 +234,7 @@ static void R_GenerateTranslationColormap(UINT8 *dest_colormap, INT32 skinnum, U
 
 	\return	Colormap. If not cached, caller should Z_Free.
 */
-UINT8* R_GetTranslationColormap(INT32 skinnum, skincolornum_t color, UINT8 flags)
+UINT8* R_GetTranslationColormap(INT32 skinnum, UINT16 color, UINT8 flags)
 {
 	UINT8* ret;
 	INT32 skintableindex;

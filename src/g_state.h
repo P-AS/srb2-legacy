@@ -55,6 +55,6 @@ extern gameaction_t gameaction;
 
 extern boolean botingame;
 extern UINT8 botskin;
-extern UINT8 botcolor;
+extern UINT16 botcolor;
 
 #endif //__G_STATE__
