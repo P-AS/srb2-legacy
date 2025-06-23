@@ -1470,8 +1470,6 @@ static menuitem_t OP_MonitorToggleMenu[] =
 
 static menuitem_t OP_LegacyOptionsMenu[] =
 {
-	{IT_HEADER|IT_STRING, NULL, "Network", NULL, 5},
-	{IT_CVAR|IT_STRING, NULL, "Net Compatibility", &cv_netcompat, 10},
 	{IT_HEADER|IT_STRING, NULL, "Screen Tilting", NULL, 15},
 	{IT_CVAR|IT_STRING, NULL, "Screen Tilting", &cv_viewroll, 	  20},
 	{IT_CVAR|IT_STRING, NULL, "Earthquake Screen Shaking", &cv_quakeiiiarena,  25},
@@ -5440,11 +5438,11 @@ static void M_ReadSavegameInfo(UINT32 slot)
 
 	// P_UnArchivePlayer()
 	CHECKPOS
-	// TODO, compatibility with this
+	// Skincolor is set by skin prefcolor.
 	(void)READUINT8(save_p);
-	savegameinfo[slot].skincolor = skins[savegameinfo[slot].skinnum].prefcolor;
 	CHECKPOS
 	savegameinfo[slot].skinnum = READUINT8(save_p);
+	savegameinfo[slot].skincolor = skins[savegameinfo[slot].skinnum].prefcolor;
 
 	CHECKPOS
 	(void)READINT32(save_p); // Score

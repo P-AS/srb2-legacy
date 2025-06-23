@@ -119,10 +119,6 @@ extern consvar_t cv_ps_descriptor;
 
 extern consvar_t cv_freedemocamera;
 
-#ifndef NONET
-extern consvar_t cv_netcompat;
-#endif
-
 extern consvar_t cv_lastserver;
 
 typedef enum

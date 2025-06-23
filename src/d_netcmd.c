@@ -385,11 +385,6 @@ static CV_PossibleValue_t ps_descriptor_cons_t[] = {
 	{1, "Average"}, {2, "SD"}, {3, "Minimum"}, {4, "Maximum"}, {0, NULL}};
 consvar_t cv_ps_descriptor = {"ps_descriptor", "Average", 0, ps_descriptor_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-// Netplay Compatibility with 2.1.25
-#ifndef NONET
-consvar_t cv_netcompat = {"netcompat", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
-
 consvar_t cv_lastserver = {"lastserver", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 
@@ -842,10 +837,6 @@ void D_RegisterClientCommands(void)
 //	CV_RegisterVar(&cv_snapto);
 
 	CV_RegisterVar(&cv_freedemocamera);
-
-#ifndef NONET
-	CV_RegisterVar(&cv_netcompat);
-#endif
 	CV_RegisterVar(&cv_lastserver);
 
 	// add cheat commands

@@ -7995,7 +7995,6 @@ static inline int lib_getenum(lua_State *L)
 	}
 	else if (fastncmp("SKINCOLOR_",word,10)) {
 		p = word+10;
-		CONS_Printf("%s", p);
 		for (i = 0; i < NUMCOLORFREESLOTS; i++) {
 			if (!FREE_SKINCOLORS[i])
 				break;
