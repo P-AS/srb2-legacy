@@ -188,11 +188,11 @@ static int lib_comAddCommand(lua_State *L)
 		lua_settop(L, 3);
 		if (lua_type(L, 3) == LUA_TBOOLEAN) 
 		{
-			/*CONS_Alert(CONS_WARNING,	// Compatbility with 2.1 lua scripts will not be removed, so this is unnecessary
+			CONS_Alert(CONS_WARNING,
 					"Using a boolean for admin commands is " 
-					"deprecated and will be removed.\n"
+					"deprecated.\n"
 					"Use \"COM_ADMIN\" instead.\n"
-			);*/
+			);
 		}
 		else
 			luaL_checktype(L, 3, LUA_TNUMBER);
