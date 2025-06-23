@@ -70,6 +70,9 @@ typedef enum
 	PT_NODETIMEOUT,   // Packet sent to self if the connection times out.
 	PT_RESYNCHING,    // Packet sent to resync players.
 	                  // Blocks game advance until synched.
+	
+	PT_TELLFILESNEEDED, // Client, to server: "what other files do I need starting from this number?"
+	PT_MOREFILESNEEDED, // Server, to client: "you need these (+ more on top of those)"
 
 	PT_LOGIN,         // Login attempt from the client.
 
@@ -311,6 +314,9 @@ typedef struct
 	UINT8 mode;
 } ATTRPACK clientconfig_pak;
 
+#define SV_DEDICATED    0x40 // server is dedicated
+#define SV_LOTSOFADDONS 0x20 // flag used to ask for full file list in d_netfil
+
 #define MAXSERVERNAME 32
 #define MAXFILENEEDED 915
 // This packet is too large
@@ -323,7 +329,7 @@ typedef struct
 	UINT8 gametype;
 	UINT8 modifiedgame;
 	UINT8 cheatsenabled;
-	UINT8 isdedicated;
+	UINT8 flags;
 	UINT8 fileneedednum;
 	SINT8 adminplayer;
 	tic_t time;
@@ -378,6 +384,14 @@ typedef struct
 	UINT8 ctfteam;
 } ATTRPACK plrconfig;
 
+typedef struct
+{
+	INT32 first;
+	UINT8 num;
+	UINT8 more;
+	UINT8 files[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
+} ATTRPACK filesneededconfig_pak;
+
 //
 // Network packet data
 //
@@ -408,6 +422,8 @@ typedef struct
 		msaskinfo_pak msaskinfo;            //          22 bytes
 		plrinfo playerinfo[MAXPLAYERS];     //        1152 bytes (I'd say 36~38)
 		plrconfig playerconfig[MAXPLAYERS]; // (up to) 896 bytes (welp they ARE)
+		INT32 filesneedednum;               //           4 bytes
+		filesneededconfig_pak filesneededcfg; //       ??? bytes
 #ifdef NEWPING
 		UINT32 pingtable[MAXPLAYERS];       //         128 bytes
 #endif
