@@ -2909,6 +2909,7 @@ static void readmaincfg(MYFILE *f)
 
 				DEH_WriteUndoline(word, va("%d", titlemap), UNDO_NONE);
 				titlemap = (INT16)value;
+				titlechanged = true;
 			}
 			else if (fastcmp(word, "HIDETITLEPICS"))
 			{
