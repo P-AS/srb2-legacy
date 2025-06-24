@@ -1609,10 +1609,6 @@ void F_TitleScreenTicker(boolean run)
 	if (gameaction != ga_nothing || gamestate != GS_TITLESCREEN)
 		return;
 
-	thinker_t *th;
-	mobj_t *mo2;
-	mobj_t *cameraref = NULL;
-
 	// Execute the titlemap camera settings
 	if (titlemapinaction) {
 		// Default behavior
