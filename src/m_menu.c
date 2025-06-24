@@ -1164,9 +1164,10 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,  NULL, "Precip Density",        &cv_precipdensity,        60},
 	{IT_STRING | IT_CVAR,  NULL, "Show FPS",              &cv_ticrate,              65},
 	{IT_STRING | IT_CVAR,  NULL, "Show TPS",              &cv_tpscounter,           70},
-	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",   &cv_homremoval,           75},
-	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",         &cv_vidwait,              80},
-	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",               &cv_fpscap,               85},
+	{IT_STRING | IT_CVAR,  NULL, "FPS/TPS Counter Size",  &cv_fpssize,              75},
+	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",   &cv_homremoval,           80},
+	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",         &cv_vidwait,              85},
+	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",               &cv_fpscap,               90},
 };
 
 static menuitem_t OP_ColorOptionsMenu[] =
@@ -4529,11 +4530,15 @@ static void M_HandleAddons(INT32 choice)
 		case KEY_DOWNARROW:
 			if (dir_on[menudepthleft] < sizedirmenu-1)
 				dir_on[menudepthleft]++;
+			else if (dir_on[menudepthleft] == sizedirmenu-1)
+				dir_on[menudepthleft] = 0;
 			S_StartSound(NULL, sfx_menu1);
 			break;
 		case KEY_UPARROW:
 			if (dir_on[menudepthleft])
 				dir_on[menudepthleft]--;
+			else if (!dir_on[menudepthleft])
+				dir_on[menudepthleft] = sizedirmenu-1;
 			S_StartSound(NULL, sfx_menu1);
 			break;
 		case KEY_PGDN:
@@ -7289,12 +7294,15 @@ static void M_HandleConnectIP(INT32 choice)
 
 		case KEY_DEL:
 			skullAnimCounter = 4; // For a nice looking cursor
-			if (setupm_ip[0])
+			if (setupm_ip[0] && !shiftdown) // Shift+Delete is used for something else.
 			{
 				//S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_ip[0] = 0;
 			}
-			break;
+			if (!shiftdown) // Shift+Delete is used for something else.
+				break;
+
+			/* FALLTHRU */
 
 		default:
 			skullAnimCounter = 4; // For a nice looking cursor
@@ -7303,26 +7311,63 @@ static void M_HandleConnectIP(INT32 choice)
 			if (l >= 127)
 				break;
 
-			const char *paste = I_ClipboardPaste(); // Paste clipboard into char
-
 			if ( ctrldown ) {
 				switch (choice) {
-					case 118: // ctrl+v, pasting
-						if (paste != NULL)
-							strcat(setupm_ip, paste); // Concat the ip field with clipboard
-						setupm_ip[127] = 0; // Truncate to maximum length
+					case 'v':
+					case 'V': // ctrl+v, pasting
+					{
+						const char *paste = I_ClipboardPaste();
+
+						if (paste != NULL) {
+							strncat(setupm_ip, paste, 28-1 - l); // Concat the ip field with clipboard
+							if (strlen(paste) != 0) // Don't play sound if nothing was pasted
+								S_StartSound(NULL,sfx_menu1); // Tails
+						}
+
 						break;
-					case 99: // ctrl+c, copying
+					}
+					case KEY_INS:
+					case 'c':
+					case 'C': // ctrl+c, ctrl+insert, copying
 						I_ClipboardCopy(setupm_ip, l);
+						S_StartSound(NULL,sfx_menu1); // Tails
 						break;
-					case 120: // ctrl+x, cutting
+
+					case 'x':
+					case 'X': // ctrl+x, cutting
 						I_ClipboardCopy(setupm_ip, l);
+						S_StartSound(NULL,sfx_menu1); // Tails
 						setupm_ip[0] = 0;
 						break;
+
 					default: // otherwise do nothing
 						break;
 				}
-				break; // break
+				break; // don't check for typed keys
+			}
+
+			if ( shiftdown ) {
+				switch (choice) {
+					case KEY_INS: // shift+insert, pasting
+						{
+							const char *paste = I_ClipboardPaste();
+
+							if (paste != NULL) {
+								strncat(setupm_ip, paste, 28-1 - l); // Concat the ip field with clipboard
+								if (strlen(paste) != 0) // Don't play sound if nothing was pasted
+									S_StartSound(NULL,sfx_menu1); // Tails
+							}
+
+							break;
+						}
+					case KEY_DEL: // shift+delete, cutting
+						I_ClipboardCopy(setupm_ip, l);
+						setupm_ip[0] = 0;
+						break;
+					default: // otherwise do nothing.
+						break;
+				}
+				break; // don't check for typed keys
 			}
 
 			// Rudimentary number, letter, period, and colon enforcing

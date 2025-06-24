@@ -42,6 +42,8 @@ static CV_PossibleValue_t ticrate_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Comp
 static CV_PossibleValue_t tpscounter_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
 consvar_t cv_ticrate = { "showfps", "No", CV_SAVE, ticrate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 consvar_t cv_tpscounter = { "showtps", "No", CV_SAVE, tpscounter_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+static CV_PossibleValue_t fpssize_cons_t[] = { {0, "Normal"}, {1, "Thin"}, {2, "Small"}, {0, NULL} };
+consvar_t cv_fpssize = { "fpssize", "Normal", CV_SAVE, fpssize_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 
 static void CV_palette_OnChange(void);
 
@@ -1272,8 +1274,8 @@ UINT8 *V_GetStringColormap(INT32 colorflags)
 		return steelmap;
 	case 13:// 0x8D, pink
 		return pinkmap;
-	case 14:// 0x8E, teal
-		return tealmap;
+	case 14:// 0x8E, brown
+		return brownmap;
 	case 15:// 0x8F, peach
 		return peachmap;
 	default: // reset
