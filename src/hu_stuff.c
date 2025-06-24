@@ -629,7 +629,7 @@ static const char *GetChatColorFromSkinColor(INT32 skincolor)
 		textcolor = "\x8C";
 	else if (chatcolor == V_PINKMAP)
 		textcolor = "\x8D";
-	else if (chatcolor == V_TEALMAP)
+	else if (chatcolor == V_BROWNMAP)
 		textcolor = "\x8E";
 	else if (chatcolor == V_PEACHMAP)
 		textcolor = "\x8F";
