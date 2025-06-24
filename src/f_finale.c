@@ -1452,7 +1452,7 @@ void F_GameEndTicker(void)
 // ==============
 void F_StartTitleScreen(void)
 {
-	S_ChangeMusicInternal("_title", looptitle);
+	S_ChangeMusicInternal("titles", looptitle);
 
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 		finalecount = 0;
