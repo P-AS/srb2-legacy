@@ -117,7 +117,7 @@ void COM_Lua_f(void)
 		flags = (UINT8)lua_tointeger(gL, -1);
 	lua_pop(gL, 1); // pop flags
 
-	if (flags & COM_SPLITSCREEN) // flag 2: splitscreen player command. TODO: support 4P
+	if (flags & COM_SPLITSCREEN) // flag 2: splitscreen player command.
 	{
 		if (!splitscreen)
 		{
