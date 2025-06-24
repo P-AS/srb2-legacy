@@ -1459,6 +1459,8 @@ void F_StartTitleScreen(void)
 	else
 		wipegamestate = GS_TITLESCREEN;
 
+	titlemap = 1;
+
 	if (titlemap)
 	{
 		gamestate_t prevwipegamestate = wipegamestate;
@@ -1610,11 +1612,44 @@ void F_TitleScreenTicker(boolean run)
 		return;
 
 	// Execute the titlemap camera settings
-	if (titlemapinaction) {
-		// Default behavior
-		camera.angle += titlescrollspeed;
-	}
+	if (titlemapinaction)
+	{
+		thinker_t *th;
+		mobj_t *mo2;
+		mobj_t *cameraref = NULL;
 
+		for (th = thinkercap.next; th != &thinkercap; th = th->next)
+		{
+			if (th->function != (actionf_p1)P_MobjThinker) // Not a mobj thinker
+				continue;
+
+			mo2 = (mobj_t *)th;
+
+			 if (!mo2)
+				continue;
+
+			if (mo2->type != MT_ALTVIEWMAN)
+				continue;
+
+			cameraref = mo2;
+			break;
+		}
+
+		if (cameraref)
+		{
+			camera.x = cameraref->x;
+			camera.y = cameraref->y;
+			camera.z = cameraref->z;
+			camera.angle = cameraref->angle;
+			camera.aiming = cameraref->cusval;
+			camera.subsector = cameraref->subsector;
+		}
+		else
+		{
+			// Default behavior: Do a lil' camera spin if a title map is loaded;
+			camera.angle += titlescrollspeed*ANG1/64;
+		}
+	}
 	// no demos to play? or, are they disabled?
 	if (!cv_rollingdemos.value || !numDemos)
 		return;
