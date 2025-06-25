@@ -1,20 +1,13 @@
-// Emacs style mode select   -*- C++ -*-
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-//
 // Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2019 by Sonic Team Junior.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file
+/// \file hw_drv.h
 /// \brief imports/exports for the 3D hardware low-level interface API
 
 #ifndef __HWR_DRV_H__
@@ -40,9 +33,9 @@ EXPORT void HWRAPI(Shutdown) (void);
 EXPORT void HWRAPI(GetModeList) (vmode_t **pvidmodes, INT32 *numvidmodes);
 #endif
 #if defined (PURESDL) || defined (macintosh)
-EXPORT void HWRAPI(SetPalette) (INT32 *, RGBA_t *gamma);
+EXPORT void HWRAPI(SetPalette) (INT32 *);
 #else
-EXPORT void HWRAPI(SetPalette) (RGBA_t *ppal, RGBA_t *pgamma);
+EXPORT void HWRAPI(SetPalette) (RGBA_t *ppal);
 #endif
 EXPORT void HWRAPI(FinishUpdate) (INT32 waitvbl);
 EXPORT void HWRAPI(Draw2DLine) (F2DCoord *v1, F2DCoord *v2, RGBA_t Color);

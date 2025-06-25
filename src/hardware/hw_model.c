@@ -195,6 +195,7 @@ model_t *LoadModel(const char *filename, int ztag)
 
 	Optimize(model);
 	GeneratePolygonNormals(model, ztag);
+	LoadModelInterpolationSettings(model);
 
 	// Default material properties
 	for (i = 0 ; i < model->numMaterials; i++)
@@ -217,6 +218,48 @@ model_t *LoadModel(const char *filename, int ztag)
 
 	return model;
 }
+
+void LoadModelInterpolationSettings(model_t *model)
+{
+	INT32 i;
+	INT32 numframes = model->meshes[0].numFrames;
+	char *framename = model->framenames;
+
+	memset(model->interpolate, 0x00, sizeof(boolean) * 0xFF);
+
+	if (!framename)
+		return;
+
+	#define GET_OFFSET \
+		memcpy(&interpolation_flag, framename + offset, 2); \
+		model->interpolate[i] = (!memcmp(interpolation_flag, MODEL_INTERPOLATION_FLAG, 2));
+
+	for (i = 0; i < numframes; i++)
+	{
+		int offset = (strlen(framename) - 4);
+		char interpolation_flag[3];
+		memset(&interpolation_flag, 0x00, 3);
+
+		// find the +i on the frame name
+		// ANIM+i00
+		// so the offset is (frame name length - 4)
+		GET_OFFSET;
+
+		// maybe the frame had three digits?
+		// ANIM+i000
+		// so the offset is (frame name length - 5)
+		if (!model->interpolate[i])
+		{
+			offset--;
+			GET_OFFSET;
+		}
+
+		framename += 16;
+	}
+
+	#undef GET_OFFSET
+}
+
 
 //
 // GenerateVertexNormals

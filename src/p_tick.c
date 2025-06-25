@@ -594,6 +594,7 @@ void P_Ticker(boolean run)
 		{
 			P_MapStart();
 			R_UpdateMobjInterpolators();
+			R_UpdateLevelInterpolators();
 			OP_ObjectplaceMovement(&players[0]);
 			P_MoveChaseCamera(&players[0], &camera, false);
 			R_UpdateViewInterpolation();
@@ -628,6 +629,8 @@ void P_Ticker(boolean run)
 
 		ps_lua_mobjhooks.value.i = 0;
 		ps_checkposition_calls.value.i = 0;
+
+		LUAh_PreThinkFrame();
 
 		PS_START_TIMING(ps_playerthink_time);
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -737,6 +740,8 @@ void P_Ticker(boolean run)
 			G_ConsGhostTic();
 		if (modeattacking)
 			G_GhostTicker();
+
+		LUAh_PostThinkFrame();
 	}
 
  	if (run)
@@ -795,6 +800,8 @@ void P_PreTicker(INT32 frames)
 	{
 		P_MapStart();
 
+		LUAh_PreThinkFrame();
+
 		R_UpdateMobjInterpolators();
 
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -832,7 +839,9 @@ void P_PreTicker(INT32 frames)
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();
 		R_ResetViewInterpolation(0);
-
+		
+		LUAh_PostThinkFrame();
+		
 		P_MapEnd();
 	}
 }

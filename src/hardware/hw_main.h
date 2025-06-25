@@ -1,20 +1,13 @@
-// Emacs style mode select   -*- C++ -*-
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-//
 // Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2019 by Sonic Team Junior.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file
+/// \file hw_main.h
 /// \brief 3D render mode functions
 
 #ifndef __HWR_MAIN_H__
@@ -86,27 +79,17 @@ extern customshaderxlat_t shaderxlat[];
 
 extern CV_PossibleValue_t granisotropicmode_cons_t[];
 
-#ifdef ALAM_LIGHTING
-extern consvar_t cv_grdynamiclighting;
-extern consvar_t cv_grstaticlighting;
-extern consvar_t cv_grcoronas;
-extern consvar_t cv_grcoronasize;
-#endif
+
 extern consvar_t cv_grshaders;
 extern consvar_t cv_grmd2;
 extern consvar_t cv_grmodelinterpolation;
-extern consvar_t cv_grgammared;
-extern consvar_t cv_grgammagreen;
-extern consvar_t cv_grgammablue;
 extern consvar_t cv_grfiltermode;
 extern consvar_t cv_granisotropicmode;
 extern consvar_t cv_grcorrecttricks;
-extern consvar_t cv_grfovchange;
 extern consvar_t cv_grsolvetjoin;
 extern consvar_t cv_grshearing;
 extern consvar_t cv_grspritebillboarding;
 extern consvar_t cv_grmodellighting;
-extern consvar_t cv_grskydome;
 extern consvar_t cv_glloadingscreen;
 extern consvar_t cv_grfakecontrast;
 extern consvar_t cv_grslopecontrast;

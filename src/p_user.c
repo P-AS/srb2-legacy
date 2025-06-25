@@ -1458,6 +1458,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_y = mobj->old_y2;
 	ghost->old_z = mobj->old_z2;
 	ghost->old_angle = mobj->old_angle2;
+	ghost->old_scale = mobj->old_scale2;
 
 	return ghost;
 }
@@ -6928,8 +6929,7 @@ static void P_MovePlayer(player_t *player)
 		}
 	}
 
-#ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none && cv_grfovchange.value)
+	if (cv_fovchange.value)
 	{
 		fixed_t speed;
 		const fixed_t runnyspeed = 20*FRACUNIT;
@@ -6949,7 +6949,6 @@ static void P_MovePlayer(player_t *player)
 	}
 	else
 		player->fovadd = 0;
-#endif
 
 #ifdef FLOORSPLATS
 	if (cv_shadow.value && rendermode == render_soft)
@@ -8751,7 +8750,10 @@ void P_PlayerThink(player_t *player)
 				player->playerstate = PST_REBORN;
 		}
 		if (player->playerstate == PST_REBORN)
+		{
+			LUAh_PlayerThink(player);
 			return;
+		}
 	}
 
 #ifdef SEENAMES
@@ -8863,7 +8865,10 @@ void P_PlayerThink(player_t *player)
 			player->lives = 0;
 
 			if (player->playerstate == PST_DEAD)
+			{	
+				LUAh_PlayerThink(player);
 				return;
+			}
 		}
 	}
 
@@ -8965,6 +8970,7 @@ void P_PlayerThink(player_t *player)
 	{
 		player->mo->flags2 &= ~MF2_SHADOW;
 		P_DeathThink(player);
+		LUAh_PlayerThink(player);
 
 		return;
 	}
@@ -9081,7 +9087,10 @@ void P_PlayerThink(player_t *player)
 		P_MovePlayer(player);
 
 	if (!player->mo)
+	{	
+		LUAh_PlayerThink(player);
 		return; // P_MovePlayer removed player->mo.
+	}
 
 	// Unset statis flags after moving.
 	// In other words, if you manually set stasis via code,
@@ -9255,6 +9264,8 @@ void P_PlayerThink(player_t *player)
 
 	player->pflags &= ~PF_SLIDING;
 
+	LUAh_PlayerThink(player);
+	
 /*
 //	Colormap verification
 	{

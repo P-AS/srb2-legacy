@@ -743,41 +743,65 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 			cstart = "\x83";
 
-			if (color <= SKINCOLOR_SILVER)
-				cstart = "\x80"; // White
-			else if (color <= SKINCOLOR_BLACK)
-				cstart = "\x86"; // Grey
-			else if (color <= SKINCOLOR_CYAN)
-				cstart = "\x88"; // Cyan/Sky
-			else if (color <= SKINCOLOR_TEAL)
-				cstart = "\x8E"; // Teal
-			else if (color <= SKINCOLOR_STEELBLUE)
-				cstart = "\x8C"; // Steel
-			else if (color <= SKINCOLOR_BLUE)
-				cstart = "\x84"; // Blue
-			else if (color <= SKINCOLOR_PEACH || color == SKINCOLOR_TAN)
-				cstart = "\x8F"; // Peach
-			else if (color == SKINCOLOR_ORANGE)
-				cstart = "\x87"; // Orange
-			else if (color == SKINCOLOR_PINK)
-				cstart = "\x8D"; // Pink
-			else if (color == SKINCOLOR_LAVENDER)
-				cstart = "\x89"; // Lavender
-			else if (color <= SKINCOLOR_PURPLE)
-				cstart = "\x81"; // Purple
-			else if (color <= SKINCOLOR_ORANGE || color == SKINCOLOR_ROSEWOOD || color == SKINCOLOR_BEIGE || color == SKINCOLOR_BROWN)
-				cstart = "\x87"; // Orange
-			else if (color <= SKINCOLOR_RED  || color == SKINCOLOR_DARKRED)
-				cstart = "\x85"; // Red
-			else if (color <= SKINCOLOR_NEONGREEN || color == SKINCOLOR_GREEN)
-				cstart = "\x83"; // Green
-			else if (color <= SKINCOLOR_ZIM || color == SKINCOLOR_OLIVE)
-				cstart = "\x8B"; // Yellow
-			else if (color <= SKINCOLOR_YELLOW)
-				cstart = "\x82"; // Yellow
-			else if (color <= SKINCOLOR_GOLD)
-				cstart = "\x8A"; // Yellow
-        }
+		switch (color)
+			{
+				case SKINCOLOR_WHITE:
+				case SKINCOLOR_SILVER:
+					cstart = "\x80"; // White
+					break;
+				case SKINCOLOR_GREY:
+				case SKINCOLOR_BLACK:
+					cstart = "\x86"; // V_GRAYMAP
+					break;
+				case SKINCOLOR_BEIGE:
+				case SKINCOLOR_BROWN:
+					cstart = "\x8e"; // V_BROWNMAP
+					break;
+				case SKINCOLOR_PINK:
+					cstart = "\x8d"; // V_PINKMAP
+					break;
+				case SKINCOLOR_RED:
+					cstart = "\x85"; // V_REDMAP
+					break;
+				case SKINCOLOR_ORANGE:
+				case SKINCOLOR_ROSEWOOD:
+					cstart = "\x87"; // V_ORANGEMAP
+					break;
+				case SKINCOLOR_PEACH:
+					cstart = "\x8f"; // V_PEACHMAP
+					break;
+				case SKINCOLOR_GOLD:
+					cstart = "\x8A"; // V_GOLDMAP
+					break;
+				case SKINCOLOR_YELLOW:
+				case SKINCOLOR_OLIVE:
+				case SKINCOLOR_ZIM:
+					cstart = "\x82"; // V_YELLOWMAP
+					break;
+				case SKINCOLOR_GREEN:
+				case SKINCOLOR_NEONGREEN:
+					cstart = "\x83"; // V_GREENMAP
+					break;
+				case SKINCOLOR_TEAL:
+				case SKINCOLOR_CYAN:
+					cstart = "\x88"; // V_SKYMAP
+					break;
+				case SKINCOLOR_STEELBLUE:
+					cstart = "\x8c"; // V_STEELMAP
+					break;
+				case SKINCOLOR_BLUE:
+					cstart = "\x84"; // V_BLUEMAP
+					break;
+				case SKINCOLOR_PURPLE:
+					cstart = "\x81"; // V_PURPLEMAP
+					break;
+				case SKINCOLOR_LAVENDER:
+					cstart = "\x89"; // V_LAVENDERMAP
+					break;
+				default:
+					break;
+			}
+		}
 		prefix = cstart;
 
 		// Give admins and remote admins their symbols.

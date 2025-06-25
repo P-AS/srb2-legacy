@@ -73,6 +73,8 @@ typedef struct tag_s
 //	matrix_t transform;
 } tag_t;
 
+#define MODEL_INTERPOLATION_FLAG "+i"
+
 typedef struct model_s
 {
 	int maxNumFrames;
@@ -86,6 +88,9 @@ typedef struct model_s
 
 	char *mdlFilename;
 	boolean unloaded;
+	
+	char *framenames;
+	boolean interpolate[256];
 } model_t;
 
 extern int numModels;
@@ -95,6 +100,7 @@ tag_t *GetTagByName(model_t *model, char *name, int frame);
 model_t *LoadModel(const char *filename, int ztag);
 void UnloadModel(model_t *model);
 void Optimize(model_t *model);
+void LoadModelInterpolationSettings(model_t *model);
 void GenerateVertexNormals(model_t *model);
 void GeneratePolygonNormals(model_t *model, int ztag);
 void CreateVBOTiny(mesh_t *mesh, tinyframe_t *frame);
