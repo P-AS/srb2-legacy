@@ -733,25 +733,13 @@ void R_DrawPlanes(void)
 
 					if (dc_yl <= dc_yh)
 					{
-						if (cv_skydome.value == 0)
-						{
-							angle = (pl->viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
-							dc_x = x;
-							dc_source =
-								R_GetColumn(skytexture,
-									angle);
-							wallcolfunc();
-						}
-						if (cv_skydome.value == 1)
-						{
-							angle = (pl->viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
-							dc_iscale = FixedMul(skyscale, FINECOSINE(xtoviewangle[x]>>ANGLETOFINESHIFT));
-							dc_x = x;
-							dc_source =
-							R_GetColumn(skytexture,
-								angle);
-							wallcolfunc();
-						}
+						angle = (pl->viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
+						dc_iscale = (cv_skydome.value) ? (FixedMul(skyscale, FINECOSINE(xtoviewangle[x]>>ANGLETOFINESHIFT))) : dc_iscale;
+						dc_x = x;
+						dc_source =
+						R_GetColumn(skytexture,
+							angle);
+						wallcolfunc();		
 					}
 				}
 				continue;
