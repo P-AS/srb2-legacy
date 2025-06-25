@@ -317,11 +317,17 @@ UINT16 R_GetColorByName(const char *name)
 
 UINT16 R_GetSuperColorByName(const char *name)
 {
-	UINT16 color;
-	for (color = FIRSTSUPERCOLOR; color < numskincolors; color++)
-		if (!stricmp(skincolors[color].name, name))
-			return color;
-	return 0;
+	UINT16 color,i;
+	color = SKINCOLOR_NONE;
+	char* realname = Z_Malloc(MAXCOLORNAME+1, PU_STATIC, NULL);
+	for (i = 1; i < numskincolors; i++)
+		if (!stricmp(skincolors[i].name, realname))
+		{
+			color = i;
+			break;
+		}
+	Z_Free(realname);
+	return color;
 }
 
 // ==========================================================================
