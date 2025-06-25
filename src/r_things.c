@@ -566,6 +566,12 @@ void R_InitSprites(void)
 	R_InitSkins();
 	for (i = 0; i < numwadfiles; i++)
 		R_AddSkins((UINT16)i);
+	
+	// Hardcode Tails and Knuckles supercolors because why not
+	if (skins[1].supercolor == SKINCOLOR_SUPER1)
+		skins[1].supercolor = SKINCOLOR_TSUPER1;
+	if (skins[2].supercolor == SKINCOLOR_SUPER1)
+		skins[2].supercolor = SKINCOLOR_KSUPER1;
 
 	//
 	// check if all sprites have frames
@@ -2931,14 +2937,19 @@ void R_AddSkins(UINT16 wadnum)
 			GETINT(accelstart)
 			GETINT(acceleration)
 #undef GETINT
-
 			// custom translation table
 			else if (!stricmp(stoken, "startcolor"))
 				skin->starttranscolor = atoi(value);
 			else if (!stricmp(stoken, "prefcolor"))
-				skin->prefcolor = R_GetColorByName(value);
+			{
+				UINT16 color = R_GetColorByName(value);
+				skin->prefcolor = (color ? color : SKINCOLOR_GREEN);
+			}
 			else if (!stricmp(stoken, "supercolor"))
-				skin->supercolor = R_GetSuperColorByName(value);
+			{
+				UINT16 color = R_GetSuperColorByName(value);
+				skin->supercolor = (color ? color : SKINCOLOR_SUPER1);
+			}
 			else if (!stricmp(stoken, "jumpfactor"))
 				skin->jumpfactor = FLOAT_TO_FIXED(atof(value));
 			else if (!stricmp(stoken, "highresscale"))

@@ -304,15 +304,15 @@ void R_FlushTranslationColormapCache(void)
 			memset(translationtablecache[i], 0, MAXSKINCOLORS * sizeof(UINT8**));
 }
 
-UINT8 R_GetColorByName(const char *name)
+UINT16 R_GetColorByName(const char *name)
 {
-	UINT8 color = (UINT8)atoi(name);
+	UINT16 color = (UINT16)atoi(name);
 	if (color > 0 && color < numskincolors)
 		return color;
 	for (color = 1; color < numskincolors; color++)
 		if (!stricmp(skincolors[color].name, name))
 			return color;
-	return 0;
+	return SKINCOLOR_NONE;
 }
 
 UINT16 R_GetSuperColorByName(const char *name)

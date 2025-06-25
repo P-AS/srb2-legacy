@@ -23,6 +23,7 @@
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
 #include "d_netcmd.h" // IsPlayerAdmin
+#include "m_menu.h" // M_CheckColor, M_GetColorNext, M_GetColorPrev
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -148,6 +149,30 @@ static int lib_isPlayerAdmin(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	lua_pushboolean(L, IsPlayerAdmin(player-players));
+	return 1;
+}
+
+// M_MENU
+/////////////
+
+static int lib_mCheckColor(lua_State *L)
+{
+	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
+	lua_pushboolean(L, M_CheckColor(color));
+	return 1;
+}
+
+static int lib_mGetColorNext(lua_State *L)
+{
+	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
+	lua_pushinteger(L, M_GetColorNext(color));
+	return 1;
+}
+
+static int lib_mGetColorPrev(lua_State *L)
+{
+	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
+	lua_pushinteger(L, M_GetColorPrev(color));
 	return 1;
 }
 
@@ -2254,7 +2279,12 @@ static luaL_Reg lib[] = {
 	{"P_Random",lib_pRandom}, // DEPRECATED
 	{"P_SignedRandom",lib_pSignedRandom}, // MACRO
 	{"P_RandomChance",lib_pRandomChance}, // MACRO
-
+	
+	// m_menu
+	{"M_CheckColor",lib_mCheckColor},
+	{"M_GetColorNext",lib_mGetColorNext},
+	{"M_GetColorPrev",lib_mGetColorPrev},
+	
 	// p_maputil
 	{"P_AproxDistance",lib_pAproxDistance},
 	{"P_ClosestPointOnLine",lib_pClosestPointOnLine},
