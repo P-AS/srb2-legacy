@@ -610,10 +610,10 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 		/* Need to rotate before translate */\
 		if (angle) /* Only needs to be done if there's an altered angle */\
 		{\
-			tempxs = FloatToFixed(vert->s);\
-			tempyt = FloatToFixed(vert->t);\
-			vert->s = (FixedToFloat(FixedMul(tempxs, FINECOSINE(angle)) - FixedMul(tempyt, FINESINE(angle))));\
-			vert->t = (FixedToFloat(FixedMul(tempxs, FINESINE(angle)) + FixedMul(tempyt, FINECOSINE(angle))));\
+			tempxs = FLOAT_TO_FIXED(vert->s);\
+			tempyt = FLOAT_TO_FIXED(vert->t);\
+			vert->s = (FIXED_TO_FLOAT(FixedMul(tempxs, FINECOSINE(angle)) - FixedMul(tempyt, FINESINE(angle))));\
+			vert->t = (FIXED_TO_FLOAT(-FixedMul(tempxs, FINESINE(angle)) - FixedMul(tempyt, FINECOSINE(angle))));\
 		}\
 \
 		vert->x = (vx);\
@@ -622,8 +622,8 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 \
 		if (slope)\
 		{\
-			fixedheight = P_GetZAt(slope, FloatToFixed(vx), FixedToFloat(vy));\
-			vert->y = FixedToFloat(fixedheight);\
+			fixedheight = P_GetZAt(slope, FLOAT_TO_FIXED((vx)), FLOAT_TO_FIXED((vy)));\
+			vert->y = FIXED_TO_FLOAT(fixedheight);\
 		}\
 }
 
