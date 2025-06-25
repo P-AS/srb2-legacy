@@ -311,13 +311,13 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 			angle = (currentplane->viewangle + currentplane->plangle)>>ANGLETOFINESHIFT;
 			planecos = FINECOSINE(angle);
 			planesin = FINESINE(angle);
-	
+
 			if (planeheight != cachedheight[y])
 			{
 				cachedheight[y] = planeheight;
 				cacheddistance[y] = distance = FixedMul(planeheight, yslope[y]);
 				span = abs(centery - y);
-	
+
 				if (span) // don't divide by zero
 				{
 					ds_xstep = FixedMul(planesin, planeheight) / span;
@@ -328,7 +328,7 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 					ds_xstep = FixedMul(distance, basexscale);
 					ds_ystep = FixedMul(distance, baseyscale);
 				}
-	
+
 				cachedxstep[y] = ds_xstep;
 				cachedystep[y] = ds_ystep;
 			}
@@ -338,10 +338,10 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 				ds_xstep = cachedxstep[y];
 				ds_ystep = cachedystep[y];
 			}
-	
+
 			ds_xfrac = xoffs + FixedMul(planecos, distance) + (x1 - centerx) * ds_xstep;
 			ds_yfrac = yoffs - FixedMul(planesin, distance) + (x1 - centerx) * ds_ystep;
-		}	
+		}
 
 	#ifndef NOWATER
 	if (planeripple.active)
@@ -733,12 +733,25 @@ void R_DrawPlanes(void)
 
 					if (dc_yl <= dc_yh)
 					{
-						angle = (pl->viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
-						dc_x = x;
-						dc_source =
+						if (cv_skydome.value == 0)
+						{
+							angle = (pl->viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
+							dc_x = x;
+							dc_source =
+								R_GetColumn(skytexture,
+									angle);
+							wallcolfunc();
+						}
+						if (cv_skydome.value == 1)
+						{
+							angle = (pl->viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
+							dc_iscale = FixedMul(skyscale, FINECOSINE(xtoviewangle[x]>>ANGLETOFINESHIFT));
+							dc_x = x;
+							dc_source =
 							R_GetColumn(skytexture,
 								angle);
-						wallcolfunc();
+							wallcolfunc();
+						}
 					}
 				}
 				continue;
@@ -1093,7 +1106,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 #endif
 		R_SetSlopePlaneVectors(pl, 0, xoffs, yoffs, fudgecanyon);
 
-		
+
 #ifndef NOWATER
 		if (spanfunc == R_DrawTranslucentWaterSpan_8)
 			spanfunc = R_DrawTiltedTranslucentWaterSpan_8;
