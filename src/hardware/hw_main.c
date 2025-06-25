@@ -447,7 +447,7 @@ static FUINT HWR_CalcSlopeLight(FUINT lightnum, angle_t dir, fixed_t delta)
 
 // HWR_RenderPlane
 // Render a floor or ceiling convex polygon
-static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, boolean isceiling, fixed_t fixedheight,
+static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, boolean isceiling, fixed_t fixedheight,
                            FBITFIELD PolyFlags, INT32 lightlevel, lumpnum_t lumpnum, sector_t *FOFsector, UINT8 alpha, boolean fogplane, extracolormap_t *planecolormap)
 {
 	polyvertex_t *  pv;
@@ -470,7 +470,6 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, boolean is
 
 	INT32 shader = SHADER_DEFAULT;
 
-	(void)sector; ///@TODO remove shitty unused variable
 	(void)fogplane; ///@TODO remove shitty unused variable
 
 	// no convex poly were generated for this subsector
@@ -555,9 +554,6 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, boolean is
 	flatxref = (float)(((fixed_t)pv->x & (~flatflag)) / fflatsize);
 	flatyref = (float)(((fixed_t)pv->y & (~flatflag)) / fflatsize);
 
-	// transform
-	v3d = planeVerts;
-
 	if (FOFsector != NULL)
 	{
 		if (!isceiling) // it's a floor
@@ -606,45 +602,36 @@ static void HWR_RenderPlane(sector_t *sector, extrasubsector_t *xsub, boolean is
 		flatyref = (FIXED_TO_FLOAT(FixedMul(tempxs, FINESINE(angle)) + FixedMul(tempyt, FINECOSINE(angle))));
 	}
 
-	for (i = 0; i < nrPlaneVerts; i++,v3d++,pv++)
-	{
-		// Hurdler: add scrolling texture on floor/ceiling
-		v3d->s = (float)((pv->x / fflatsize) - flatxref + scrollx);
-		v3d->t = (float)(flatyref - (pv->y / fflatsize) + scrolly);
+#define SETUP3DVERT(vert, vx, vy) {\
+		/* Hurdler: add scrolling texture on floor/ceiling */\
+		vert->s = (float)(((vx) / fflatsize) - flatxref + scrollx);\
+		vert->t = (float)(flatyref - ((vy) / fflatsize) + scrolly);\
+\
+		/* Need to rotate before translate */\
+		if (angle) /* Only needs to be done if there's an altered angle */\
+		{\
+			tempxs = FloatToFixed(vert->s);\
+			tempyt = FloatToFixed(vert->t);\
+			vert->s = (FixedToFloat(FixedMul(tempxs, FINECOSINE(angle)) - FixedMul(tempyt, FINESINE(angle))));\
+			vert->t = (FixedToFloat(FixedMul(tempxs, FINESINE(angle)) + FixedMul(tempyt, FINECOSINE(angle))));\
+		}\
+\
+		vert->x = (vx);\
+		vert->y = height;\
+		vert->z = (vy);\
+\
+		if (slope)\
+		{\
+			fixedheight = P_GetZAt(slope, FloatToFixed(vx), FixedToFloat(vy));\
+			vert->y = FixedToFloat(fixedheight);\
+		}\
+}
 
-		//v3d->s = (float)(pv->x / fflatsize);
-		//v3d->t = (float)(pv->y / fflatsize);
-
-		// Need to rotate before translate
-		if (angle) // Only needs to be done if there's an altered angle
-		{
-			tempxs = FLOAT_TO_FIXED(v3d->s);
-			tempyt = FLOAT_TO_FIXED(v3d->t);
-			v3d->s = (FIXED_TO_FLOAT(FixedMul(tempxs, FINECOSINE(angle)) - FixedMul(tempyt, FINESINE(angle))));
-			v3d->t = (FIXED_TO_FLOAT(-FixedMul(tempxs, FINESINE(angle)) - FixedMul(tempyt, FINECOSINE(angle))));
-		}
-
-		//v3d->s = (float)(v3d->s - flatxref + scrollx);
-		//v3d->t = (float)(flatyref - v3d->t + scrolly);
-
-		v3d->x = pv->x;
-		v3d->y = height;
-		v3d->z = pv->y;
-
-
-		if (slope)
-		{
-			fixedheight = P_GetZAt(slope, FLOAT_TO_FIXED(pv->x), FLOAT_TO_FIXED(pv->y));
-			v3d->y = FIXED_TO_FLOAT(fixedheight);
-		}
-	}
-
-
+	for (i = 0, v3d = planeVerts; i < (INT32)nrPlaneVerts; i++,v3d++,pv++)
+		SETUP3DVERT(v3d, pv->x, pv->y);
 
 	if (slope)
 		lightlevel = HWR_CalcSlopeLight(lightlevel, R_PointToAngle2(0, 0, slope->normal.x, slope->normal.y), abs(slope->zdelta));
-
-
 
 	HWR_Lighting(&Surf, lightlevel, planecolormap);
 
@@ -678,6 +665,79 @@ if (PolyFlags & (PF_Translucent|PF_Fog))
 	}
 
 	HWR_ProcessPolygon(&Surf, planeVerts, nrPlaneVerts, PolyFlags, shader, false);
+
+	if (subsector)
+	{
+		// Horizon lines
+		FOutVector horizonpts[6];
+		float dist, vx, vy;
+		float x1, y1, xd, yd;
+		UINT8 numplanes, j;
+		vertex_t v; // For determining the closest distance from the line to the camera, to split render planes for minimum distortion;
+
+		const float renderdist = 27000.0f; // How far out to properly render the plane
+		const float farrenderdist = 32768.0f; // From here, raise plane to horizon level to fill in the line with some texture distortion
+
+		seg_t *line = &segs[subsector->firstline];
+
+		for (i = 0; i < subsector->numlines; i++, line++)
+		{
+			if (line->linedef->special == 41 && R_PointOnSegSide(dup_viewx, dup_viewy, line) == 0)
+			{
+				P_ClosestPointOnLine(viewx, viewy, line->linedef, &v);
+				dist = FIXED_TO_FLOAT(R_PointToDist(v.x, v.y));
+
+				x1 = ((polyvertex_t *)line->pv1)->x;
+				y1 = ((polyvertex_t *)line->pv1)->y;
+				xd = ((polyvertex_t *)line->pv2)->x - x1;
+				yd = ((polyvertex_t *)line->pv2)->y - y1;
+
+				// Based on the seg length and the distance from the line, split horizon into multiple poly sets to reduce distortion
+				dist = sqrtf((xd*xd) + (yd*yd)) / dist / 16.0f;
+				if (dist > 100.0f)
+					numplanes = 100;
+				else
+					numplanes = (UINT8)dist + 1;
+
+				for (j = 0; j < numplanes; j++)
+				{
+					// Left side
+					vx = x1 + xd * j / numplanes;
+					vy = y1 + yd * j / numplanes;
+					SETUP3DVERT((&horizonpts[1]), vx, vy);
+
+					dist = sqrtf(powf(vx - gr_viewx, 2) + powf(vy - gr_viewy, 2));
+					vx = (vx - gr_viewx) * renderdist / dist + gr_viewx;
+					vy = (vy - gr_viewy) * renderdist / dist + gr_viewy;
+					SETUP3DVERT((&horizonpts[0]), vx, vy);
+
+					// Right side
+					vx = x1 + xd * (j+1) / numplanes;
+					vy = y1 + yd * (j+1) / numplanes;
+					SETUP3DVERT((&horizonpts[2]), vx, vy);
+
+					dist = sqrtf(powf(vx - gr_viewx, 2) + powf(vy - gr_viewy, 2));
+					vx = (vx - gr_viewx) * renderdist / dist + gr_viewx;
+					vy = (vy - gr_viewy) * renderdist / dist + gr_viewy;
+					SETUP3DVERT((&horizonpts[3]), vx, vy);
+
+					// Horizon fills
+					vx = (horizonpts[0].x - gr_viewx) * farrenderdist / renderdist + gr_viewx;
+					vy = (horizonpts[0].z - gr_viewy) * farrenderdist / renderdist + gr_viewy;
+					SETUP3DVERT((&horizonpts[5]), vx, vy);
+					horizonpts[5].y = gr_viewz;
+
+					vx = (horizonpts[3].x - gr_viewx) * farrenderdist / renderdist + gr_viewx;
+					vy = (horizonpts[3].z - gr_viewy) * farrenderdist / renderdist + gr_viewy;
+					SETUP3DVERT((&horizonpts[4]), vx, vy);
+					horizonpts[4].y = gr_viewz;
+
+					// Draw
+					HWR_ProcessPolygon(&Surf, horizonpts, 6, PolyFlags, shader, true);
+				}
+			}
+		}
+	}
 }
 
 #ifdef POLYSKY
@@ -3157,7 +3217,7 @@ static void HWR_Subsector(size_t num)
 			if (sub->validcount != validcount)
 			{
 				HWR_GetFlat(levelflats[gr_frontsector->floorpic].lumpnum);
-				HWR_RenderPlane(gr_frontsector, &extrasubsectors[num], false,
+				HWR_RenderPlane(sub, &extrasubsectors[num], false,
 					// Hack to make things continue to work around slopes.
 					locFloorHeight == cullFloorHeight ? locFloorHeight : gr_frontsector->floorheight,
 					// We now return you to your regularly scheduled rendering.
@@ -3179,7 +3239,7 @@ static void HWR_Subsector(size_t num)
 			if (sub->validcount != validcount)
 			{
 				HWR_GetFlat(levelflats[gr_frontsector->ceilingpic].lumpnum);
-				HWR_RenderPlane(NULL, &extrasubsectors[num], true,
+				HWR_RenderPlane(sub, &extrasubsectors[num], true,
 					// Hack to make things continue to work around slopes.
 					locCeilingHeight == cullCeilingHeight ? locCeilingHeight : gr_frontsector->ceilingheight,
 					// We now return you to your regularly scheduled rendering.
@@ -3259,7 +3319,7 @@ static void HWR_Subsector(size_t num)
 				{
 					HWR_GetFlat(levelflats[*rover->bottompic].lumpnum);
 					light = R_GetPlaneLight(gr_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
-										HWR_RenderPlane(NULL, &extrasubsectors[num], false, *rover->bottomheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gr_frontsector->lightlist[light].lightlevel, levelflats[*rover->bottompic].lumpnum,
+										HWR_RenderPlane(sub, &extrasubsectors[num], false, *rover->bottomheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gr_frontsector->lightlist[light].lightlevel, levelflats[*rover->bottompic].lumpnum,
 					                rover->master->frontsector, 255, false, gr_frontsector->lightlist[light].extra_colormap);
 
 				}
@@ -3314,7 +3374,7 @@ static void HWR_Subsector(size_t num)
 				{
 					HWR_GetFlat(levelflats[*rover->toppic].lumpnum);
 					light = R_GetPlaneLight(gr_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
-					HWR_RenderPlane(NULL, &extrasubsectors[num], true, *rover->topheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gr_frontsector->lightlist[light].lightlevel, levelflats[*rover->toppic].lumpnum,
+					HWR_RenderPlane(sub, &extrasubsectors[num], true, *rover->topheight, (rover->flags & FF_RIPPLE ? PF_Ripple : 0)|PF_Occlude, *gr_frontsector->lightlist[light].lightlevel, levelflats[*rover->toppic].lumpnum,
 					                  rover->master->frontsector, 255, false, gr_frontsector->lightlist[light].extra_colormap);
 				}
 			}
