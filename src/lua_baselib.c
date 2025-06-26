@@ -2279,12 +2279,12 @@ static luaL_Reg lib[] = {
 	{"P_Random",lib_pRandom}, // DEPRECATED
 	{"P_SignedRandom",lib_pSignedRandom}, // MACRO
 	{"P_RandomChance",lib_pRandomChance}, // MACRO
-	
+
 	// m_menu
 	{"M_CheckColor",lib_mCheckColor},
 	{"M_GetColorNext",lib_mGetColorNext},
 	{"M_GetColorPrev",lib_mGetColorPrev},
-	
+
 	// p_maputil
 	{"P_AproxDistance",lib_pAproxDistance},
 	{"P_ClosestPointOnLine",lib_pClosestPointOnLine},

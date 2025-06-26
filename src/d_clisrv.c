@@ -1145,16 +1145,16 @@ static void CL_DrawPlayerList(void)
 				player_name[MAXPLAYERNAME] = '\0';
 
 				V_DrawThinString(x + 10, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, player_name);
-				
+
 				if (playerinfo[i].team == 0) { statuscolor = 184; } // playing
 				if (playerinfo[i].data & 0x20) { statuscolor = 86; } // tag IT
 				if (playerinfo[i].team == 1) { statuscolor = 128; } // ctf red team
 				if (playerinfo[i].team == 2) { statuscolor = 232; } // ctf blue team
 				if (playerinfo[i].team == 255) { statuscolor = 16; } // spectator or non-team
-				
+
 				V_DrawFill(x, y, 7, 7, 31);
 				V_DrawFill(x, y, 6, 6, statuscolor);
-				
+
 				y += 9;
 				count++;
 				if ((count == 11) || (count == 22))
@@ -1183,7 +1183,7 @@ static void CL_DrawAddonList(void)
 	{
 		if (i & 1)
 			V_DrawFill(x, y - 1, 292, 9, 236);
-		
+
 		fileneeded_t addon_file = fileneeded[i];
 		strncpy(file_name, addon_file.filename, MAX_WADPATH);
 
@@ -1349,7 +1349,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 
 			if (fileneedednum > 0)
-				V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 11, V_ALLOWLOWERCASE, va("[""\x82""SPACE/X""\x80""] = %s", 
+				V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 11, V_ALLOWLOWERCASE, va("[""\x82""SPACE/X""\x80""] = %s",
 					(addonlist_show ? "Players" : "Addons")));
 			V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sENTER/A%s] = Join", "\x82", "\x80"));
 		}
@@ -1506,7 +1506,7 @@ static void SV_SendPlayerInfo(INT32 node)
 
 		// Extra data
 		netbuffer->u.playerinfo[i].data = 0; // players[i].skincolor
-		
+
 		if (players[i].pflags & PF_TAGIT)
 			netbuffer->u.playerinfo[i].data |= 0x20;
 
@@ -2155,7 +2155,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				cl_mode = CL_CHECKFILES;
 			else if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 				cl_mode = CL_ABORTED;
-			
+
 			if ((key == KEY_SPACE || key == KEY_JOY1+2) && fileneedednum)
 			{
 				if (!addonlist_toggle_tapped)
@@ -2167,7 +2167,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			}
 			else if (!(addonlist_show && fileneedednum > 11))
 				addonlist_toggle_tapped = false;
-			
+
 			if (addonlist_show && fileneedednum > 11)
 			{
 				if ((key == KEY_DOWNARROW || key == KEY_HAT1+1))
@@ -2224,7 +2224,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			addonlist_scroll_time = 0;
 		}
 
-		
+
 
 		if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 		{
@@ -4001,9 +4001,9 @@ static void HandlePacketFromAwayNode(SINT8 node)
 		case PT_CLIENTCMD:
 			break; // This is not an "unknown packet"
 
-		case PT_PLAYERINFO: 
+		case PT_PLAYERINFO:
 			HandlePlayerInfo(node);
-		break; 
+		break;
 
 		case PT_SERVERTICS:
 			// Do not remove my own server (we have just get a out of order packet)

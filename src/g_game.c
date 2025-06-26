@@ -3647,7 +3647,7 @@ void G_SaveGame(UINT32 savegameslot)
 void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar, boolean SSSG, boolean FLS)
 {
 	UINT8 color = skins[pickedchar].prefcolor;
-	
+
 	paused = false;
 
 	if (demoplayback)
@@ -3669,7 +3669,7 @@ void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar, b
 		splitscreen = SSSG;
 		SplitScreen_OnChange();
 	}
-	
+
 	SetPlayerSkinByNum(consoleplayer, pickedchar);
 	CV_StealthSet(&cv_skin, skins[pickedchar].name);
 	CV_StealthSetValue(&cv_playercolor, color);
@@ -5003,6 +5003,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	// compatibility available?
 	case 0x0008:
 	case 0x0009:
+	case 0x000A:
 		break;
 	// too old, cannot support.
 	default:
@@ -5144,6 +5145,7 @@ void G_DoPlayDemo(char *defdemoname)
 	// compatibility available?
 	case 0x0008:
 	case 0x0009:
+	case 0x000A:
 		break;
 	// too old, cannot support.
 	default:
@@ -5362,6 +5364,8 @@ void G_AddGhost(char *defdemoname)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
+	case 0x000A:
 		break;
 	// too old, cannot support.
 	default:
@@ -5587,6 +5591,8 @@ void G_DoPlayMetal(void)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
+	case 0x000A:
 		break;
 	// too old, cannot support.
 	default:

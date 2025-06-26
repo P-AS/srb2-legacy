@@ -65,7 +65,7 @@ static inline void P_ArchivePlayer(void)
 	INT32 pllives = player->lives;
 	if (pllives < 3) // Bump up to 3 lives if the player
 		pllives = 3; // has less than that.
-	
+
 	WRITEUINT8(save_p, player->skincolor);
 	WRITEUINT8(save_p, player->skin);
 
@@ -89,7 +89,7 @@ static inline void P_UnArchivePlayer(void)
 	(void)READUINT8(save_p);
 	savedata.skin = READUINT8(save_p);
 	savedata.skincolor = skins[savedata.skin].prefcolor;
-	
+
 	savedata.score = READINT32(save_p);
 	savedata.lives = READINT32(save_p);
 	savedata.continues = READINT32(save_p);

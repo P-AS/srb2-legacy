@@ -612,7 +612,7 @@ void D_RegisterServerCommands(void)
 void D_RegisterClientCommands(void)
 {
 	INT32 i;
-	
+
 	for (i = 0; i < MAXSKINCOLORS; i++)
 	{
 		Color_cons_t[i].value = i;
