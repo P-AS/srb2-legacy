@@ -15,8 +15,6 @@
 #ifndef __DOOMDEF__
 #define __DOOMDEF__
 
-
-
 // Sound system select
 // This should actually be in the makefile,
 // but I can't stand that gibberish. D:
@@ -98,6 +96,7 @@
 
 
 #include "doomtype.h"
+#include "version.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -145,21 +144,16 @@ extern char logfilename[1024];
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
-#define VERSION    0 // Game version
-#define SUBVERSION 0 // more precise version number
 #define VERSIONSTRING "Development EXE"
-#define VERSIONSTRINGW L"Development EXE"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-#define VERSION    201 // Game version
-#define SUBVERSION 28  // more precise version number
-#define SUBVERSION_NETCOMPAT 25  // for backwards compatibility with 2.1.25 servers
-#define VERSIONSTRING "v2.1.28"
-#define VERSIONSTRINGW L"v2.1.28"
+#define VERSIONSTRING "v"SRB2VERSION
 // Hey! If you change this, add 1 to the MODVERSION below!
 // Otherwise we can't force updates!
 #endif
+
+#define VERSIONSTRINGW WSTRING (VERSIONSTRING)
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
@@ -216,17 +210,6 @@ RELEASES \
 // (such as 2.0.4 to 2.0.5, etc) into your working copy.
 // Will always resemble the versionstring, 205 = 2.0.5, 210 = 2.1, etc.
 #define CODEBASE 210
-
-// The Modification ID; must be obtained from Rob ( https://mb.srb2.org/private.php?do=newpm&u=546 ).
-// DO NOT try to set this otherwise, or your modification will be unplayable through the Master Server.
-// "12" is the default mod ID for version 2.1
-#define MODID 12
-
-// The Modification Version, starting from 1. Do not follow your version string for this,
-// it's only for detection of the version the player is using so the MS can alert them of an update.
-// Only set it higher, not lower, obviously.
-// Note that we use this to help keep internal testing in check; this is why v2.1.0 is not version "1".
-#define MODVERSION 33
 
 // To version config.cfg, MAJOREXECVERSION is set equal to MODVERSION automatically.
 // Increment MINOREXECVERSION whenever a config change is needed that does not correspond
@@ -401,6 +384,9 @@ char *sizeu4(size_t num);
 char *sizeu5(size_t num);
 
 // d_main.c
+extern int    VERSION;
+extern int SUBVERSION;
+extern const int SUBVERSION_NETCOMPAT; // TODO: REMOVE
 extern boolean devparm; // development mode (-debug)
 // d_netcmd.c
 extern INT32 cv_debug;
