@@ -76,7 +76,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
 #include "keys.h"
-#include "filesrch.h" // refreshdirmenu, mainwadstally 
+#include "filesrch.h" // refreshdirmenu, mainwadstally
 #include "r_fps.h"
 #include "m_perfstats.h"
 
@@ -253,7 +253,7 @@ static void D_Display(void)
 	if (vid.recalc)
 		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
 
-	
+
 	if (rendermode == render_soft && !splitscreen)
 		R_CheckViewMorph();
 
@@ -407,7 +407,7 @@ static void D_Display(void)
 			{
 				if (!splitscreen)
 					R_ApplyViewMorph();
-					
+
 				if (postimgtype)
 					V_DoPostProcessor(0, postimgtype, postimgparam);
 				if (postimgtype2)
@@ -780,7 +780,7 @@ void D_StartTitle(void)
 	INT32 i;
 
 	S_StopMusic();
-	
+
 	if (netgame)
 	{
 		if (gametype == GT_COOP)
@@ -1246,10 +1246,10 @@ void D_SRB2Main(void)
 	// Setup character tables
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
-	
+
 	// load colors
 	M_InitSkincolors();
-	
+
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
 	if (!W_InitMultipleFiles(startupwadfiles))
@@ -1589,4 +1589,3 @@ const char *D_Home(void)
 	if (usehome) return userhome;
 	else return NULL;
 }
-

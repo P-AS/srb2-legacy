@@ -1271,7 +1271,7 @@ int LUA_InfoLib(lua_State *L)
 		lua_pushcfunction(L, mobjinfo_num);
 		lua_setfield(L, -2, "__len");
 	lua_pop(L, 1);
-	
+
 	luaL_newmetatable(L, META_SKINCOLOR);
 		lua_pushcfunction(L, skincolor_get);
 		lua_setfield(L, -2, "__index");
@@ -1306,7 +1306,7 @@ int LUA_InfoLib(lua_State *L)
 		lua_pushcfunction(L, sfxinfo_num);
 		lua_setfield(L, -2, "__len");
 	lua_pop(L, 1);
-	
+
 	lua_newuserdata(L, 0);
 		lua_createtable(L, 0, 2);
 			lua_pushcfunction(L, lib_getSprname);
@@ -1355,10 +1355,10 @@ int LUA_InfoLib(lua_State *L)
 			lua_setfield(L, -2, "__len");
 		lua_setmetatable(L, -2);
 	lua_pushvalue(L, -1);
-	
+
 	lua_setglobal(L, "S_sfx");
 	lua_setglobal(L, "sfxinfo");
-	
+
 	lua_newuserdata(L, 0);
 		lua_createtable(L, 0, 2);
 			lua_pushcfunction(L, lib_getSkinColor);
@@ -1371,6 +1371,6 @@ int LUA_InfoLib(lua_State *L)
 			lua_setfield(L, -2, "__len");
 		lua_setmetatable(L, -2);
 	lua_setglobal(L, "skincolors");
-	
+
 	return 0;
 }
