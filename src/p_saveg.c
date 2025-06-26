@@ -99,8 +99,8 @@ static inline void P_UnArchivePlayer(void)
 		savedata.botskin = READUINT8(save_p);
 		if (savedata.botskin-1 >= numskins)
 			savedata.botskin = 0;
-		// TODO compat
-		savedata.botcolor = READUINT8(save_p);
+		(void)READUINT8(save_p);
+		savedata.botcolor = skins[savedata.botskin].prefcolor;
 	}
 	else
 		savedata.botskin = 0;
@@ -1241,7 +1241,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_SKIN)
 		WRITEUINT8(save_p, (UINT8)((skin_t *)mobj->skin - skins));
 	if (diff2 & MD2_COLOR)
-		WRITEUINT8(save_p, mobj->color);
+		WRITEUINT16(save_p, mobj->color);
 	if (diff2 & MD2_EXTVAL1)
 		WRITEINT32(save_p, mobj->extravalue1);
 	if (diff2 & MD2_EXTVAL2)
@@ -2107,9 +2107,8 @@ static void LoadMobjThinker(actionf_p1 thinker)
 		mobj->cvmem = READINT32(save_p);
 	if (diff2 & MD2_SKIN)
 		mobj->skin = &skins[READUINT8(save_p)];
-	// TODO compat
 	if (diff2 & MD2_COLOR)
-		mobj->color = READUINT8(save_p);
+		mobj->color = READUINT16(save_p);
 	if (diff2 & MD2_EXTVAL1)
 		mobj->extravalue1 = READINT32(save_p);
 	if (diff2 & MD2_EXTVAL2)

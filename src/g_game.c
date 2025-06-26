@@ -2162,7 +2162,7 @@ void G_PlayerReborn(INT32 player)
 	INT16 totalring;
 	UINT8 laps;
 	UINT8 mare;
-	UINT8 skincolor;
+	UINT16 skincolor;
 	INT32 skin;
 	tic_t jointime;
 	boolean spectator;

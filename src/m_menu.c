@@ -5463,8 +5463,8 @@ static void M_ReadSavegameInfo(UINT32 slot)
 		if (savegameinfo[slot].botskin-1 >= numskins)
 			savegameinfo[slot].botskin = 0;
 		CHECKPOS
-		// TODO compat this
-		savegameinfo[slot].botcolor = READUINT8(save_p); // because why not.
+		(void)READUINT8(save_p);
+		savegameinfo[slot].botcolor = skins[savegameinfo[slot].skinnum].prefcolor; // bot color
 	}
 	else
 		savegameinfo[slot].botskin = 0;

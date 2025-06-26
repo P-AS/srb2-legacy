@@ -1264,7 +1264,7 @@ static void SendNameAndColor(void)
 
 	// Finally write out the complete packet and send it off.
 	WRITESTRINGN(p, cv_playername.zstring, MAXPLAYERNAME);
-	WRITEUINT8(p, (UINT8)cv_playercolor.value);
+	WRITEUINT16(p, (UINT16)cv_playercolor.value);
 	WRITEUINT8(p, (UINT8)cv_skin.value);
 	SendNetXCmd(XD_NAMEANDCOLOR, buf, p - buf);
 }
@@ -1390,7 +1390,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 #endif
 
 	READSTRINGN(*cp, name, MAXPLAYERNAME);
-	color = READUINT8(*cp);
+	color = READUINT16(*cp);
 	skin = READUINT8(*cp);
 
 	// set name
@@ -1406,6 +1406,10 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	if (server && (p != &players[consoleplayer] && p != &players[secondarydisplayplayer]))
 	{
 		boolean kick = false;
+		
+		// don't allow inaccessible colors
+		if (skincolors[p->skincolor].accessible == false)
+			kick = true;
 
 		// team colors
 		if (G_GametypeHasTeams())
@@ -1415,10 +1419,6 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 			else if (p->ctfteam == 2 && p->skincolor != skincolor_blueteam)
 				kick = true;
 		}
-
-		// don't allow color "none"
-		if (!p->skincolor)
-			kick = true;
 
 		if (kick)
 		{
