@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
+file(STRINGS src/version.h SRB2_VERSION)
+string(REGEX MATCH "[0-9]+\\.[0-9.]+" SRB2_VERSION ${SRB2_VERSION})
+
 # Enable CCache early
 set(SRB2_USE_CCACHE OFF CACHE BOOL "Use CCache")
 if (${SRB2_USE_CCACHE})
@@ -15,7 +18,7 @@ endif()
 # DO NOT CHANGE THIS SRB2 STRING! Some variable names depend on this string.
 # Version change is fine.
 project(SRB2
-	VERSION 2.1.28
+	VERSION ${SRB2_VERSION}
 	LANGUAGES C)
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})

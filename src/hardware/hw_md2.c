@@ -1,17 +1,12 @@
-// Emacs style mode select   -*- C++ -*-
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-//
+// Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2019 by Sonic Team Junior.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief MD2 Handling
@@ -237,7 +232,7 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 
 	{
 		png_uint_32 i, pitch = png_get_rowbytes(png_ptr, png_info_ptr);
-		png_bytep PNG_image = Z_Malloc(pitch*height, PU_HWRCACHE, &grpatch->mipmap->grInfo.data);
+		png_bytep PNG_image = Z_Malloc(pitch*height, PU_HWRMODELTEXTURE, &grpatch->mipmap->grInfo.data);
 		png_bytepp row_pointers = png_malloc(png_ptr, height * sizeof (png_bytep));
 		for (i = 0; i < height; i++)
 			row_pointers[i] = PNG_image + i*pitch;
@@ -311,7 +306,7 @@ static GLTextureFormat_t PCX_Load(const char *filename, int *w, int *h,
 
 	pw = *w = header.xmax - header.xmin + 1;
 	ph = *h = header.ymax - header.ymin + 1;
-	image = Z_Malloc(pw*ph*4, PU_HWRCACHE, &grpatch->mipmap->grInfo.data);
+	image = Z_Malloc(pw*ph*4, PU_HWRMODELTEXTURE, &grpatch->mipmap->grInfo.data);
 
 	if (fread(palette, sizeof (UINT8), PALSIZE, file) != PALSIZE)
 	{
@@ -371,6 +366,9 @@ static void md2_loadTexture(md2_t *model)
 	if (!grpatch->mipmap->downloaded && !grpatch->mipmap->grInfo.data)
 	{
 		int w = 0, h = 0;
+		UINT32 size;
+		RGBA_t *image;
+
 #ifdef HAVE_PNG
 		grpatch->mipmap->grInfo.format = PNG_Load(filename, &w, &h, grpatch);
 		if (grpatch->mipmap->grInfo.format == 0)
@@ -389,6 +387,15 @@ static void md2_loadTexture(md2_t *model)
 		grpatch->height = (INT16)h;
 		grpatch->mipmap->width = (UINT16)w;
 		grpatch->mipmap->height = (UINT16)h;
+
+		// Lactozilla: Apply colour cube
+		image = grpatch->mipmap->grInfo.data;
+		size = w*h;
+		while (size--)
+		{
+			V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
+			image++;
+		}
 
 		// not correct!
 		grpatch->mipmap->grInfo.smallLodLog2 = GR_LOD_LOG2_256;
@@ -649,7 +656,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 	Z_Free(grmip->grInfo.data);
 	grmip->grInfo.data = NULL;
 
-	cur = Z_Malloc(size*4, PU_HWRCACHE, &grmip->grInfo.data);
+	cur = Z_Malloc(size*4, PU_HWRMODELTEXTURE, &grmip->grInfo.data);
 	memset(cur, 0x00, size*4);
 
 	image = gpatch->mipmap->grInfo.data;
@@ -845,7 +852,7 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, con
 			if (grmip->downloaded && grmip->grInfo.data)
 			{
 				HWD.pfnSetTexture(grmip); // found the colormap, set it to the correct texture
-				Z_ChangeTag(grmip->grInfo.data, PU_HWRCACHE_UNLOCKED);
+				Z_ChangeTag(grmip->grInfo.data, PU_HWRMODELTEXTURE);
 				return;
 			}
 		}
@@ -867,7 +874,7 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, con
 	HWR_CreateBlendedTexture(gpatch, blendgpatch, newmip, color);
 
 	HWD.pfnSetTexture(newmip);
-	Z_ChangeTag(newmip->grInfo.data, PU_HWRCACHE_UNLOCKED);
+	Z_ChangeTag(newmip->grInfo.data, PU_HWRMODELTEXTURE);
 }
 
 static boolean HWR_CanInterpolateModel(mobj_t *mobj, model_t *model)

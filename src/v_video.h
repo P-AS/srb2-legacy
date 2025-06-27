@@ -27,8 +27,11 @@
 
 extern UINT8 *screens[5];
 
-extern const UINT8 gammatable[5][256];
-extern consvar_t cv_ticrate, cv_tpscounter, cv_usegamma, cv_allcaps, cv_constextsize;
+extern consvar_t cv_ticrate, cv_tpscounter, cv_fpssize, cv_allcaps, cv_constextsize, \
+cv_globalgamma, cv_globalsaturation, \
+cv_rhue, cv_yhue, cv_ghue, cv_chue, cv_bhue, cv_mhue,\
+cv_rgamma, cv_ygamma, cv_ggamma, cv_cgamma, cv_bgamma, cv_mgamma, \
+cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, cv_msaturation;
 
 // Allocates buffer screens, call before R_Init.
 void V_Init(void);
@@ -55,6 +58,8 @@ const char *GetPalette(void);
 
 extern RGBA_t *pLocalPalette;
 
+void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
+
 // Retrieve the ARGB value from a palette color index
 #define V_GetColor(color) (pLocalPalette[color&0xFF])
 
@@ -76,8 +81,6 @@ extern RGBA_t *pLocalPalette;
 #define V_MONOSPACE          0x00000C00 // Don't do width checks on characters, all characters 8 width
 
 // use bits 13-16 for colors
-// though we only have 7 colors now, perhaps we can introduce
-// more as needed later
 #define V_CHARCOLORSHIFT     12
 #define V_CHARCOLORMASK      0x0000F000
 // for simplicity's sake, shortcuts to specific colors
@@ -94,7 +97,7 @@ extern RGBA_t *pLocalPalette;
 #define V_TEAMAP             0x0000B000
 #define V_STEELMAP           0x0000C000
 #define V_PINKMAP            0x0000D000
-#define V_TEALMAP            0x0000E000
+#define V_BROWNMAP           0x0000E000
 #define V_PEACHMAP           0x0000F000
 
 // use bits 17-20 for alpha transparency
@@ -246,4 +249,3 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 	size_t destrowbytes);
 
 #endif
-

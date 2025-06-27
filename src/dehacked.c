@@ -332,21 +332,6 @@ static INT32 searchvalue(const char *s)
 	}
 }
 
-#ifdef HWRENDER
-static float searchfvalue(const char *s)
-{
-	while (s[0] != '=' && s[0])
-		s++;
-	if (s[0] == '=')
-		return (float)atof(&s[1]);
-	else
-	{
-		deh_warning("No value found");
-		return 0;
-	}
-}
-#endif
-
 // These are for clearing all of various things
 static void clear_conditionsets(void)
 {
@@ -840,128 +825,6 @@ static void readthing(MYFILE *f, INT32 num)
 
 	Z_Free(s);
 }
-
-#ifdef HWRENDER
-static void readlight(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word;
-	char *tmp;
-	INT32 value;
-	float fvalue;
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			tmp = strchr(s, '#');
-			if (tmp)
-				*tmp = '\0';
-			if (s == tmp)
-				continue; // Skip comment lines, but don't break.
-
-			fvalue = searchfvalue(s);
-			value = searchvalue(s);
-
-			word = strtok(s, " ");
-			if (word)
-				strupr(word);
-			else
-				break;
-
-			if (fastcmp(word, "TYPE"))
-			{
-				DEH_WriteUndoline(word, va("%d", lspr[num].type), UNDO_NONE);
-				lspr[num].type = (UINT16)value;
-			}
-			else if (fastcmp(word, "OFFSETX"))
-			{
-				DEH_WriteUndoline(word, va("%f", lspr[num].light_xoffset), UNDO_NONE);
-				lspr[num].light_xoffset = fvalue;
-			}
-			else if (fastcmp(word, "OFFSETY"))
-			{
-				DEH_WriteUndoline(word, va("%f", lspr[num].light_yoffset), UNDO_NONE);
-				lspr[num].light_yoffset = fvalue;
-			}
-			else if (fastcmp(word, "CORONACOLOR"))
-			{
-				DEH_WriteUndoline(word, va("%u", lspr[num].corona_color), UNDO_NONE);
-				lspr[num].corona_color = value;
-			}
-			else if (fastcmp(word, "CORONARADIUS"))
-			{
-				DEH_WriteUndoline(word, va("%f", lspr[num].corona_radius), UNDO_NONE);
-				lspr[num].corona_radius = fvalue;
-			}
-			else if (fastcmp(word, "DYNAMICCOLOR"))
-			{
-				DEH_WriteUndoline(word, va("%u", lspr[num].dynamic_color), UNDO_NONE);
-				lspr[num].dynamic_color = value;
-			}
-			else if (fastcmp(word, "DYNAMICRADIUS"))
-			{
-				DEH_WriteUndoline(word, va("%f", lspr[num].dynamic_radius), UNDO_NONE);
-				lspr[num].dynamic_radius = fvalue;
-
-				/// \note Update the sqrradius! unnecessary?
-				lspr[num].dynamic_sqrradius = fvalue * fvalue;
-			}
-			else
-				deh_warning("Light %d: unknown word '%s'", num, word);
-		}
-	} while (!myfeof(f)); // finish when the line is empty
-
-	Z_Free(s);
-}
-
-static void readspritelight(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word;
-	char *tmp;
-	INT32 value;
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			tmp = strchr(s, '#');
-			if (tmp)
-				*tmp = '\0';
-			if (s == tmp)
-				continue; // Skip comment lines, but don't break.
-
-			value = searchvalue(s);
-
-			word = strtok(s, " ");
-			if (word)
-				strupr(word);
-			else
-				break;
-
-			if (fastcmp(word, "LIGHTTYPE"))
-			{
-				INT32 oldvar;
-				for (oldvar = 0; t_lspr[num] != &lspr[oldvar]; oldvar++)
-					;
-				DEH_WriteUndoline(word, va("%d", oldvar), UNDO_NONE);
-				t_lspr[num] = &lspr[value];
-			}
-			else
-				deh_warning("Sprite %d: unknown word '%s'", num, word);
-		}
-	} while (!myfeof(f)); // finish when the line is empty
-
-	Z_Free(s);
-}
-#endif // HWRENDER
 
 static const struct {
 	const char *name;
@@ -3439,34 +3302,16 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 				{
 					readAnimTex(f, i);
 				}*/
-				else if (fastcmp(word, "LIGHT"))
-				{
-#ifdef HWRENDER
-					// TODO: Read lights by name
-					if (i > 0 && i < NUMLIGHTS)
-						readlight(f, i);
-					else
-					{
-						deh_warning("Light number %d out of range (1 - %d)", i, NUMLIGHTS-1);
-						ignorelines(f);
-					}
-					DEH_WriteUndoline(word, word2, UNDO_HEADER);
-#endif
-				}
 				else if (fastcmp(word, "SPRITE"))
 				{
-#ifdef HWRENDER
 					if (i == 0 && word2[0] != '0') // If word2 isn't a number
 						i = get_sprite(word2); // find a sprite by name
-					if (i < NUMSPRITES && i >= 0)
-						readspritelight(f, i);
 					else
 					{
 						deh_warning("Sprite number %d out of range (0 - %d)", i, NUMSPRITES-1);
 						ignorelines(f);
 					}
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
-#endif
 				}
 				else if (fastcmp(word, "LEVEL"))
 				{
@@ -7032,8 +6877,6 @@ struct {
 	{"PUSHACCEL",PUSHACCEL},
 	{"MODID",MODID}, // I don't know, I just thought it would be cool for a wad to potentially know what mod it was loaded into.
 	{"CODEBASE",CODEBASE}, // or what release of SRB2 this is.
-	{"VERSION",VERSION}, // Grab the game's version!
-	{"SUBVERSION",SUBVERSION}, // more precise version number
 
 	// Special linedef executor tag numbers!
 	{"LE_PINCHPHASE",LE_PINCHPHASE}, // A boss entered pinch phase (and, in most cases, is preparing their pinch phase attack!)
@@ -7392,6 +7235,11 @@ struct {
 	{"BT_CUSTOM2",BT_CUSTOM2}, // Lua customizable
 	{"BT_CUSTOM3",BT_CUSTOM3}, // Lua customizable
 
+	// Lua command registration flags
+	{"COM_ADMIN",COM_ADMIN},
+	{"COM_SPLITSCREEN",COM_SPLITSCREEN},
+	{"COM_LOCAL",COM_LOCAL},
+
 	// cvflags_t
 	{"CV_SAVE",CV_SAVE},
 	{"CV_CALL",CV_CALL},
@@ -7421,6 +7269,13 @@ struct {
 	{"V_REDMAP",V_REDMAP},
 	{"V_GRAYMAP",V_GRAYMAP},
 	{"V_ORANGEMAP",V_ORANGEMAP},
+	{"V_SKYMAP",V_SKYMAP},
+	{"V_LAVENDERMAP",V_LAVENDERMAP},
+	{"V_GOLDMAP",V_GOLDMAP},
+	{"V_TEAMAP",V_TEAMAP},
+	{"V_STEELMAP",V_STEELMAP},
+	{"V_PINKMAP",V_PINKMAP},
+	{"V_BROWNMAP",V_BROWNMAP},
 	{"V_TRANSLUCENT",V_TRANSLUCENT},
 	{"V_10TRANS",V_10TRANS},
 	{"V_20TRANS",V_20TRANS},
@@ -8109,11 +7964,23 @@ static inline int lib_getenum(lua_State *L)
 			return 0;
 		LUA_PushUserdata(L, &players[adminplayers[0]], META_PLAYER);
 		return 1;
+	} else if (fastcmp(word,"isserver")) {
+		lua_pushboolean(L, server);
+		return 1;
+	} else if (fastcmp(word, "isdedicatedserver")) {
+		lua_pushboolean(L, dedicated);
+		return 1;
 	} else if (fastcmp(word,"emeralds")) {
 		lua_pushinteger(L, emeralds);
 		return 1;
 	} else if (fastcmp(word,"gravity")) {
 		lua_pushinteger(L, gravity);
+		return 1;
+	} else if (fastcmp(word,"VERSION")) {
+		lua_pushinteger(L, VERSION);
+		return 1;
+	} else if (fastcmp(word,"SUBVERSION")) {
+		lua_pushinteger(L, SUBVERSION);
 		return 1;
 	} else if (fastcmp(word,"VERSIONSTRING")) {
 		lua_pushstring(L, VERSIONSTRING);
