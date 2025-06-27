@@ -748,7 +748,7 @@ static void RemoveFromMasterServer(void *userdata)
 	strcpy(info->ip, "");
 	strcpy(info->port, int2str(current_port));
 	strcpy(info->name, registered_server.name);
-	sprintf(info->version, "%d.%d.%d", VERSION/100, VERSION%100, SUBVERSION);
+	strcpy(info->version, SRB2VERSION);
 
 	msg.type = REMOVE_SERVER_MSG;
 	msg.length = (UINT32)sizeof (msg_server_t);
