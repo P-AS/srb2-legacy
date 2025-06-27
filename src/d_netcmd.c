@@ -351,9 +351,7 @@ static CV_PossibleValue_t nettimeout_cons_t[] = {{TICRATE/7, "MIN"}, {60*TICRATE
 consvar_t cv_nettimeout = {"nettimeout", "350", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange, 0, NULL, NULL, 0, 0, NULL};
 static CV_PossibleValue_t jointimeout_cons_t[] = {{5*TICRATE, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
 consvar_t cv_jointimeout = {"jointimeout", "350", CV_CALL|CV_SAVE, jointimeout_cons_t, JoinTimeout_OnChange, 0, NULL, NULL, 0, 0, NULL};
-#ifdef NEWPING
 consvar_t cv_maxping = {"maxping", "0", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
 
 // show your ping on the HUD next to framerate
 consvar_t cv_showping = {"showping", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -593,9 +591,7 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_skipmapcheck);
 	CV_RegisterVar(&cv_sleep);
-#ifdef NEWPING
 	CV_RegisterVar(&cv_maxping);
-#endif
 	CV_RegisterVar(&cv_showping);
 
 #ifdef SEENAMES
