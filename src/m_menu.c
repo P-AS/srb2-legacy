@@ -8287,9 +8287,6 @@ boolean M_CheckColor(UINT16 color)
 
 UINT16 M_GetColorNext(UINT16 base)
 {
-	if (!M_CheckColor(base))
-		I_Error("M_GetColorNext: Invalid color %d.", base);
-	
 	UINT32 i;
 	
 	for (i = base + 1; ; i++)
@@ -8303,9 +8300,6 @@ UINT16 M_GetColorNext(UINT16 base)
 
 UINT16 M_GetColorPrev(UINT16 base)
 {
-	if (!M_CheckColor(base))
-		I_Error("M_GetColorPrev: Invalid color %d.", base);
-	
 	UINT32 i;
 	
 	for (i = base - 1; ; i--)
