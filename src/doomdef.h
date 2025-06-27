@@ -148,10 +148,11 @@ extern char logfilename[1024];
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
-#define VERSION    201 // Game version
-#define SUBVERSION 28  // more precise version number
-#define VERSIONSTRING "v2.1.28"
-#define VERSIONSTRINGW L"v2.1.28"
+#ifdef BETAVERSION
+#define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
+#else
+#define VERSIONSTRING "v"SRB2VERSION
+#endif
 // Hey! If you change this, add 1 to the MODVERSION below!
 // Otherwise we can't force updates!
 #endif
