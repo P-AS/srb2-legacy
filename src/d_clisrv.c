@@ -21,6 +21,7 @@
 #include "i_net.h"
 #include "i_system.h"
 #include "i_video.h"
+#include "d_clisrv.h"
 #include "d_net.h"
 #include "d_main.h"
 #include "g_game.h"
@@ -100,6 +101,7 @@ static tic_t freezetimeout[MAXNETNODES]; // Until when can this node freeze the 
 UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
+UINT32 playerpacketlosstable[MAXPLAYERS];
 SINT8 nodetoplayer[MAXNETNODES];
 SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (splitscreen)
 UINT8 playerpernode[MAXNETNODES]; // used specialy for scplitscreen
@@ -4435,9 +4437,14 @@ FILESTAMP
 			{
 				UINT8 i;
 				for (i = 0; i < MAXPLAYERS; i++)
+				{
 					if (playeringame[i])
-						playerpingtable[i] = (tic_t)netbuffer->u.pingtable[i];
-				servermaxping = (tic_t)netbuffer->u.pingtable[MAXPLAYERS];
+					{
+						playerpingtable[i] = (tic_t)netbuffer->u.netinfo.pingtable[i];
+						playerpacketlosstable[i] = netbuffer->u.netinfo.packetloss[i];
+					}
+				}
+				servermaxping = (tic_t)netbuffer->u.netinfo.pingtable[MAXPLAYERS];
 			}
 
 			break;
@@ -4871,6 +4878,8 @@ static void SV_Maketic(void)
 	INT32 j;
 
 	for (j = 0; j < MAXNETNODES; j++)
+	{
+		packetloss[(j < MAXPLAYERS) ? j : MAXPLAYERS-1][maketic%PACKETMEASUREWINDOW] = false; // Hack that I don't even know if it works
 		if (playerpernode[j])
 		{
 			INT32 player = nodetoplayer[j];
@@ -4888,8 +4897,10 @@ static void SV_Maketic(void)
 					netcmds[maketic%BACKUPTICS][player] = netcmds[(maketic-1)%BACKUPTICS][player];
 					netcmds[maketic%BACKUPTICS][player].angleturn &= ~TICCMD_RECEIVED;
 				}
+				packetloss[j][maketic%PACKETMEASUREWINDOW] = true;
 			}
 		}
+	}
 
 	// all tic are now proceed make the next
 	maketic++;
@@ -5007,7 +5018,7 @@ static INT32 pingtimeout[MAXPLAYERS];
 
 static inline void PingUpdate(void)
 {
-	INT32 i;
+	INT32 i, j;
 	boolean laggers[MAXPLAYERS];
 	UINT8 numlaggers = 0;
 	memset(laggers, 0, sizeof(boolean) * MAXPLAYERS);
@@ -5066,20 +5077,28 @@ static inline void PingUpdate(void)
 	//make the ping packet and clear server data for next one
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		netbuffer->u.pingtable[i] = realpingtable[i] / pingmeasurecount;
+		netbuffer->u.netinfo.pingtable[i] = realpingtable[i] / pingmeasurecount;
 		//server takes a snapshot of the real ping for display.
 		//otherwise, pings fluctuate a lot and would be odd to look at.
 		playerpingtable[i] = realpingtable[i] / pingmeasurecount;
 		realpingtable[i] = 0; //Reset each as we go.
+				UINT32 lost = 0;
+		for (j = 0; j < PACKETMEASUREWINDOW; j++)
+		{
+			if (packetloss[i][j])
+				lost++;
+		}
+
+		netbuffer->u.netinfo.packetloss[i] = lost;
 	}
 
 	// send the server's maxping as last element of our ping table. This is useful to let us know when we're about to get kicked.
-	netbuffer->u.pingtable[MAXPLAYERS] = cv_maxping.value;
+	netbuffer->u.netinfo.pingtable[MAXPLAYERS] = cv_maxping.value;
 
 	//send out our ping packets
 	for (i = 0; i < MAXNETNODES; i++)
 		if (nodeingame[i])
-			HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
+			HSendPacket(i, true, 0, sizeof(struct netinfo_pak));
 
 	pingmeasurecount = 1; //Reset count
 }

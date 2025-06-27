@@ -376,6 +376,12 @@ typedef struct
 	UINT8 ctfteam;
 } ATTRPACK plrconfig;
 
+struct netinfo_pak
+{
+	UINT32 pingtable[MAXPLAYERS+1];
+	UINT32 packetloss[MAXPLAYERS+1];
+} ATTRPACK;
+
 //
 // Network packet data
 //
@@ -406,7 +412,7 @@ typedef struct
 		msaskinfo_pak msaskinfo;            //          22 bytes
 		plrinfo playerinfo[MAXPLAYERS];     //         576 bytes(?)
 		plrconfig playerconfig[MAXPLAYERS]; // (up to) 528 bytes(?)
-		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
+		struct netinfo_pak netinfo;					// Don't believe their lies
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK doomdata_t;
 
@@ -470,6 +476,7 @@ extern tic_t jointimeout;
 extern UINT16 pingmeasurecount;
 extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
+extern UINT32 playerpacketlosstable[MAXPLAYERS];
 extern tic_t servermaxping;
 
 extern consvar_t cv_joinnextround, cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_resynchattempts, cv_blamecfail,
