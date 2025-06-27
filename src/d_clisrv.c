@@ -5187,18 +5187,6 @@ void NetUpdate(void)
 		dedicatedidletimeprev = dedicatedidletime;
 	}
 
-
-	if (server)
-	{
-		if (netgame && !(gametime % 35)) // update once per second.
-			PingUpdate();
-		// update node latency values so we can take an average later.
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i])
-				realpingtable[i] += GetLag(playernode[i]) * (1000.00f / TICRATE);
-		pingmeasurecount++;
-	}
-
 	gametime = nowtime;
 
 	UpdatePingTable();
