@@ -2,9 +2,9 @@ name: Windows x86
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "next", "master" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "next", "master" ]
 
 env:
   PREFIX: i686-w64-mingw32

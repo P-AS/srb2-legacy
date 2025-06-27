@@ -2,9 +2,9 @@ name: Ubuntu ARM64
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "next", "master" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "next", "master" ]
 
 env:
   CC: gcc
