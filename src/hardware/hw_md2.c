@@ -788,7 +788,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			blendcolor = V_GetColor(126);
 			break;
 		default:
-			blendcolor = V_GetColor(247);
+			blendcolor = V_GetColor(skincolors[color].ramp[7]); // Not perfect, but it works fine enough
 			break;
 	}
 
