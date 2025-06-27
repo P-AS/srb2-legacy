@@ -53,7 +53,7 @@ static void COM_Toggle_f(void);
 static void CV_EnforceExecVersion(void);
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
 static boolean CV_Command(void);
-static consvar_t *CV_FindVar(const char *name);
+consvar_t *CV_FindVar(const char *name);
 static const char *CV_StringValue(const char *var_name);
 static consvar_t *consvar_vars; // list of registered console variables
 
@@ -989,7 +989,7 @@ static const char *cv_null_string = "";
   * \return Pointer to the variable if found, or NULL.
   * \sa CV_FindNetVar
   */
-static consvar_t *CV_FindVar(const char *name)
+consvar_t *CV_FindVar(const char *name)
 {
 	consvar_t *cvar;
 
