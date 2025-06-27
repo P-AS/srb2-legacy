@@ -104,6 +104,12 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 #include "lua_script.h"
 
+
+// Version numbers for netplay :upside_down_face:
+int    VERSION;
+int SUBVERSION;
+const int SUBVERSION_NETCOMPAT = 25; // TODO: REMOVE
+
 // platform independant focus loss
 UINT8 window_notinfocus = false;
 INT32 window_x;
@@ -768,6 +774,22 @@ void D_AdvanceDemo(void)
 	advancedemo = true;
 }
 
+
+static void
+D_ConvertVersionNumbers (void)
+{
+	/* leave at defaults (0) under DEVELOP */
+#ifndef DEVELOP
+	int major;
+	int minor;
+
+	sscanf(SRB2VERSION, "%d.%d.%d", &major, &minor, &SUBVERSION);
+
+	/* this is stupid */
+	VERSION = ( major * 100 ) + minor;
+#endif
+}
+
 // =========================================================================
 // D_SRB2Main
 // =========================================================================
@@ -1034,6 +1056,9 @@ void D_SRB2Main(void)
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
+
+	/* break the version string into version numbers, for netplay */
+	D_ConvertVersionNumbers();
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(

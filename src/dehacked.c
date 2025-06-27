@@ -7025,8 +7025,6 @@ struct {
 	{"PUSHACCEL",PUSHACCEL},
 	{"MODID",MODID}, // I don't know, I just thought it would be cool for a wad to potentially know what mod it was loaded into.
 	{"CODEBASE",CODEBASE}, // or what release of SRB2 this is.
-	{"VERSION",VERSION}, // Grab the game's version!
-	{"SUBVERSION",SUBVERSION}, // more precise version number
 
 	// Special linedef executor tag numbers!
 	{"LE_PINCHPHASE",LE_PINCHPHASE}, // A boss entered pinch phase (and, in most cases, is preparing their pinch phase attack!)
@@ -8172,6 +8170,12 @@ static inline int lib_getenum(lua_State *L)
 		return 1;
 	} else if (fastcmp(word,"gravity")) {
 		lua_pushinteger(L, gravity);
+		return 1;
+	} else if (fastcmp(word,"VERSION")) {
+		lua_pushinteger(L, VERSION);
+		return 1;
+	} else if (fastcmp(word,"SUBVERSION")) {
+		lua_pushinteger(L, SUBVERSION);
 		return 1;
 	} else if (fastcmp(word,"VERSIONSTRING")) {
 		lua_pushstring(L, VERSIONSTRING);
