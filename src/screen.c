@@ -565,14 +565,14 @@ void SCR_DisplayTicRate(void)
 void SCR_DisplayLocalPing(void)
 {
 	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
-	if (cv_showping.value)
+	if (cv_showping.value == 1 || (cv_showping.value == 2 && servermaxping && ping > servermaxping))	// only show 2 (warning) if our ping is at a bad level
 	{
-		INT32 dispy;
+		INT32 dispy = 189;
 
-		if(cv_tpscounter.value)
+		if(cv_tpscounter.value && cv_ticrate.value)
 			dispy = 172;
-		else
-			dispy = cv_ticrate.value ? 180 : 189;
+		else if (cv_tpscounter.value || cv_ticrate.value)
+			dispy = 180;
 
 		HU_drawPing(307, dispy, ping, true, V_SNAPTORIGHT|V_SNAPTOBOTTOM);
 	}

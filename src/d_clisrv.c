@@ -104,6 +104,7 @@ SINT8 nodetoplayer[MAXNETNODES];
 SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (splitscreen)
 UINT8 playerpernode[MAXNETNODES]; // used specialy for scplitscreen
 boolean nodeingame[MAXNETNODES]; // set false as nodes leave game
+tic_t servermaxping = 800; // server's max ping. Defaults to 800
 static tic_t nettics[MAXNETNODES]; // what tic the client have received
 static tic_t supposedtics[MAXNETNODES]; // nettics prevision for smaller packet
 static UINT8 nodewaiting[MAXNETNODES];
@@ -122,10 +123,6 @@ static UINT8 resynch_inprogress[MAXNETNODES];
 static UINT8 resynch_local_inprogress = false; // WE are desynched and getting packets to fix it.
 static UINT8 player_joining = false;
 UINT8 hu_resynching = 0;
-
-
-
-
 // true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
 boolean hu_stopped = false;
 
@@ -4433,10 +4430,11 @@ FILESTAMP
 			//Update client ping table from the server.
 			if (client)
 			{
-				INT32 i;
+				UINT8 i;
 				for (i = 0; i < MAXPLAYERS; i++)
 					if (playeringame[i])
 						playerpingtable[i] = (tic_t)netbuffer->u.pingtable[i];
+				servermaxping = (tic_t)netbuffer->u.pingtable[MAXPLAYERS];
 			}
 
 			break;
@@ -4996,6 +4994,13 @@ boolean TryRunTics(tic_t realtics)
 	return ticking;
 }
 
+/*
+Ping Update except better:
+We call this once per second and check for people's pings. If their ping happens to be too high, we increment some timer and kick them out.
+If they're not lagging, decrement the timer by 1. Of course, reset all of this if they leave.
+*/
+
+static INT32 pingtimeout[MAXPLAYERS];
 
 static inline void PingUpdate(void)
 {
@@ -5017,7 +5022,10 @@ static inline void PingUpdate(void)
 					laggers[i] = true;
 				numlaggers++;
 			}
+			else
+				pingtimeout[i] = 0;
 		}
+
 
 		//kick lagging players... unless everyone but the server's ping sucks.
 		//in that case, it is probably the server's fault.
@@ -5027,12 +5035,27 @@ static inline void PingUpdate(void)
 			{
 				if (playeringame[i] && laggers[i])
 				{
-					XBOXSTATIC char buf[2];
+					pingtimeout[i]++;
+					if (pingtimeout[i] > cv_pingtimeout.value)
+// ok your net has been bad for too long, you deserve to die.
+					{
+						char buf[2];
 
-					buf[0] = (char)i;
-					buf[1] = KICK_MSG_PING_HIGH;
-					SendNetXCmd(XD_KICK, &buf, 2);
+						pingtimeout[i] = 0;
+
+						buf[0] = (char)i;
+						buf[1] = KICK_MSG_PING_HIGH;
+						SendNetXCmd(XD_KICK, &buf, 2);
+					}
 				}
+				/*
+					you aren't lagging,
+					but you aren't free yet.
+					In case you'll keep spiking,
+					we just make the timer go back down. (Very unstable net must still get kicked).
+				*/
+				else
+					pingtimeout[i] = (pingtimeout[i] == 0 ? 0 : pingtimeout[i]-1);
 			}
 		}
 	}
@@ -5047,10 +5070,13 @@ static inline void PingUpdate(void)
 		realpingtable[i] = 0; //Reset each as we go.
 	}
 
+	// send the server's maxping as last element of our ping table. This is useful to let us know when we're about to get kicked.
+	netbuffer->u.pingtable[MAXPLAYERS] = cv_maxping.value;
+
 	//send out our ping packets
 	for (i = 0; i < MAXNETNODES; i++)
 		if (nodeingame[i])
-			HSendPacket(i, true, 0, sizeof(INT32) * MAXPLAYERS);
+			HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
 
 	pingmeasurecount = 1; //Reset count
 }
@@ -5134,7 +5160,7 @@ void NetUpdate(void)
 
 	if (server)
 	{
-		if (netgame && !(gametime % 255))
+		if (netgame && !(gametime % 35)) // update once per second.
 			PingUpdate();
 		// update node latency values so we can take an average later.
 		for (i = 0; i < MAXPLAYERS; i++)
