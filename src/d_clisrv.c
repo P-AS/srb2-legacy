@@ -126,6 +126,8 @@ UINT8 hu_resynching = 0;
 // true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
 boolean hu_stopped = false;
 
+consvar_t cv_dedicatedidletime = {"dedicatedidletime", "10", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
 
@@ -3228,6 +3230,7 @@ void D_ClientServerInit(void)
 	CV_RegisterVar(&cv_showjoinaddress);
 	CV_RegisterVar(&cv_resynchattempts);
 	CV_RegisterVar(&cv_blamecfail);
+	CV_RegisterVar(&cv_dedicatedidletime);
 #ifdef DUMPCONSISTENCY
 	CV_RegisterVar(&cv_dumpconsistency);
 #endif
@@ -5081,13 +5084,28 @@ static inline void PingUpdate(void)
 	pingmeasurecount = 1; //Reset count
 }
 
+static tic_t gametime = 0;
 
-// If a tree falls in the forest but nobody is around to hear it, does it make a tic?
-#define DEDICATEDIDLETIME (10*TICRATE)
+
+static void UpdatePingTable(void)
+{
+	INT32 i;
+
+	if (server)
+	{
+		if (netgame && !(gametime % 35)) // update once per second.
+			PingUpdate();
+		// update node latency values so we can take an average later.
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && playernode[i] != UINT8_MAX)
+				realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
+		pingmeasurecount++;
+	}
+}
 
 void NetUpdate(void)
 {
-	static tic_t gametime = 0;
+	
 	static tic_t resptime = 0;
 	tic_t nowtime;
 	INT32 i;
@@ -5099,54 +5117,6 @@ void NetUpdate(void)
 	if (realtics <= 0) // nothing new to update
 		return;
 
-#ifdef DEDICATEDIDLETIME
-	if (server && dedicated && gamestate == GS_LEVEL)
-	{
-		static tic_t dedicatedidle = 0;
-
-		for (i = 1; i < MAXNETNODES; ++i)
-			if (nodeingame[i])
-			{
-				if (dedicatedidle == DEDICATEDIDLETIME)
-				{
-					CONS_Printf("DEDICATED: Awakening from idle (Node %d detected...)\n", i);
-					dedicatedidle = 0;
-				}
-				break;
-			}
-
-		if (i == MAXNETNODES)
-		{
-			if (leveltime == 2)
-			{
-				// On next tick...
-				dedicatedidle = DEDICATEDIDLETIME-1;
-			}
-			else if (dedicatedidle == DEDICATEDIDLETIME)
-			{
-				if (D_GetExistingTextcmd(gametic, 0) || D_GetExistingTextcmd(gametic+1, 0))
-				{
-					CONS_Printf("DEDICATED: Awakening from idle (Netxcmd detected...)\n");
-					dedicatedidle = 0;
-				}
-				else
-				{
-					realtics = 0;
-				}
-			}
-			else if (++dedicatedidle == DEDICATEDIDLETIME)
-			{
-				const char *idlereason = "at round start";
-				if (leveltime > 3)
-					idlereason = va("for %d seconds", dedicatedidle/TICRATE);
-
-				CONS_Printf("DEDICATED: No nodes %s, idling...\n", idlereason);
-				realtics = 0;
-			}
-		}
-	}
-#endif
-
 	if (realtics > 5)
 	{
 		if (server)
@@ -5155,7 +5125,67 @@ void NetUpdate(void)
 			realtics = 5;
 	}
 
-	gametime = nowtime;
+	if (server && dedicated && gamestate == GS_LEVEL)
+	{
+		const tic_t dedicatedidletime = cv_dedicatedidletime.value * TICRATE;
+		static tic_t dedicatedidletimeprev = 0;
+		static tic_t dedicatedidle = 0;
+
+		if (dedicatedidletime > 0)
+		{
+			for (i = 1; i < MAXNETNODES; ++i)
+				if (nodeingame[i])
+				{
+					if (dedicatedidle >= dedicatedidletime)
+					{
+						CONS_Printf("DEDICATED: Awakening from idle (Node %d detected...)\n", i);
+						dedicatedidle = 0;
+					}
+					break;
+				}
+
+			if (i == MAXNETNODES)
+			{
+				if (leveltime == 2)
+				{
+					// On next tick...
+					dedicatedidle = dedicatedidletime-1;
+				}
+				else if (dedicatedidle >= dedicatedidletime)
+				{
+					if (D_GetExistingTextcmd(gametic, 0) || D_GetExistingTextcmd(gametic+1, 0))
+					{
+						CONS_Printf("DEDICATED: Awakening from idle (Netxcmd detected...)\n");
+						dedicatedidle = 0;
+					}
+					else
+					{
+						realtics = 0;
+					}
+				}
+				else if ((dedicatedidle += realtics) >= dedicatedidletime)
+				{
+					const char *idlereason = "at round start";
+					if (leveltime > 3)
+						idlereason = va("for %d seconds", dedicatedidle/TICRATE);
+
+					CONS_Printf("DEDICATED: No nodes %s, idling...\n", idlereason);
+					realtics = 0;
+					dedicatedidle = dedicatedidletime;
+				}
+			}
+		}
+		else
+		{
+			if (dedicatedidletimeprev > 0 && dedicatedidle >= dedicatedidletimeprev)
+			{
+				CONS_Printf("DEDICATED: Awakening from idle (Idle disabled...)\n");
+			}
+			dedicatedidle = 0;
+		}
+
+		dedicatedidletimeprev = dedicatedidletime;
+	}
 
 
 	if (server)
@@ -5168,6 +5198,10 @@ void NetUpdate(void)
 				realpingtable[i] += GetLag(playernode[i]) * (1000.00f / TICRATE);
 		pingmeasurecount++;
 	}
+
+	gametime = nowtime;
+
+	UpdatePingTable();
 
 
 	if (client)

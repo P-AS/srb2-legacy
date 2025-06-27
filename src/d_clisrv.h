@@ -473,7 +473,7 @@ extern UINT32 playerpingtable[MAXPLAYERS];
 extern tic_t servermaxping;
 
 extern consvar_t cv_joinnextround, cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_resynchattempts, cv_blamecfail,
-cv_maxsend, cv_noticedownload, cv_downloadspeed;
+cv_maxsend, cv_noticedownload, cv_downloadspeed, cv_dedicatedidletime;
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, INT32 node);
