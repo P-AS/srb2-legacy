@@ -2248,7 +2248,15 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 ping, boolean notext, INT32 flags)
 	}
 
 	if (!notext || vid.width >= 640) // how sad, we're using a shit resolution.
-		V_DrawSmallString(dx, y+4, V_ALLOWLOWERCASE|flags, va("%dms", ping));
+	{
+		if (cv_pingmeasurement.value)
+			V_DrawSmallString(dx, y+4, V_ALLOWLOWERCASE|flags, va("%dms", ping));
+		else
+		{
+			float lag = ((float)ping * (1.0f / TICRATE));
+			V_DrawSmallString(dx, y+4, V_ALLOWLOWERCASE|flags, va("%.1fd", lag));
+		}	
+	}
 
 	for (i=0; (i<3); i++) // Draw the ping bar
 	{

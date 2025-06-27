@@ -1418,15 +1418,16 @@ void Command_Ping_f(void)
 
 	for (i = 0; i < pingc; ++i)
 	{
-		CONS_Printf("%02d : %-*s %*d ms\n",
+		CONS_Printf("%02d : %-*s %*d ms(%*.1f frames)\n",
 				pingv[i].num,
 				name_width, player_names[pingv[i].num],
-				ms_width,   pingv[i].ms);
+				ms_width,   pingv[i].ms,
+				ms_width,   ((float)pingv[i].ms * (1.0f / TICRATE)));
 	}
 
 	if (!server && playeringame[consoleplayer])
 	{
-		CONS_Printf("\nYour ping is %d ms\n", playerpingtable[consoleplayer]);
+		CONS_Printf("\nYour ping is %d ms (%.1f frames)\n", playerpingtable[consoleplayer], (float)(playerpingtable[i] * (1.0f / TICRATE)));
 	}
 }
 
