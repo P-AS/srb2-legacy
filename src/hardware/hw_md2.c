@@ -685,6 +685,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 	if (color != SKINCOLOR_NONE)
 	{
 		UINT8 numdupes = 1;
+		UINT8 prevdupes = numdupes;
 
 		translation[translen] = colortranslations[color][0];
 		cutoff[translen] = 255;
@@ -699,13 +700,19 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 			if (translen > 0)
 			{
-				cutoff[translen] = cutoff[translen-1] - (256 / (16 / numdupes));
+				INT16 newcutoff = cutoff[translen-1] - (255 / (16 / prevdupes));
+
+				if (newcutoff < 0)
+					newcutoff = 0;
+
+				cutoff[translen] = (UINT8)newcutoff;
 			}
 
+			prevdupes = numdupes;
 			numdupes = 1;
 			translen++;
 
-			translation[translen] = (UINT8)colortranslations[color-1][i];
+			translation[translen] = (UINT8)colortranslations[color][i];
 		}
 
 		translen++;
