@@ -566,15 +566,18 @@ void SCR_DisplayLocalPing(void)
 {
 	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
 	UINT32 packetloss = playerpacketlosstable[consoleplayer];
-	if (cv_showping.value == 1 || (cv_showping.value == 2 && servermaxping && ping > servermaxping))	// only show 2 (warning) if our ping is at a bad level
+	boolean shitping = (cv_showping.value == 2 && servermaxping && ping > servermaxping);
+	
+	if (cv_showping.value == 1 || shitping)	// only show 2 (warning) if our ping is at a bad level
 	{
 		INT32 dispy = 189;
+		INT32 transflag = shitping ? V_10TRANS*(leveltime/2) : 0;
 
 		if(cv_tpscounter.value && cv_ticrate.value)
 			dispy = 172;
 		else if (cv_tpscounter.value || cv_ticrate.value)
 			dispy = 180;
 
-		HU_drawPing(307, dispy, ping, packetloss, true, V_SNAPTORIGHT|V_SNAPTOBOTTOM);
+		HU_drawPing(307, dispy, ping, packetloss, true, transflag|V_SNAPTORIGHT|V_SNAPTOBOTTOM);
 	}
 }
