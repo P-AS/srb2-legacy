@@ -686,7 +686,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 	{
 		UINT8 numdupes = 1;
 
-		translation[translen] = colortranslations[color-1][0];
+		translation[translen] = colortranslations[color][0];
 		cutoff[translen] = 255;
 
 		for (i = 1; i < 16; i++)
