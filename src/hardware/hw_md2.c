@@ -471,7 +471,7 @@ void HWR_InitMD2(void)
 	size_t i;
 	INT32 s;
 	FILE *f;
-	char name[18], filename[32];
+	char name[20], filename[32];
 	float scale, offset;
 
 	CONS_Printf("InitMD2()...\n");
@@ -551,7 +551,7 @@ md2found:
 void HWR_AddPlayerMD2(int skin) // For MD2's that were added after startup
 {
 	FILE *f;
-	char name[18], filename[32];
+	char name[20], filename[32];
 	float scale, offset;
 
 	if (nomd2s)
@@ -596,7 +596,7 @@ void HWR_AddSpriteMD2(size_t spritenum) // For MD2s that were added after startu
 	FILE *f;
 	// name[18] is used to check for names in the md2.dat file that match with sprites or player skins
 	// sprite names are always 4 characters long, and names is for player skins can be up to 19 characters long
-	char name[18], filename[32];
+	char name[20], filename[32];
 	float scale, offset;
 
 	if (nomd2s)

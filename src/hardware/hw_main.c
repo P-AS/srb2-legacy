@@ -998,11 +998,9 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 	for (i = 0; i < sector->numlights; i++)
 	{
-        if (endtop < endrealbot)
-		if (top < realbot)
+		if (endtop < endrealbot && top < realbot)
 			return;
 
-	// There's a compiler warning here if this comment isn't here because of indentation
 		if (!(list[i].flags & FF_NOSHADE))
 		{
 			if (pfloor && (pfloor->flags & FF_FOG))
