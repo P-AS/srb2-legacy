@@ -4893,7 +4893,7 @@ static void SV_Maketic(void)
 					netcmds[maketic%BACKUPTICS][player] = netcmds[(maketic-1)%BACKUPTICS][player];
 					netcmds[maketic%BACKUPTICS][player].angleturn &= ~TICCMD_RECEIVED;
 				}
-				packetloss[j][maketic%PACKETMEASUREWINDOW] = true;
+				packetloss[(j < MAXPLAYERS) ? j : MAXPLAYERS-1][maketic%PACKETMEASUREWINDOW] = true;
 			}
 		}
 	}
