@@ -20,6 +20,7 @@
 #include "z_zone.h"
 #include "d_player.h"
 #include "lzf.h"
+#include "v_video.h" // V_* constants
 
 // Hey, moron! If you change this table, don't forget about the sprite enum in info.h and the sprite lights in hw_light.c!
 char sprnames[NUMSPRITES + 1][5] =
@@ -51,6 +52,54 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ROII","ROIJ","ROIK","ROIL","ROIM","ROIN","ROIO","ROIP","BBAL","GWLG",
 	"GWLR","SRBA","SRBB","SRBC","SRBD","SRBE","SRBF","SRBG","SRBH","SRBI",
 	"SRBJ","SRBK","SRBL","SRBM","SRBN","SRBO",
+};
+
+skincolor_t skincolors[MAXSKINCOLORS] = {
+	// Normal colors.
+	{"None", {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, SKINCOLOR_NONE, 8, 0, false},
+	
+	{"White", {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7}, SKINCOLOR_BLACK, 10, 0, true},
+	{"Silver", {3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}, SKINCOLOR_GREY, 4, 0, true},
+	{"Grey", {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}, SKINCOLOR_SILVER, 12, V_GRAYMAP, true},
+	{"Black", {24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31}, SKINCOLOR_WHITE, 8, V_GRAYMAP, true},
+	{"Cyan", {208, 208, 209, 210, 211, 211, 212, 213, 214, 214, 215, 216, 217, 217, 218, 219}, SKINCOLOR_NONE, 8, V_BLUEMAP, true},
+	{"Teal", {247, 247, 247, 247, 220, 220, 220, 221, 221, 221, 222, 222, 222, 223, 223, 223}, SKINCOLOR_NONE, 8, V_BLUEMAP, true},
+	{"Steel Blue", {200, 200, 201, 201, 202, 202, 203, 203, 204, 204, 205, 205, 206, 206, 207, 207}, SKINCOLOR_NONE, 8, V_BLUEMAP, true},
+	{"Blue", {226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241}, SKINCOLOR_ORANGE, 9, V_BLUEMAP, true},
+	{"Peach", {64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79}, SKINCOLOR_NONE, 8, V_ORANGEMAP, true},
+	{"Tan", {72, 73, 74, 75, 76, 77, 78, 79, 48, 49, 50, 51, 52, 53, 54, 55}, SKINCOLOR_NONE, 8, V_PURPLEMAP, true},
+	{"Pink", {144, 144, 145, 145, 146, 146, 147, 147, 148, 148, 149, 149, 150, 150, 151, 151}, SKINCOLOR_NONE, 8, V_REDMAP, true},
+	{"Lavender", {248, 248, 249, 249, 250, 250, 251, 251, 252, 252, 253, 253, 254, 254, 255, 255}, SKINCOLOR_NONE, 8, V_PURPLEMAP, true},
+	{"Purple", {192, 192, 193, 193, 194, 194, 195, 195, 196, 196, 197, 197, 198, 198, 199, 199}, SKINCOLOR_NONE, 8, V_PURPLEMAP, true},
+	{"Orange", {82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 152, 153}, SKINCOLOR_BLUE, 12, V_ORANGEMAP, true},
+	{"Rosewood", {92, 92, 93, 94, 95, 95, 152, 152, 153, 154, 155, 155, 156, 157, 158, 158}, SKINCOLOR_NONE, 8, V_ORANGEMAP, true},
+	{"Beige", {32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47}, SKINCOLOR_NONE, 8, V_REDMAP, true},
+	{"Brown", {48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63}, SKINCOLOR_NONE, 8, V_REDMAP, true},
+	{"Red", {125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140}, SKINCOLOR_GREEN, 5, V_REDMAP, true},
+	{"Dark Red", {133, 133, 134, 134, 135, 135, 136, 136, 137, 137, 138, 138, 139, 139, 140, 140}, SKINCOLOR_NONE, 8, V_REDMAP, true},
+	{"Neon Green", {160, 184, 184, 184, 185, 185, 186, 186, 186, 187, 187, 188, 188, 188, 189, 189}, SKINCOLOR_NONE, 8, V_GREENMAP, true},
+	{"Green", {160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175}, SKINCOLOR_RED, 11, V_GREENMAP, true},
+	{"Zim", {176, 176, 177, 177, 178, 178, 179, 179, 180, 180, 181, 181, 182, 182, 183, 183}, SKINCOLOR_PURPLE, 3, V_GREENMAP, true},
+	{"Olive", {105, 105, 105, 106, 106, 107, 107, 108, 108, 108, 109, 109, 110, 110, 111, 111}, SKINCOLOR_NONE, 8, V_GREENMAP, true},
+	{"Yellow", {103, 103, 104, 104, 105, 105, 106, 106, 107, 107, 108, 108, 109, 109, 110, 110}, SKINCOLOR_NONE, 8, V_YELLOWMAP, true},
+	{"Gold", {112, 112, 113, 113, 114, 114, 115, 115, 116, 116, 117, 117, 118, 118, 119, 119}, SKINCOLOR_NONE, 8, V_YELLOWMAP, true},
+	
+	// Super colors.
+	{"SUPER1", {120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 96, 97, 98, 99, 100, 101}, 0, 0, 0, false},
+	{"SUPER2", {96, 97, 98, 99, 100, 112, 101, 101, 102, 102, 103, 103, 104, 104, 113, 114}, 0, 0, 0, false},
+	{"SUPER3", {98, 99, 100, 112, 101, 101, 102, 102, 103, 103, 104, 104, 113, 114, 115, 116}, 0, 0, 0, false},
+	{"SUPER4", {112, 101, 101, 102, 102, 103, 103, 104, 104, 113, 114, 115, 116, 117, 118, 119}, 0, 0, 0, false},
+	{"SUPER5", {101, 101, 102, 102, 103, 103, 104, 104, 113, 114, 115, 116, 117, 118, 119, 155}, 0, 0, 0, false},
+	{"TSUPER1", {120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 80, 81, 82, 83, 84, 85}, 0, 0, 0, false},
+	{"TSUPER2", {120, 120, 120, 120, 80, 80, 81, 81, 82, 82, 83, 83, 84, 84, 85, 85}, 0, 0, 0, false},
+	{"TSUPER3", {120, 120, 80, 80, 81, 81, 82, 82, 83, 83, 84, 84, 85, 85, 86, 86}, 0, 0, 0, false},
+	{"TSUPER4", {120, 80, 81, 82, 83, 84, 85, 86, 87, 115, 115, 116, 117, 117, 118, 119}, 0, 0, 0, false},
+	{"TSUPER5", {80, 81, 82, 83, 84, 85, 86, 87, 115, 115, 116, 116, 117, 118, 118, 119}, 0, 0, 0, false},
+	{"KSUPER1", {120, 120, 120, 120, 121, 121, 121, 121, 122, 122, 122, 122, 123, 123, 123, 123}, 0, 0, 0, false},
+	{"KSUPER2", {120, 120, 120, 121, 121, 121, 122, 122, 123, 123, 123, 124, 124, 124, 125, 125}, 0, 0, 0, false},
+	{"KSUPER3", {120, 120, 121, 121, 122, 122, 123, 123, 124, 124, 125, 125, 126, 126, 127, 127}, 0, 0, 0, false},
+	{"KSUPER4", {121, 121, 122, 122, 123, 123, 124, 124, 125, 125, 126, 126, 127, 127, 128, 128}, 0, 0, 0, false},
+	{"KSUPER5", {122, 122, 123, 123, 124, 124, 125, 125, 126, 126, 127, 127, 128, 128, 129, 129}, 0, 0, 0, false}
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)
@@ -13789,6 +13838,11 @@ void P_PatchInfoTables(void)
 	sprnames[i][0] = '\0'; // i == NUMSPRITES
 	memset(&states[S_FIRSTFREESLOT], 0, sizeof (state_t) * NUMSTATEFREESLOTS);
 	memset(&mobjinfo[MT_FIRSTFREESLOT], 0, sizeof (mobjinfo_t) * NUMMOBJFREESLOTS);
+	memset(&skincolors[SKINCOLOR_FIRSTFREESLOT], 0, sizeof (skincolor_t) * NUMCOLORFREESLOTS);
+	for (i = SKINCOLOR_FIRSTFREESLOT; i <= SKINCOLOR_LASTFREESLOT; i++) {
+		skincolors[i].accessible = false;
+		skincolors[i].name[0] = '\0';
+	}
 	for (i = MT_FIRSTFREESLOT; i <= MT_LASTFREESLOT; i++)
 		mobjinfo[i].doomednum = -1;
 }

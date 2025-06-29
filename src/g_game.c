@@ -48,6 +48,7 @@
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "r_fps.h" // Uncapped
+#include "dehacked.h"
 
 
 gameaction_t gameaction;
@@ -56,7 +57,7 @@ UINT8 ultimatemode = false;
 
 boolean botingame;
 UINT8 botskin;
-UINT8 botcolor;
+UINT16 botcolor;
 
 JoyType_t Joystick;
 JoyType_t Joystick2;
@@ -127,10 +128,10 @@ INT16 sstage_end;
 boolean looptitle = false;
 boolean useNightsSS = false;
 
-UINT8 skincolor_redteam = SKINCOLOR_RED;
-UINT8 skincolor_blueteam = SKINCOLOR_BLUE;
-UINT8 skincolor_redring = SKINCOLOR_RED;
-UINT8 skincolor_bluering = SKINCOLOR_STEELBLUE;
+UINT16 skincolor_redteam = SKINCOLOR_RED;
+UINT16 skincolor_blueteam = SKINCOLOR_BLUE;
+UINT16 skincolor_redring = SKINCOLOR_RED;
+UINT16 skincolor_bluering = SKINCOLOR_STEELBLUE;
 
 tic_t countdowntimer = 0;
 boolean countdowntimeup = false;
@@ -257,7 +258,7 @@ static struct {
 	UINT8 flags; // EZT flags
 
 	// EZT_COLOR
-	UINT8 color, lastcolor;
+	UINT16 color, lastcolor;
 
 	// EZT_SCALE
 	fixed_t scale, lastscale;
@@ -271,7 +272,8 @@ static struct {
 // There is no conflict here.
 typedef struct demoghost {
 	UINT8 checksum[16];
-	UINT8 *buffer, *p, color;
+	UINT8 *buffer, *p;
+	UINT16 color;
 	UINT16 version;
 	mobj_t oldmo, *mo;
 	struct demoghost *next;
@@ -2160,7 +2162,7 @@ void G_PlayerReborn(INT32 player)
 	INT16 totalring;
 	UINT8 laps;
 	UINT8 mare;
-	UINT8 skincolor;
+	UINT16 skincolor;
 	INT32 skin;
 	tic_t jointime;
 	boolean spectator;
@@ -3644,7 +3646,8 @@ void G_SaveGame(UINT32 savegameslot)
 //
 void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar, boolean SSSG, boolean FLS)
 {
-	UINT8 color = 0;
+	UINT8 color = skins[pickedchar].prefcolor;
+
 	paused = false;
 
 	if (demoplayback)
@@ -3667,8 +3670,6 @@ void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar, b
 		SplitScreen_OnChange();
 	}
 
-	if (!color)
-		color = skins[pickedchar].prefcolor;
 	SetPlayerSkinByNum(consoleplayer, pickedchar);
 	CV_StealthSet(&cv_skin, skins[pickedchar].name);
 	CV_StealthSetValue(&cv_playercolor, color);
@@ -3822,7 +3823,7 @@ char *G_BuildMapTitle(INT32 mapnum)
 // DEMO RECORDING
 //
 
-#define DEMOVERSION 0x0009
+#define DEMOVERSION 0x000B // Changed because of color names
 #define DEMOHEADER  "\xF0" "SRB2Replay" "\x0F"
 
 #define DF_GHOST        0x01 // This demo contains ghost data too!
@@ -4016,13 +4017,13 @@ void G_GhostAddColor(ghostcolor_t color)
 {
 	if (!demorecording || !(demoflags & DF_GHOST))
 		return;
-	if (ghostext.lastcolor == (UINT8)color)
+	if (ghostext.lastcolor == (UINT16)color)
 	{
 		ghostext.flags &= ~EZT_COLOR;
 		return;
 	}
 	ghostext.flags |= EZT_COLOR;
-	ghostext.color = (UINT8)color;
+	ghostext.color = (UINT16)color;
 }
 
 void G_GhostAddScale(fixed_t scale)
@@ -4157,7 +4158,7 @@ void G_WriteGhostTic(mobj_t *ghost)
 		WRITEUINT8(demo_p,ghostext.flags);
 		if (ghostext.flags & EZT_COLOR)
 		{
-			WRITEUINT8(demo_p,ghostext.color);
+			WRITEUINT16(demo_p,ghostext.color);
 			ghostext.lastcolor = ghostext.color;
 		}
 		if (ghostext.flags & EZT_SCALE)
@@ -4251,7 +4252,7 @@ void G_ConsGhostTic(void)
 	{ // But wait, there's more!
 		ziptic = READUINT8(demo_p);
 		if (ziptic & EZT_COLOR)
-			demo_p++;
+			demo_p += (demoversion<DEMOVERSION) ? 1 : sizeof(UINT16);
 		if (ziptic & EZT_SCALE)
 			demo_p += sizeof(fixed_t);
 		if (ziptic & EZT_HIT)
@@ -4386,7 +4387,7 @@ void G_GhostTicker(void)
 			ziptic = READUINT8(g->p);
 			if (ziptic & EZT_COLOR)
 			{
-				g->color = READUINT8(g->p);
+				g->color = (demoversion<DEMOVERSION) ? READUINT8(g->p) : READUINT8(g->p);
 				switch(g->color)
 				{
 				default:
@@ -4493,11 +4494,12 @@ void G_GhostTicker(void)
 		switch(g->color)
 		{
 		case GHC_SUPER: // Super Sonic (P_DoSuperStuff)
-			g->mo->color = SKINCOLOR_SUPER1;
+			skin_t *skin = (skin_t *)g->mo->skin;
+			g->mo->color = skin->supercolor;
 			g->mo->color += abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4);
 			break;
 		case GHC_INVINCIBLE: // Mario invincibility (P_CheckInvincibilityTimer)
-			g->mo->color = (UINT8)(leveltime % MAXSKINCOLORS);
+			g->mo->color = (UINT16)(leveltime % FIRSTSUPERCOLOR);
 			break;
 		default:
 			break;
@@ -4761,7 +4763,7 @@ void G_RecordMetal(void)
 void G_BeginRecording(void)
 {
 	UINT8 i;
-	char name[16];
+	char name[MAXCOLORNAME+1];
 	player_t *player = &players[consoleplayer];
 
 	if (demo_p)
@@ -4824,12 +4826,16 @@ void G_BeginRecording(void)
 	demo_p += 16;
 
 	// Color
-	for (i = 0; i < 16 && cv_playercolor.string[i]; i++)
-		name[i] = cv_playercolor.string[i];
-	for (; i < 16; i++)
+	UINT8 skincolor = players[0].skincolor;
+	if (skincolor >= numskincolors)
+		skincolor = SKINCOLOR_NONE;
+	const char *skincolor_name = skincolors[skincolor].name;
+	for (i = 0; i < MAXCOLORNAME && skincolor_name[i]; i++)
+		name[i] = skincolor_name[i];
+	for (; i < MAXCOLORNAME; i++)
 		name[i] = '\0';
-	M_Memcpy(demo_p,name,16);
-	demo_p += 16;
+	M_Memcpy(demo_p,name,MAXCOLORNAME);
+	demo_p += MAXCOLORNAME;
 
 	// Stats
 	WRITEUINT8(demo_p,player->charability);
@@ -4996,6 +5002,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
 	case 0x000A:
 		break;
 	// too old, cannot support.
@@ -5070,14 +5077,14 @@ void G_DoPlayDemo(char *defdemoname)
 {
 	UINT8 i;
 	lumpnum_t l;
-	char skin[17],color[17],*n,*pdemoname;
+	char skin[17],color[MAXCOLORNAME+1],*n,*pdemoname;
 	UINT8 version,subversion,charability,charability2,thrustfactor,accelstart,acceleration;
 	UINT32 randseed;
 	fixed_t actionspd,mindash,maxdash,normalspeed,runspeed,jumpfactor;
 	char msg[1024];
 
 	skin[16] = '\0';
-	color[16] = '\0';
+	color[MAXCOLORNAME] = '\0';
 
 	n = defdemoname+strlen(defdemoname);
 	while (*n != '/' && *n != '\\' && n != defdemoname)
@@ -5137,6 +5144,7 @@ void G_DoPlayDemo(char *defdemoname)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
 	case 0x000A:
 		break;
 	// too old, cannot support.
@@ -5207,8 +5215,8 @@ void G_DoPlayDemo(char *defdemoname)
 	demo_p += 16;
 
 	// Color
-	M_Memcpy(color,demo_p,16);
-	demo_p += 16;
+	M_Memcpy(color,demo_p, (demoversion < 0x000B) ? 16 : MAXCOLORNAME);
+	demo_p += (demoversion < 0x000B) ? 16 : MAXCOLORNAME;
 
 	charability = READUINT8(demo_p);
 	charability2 = READUINT8(demo_p);
@@ -5262,8 +5270,8 @@ void G_DoPlayDemo(char *defdemoname)
 	SetPlayerSkin(0, skin);
 
 	// Set color
-	for (i = 0; i < MAXSKINCOLORS; i++)
-		if (!stricmp(Color_Names[i],color))
+	for (i = 0; i < numskincolors; i++)
+		if (!stricmp(skincolors[i].name,color))
 		{
 			players[0].skincolor = i;
 			break;
@@ -5299,7 +5307,7 @@ void G_AddGhost(char *defdemoname)
 {
 	INT32 i;
 	lumpnum_t l;
-	char name[17],skin[17],color[17],*n,*pdemoname,md5[16];
+	char name[17],skin[17],color[MAXCOLORNAME+1],*n,*pdemoname,md5[16];
 	demoghost *gh;
 	UINT8 flags;
 	UINT8 *buffer,*p;
@@ -5308,7 +5316,7 @@ void G_AddGhost(char *defdemoname)
 
 	name[16] = '\0';
 	skin[16] = '\0';
-	color[16] = '\0';
+	color[MAXCOLORNAME] = '\0';
 
 	n = defdemoname+strlen(defdemoname);
 	while (*n != '/' && *n != '\\' && n != defdemoname)
@@ -5356,6 +5364,8 @@ void G_AddGhost(char *defdemoname)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
+	case 0x000A:
 		break;
 	// too old, cannot support.
 	default:
@@ -5418,8 +5428,8 @@ void G_AddGhost(char *defdemoname)
 	p += 16;
 
 	// Color
-	M_Memcpy(color, p,16);
-	p += 16;
+	M_Memcpy(color,demo_p, (demoversion < 0x000B) ? 16 : MAXCOLORNAME);
+	demo_p += (demoversion < 0x000B) ? 16 : MAXCOLORNAME;
 
 	// Ghosts do not have a player structure to put this in.
 	p++; // charability
@@ -5507,10 +5517,10 @@ void G_AddGhost(char *defdemoname)
 
 	// Set color
 	gh->mo->color = ((skin_t*)gh->mo->skin)->prefcolor;
-	for (i = 0; i < MAXSKINCOLORS; i++)
-		if (!stricmp(Color_Names[i],color))
+	for (i = 0; i < numskincolors; i++)
+		if (!stricmp(skincolors[i].name,color))
 		{
-			gh->mo->color = (UINT8)i;
+			gh->mo->color = (UINT16)i;
 			break;
 		}
 	gh->oldmo.color = gh->mo->color;
@@ -5581,6 +5591,8 @@ void G_DoPlayMetal(void)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
+	case 0x000A:
 		break;
 	// too old, cannot support.
 	default:

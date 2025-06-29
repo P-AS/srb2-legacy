@@ -643,7 +643,7 @@ spritemd2found:
 #define SETBRIGHTNESS(brightness,r,g,b) \
 	brightness = (UINT8)(((1063*(UINT16)(r))/5000) + ((3576*(UINT16)(g))/5000) + ((361*(UINT16)(b))/5000))
 
-static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, INT32 skinnum, skincolors_t color)
+static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, INT32 skinnum, skincolornum_t color)
 {
 	UINT16 w = gpatch->width, h = gpatch->height;
 	UINT32 size = w*h;
@@ -687,12 +687,12 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 		UINT8 numdupes = 1;
 		UINT8 prevdupes = numdupes;
 
-		translation[translen] = colortranslations[color][0];
+		translation[translen] = skincolors[color].ramp[0];
 		cutoff[translen] = 255;
 
 		for (i = 1; i < 16; i++)
 		{
-			if (translation[translen] == colortranslations[color][i])
+			if (translation[translen] == skincolors[color].ramp[i])
 			{
 				numdupes++;
 				continue;
@@ -712,7 +712,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			numdupes = 1;
 			translen++;
 
-			translation[translen] = (UINT8)colortranslations[color][i];
+			translation[translen] = (UINT16)skincolors[color].ramp[i];
 		}
 
 		translen++;
@@ -856,7 +856,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 #undef SETBRIGHTNESS
 
-static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT32 skinnum, const UINT8 *colormap, skincolors_t color)
+static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT32 skinnum, const UINT8 *colormap, skincolornum_t color)
 {
 	// mostly copied from HWR_GetMappedPatch, hence the similarities and comment
 	GLMipmap_t *grmip, *newmip;
@@ -1079,7 +1079,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 					else
 						skinnum = TC_BOSS;
 				}
-				else if ((skincolors_t)spr->mobj->color != SKINCOLOR_NONE)
+				else if ((skincolornum_t)spr->mobj->color != SKINCOLOR_NONE)
 				{
 					if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 					{
@@ -1089,7 +1089,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 				}
 				// Translation or skin number found
 				if (skinnum != INT32_MAX)
-					HWR_GetBlendedTexture(gpatch, (GLPatch_t *)md2->blendgrpatch, skinnum, spr->colormap, (skincolors_t)spr->mobj->color);
+					HWR_GetBlendedTexture(gpatch, (GLPatch_t *)md2->blendgrpatch, skinnum, spr->colormap, (skincolornum_t)spr->mobj->color);
 				else
 				{
 					// Sorry nothing

@@ -597,6 +597,45 @@ static void Command_CSay_f(void)
 }
 static tic_t stop_spamming[MAXPLAYERS];
 
+static const char *GetChatColorFromSkinColor(INT32 skincolor)
+{
+	const char *textcolor = NULL;
+	UINT16 chatcolor = skincolors[skincolor].chatcolor;
+	if (!chatcolor || chatcolor%0x1000)
+		textcolor = "\x80";
+	else if (chatcolor == V_PURPLEMAP)
+		textcolor = "\x81";
+	else if (chatcolor == V_YELLOWMAP)
+		textcolor = "\x82";
+	else if (chatcolor == V_GREENMAP)
+		textcolor = "\x83";
+	else if (chatcolor == V_BLUEMAP)
+		textcolor = "\x84";
+	else if (chatcolor == V_REDMAP)
+		textcolor = "\x85";
+	else if (chatcolor == V_GRAYMAP)
+		textcolor = "\x86";
+	else if (chatcolor == V_ORANGEMAP)
+		textcolor = "\x87";
+	else if (chatcolor == V_SKYMAP)
+		textcolor = "\x88";
+	else if (chatcolor == V_LAVENDERMAP)
+		textcolor = "\x89";
+	else if (chatcolor == V_GOLDMAP)
+		textcolor = "\x8A";
+	else if (chatcolor == V_TEAMAP)
+		textcolor = "\x8B";
+	else if (chatcolor == V_STEELMAP)
+		textcolor = "\x8C";
+	else if (chatcolor == V_PINKMAP)
+		textcolor = "\x8D";
+	else if (chatcolor == V_BROWNMAP)
+		textcolor = "\x8E";
+	else if (chatcolor == V_PEACHMAP)
+		textcolor = "\x8F";
+	return textcolor;
+}
+
 /** Receives a message, processing an ::XD_SAY command.
   * \sa DoSayCommand
   * \author Graue <graue@oceanbase.org>
@@ -739,69 +778,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		}
 		else
         {
-			const UINT8 color = players[playernum].skincolor;
-
-			cstart = "\x83";
-
-		switch (color)
-			{
-				case SKINCOLOR_WHITE:
-				case SKINCOLOR_SILVER:
-					cstart = "\x80"; // White
-					break;
-				case SKINCOLOR_GREY:
-				case SKINCOLOR_BLACK:
-					cstart = "\x86"; // V_GRAYMAP
-					break;
-				case SKINCOLOR_BEIGE:
-				case SKINCOLOR_BROWN:
-					cstart = "\x8e"; // V_BROWNMAP
-					break;
-				case SKINCOLOR_PINK:
-					cstart = "\x8d"; // V_PINKMAP
-					break;
-				case SKINCOLOR_RED:
-					cstart = "\x85"; // V_REDMAP
-					break;
-				case SKINCOLOR_ORANGE:
-				case SKINCOLOR_ROSEWOOD:
-					cstart = "\x87"; // V_ORANGEMAP
-					break;
-				case SKINCOLOR_PEACH:
-					cstart = "\x8f"; // V_PEACHMAP
-					break;
-				case SKINCOLOR_GOLD:
-					cstart = "\x8A"; // V_GOLDMAP
-					break;
-				case SKINCOLOR_YELLOW:
-				case SKINCOLOR_OLIVE:
-				case SKINCOLOR_ZIM:
-					cstart = "\x82"; // V_YELLOWMAP
-					break;
-				case SKINCOLOR_GREEN:
-				case SKINCOLOR_NEONGREEN:
-					cstart = "\x83"; // V_GREENMAP
-					break;
-				case SKINCOLOR_TEAL:
-				case SKINCOLOR_CYAN:
-					cstart = "\x88"; // V_SKYMAP
-					break;
-				case SKINCOLOR_STEELBLUE:
-					cstart = "\x8c"; // V_STEELMAP
-					break;
-				case SKINCOLOR_BLUE:
-					cstart = "\x84"; // V_BLUEMAP
-					break;
-				case SKINCOLOR_PURPLE:
-					cstart = "\x81"; // V_PURPLEMAP
-					break;
-				case SKINCOLOR_LAVENDER:
-					cstart = "\x89"; // V_LAVENDERMAP
-					break;
-				default:
-					break;
-			}
-		}
+			cstart = GetChatColorFromSkinColor(players[playernum].skincolor);
+        }
 		prefix = cstart;
 
 		// Give admins and remote admins their symbols.

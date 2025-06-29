@@ -1145,16 +1145,16 @@ static void CL_DrawPlayerList(void)
 				player_name[MAXPLAYERNAME] = '\0';
 
 				V_DrawThinString(x + 10, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, player_name);
-				
+
 				if (playerinfo[i].team == 0) { statuscolor = 184; } // playing
 				if (playerinfo[i].data & 0x20) { statuscolor = 86; } // tag IT
 				if (playerinfo[i].team == 1) { statuscolor = 128; } // ctf red team
 				if (playerinfo[i].team == 2) { statuscolor = 232; } // ctf blue team
 				if (playerinfo[i].team == 255) { statuscolor = 16; } // spectator or non-team
-				
+
 				V_DrawFill(x, y, 7, 7, 31);
 				V_DrawFill(x, y, 6, 6, statuscolor);
-				
+
 				y += 9;
 				count++;
 				if ((count == 11) || (count == 22))
@@ -1183,7 +1183,7 @@ static void CL_DrawAddonList(void)
 	{
 		if (i & 1)
 			V_DrawFill(x, y - 1, 292, 9, 236);
-		
+
 		fileneeded_t addon_file = fileneeded[i];
 		strncpy(file_name, addon_file.filename, MAX_WADPATH);
 
@@ -1349,7 +1349,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 
 			if (fileneedednum > 0)
-				V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 11, V_ALLOWLOWERCASE, va("[""\x82""SPACE/X""\x80""] = %s", 
+				V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 11, V_ALLOWLOWERCASE, va("[""\x82""SPACE/X""\x80""] = %s",
 					(addonlist_show ? "Players" : "Addons")));
 			V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sENTER/A%s] = Join", "\x82", "\x80"));
 		}
@@ -1418,10 +1418,7 @@ static boolean CL_SendJoin(void)
 		localplayers++;
 	netbuffer->u.clientcfg.localplayers = localplayers;
 	netbuffer->u.clientcfg.version = VERSION;
-	if (cv_netcompat.value)
-		netbuffer->u.clientcfg.subversion = SUBVERSION_NETCOMPAT;
-	else
-		netbuffer->u.clientcfg.subversion = SUBVERSION;
+	netbuffer->u.clientcfg.subversion = SUBVERSION;
 
 	return HSendPacket(servernode, true, 0, sizeof (clientconfig_pak));
 }
@@ -1508,7 +1505,7 @@ static void SV_SendPlayerInfo(INT32 node)
 		netbuffer->u.playerinfo[i].skin = (UINT8)players[i].skin;
 
 		// Extra data
-		netbuffer->u.playerinfo[i].data = players[i].skincolor;
+		netbuffer->u.playerinfo[i].data = 0; // players[i].skincolor
 
 		if (players[i].pflags & PF_TAGIT)
 			netbuffer->u.playerinfo[i].data |= 0x20;
@@ -1551,7 +1548,7 @@ static boolean SV_SendServerConfig(INT32 node)
 	// we fill these structs with FFs so that any players not in game get sent as 0xFFFF
 	// which is nice and easy for us to detect
 	memset(netbuffer->u.servercfg.playerskins, 0xFF, sizeof(netbuffer->u.servercfg.playerskins));
-	memset(netbuffer->u.servercfg.playercolor, 0xFF, sizeof(netbuffer->u.servercfg.playercolor));
+	memset(netbuffer->u.servercfg.playercolor, 0xFFFF, sizeof(netbuffer->u.servercfg.playercolor));
 
 	memset(netbuffer->u.servercfg.adminplayers, -1, sizeof(netbuffer->u.servercfg.adminplayers));
 
@@ -1562,7 +1559,7 @@ static boolean SV_SendServerConfig(INT32 node)
 		if (!playeringame[i])
 			continue;
 		netbuffer->u.servercfg.playerskins[i] = (UINT8)players[i].skin;
-		netbuffer->u.servercfg.playercolor[i] = (UINT8)players[i].skincolor;
+		netbuffer->u.servercfg.playercolor[i] = (UINT16)players[i].skincolor;
 	}
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
@@ -1846,7 +1843,7 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 		if (info->version != VERSION)
 			return; // Not same version.
 
-		if (info->subversion != SUBVERSION && info->subversion != SUBVERSION_NETCOMPAT)
+		if (info->subversion != SUBVERSION)
 			return; // Close, but no cigar.
 
 		i = serverlistcount++;
@@ -2158,7 +2155,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				cl_mode = CL_CHECKFILES;
 			else if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 				cl_mode = CL_ABORTED;
-			
+
 			if ((key == KEY_SPACE || key == KEY_JOY1+2) && fileneedednum)
 			{
 				if (!addonlist_toggle_tapped)
@@ -2170,7 +2167,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			}
 			else if (!(addonlist_show && fileneedednum > 11))
 				addonlist_toggle_tapped = false;
-			
+
 			if (addonlist_show && fileneedednum > 11)
 			{
 				if ((key == KEY_DOWNARROW || key == KEY_HAT1+1))
@@ -2227,7 +2224,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			addonlist_scroll_time = 0;
 		}
 
-		
+
 
 		if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 		{
@@ -3693,8 +3690,7 @@ static void HandleConnect(SINT8 node)
 	if (bannednode && bannednode[node])
 		SV_SendRefuse(node, M_GetText("You have been banned\nfrom the server"));
 	else if (netbuffer->u.clientcfg.version != VERSION
-		|| (netbuffer->u.clientcfg.subversion != SUBVERSION
-		&& netbuffer->u.clientcfg.subversion != SUBVERSION_NETCOMPAT))
+		|| (netbuffer->u.clientcfg.subversion != SUBVERSION))
 		SV_SendRefuse(node, va(M_GetText("Different SRB2 versions cannot\nplay a netgame!\n(server version %d.%d.%d)"), VERSION/100, VERSION%100, SUBVERSION));
 	else if (!cv_allownewplayer.value && node)
 		SV_SendRefuse(node, M_GetText("The server is not accepting\njoins for the moment"));
@@ -3951,7 +3947,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			for (j = 0; j < MAXPLAYERS; j++)
 			{
 				if (netbuffer->u.servercfg.playerskins[j] == 0xFF
-				 && netbuffer->u.servercfg.playercolor[j] == 0xFF)
+				 && netbuffer->u.servercfg.playercolor[j] == 0xFFFF)
 					continue; // not in game
 
 				playeringame[j] = true;
@@ -4005,9 +4001,9 @@ static void HandlePacketFromAwayNode(SINT8 node)
 		case PT_CLIENTCMD:
 			break; // This is not an "unknown packet"
 
-		case PT_PLAYERINFO: 
+		case PT_PLAYERINFO:
 			HandlePlayerInfo(node);
-		break; 
+		break;
 
 		case PT_SERVERTICS:
 			// Do not remove my own server (we have just get a out of order packet)

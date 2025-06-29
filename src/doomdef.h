@@ -239,9 +239,24 @@ RELEASES \
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 
+#define COLORRAMPSIZE 16
+#define MAXCOLORNAME 32
+#define NUMCOLORFREESLOTS 1024
+
+typedef struct skincolor_s
+{
+	char name[MAXCOLORNAME+1];  // Skincolor name
+	UINT8 ramp[COLORRAMPSIZE];  // Colormap ramp
+	UINT16 invcolor;            // Signpost color
+	UINT8 invshade;             // Signpost color shade
+	UINT16 chatcolor;           // Chat color
+	boolean accessible;         // Accessible by the color command + setup menu
+} skincolor_t;
+
 typedef enum
 {
 	SKINCOLOR_NONE = 0,
+	
 	SKINCOLOR_WHITE,
 	SKINCOLOR_SILVER,
 	SKINCOLOR_GREY,
@@ -267,12 +282,11 @@ typedef enum
 	SKINCOLOR_OLIVE,
 	SKINCOLOR_YELLOW,
 	SKINCOLOR_GOLD,
-
-	// Careful! MAXSKINCOLORS cannot be greater than 0x20!
-	MAXSKINCOLORS,
+	
+	FIRSTSUPERCOLOR,
 
 	// Super special awesome Super flashing colors!
-	SKINCOLOR_SUPER1 = MAXSKINCOLORS,
+	SKINCOLOR_SUPER1 = FIRSTSUPERCOLOR,
 	SKINCOLOR_SUPER2,
 	SKINCOLOR_SUPER3,
 	SKINCOLOR_SUPER4,
@@ -291,9 +305,17 @@ typedef enum
 	SKINCOLOR_KSUPER3,
 	SKINCOLOR_KSUPER4,
 	SKINCOLOR_KSUPER5,
+	
+	SKINCOLOR_FIRSTFREESLOT,
+	SKINCOLOR_LASTFREESLOT = SKINCOLOR_FIRSTFREESLOT + NUMCOLORFREESLOTS - 1,
+	
+	MAXSKINCOLORS,
 
-	MAXTRANSLATIONS
-} skincolors_t;
+	NUMSUPERCOLORS = ((SKINCOLOR_FIRSTFREESLOT - FIRSTSUPERCOLOR)/5)
+} skincolornum_t;
+
+extern UINT16 numskincolors;
+extern skincolor_t skincolors[MAXSKINCOLORS];
 
 // State updates, number of tics / second.
 // NOTE: used to setup the timer rate, see I_StartupTimer().
