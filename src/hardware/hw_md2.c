@@ -1070,7 +1070,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 				&& gpatch->width == ((GLPatch_t *)md2->blendgrpatch)->width && gpatch->height == ((GLPatch_t *)md2->blendgrpatch)->height)
 			{
 				INT32 skinnum = INT32_MAX;
-				if ((spr->mobj->flags & MF_BOSS) && (spr->mobj->flags2 & MF2_FRET)) // Bosses "flash"
+				if ((spr->mobj->flags & MF_BOSS) && (spr->mobj->flags2 & MF2_FRET) && (leveltime & 1)) // Bosses "flash"
 				{
 					if (spr->mobj->type == MT_CYBRAKDEMON)
 						skinnum = TC_ALLWHITE;
