@@ -983,7 +983,7 @@ void HU_Ticker(void)
 
 	if (cechotimer > 0) --cechotimer;
 
-	if (hu_resynching)
+	if (hu_redownloadinggamestate)
 		resynch_ticker++;
 }
 
@@ -2137,7 +2137,7 @@ void HU_Drawer(void)
 		HU_DrawCrosshair2();
 
 	// draw desynch text
-	if (hu_resynching)
+	if (hu_redownloadinggamestate)
 	{
 		char resynch_text[14];
 		UINT32 i;

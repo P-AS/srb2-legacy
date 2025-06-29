@@ -1716,7 +1716,7 @@ void G_DoLoadLevel(boolean resetplayer)
 	}
 
 	// Setup the level.
-	if (!P_SetupLevel(false))
+	if (!P_SetupLevel(false, false)) // this never returns false?
 	{
 		// fail so reset game stuff
 		Command_ExitGame_f();
