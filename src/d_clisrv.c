@@ -21,6 +21,7 @@
 #include "i_net.h"
 #include "i_system.h"
 #include "i_video.h"
+#include "d_clisrv.h"
 #include "d_net.h"
 #include "d_main.h"
 #include "g_game.h"
@@ -96,15 +97,16 @@ tic_t jointimeout = (10*TICRATE);
 static boolean sendingsavegame[MAXNETNODES]; // Are we sending the savegame?
 static tic_t freezetimeout[MAXNETNODES]; // Until when can this node freeze the server before getting a timeout?
 
-#ifdef NEWPING
+
 UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
-#endif
+UINT32 playerpacketlosstable[MAXPLAYERS];
 SINT8 nodetoplayer[MAXNETNODES];
 SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (splitscreen)
 UINT8 playerpernode[MAXNETNODES]; // used specialy for scplitscreen
 boolean nodeingame[MAXNETNODES]; // set false as nodes leave game
+tic_t servermaxping = 800; // server's max ping. Defaults to 800
 static tic_t nettics[MAXNETNODES]; // what tic the client have received
 static tic_t supposedtics[MAXNETNODES]; // nettics prevision for smaller packet
 static UINT8 nodewaiting[MAXNETNODES];
@@ -123,12 +125,10 @@ static UINT8 resynch_inprogress[MAXNETNODES];
 static UINT8 resynch_local_inprogress = false; // WE are desynched and getting packets to fix it.
 static UINT8 player_joining = false;
 UINT8 hu_resynching = 0;
-
-
-
-
 // true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
 boolean hu_stopped = false;
+
+consvar_t cv_dedicatedidletime = {"dedicatedidletime", "10", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
@@ -215,24 +215,25 @@ static inline void *G_ScpyTiccmd(ticcmd_t* dest, void* src, const size_t n)
 // of 512 bytes is like 0.1)
 UINT16 software_MAXPACKETLENGTH;
 
-/** Guesses the value of a tic from its lowest byte and from maketic
+/** Guesses the full value of a tic from its lowest byte, for a specific node
   *
   * \param low The lowest byte of the tic value
+  * \param node The node to deduce the tic for
   * \return The full tic value
   *
   */
-tic_t ExpandTics(INT32 low)
+tic_t ExpandTics(INT32 low, INT32 node)
 {
 	INT32 delta;
 
-	delta = low - (maketic & UINT8_MAX);
+	delta = low - (nettics[node] & UINT8_MAX);
 
 	if (delta >= -64 && delta <= 64)
-		return (maketic & ~UINT8_MAX) + low;
+		return (nettics[node] & ~UINT8_MAX) + low;
 	else if (delta > 64)
-		return (maketic & ~UINT8_MAX) - 256 + low;
+		return (nettics[node] & ~UINT8_MAX) - 256 + low;
 	else //if (delta < -64)
-		return (maketic & ~UINT8_MAX) + 256 + low;
+		return (nettics[node] & ~UINT8_MAX) + 256 + low;
 }
 
 // -----------------------------------------------------------------
@@ -3082,12 +3083,10 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			HU_AddChatText(va("\x82*%s has been kicked (Go away)", player_names[pnum]), false);
 			kickreason = KR_KICK;
 			break;
-#ifdef NEWPING
 		case KICK_MSG_PING_HIGH:
 			HU_AddChatText(va("\x82*%s left the game (Broke ping limit)", player_names[pnum]), false);
 			kickreason = KR_PINGLIMIT;
 			break;
-#endif
 		case KICK_MSG_CON_FAIL:
 			HU_AddChatText(va("\x82*%s left the game (Synch Failure)", player_names[pnum]), false);
 			kickreason = KR_SYNCH;
@@ -3160,10 +3159,8 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		D_StartTitle();
 		if (msg == KICK_MSG_CON_FAIL)
 			M_StartMessage(M_GetText("Server closed connection\n(synch failure)\nPress ESC\n"), NULL, MM_NOTHING);
-#ifdef NEWPING
 		else if (msg == KICK_MSG_PING_HIGH)
 			M_StartMessage(M_GetText("Server closed connection\n(Broke ping limit)\nPress ESC\n"), NULL, MM_NOTHING);
-#endif
 		else if (msg == KICK_MSG_BANNED)
 			M_StartMessage(M_GetText("You have been banned by the server\n\nPress ESC\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_KICK)
@@ -3176,6 +3173,9 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	else
 		CL_RemovePlayer(pnum, kickreason);
 }
+
+static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
+consvar_t cv_netticbuffer = {"netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_allownewplayer = {"allowjoin", "On", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL	};
 consvar_t cv_joinnextround = {"joinnextround", "Off", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL}; /// \todo not done
@@ -3229,6 +3229,7 @@ void D_ClientServerInit(void)
 	CV_RegisterVar(&cv_showjoinaddress);
 	CV_RegisterVar(&cv_resynchattempts);
 	CV_RegisterVar(&cv_blamecfail);
+	CV_RegisterVar(&cv_dedicatedidletime);
 #ifdef DUMPCONSISTENCY
 	CV_RegisterVar(&cv_dumpconsistency);
 #endif
@@ -4070,8 +4071,8 @@ FILESTAMP
 
 			// To save bytes, only the low byte of tic numbers are sent
 			// Use ExpandTics to figure out what the rest of the bytes are
-			realstart = ExpandTics(netbuffer->u.clientpak.client_tic);
-			realend = ExpandTics(netbuffer->u.clientpak.resendfrom);
+			realstart = ExpandTics(netbuffer->u.clientpak.client_tic, node);
+			realend = ExpandTics(netbuffer->u.clientpak.resendfrom, node);
 
 			if (netbuffer->packettype == PT_CLIENTMIS || netbuffer->packettype == PT_CLIENT2MIS
 				|| netbuffer->packettype == PT_NODEKEEPALIVEMIS
@@ -4109,7 +4110,7 @@ FILESTAMP
 			// If we've alredy received a ticcmd for this tic, just submit it for the next one.
 			tic_t faketic = maketic;
 			if ((!!(netcmds[maketic % BACKUPTICS][netconsole].angleturn & TICCMD_RECEIVED))
-				&& (maketic - firstticstosend < BACKUPTICS))
+				&& (maketic - firstticstosend < BACKUPTICS - 1))
 				faketic++;
 
 			// Copy ticcmd
@@ -4341,15 +4342,15 @@ FILESTAMP
 				break;
 			}
 
-			realstart = ExpandTics(netbuffer->u.serverpak.starttic);
+			realstart = netbuffer->u.serverpak.starttic;
 			realend = realstart + netbuffer->u.serverpak.numtics;
 
 			if (!txtpak)
 				txtpak = (UINT8 *)&netbuffer->u.serverpak.cmds[netbuffer->u.serverpak.numslots
 					* netbuffer->u.serverpak.numtics];
 
-			if (realend > gametic + BACKUPTICS)
-				realend = gametic + BACKUPTICS;
+			if (realend > gametic + CLIENTBACKUPTICS)
+				realend = gametic + CLIENTBACKUPTICS;
 			cl_packetmissed = realstart > neededtic;
 
 			if (realstart <= neededtic && realend > neededtic)
@@ -4410,7 +4411,6 @@ FILESTAMP
 			resynch_local_inprogress = true;
 			CL_AcknowledgeResynch(&netbuffer->u.resynchpak);
 			break;
-#ifdef NEWPING
 		case PT_PING:
 			// Only accept PT_PING from the server.
 			if (node != servernode)
@@ -4431,14 +4431,19 @@ FILESTAMP
 			//Update client ping table from the server.
 			if (client)
 			{
-				INT32 i;
+				UINT8 i;
 				for (i = 0; i < MAXPLAYERS; i++)
+				{
 					if (playeringame[i])
-						playerpingtable[i] = (tic_t)netbuffer->u.pingtable[i];
+					{
+						playerpingtable[i] = (tic_t)netbuffer->u.netinfo.pingtable[i];
+						playerpacketlosstable[i] = netbuffer->u.netinfo.packetloss[i];
+					}
+				}
+				servermaxping = (tic_t)netbuffer->u.netinfo.pingtable[MAXPLAYERS];
 			}
 
 			break;
-#endif
 		case PT_SERVERCFG:
 			break;
 		case PT_FILEFRAGMENT:
@@ -4715,11 +4720,12 @@ static void SV_SendTics(void)
 	for (n = 1; n < MAXNETNODES; n++)
 		if (nodeingame[n])
 		{
-			lasttictosend = maketic;
 
 			// assert supposedtics[n]>=nettics[n]
 			realfirsttic = supposedtics[n];
-			if (realfirsttic >= maketic)
+			lasttictosend = min(maketic, realfirsttic + CLIENTBACKUPTICS);
+
+			if (realfirsttic >= lasttictosend)
 			{
 				// well we have sent all tics we will so use extrabandwidth
 				// to resent packet that are supposed lost (this is necessary since lost
@@ -4728,7 +4734,7 @@ static void SV_SendTics(void)
 				DEBFILE(va("Nothing to send node %u mak=%u sup=%u net=%u \n",
 					n, maketic, supposedtics[n], nettics[n]));
 				realfirsttic = nettics[n];
-				if (realfirsttic >= maketic || (I_GetTime() + n)&3)
+				if (realfirsttic >= lasttictosend || (I_GetTime() + n)&3)
 					// all tic are ok
 					continue;
 				DEBFILE(va("Sent %d anyway\n", realfirsttic));
@@ -4771,7 +4777,7 @@ static void SV_SendTics(void)
 
 			// Send the tics
 			netbuffer->packettype = PT_SERVERTICS;
-			netbuffer->u.serverpak.starttic = (UINT8)realfirsttic;
+			netbuffer->u.serverpak.starttic = realfirsttic;
 			netbuffer->u.serverpak.numtics = (UINT8)(lasttictosend - realfirsttic);
 			netbuffer->u.serverpak.numslots = (UINT8)SHORT(doomcom->numslots);
 			bufpos = (UINT8 *)&netbuffer->u.serverpak.cmds;
@@ -4865,9 +4871,13 @@ void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
 // create missed tic
 static void SV_Maketic(void)
 {
-	INT32 j;
+	INT32 i, j;
 
+	for (i = 0; i < MAXPLAYERS; i++)
+		packetloss[i][maketic%PACKETMEASUREWINDOW] = false;
+		
 	for (j = 0; j < MAXNETNODES; j++)
+	{
 		if (playerpernode[j])
 		{
 			INT32 player = nodetoplayer[j];
@@ -4876,17 +4886,17 @@ static void SV_Maketic(void)
 				INT32 i;
 
 				DEBFILE(va("MISS tic%4d for node %d\n", maketic, j));
-#if defined(PARANOIA) && 0
-				CONS_Debug(DBG_NETPLAY, "Client Misstic %d\n", maketic);
-#endif
+
 				// copy the old tic
 				for (i = 0; i < playerpernode[j]; i++, player = nodetoplayer2[j])
 				{
 					netcmds[maketic%BACKUPTICS][player] = netcmds[(maketic-1)%BACKUPTICS][player];
 					netcmds[maketic%BACKUPTICS][player].angleturn &= ~TICCMD_RECEIVED;
 				}
+				packetloss[i][maketic%PACKETMEASUREWINDOW] = true;
 			}
 		}
+	}
 
 	// all tic are now proceed make the next
 	maketic++;
@@ -4980,6 +4990,10 @@ boolean TryRunTics(tic_t realtics)
 					PS_STOP_TIMING(ps_tictime);
 					PS_UpdateTickStats();
 				}
+
+				// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
+				if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)
+					break;
 			}
 	}
 	else
@@ -4990,10 +5004,17 @@ boolean TryRunTics(tic_t realtics)
 	return ticking;
 }
 
-#ifdef NEWPING
+/*
+Ping Update except better:
+We call this once per second and check for people's pings. If their ping happens to be too high, we increment some timer and kick them out.
+If they're not lagging, decrement the timer by 1. Of course, reset all of this if they leave.
+*/
+
+static INT32 pingtimeout[MAXPLAYERS];
+
 static inline void PingUpdate(void)
 {
-	INT32 i;
+	INT32 i, j;
 	boolean laggers[MAXPLAYERS];
 	UINT8 numlaggers = 0;
 	memset(laggers, 0, sizeof(boolean) * MAXPLAYERS);
@@ -5011,7 +5032,10 @@ static inline void PingUpdate(void)
 					laggers[i] = true;
 				numlaggers++;
 			}
+			else
+				pingtimeout[i] = 0;
 		}
+
 
 		//kick lagging players... unless everyone but the server's ping sucks.
 		//in that case, it is probably the server's fault.
@@ -5021,12 +5045,27 @@ static inline void PingUpdate(void)
 			{
 				if (playeringame[i] && laggers[i])
 				{
-					XBOXSTATIC char buf[2];
+					pingtimeout[i]++;
+					if (pingtimeout[i] > cv_pingtimeout.value)
+// ok your net has been bad for too long, you deserve to die.
+					{
+						char buf[2];
 
-					buf[0] = (char)i;
-					buf[1] = KICK_MSG_PING_HIGH;
-					SendNetXCmd(XD_KICK, &buf, 2);
+						pingtimeout[i] = 0;
+
+						buf[0] = (char)i;
+						buf[1] = KICK_MSG_PING_HIGH;
+						SendNetXCmd(XD_KICK, &buf, 2);
+					}
 				}
+				/*
+					you aren't lagging,
+					but you aren't free yet.
+					In case you'll keep spiking,
+					we just make the timer go back down. (Very unstable net must still get kicked).
+				*/
+				else
+					pingtimeout[i] = (pingtimeout[i] == 0 ? 0 : pingtimeout[i]-1);
 			}
 		}
 	}
@@ -5034,28 +5073,54 @@ static inline void PingUpdate(void)
 	//make the ping packet and clear server data for next one
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		netbuffer->u.pingtable[i] = realpingtable[i] / pingmeasurecount;
+		netbuffer->u.netinfo.pingtable[i] = realpingtable[i] / pingmeasurecount;
 		//server takes a snapshot of the real ping for display.
 		//otherwise, pings fluctuate a lot and would be odd to look at.
 		playerpingtable[i] = realpingtable[i] / pingmeasurecount;
 		realpingtable[i] = 0; //Reset each as we go.
+				UINT32 lost = 0;
+		for (j = 0; j < PACKETMEASUREWINDOW; j++)
+		{
+			if (packetloss[i][j])
+				lost++;
+		}
+
+		netbuffer->u.netinfo.packetloss[i] = lost;
 	}
+
+	// send the server's maxping as last element of our ping table. This is useful to let us know when we're about to get kicked.
+	netbuffer->u.netinfo.pingtable[MAXPLAYERS] = cv_maxping.value;
 
 	//send out our ping packets
 	for (i = 0; i < MAXNETNODES; i++)
 		if (nodeingame[i])
-			HSendPacket(i, true, 0, sizeof(INT32) * MAXPLAYERS);
+			HSendPacket(i, true, 0, sizeof(struct netinfo_pak));
 
 	pingmeasurecount = 1; //Reset count
 }
-#endif
 
-// If a tree falls in the forest but nobody is around to hear it, does it make a tic?
-#define DEDICATEDIDLETIME (10*TICRATE)
+static tic_t gametime = 0;
+
+
+static void UpdatePingTable(void)
+{
+	INT32 i;
+
+	if (server)
+	{
+		if (netgame && !(gametime % 35)) // update once per second.
+			PingUpdate();
+		// update node latency values so we can take an average later.
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && playernode[i] != UINT8_MAX)
+				realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
+		pingmeasurecount++;
+	}
+}
 
 void NetUpdate(void)
 {
-	static tic_t gametime = 0;
+	
 	static tic_t resptime = 0;
 	tic_t nowtime;
 	INT32 i;
@@ -5067,54 +5132,6 @@ void NetUpdate(void)
 	if (realtics <= 0) // nothing new to update
 		return;
 
-#ifdef DEDICATEDIDLETIME
-	if (server && dedicated && gamestate == GS_LEVEL)
-	{
-		static tic_t dedicatedidle = 0;
-
-		for (i = 1; i < MAXNETNODES; ++i)
-			if (nodeingame[i])
-			{
-				if (dedicatedidle == DEDICATEDIDLETIME)
-				{
-					CONS_Printf("DEDICATED: Awakening from idle (Node %d detected...)\n", i);
-					dedicatedidle = 0;
-				}
-				break;
-			}
-
-		if (i == MAXNETNODES)
-		{
-			if (leveltime == 2)
-			{
-				// On next tick...
-				dedicatedidle = DEDICATEDIDLETIME-1;
-			}
-			else if (dedicatedidle == DEDICATEDIDLETIME)
-			{
-				if (D_GetExistingTextcmd(gametic, 0) || D_GetExistingTextcmd(gametic+1, 0))
-				{
-					CONS_Printf("DEDICATED: Awakening from idle (Netxcmd detected...)\n");
-					dedicatedidle = 0;
-				}
-				else
-				{
-					realtics = 0;
-				}
-			}
-			else if (++dedicatedidle == DEDICATEDIDLETIME)
-			{
-				const char *idlereason = "at round start";
-				if (leveltime > 3)
-					idlereason = va("for %d seconds", dedicatedidle/TICRATE);
-
-				CONS_Printf("DEDICATED: No nodes %s, idling...\n", idlereason);
-				realtics = 0;
-			}
-		}
-	}
-#endif
-
 	if (realtics > 5)
 	{
 		if (server)
@@ -5123,20 +5140,72 @@ void NetUpdate(void)
 			realtics = 5;
 	}
 
+	if (server && dedicated && gamestate == GS_LEVEL)
+	{
+		const tic_t dedicatedidletime = cv_dedicatedidletime.value * TICRATE;
+		static tic_t dedicatedidletimeprev = 0;
+		static tic_t dedicatedidle = 0;
+
+		if (dedicatedidletime > 0)
+		{
+			for (i = 1; i < MAXNETNODES; ++i)
+				if (nodeingame[i])
+				{
+					if (dedicatedidle >= dedicatedidletime)
+					{
+						CONS_Printf("DEDICATED: Awakening from idle (Node %d detected...)\n", i);
+						dedicatedidle = 0;
+					}
+					break;
+				}
+
+			if (i == MAXNETNODES)
+			{
+				if (leveltime == 2)
+				{
+					// On next tick...
+					dedicatedidle = dedicatedidletime-1;
+				}
+				else if (dedicatedidle >= dedicatedidletime)
+				{
+					if (D_GetExistingTextcmd(gametic, 0) || D_GetExistingTextcmd(gametic+1, 0))
+					{
+						CONS_Printf("DEDICATED: Awakening from idle (Netxcmd detected...)\n");
+						dedicatedidle = 0;
+					}
+					else
+					{
+						realtics = 0;
+					}
+				}
+				else if ((dedicatedidle += realtics) >= dedicatedidletime)
+				{
+					const char *idlereason = "at round start";
+					if (leveltime > 3)
+						idlereason = va("for %d seconds", dedicatedidle/TICRATE);
+
+					CONS_Printf("DEDICATED: No nodes %s, idling...\n", idlereason);
+					realtics = 0;
+					dedicatedidle = dedicatedidletime;
+				}
+			}
+		}
+		else
+		{
+			if (dedicatedidletimeprev > 0 && dedicatedidle >= dedicatedidletimeprev)
+			{
+				CONS_Printf("DEDICATED: Awakening from idle (Idle disabled...)\n");
+			}
+			dedicatedidle = 0;
+		}
+
+		dedicatedidletimeprev = dedicatedidletime;
+	}
+
 	gametime = nowtime;
 
-#ifdef NEWPING
-	if (server)
-	{
-		if (netgame && !(gametime % 255))
-			PingUpdate();
-		// update node latency values so we can take an average later.
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i])
-				realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
-		pingmeasurecount++;
-	}
-#endif
+	UpdatePingTable();
+
 
 	if (client)
 		maketic = neededtic;

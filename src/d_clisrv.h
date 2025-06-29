@@ -25,7 +25,8 @@
 //  be transmitted.
 
 // Networking and tick handling related.
-#define BACKUPTICS 32
+#define BACKUPTICS 1024
+#define CLIENTBACKUPTICS 32
 #define MAXTEXTCMD 256
 //
 // Packet structure
@@ -72,10 +73,7 @@ typedef enum
 	                  // Blocks game advance until synched.
 
 	PT_LOGIN,         // Login attempt from the client.
-
-#ifdef NEWPING
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
-#endif
 	NUMPACKETTYPE
 } packettype_t;
 
@@ -118,7 +116,7 @@ typedef struct
 // this packet is too large
 typedef struct
 {
-	UINT8 starttic;
+	tic_t starttic;
 	UINT8 numtics;
 	UINT8 numslots; // "Slots filled": Highest player number in use plus one.
 	ticcmd_t cmds[45]; // Normally [BACKUPTIC][MAXPLAYERS] but too large
@@ -378,6 +376,12 @@ typedef struct
 	UINT8 ctfteam;
 } ATTRPACK plrconfig;
 
+struct netinfo_pak
+{
+	UINT32 pingtable[MAXPLAYERS+1];
+	UINT32 packetloss[MAXPLAYERS+1];
+} ATTRPACK;
+
 //
 // Network packet data
 //
@@ -406,11 +410,9 @@ typedef struct
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)
 		askinfo_pak askinfo;                //          61 bytes
 		msaskinfo_pak msaskinfo;            //          22 bytes
-		plrinfo playerinfo[MAXPLAYERS];     //        1152 bytes (I'd say 36~38)
-		plrconfig playerconfig[MAXPLAYERS]; // (up to) 896 bytes (welp they ARE)
-#ifdef NEWPING
-		UINT32 pingtable[MAXPLAYERS];       //         128 bytes
-#endif
+		plrinfo playerinfo[MAXPLAYERS];     //         576 bytes(?)
+		plrconfig playerconfig[MAXPLAYERS]; // (up to) 528 bytes(?)
+		struct netinfo_pak netinfo;					// Don't believe their lies
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK doomdata_t;
 
@@ -443,9 +445,7 @@ extern consvar_t cv_playbackspeed;
 #define KICK_MSG_PLAYER_QUIT 3
 #define KICK_MSG_TIMEOUT     4
 #define KICK_MSG_BANNED      5
-#ifdef NEWPING
 #define KICK_MSG_PING_HIGH   6
-#endif
 #define KICK_MSG_CUSTOM_KICK 7
 #define KICK_MSG_CUSTOM_BAN  8
 
@@ -473,16 +473,17 @@ extern SINT8 joinnode;
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
 extern tic_t jointimeout;
-#ifdef NEWPING
 extern UINT16 pingmeasurecount;
 extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
-#endif
+extern UINT32 playerpacketlosstable[MAXPLAYERS];
+extern tic_t servermaxping;
 
-extern consvar_t cv_joinnextround, cv_allownewplayer, cv_maxplayers, cv_resynchattempts, cv_blamecfail, cv_maxsend, cv_noticedownload, cv_downloadspeed;
+extern consvar_t cv_joinnextround, cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_resynchattempts, cv_blamecfail,
+cv_maxsend, cv_noticedownload, cv_downloadspeed, cv_dedicatedidletime;
 
 // Used in d_net, the only dependence
-tic_t ExpandTics(INT32 low);
+tic_t ExpandTics(INT32 low, INT32 node);
 void D_ClientServerInit(void);
 
 // Initialise the other field
