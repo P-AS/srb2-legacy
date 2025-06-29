@@ -4871,13 +4871,11 @@ void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
 // create missed tic
 static void SV_Maketic(void)
 {
-	INT32 i, j;
+	INT32 j;
 
-	for (i = 0; i < MAXPLAYERS; i++)
-		packetloss[i][maketic%PACKETMEASUREWINDOW] = false;
-		
 	for (j = 0; j < MAXNETNODES; j++)
 	{
+		packetloss[(j < MAXPLAYERS) ? j : MAXPLAYERS-1][maketic%PACKETMEASUREWINDOW] = false; // Hack that I don't even know if it works
 		if (playerpernode[j])
 		{
 			INT32 player = nodetoplayer[j];
@@ -4886,14 +4884,16 @@ static void SV_Maketic(void)
 				INT32 i;
 
 				DEBFILE(va("MISS tic%4d for node %d\n", maketic, j));
-
+#if defined(PARANOIA) && 0
+				CONS_Debug(DBG_NETPLAY, "Client Misstic %d\n", maketic);
+#endif
 				// copy the old tic
 				for (i = 0; i < playerpernode[j]; i++, player = nodetoplayer2[j])
 				{
 					netcmds[maketic%BACKUPTICS][player] = netcmds[(maketic-1)%BACKUPTICS][player];
 					netcmds[maketic%BACKUPTICS][player].angleturn &= ~TICCMD_RECEIVED;
 				}
-				packetloss[i][maketic%PACKETMEASUREWINDOW] = true;
+				packetloss[j][maketic%PACKETMEASUREWINDOW] = true;
 			}
 		}
 	}
