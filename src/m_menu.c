@@ -918,9 +918,9 @@ static menuitem_t MP_SplitServerMenu[] =
 
 static menuitem_t MP_PlayerSetupMenu[] =
 {
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Your name",   M_HandleSetupMultiPlayer,   0},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Your color",  M_HandleSetupMultiPlayer,  16},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Your player", M_HandleSetupMultiPlayer,  96}, // Tails 01-18-2001
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Name",   M_HandleSetupMultiPlayer,   0},
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Character",  M_HandleSetupMultiPlayer,  16},
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Color", M_HandleSetupMultiPlayer,  96}, // Tails 01-18-2001
 };
 
 // ------------------------------------
@@ -7417,7 +7417,7 @@ static consvar_t *setupm_cvskin;
 static consvar_t *setupm_cvcolor;
 static consvar_t *setupm_cvname;
 static INT32      setupm_fakeskin;
-static UINT8     setupm_fakecolor;
+static UINT16     setupm_fakecolor;
 
 static void M_DrawSetupMultiPlayerMenu(void)
 {
@@ -7438,13 +7438,13 @@ static void M_DrawSetupMultiPlayerMenu(void)
 	V_DrawString(mx + 98, my, V_ALLOWLOWERCASE, setupm_name);
 
 	// draw skin string
-	V_DrawString(mx + 90, my + 96,
+	V_DrawString(208, 72,
 		((MP_PlayerSetupMenu[2].status & IT_TYPE) == IT_SPACE ? V_TRANSLUCENT : 0)|V_YELLOWMAP|V_ALLOWLOWERCASE,
 		skins[setupm_fakeskin].realname);
 
 	// draw the name of the color you have chosen
 	// Just so people don't go thinking that "Default" is Green.
-	V_DrawString(208, 72, V_YELLOWMAP|V_ALLOWLOWERCASE, skincolors[setupm_fakecolor].name);
+	V_DrawRightAlignedString(291, my + 96, V_YELLOWMAP|V_ALLOWLOWERCASE, skincolors[setupm_fakecolor].name);
 
 	// draw text cursor for name
 	if (!itemOn && skullAnimCounter < 4) // blink cursor
@@ -7515,6 +7515,44 @@ static void M_DrawSetupMultiPlayerMenu(void)
 		else
 			V_DrawMappedPatch(mx + 98 + (PLBOXW * 8 / 2), my + 16 + (PLBOXH * 8) - 12, flags, patch, colormap);
 	}
+
+	// Draw the palette below!
+	// note: height is always 16
+#define color_width 12
+#define selected_width 80
+
+	int x,y,count,i,j,color;
+	count = 8;
+	x = (BASEVIDWIDTH / 2) - (color_width / 2);
+	y = 148;
+	color = setupm_fakecolor;
+
+	// selected color
+	for (j = 0; j < 16; j++)
+		V_DrawFill(x - (selected_width / 2), y+j, selected_width, 1, skincolors[color].ramp[j]);
+
+	color = M_GetColorPrev(color);
+
+	// prev colors
+	for (i = 0; i < count; i++)
+	{
+		for (j = 0; j < 16; j++)
+			V_DrawFill(x - (i * color_width) - (selected_width / 2), y+j, color_width, 1, skincolors[color].ramp[j]);
+		color = M_GetColorPrev(color);
+	}
+
+	color = M_GetColorNext(setupm_fakecolor);
+
+	// next colors
+	for (i = 0; i < count; i++)
+	{
+		for (j = 0; j < 16; j++)
+			V_DrawFill(x + (i * color_width) + (selected_width / 2), y+j, color_width, 1, skincolors[color].ramp[j]);
+		color = M_GetColorNext(color);
+	}
+
+#undef selected_width
+#undef color_width
 }
 
 // Handle 1P/2P MP Setup
@@ -7536,12 +7574,12 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		break;
 
 	case KEY_LEFTARROW:
-		if (itemOn == 2)       //player skin
+		if (itemOn == 1)       //player skin
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_fakeskin--;
 		}
-		else if (itemOn == 1) // player color
+		else if (itemOn == 2) // player color
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_fakecolor = M_GetColorPrev(setupm_fakecolor);
@@ -7549,12 +7587,12 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		break;
 
 	case KEY_RIGHTARROW:
-		if (itemOn == 2)       //player skin
+		if (itemOn == 1)       //player skin
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_fakeskin++;
 		}
-		else if (itemOn == 1) // player color
+		else if (itemOn == 2) // player color
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_fakecolor = M_GetColorNext(setupm_fakecolor);
