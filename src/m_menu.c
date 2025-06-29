@@ -918,9 +918,9 @@ static menuitem_t MP_SplitServerMenu[] =
 
 static menuitem_t MP_PlayerSetupMenu[] =
 {
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Your name",   M_HandleSetupMultiPlayer,   0},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Your color",  M_HandleSetupMultiPlayer,  16},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Your player", M_HandleSetupMultiPlayer,  96}, // Tails 01-18-2001
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Name",   M_HandleSetupMultiPlayer,   0},
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Character",  M_HandleSetupMultiPlayer,  16},
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Color", M_HandleSetupMultiPlayer,  96}, // Tails 01-18-2001
 };
 
 // ------------------------------------
@@ -1470,8 +1470,6 @@ static menuitem_t OP_MonitorToggleMenu[] =
 
 static menuitem_t OP_LegacyOptionsMenu[] =
 {
-	{IT_HEADER|IT_STRING, NULL, "Network", NULL, 5},
-	{IT_CVAR|IT_STRING, NULL, "Net Compatibility", &cv_netcompat, 10},
 	{IT_HEADER|IT_STRING, NULL, "Screen Tilting", NULL, 15},
 	{IT_CVAR|IT_STRING, NULL, "Screen Tilting", &cv_viewroll, 	  20},
 	{IT_CVAR|IT_STRING, NULL, "Earthquake Screen Shaking", &cv_quakeiiiarena,  25},
@@ -2596,7 +2594,6 @@ boolean M_Responder(event_t *ev)
 			}
 			else
 				M_ClearMenus(true);
-
 			return true;
 
 		case KEY_BACKSPACE:
@@ -5445,9 +5442,11 @@ static void M_ReadSavegameInfo(UINT32 slot)
 
 	// P_UnArchivePlayer()
 	CHECKPOS
-	savegameinfo[slot].skincolor = READUINT8(save_p);
+	// Skincolor is set by skin prefcolor.
+	(void)READUINT8(save_p);
 	CHECKPOS
 	savegameinfo[slot].skinnum = READUINT8(save_p);
+	savegameinfo[slot].skincolor = skins[savegameinfo[slot].skinnum].prefcolor;
 
 	CHECKPOS
 	(void)READINT32(save_p); // Score
@@ -5464,7 +5463,8 @@ static void M_ReadSavegameInfo(UINT32 slot)
 		if (savegameinfo[slot].botskin-1 >= numskins)
 			savegameinfo[slot].botskin = 0;
 		CHECKPOS
-		savegameinfo[slot].botcolor = READUINT8(save_p); // because why not.
+		(void)READUINT8(save_p);
+		savegameinfo[slot].botcolor = skins[savegameinfo[slot].skinnum].prefcolor; // bot color
 	}
 	else
 		savegameinfo[slot].botskin = 0;
@@ -7417,7 +7417,7 @@ static consvar_t *setupm_cvskin;
 static consvar_t *setupm_cvcolor;
 static consvar_t *setupm_cvname;
 static INT32      setupm_fakeskin;
-static INT32      setupm_fakecolor;
+static UINT16     setupm_fakecolor;
 
 static void M_DrawSetupMultiPlayerMenu(void)
 {
@@ -7438,13 +7438,13 @@ static void M_DrawSetupMultiPlayerMenu(void)
 	V_DrawString(mx + 98, my, V_ALLOWLOWERCASE, setupm_name);
 
 	// draw skin string
-	V_DrawString(mx + 90, my + 96,
+	V_DrawString(208, 72,
 		((MP_PlayerSetupMenu[2].status & IT_TYPE) == IT_SPACE ? V_TRANSLUCENT : 0)|V_YELLOWMAP|V_ALLOWLOWERCASE,
 		skins[setupm_fakeskin].realname);
 
 	// draw the name of the color you have chosen
 	// Just so people don't go thinking that "Default" is Green.
-	V_DrawString(208, 72, V_YELLOWMAP|V_ALLOWLOWERCASE, Color_Names[setupm_fakecolor]);
+	V_DrawRightAlignedString(291, my + 96, V_YELLOWMAP|V_ALLOWLOWERCASE, skincolors[setupm_fakecolor].name);
 
 	// draw text cursor for name
 	if (!itemOn && skullAnimCounter < 4) // blink cursor
@@ -7503,7 +7503,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 	}
 	else
 	{
-		UINT8 *colormap = R_GetTranslationColormap(setupm_fakeskin, setupm_fakecolor, 0);
+		UINT8 *colormap = R_GetTranslationColormap(setupm_fakeskin, setupm_fakecolor, GTC_CACHE);
 
 		if (skins[setupm_fakeskin].flags & SF_HIRES)
 		{
@@ -7514,9 +7514,45 @@ static void M_DrawSetupMultiPlayerMenu(void)
 		}
 		else
 			V_DrawMappedPatch(mx + 98 + (PLBOXW * 8 / 2), my + 16 + (PLBOXH * 8) - 12, flags, patch, colormap);
-
-		Z_Free(colormap);
 	}
+
+	// Draw the palette below!
+	// note: height is always 16
+#define color_width 12
+#define selected_width 80
+
+	int x,y,count,i,j,color;
+	count = 8;
+	x = (BASEVIDWIDTH / 2) - (color_width / 2);
+	y = 148;
+	color = setupm_fakecolor;
+
+	// selected color
+	for (j = 0; j < 16; j++)
+		V_DrawFill(x - (selected_width / 2), y+j, selected_width, 1, skincolors[color].ramp[j]);
+
+	color = M_GetColorPrev(color);
+
+	// prev colors
+	for (i = 0; i < count; i++)
+	{
+		for (j = 0; j < 16; j++)
+			V_DrawFill(x - (i * color_width) - (selected_width / 2), y+j, color_width, 1, skincolors[color].ramp[j]);
+		color = M_GetColorPrev(color);
+	}
+
+	color = M_GetColorNext(setupm_fakecolor);
+
+	// next colors
+	for (i = 0; i < count; i++)
+	{
+		for (j = 0; j < 16; j++)
+			V_DrawFill(x + (i * color_width) + (selected_width / 2), y+j, color_width, 1, skincolors[color].ramp[j]);
+		color = M_GetColorNext(color);
+	}
+
+#undef selected_width
+#undef color_width
 }
 
 // Handle 1P/2P MP Setup
@@ -7538,28 +7574,28 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		break;
 
 	case KEY_LEFTARROW:
-		if (itemOn == 2)       //player skin
+		if (itemOn == 1)       //player skin
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_fakeskin--;
 		}
-		else if (itemOn == 1) // player color
+		else if (itemOn == 2) // player color
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
-			setupm_fakecolor--;
+			setupm_fakecolor = M_GetColorPrev(setupm_fakecolor);
 		}
 		break;
 
 	case KEY_RIGHTARROW:
-		if (itemOn == 2)       //player skin
+		if (itemOn == 1)       //player skin
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_fakeskin++;
 		}
-		else if (itemOn == 1) // player color
+		else if (itemOn == 2) // player color
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
-			setupm_fakecolor++;
+			setupm_fakecolor = M_GetColorNext(setupm_fakecolor);
 		}
 		break;
 
@@ -7593,12 +7629,6 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		setupm_fakeskin = numskins - 1;
 	if (setupm_fakeskin > numskins - 1)
 		setupm_fakeskin = 0;
-
-	// check color
-	if (setupm_fakecolor < 1)
-		setupm_fakecolor = MAXSKINCOLORS - 1;
-	if (setupm_fakecolor > MAXSKINCOLORS - 1)
-		setupm_fakecolor = 1;
 
 	if (exitmenu)
 	{
@@ -8275,6 +8305,48 @@ static void M_ChangeControl(INT32 choice)
 	strlcpy(controltochangetext, currentMenu->menuitems[choice].text, 33);
 
 	M_StartMessage(tmp, M_ChangecontrolResponse, MM_EVENTHANDLER);
+}
+
+// ===========
+// Color stuff
+// ===========
+
+void M_InitSkincolors(void)
+{
+	numskincolors = SKINCOLOR_FIRSTFREESLOT;
+}
+
+boolean M_CheckColor(UINT16 color)
+{
+	if (!color || color >= numskincolors)
+		return false;
+	return true;
+}
+
+UINT16 M_GetColorNext(UINT16 base)
+{
+	UINT32 i;
+	
+	for (i = base + 1; ; i++)
+	{
+		if (i >= numskincolors)
+			i = 0; // Recheck.
+		if (skincolors[i].accessible)
+			return i; // Good.
+	}
+}
+
+UINT16 M_GetColorPrev(UINT16 base)
+{
+	UINT32 i;
+	
+	for (i = base - 1; ; i--)
+	{
+		if (!i)
+			i = numskincolors - 1; // Recheck.
+		if (skincolors[i].accessible)
+			return i; // Good.
+	}
 }
 
 // ===============
