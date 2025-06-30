@@ -95,10 +95,6 @@
 #include <errno.h>
 #include <time.h>
 
-#ifdef _arch_dreamcast
-#include "sdl12/SRB2DC/dchelp.h"
-#endif
-
 #if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
 	#include <sys/time.h>
 #endif // UNIXCOMMON
@@ -195,10 +191,6 @@ static UINT8 UPNP_support = TRUE;
 	// winsock stuff (in winsock a socket is not a file)
 	#define ioctl ioctlsocket
 	#define close closesocket
-
-	#ifdef _WIN32_WCE
-	#include "sdl12/SRB2CE/cehelp.h"
-	#endif
 #endif
 
 #include "i_addrinfo.h"

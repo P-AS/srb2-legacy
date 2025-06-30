@@ -86,10 +86,6 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "config.h.in"
 #endif
 
-#ifdef _XBOX
-#include "sdl12/SRB2XBOX/xboxhelp.h"
-#endif
-
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
 #endif
