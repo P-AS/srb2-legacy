@@ -7609,6 +7609,15 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_name[l - 1] = 0;
 		}
+		else if (itemOn == 2)
+		{
+			UINT8 col = skins[setupm_fakeskin].prefcolor;
+			if (setupm_fakecolor != col && skincolors[col].accessible)
+			{
+				S_StartSound(NULL,sfx_menu1); // Tails
+				setupm_fakecolor = col;
+			}
+		}
 		break;
 
 	default:
