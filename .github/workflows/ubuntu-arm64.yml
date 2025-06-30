@@ -25,7 +25,7 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4.6.2
       with:
-        name: srb2legacy-linux-arm64
+        name: srb2legacy-linux-arm64-${{ github.sha }}
         path: |
           bin/
           src/comptime.h

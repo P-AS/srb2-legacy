@@ -24,7 +24,7 @@ jobs:
      - name: Upload Artifacts
        uses: actions/upload-artifact@v4.6.2
        with:
-        name: srb2legacy-windows-x86
+        name: srb2legacy-windows-x86-${{ github.sha }}
         path: |
           bin/
           src/comptime.h
