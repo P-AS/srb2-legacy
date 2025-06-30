@@ -22,7 +22,7 @@ jobs:
        run: make -C src/ --keep-going  -j$(nproc) MINGW=1
 
      - name: Upload Artifacts
-       uses: actions/upload-artifact@v4.6.1
+       uses: actions/upload-artifact@v4.6.2
        with:
         name: srb2legacy-windows-x86
         path: |

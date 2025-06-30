@@ -15,7 +15,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4.2.2
-    
+
     - name: Install Dependencies
       run: sudo apt-get update && sudo apt install -y libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libminiupnpc-dev libopenmpt-dev
 
@@ -23,7 +23,7 @@ jobs:
       run: make -C src/ --keep-going -j$(nproc) LINUX64=1
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4.6.1
+      uses: actions/upload-artifact@v4.6.2
       with:
         name: srb2legacy-linux-x86_64
         path: |
