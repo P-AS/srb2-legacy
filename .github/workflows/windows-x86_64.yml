@@ -15,11 +15,8 @@ jobs:
     steps:
      - uses: actions/checkout@v4.2.2
 
-     - name: Update package list
-       run: sudo apt-get update
-
      - name: Install Dependencies
-       run: sudo apt-get install -y gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+       run: sudo apt update && sudo apt install -y gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
 
      - name: Build SRB2 Legacy
        run: make -C src/ --keep-going  -j$(nproc) MINGW64=1
