@@ -108,7 +108,6 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
-const int SUBVERSION_NETCOMPAT = 25; // TODO: REMOVE
 
 // platform independant focus loss
 UINT8 window_notinfocus = false;

@@ -412,7 +412,7 @@ char *sizeu5(size_t num);
 // d_main.c
 extern int    VERSION;
 extern int SUBVERSION;
-extern const int SUBVERSION_NETCOMPAT; // TODO: REMOVE
+
 extern boolean devparm; // development mode (-debug)
 // d_netcmd.c
 extern INT32 cv_debug;
