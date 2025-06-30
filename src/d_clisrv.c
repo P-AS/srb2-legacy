@@ -5094,7 +5094,7 @@ static inline void PingUpdate(void)
 	//send out our ping packets
 	for (i = 0; i < MAXNETNODES; i++)
 		if (nodeingame[i])
-			HSendPacket(i, true, 0, sizeof(struct netinfo_pak));
+			HSendPacket(i, true, 0, sizeof(netinfo_pak));
 
 	pingmeasurecount = 1; //Reset count
 }

@@ -376,11 +376,11 @@ typedef struct
 	UINT8 ctfteam;
 } ATTRPACK plrconfig;
 
-struct netinfo_pak
+typedef struct 
 {
 	UINT32 pingtable[MAXPLAYERS+1];
 	UINT32 packetloss[MAXPLAYERS+1];
-} ATTRPACK;
+} ATTRPACK netinfo_pak;
 
 //
 // Network packet data
@@ -412,7 +412,7 @@ typedef struct
 		msaskinfo_pak msaskinfo;            //          22 bytes
 		plrinfo playerinfo[MAXPLAYERS];     //         576 bytes(?)
 		plrconfig playerconfig[MAXPLAYERS]; // (up to) 528 bytes(?)
-		struct netinfo_pak netinfo;					// Don't believe their lies
+		netinfo_pak netinfo;					// Don't believe their lies
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK doomdata_t;
 
