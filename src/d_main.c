@@ -993,8 +993,6 @@ static void IdentifyVersion(void)
 void D_SRB2Main(void)
 {
 	INT32 p;
-	char srb2[82]; // srb2 title banner
-	char title[82];
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
