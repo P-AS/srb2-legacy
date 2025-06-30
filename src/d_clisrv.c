@@ -418,11 +418,7 @@ static void ExtraDataTicker(void)
 					{
 						if (server)
 						{
-							XBOXSTATIC UINT8 buf[3];
-
-							buf[0] = (UINT8)i;
-							buf[1] = KICK_MSG_CON_FAIL;
-							SendNetXCmd(XD_KICK, &buf, 2);
+							SendKick(i, KICK_MSG_CON_FAIL);
 							DEBFILE(va("player %d kicked [gametic=%u] reason as follows:\n", i, gametic));
 						}
 						CONS_Alert(CONS_WARNING, M_GetText("Got unknown net command [%s]=%d (max %d)\n"), sizeu1(curpos - bufferstart), *curpos, bufferstart[0]);
@@ -462,6 +458,15 @@ void D_ResetTiccmds(void)
 	for (i = 0; i < TEXTCMD_HASH_SIZE; i++)
 		while (textcmds[i])
 			D_Clearticcmd(textcmds[i]->tic);
+}
+
+void SendKick(UINT8 playernum, UINT8 msg)
+{
+	UINT8 buf[2];
+
+	buf[0] = playernum;
+	buf[1] = msg;
+	SendNetXCmd(XD_KICK, &buf, 2);
 }
 
 // -----------------------------------------------------------------
@@ -1031,10 +1036,7 @@ static void SV_SendResynch(INT32 node)
 
 	if (resynch_score[node] > (unsigned)cv_resynchattempts.value*250)
 	{
-		XBOXSTATIC UINT8 buf[2];
-		buf[0] = (UINT8)nodetoplayer[node];
-		buf[1] = KICK_MSG_CON_FAIL;
-		SendNetXCmd(XD_KICK, &buf, 2);
+		SendKick(nodetoplayer[node], KICK_MSG_CON_FAIL);
 		resynch_score[node] = 0;
 	}
 }
@@ -3395,13 +3397,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		// protect against hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal add player command received from %s\n"), player_names[playernum]);
 		if (server)
-		{
-			XBOXSTATIC UINT8 buf[2];
-
-			buf[0] = (UINT8)playernum;
-			buf[1] = KICK_MSG_CON_FAIL;
-			SendNetXCmd(XD_KICK, &buf, 2);
-		}
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -3575,14 +3571,11 @@ void CL_AddSplitscreenPlayer(void)
 
 void CL_RemoveSplitscreenPlayer(void)
 {
-	XBOXSTATIC UINT8 buf[2];
 
 	if (cl_mode != CL_CONNECTED)
 		return;
 
-	buf[0] = (UINT8)secondarydisplayplayer;
-	buf[1] = KICK_MSG_PLAYER_QUIT;
-	SendNetXCmd(XD_KICK, &buf, 2);
+	SendKick(secondarydisplayplayer, KICK_MSG_PLAYER_QUIT);
 }
 
 // is there a game running
@@ -4120,13 +4113,10 @@ FILESTAMP
 			if (netcmds[faketic%BACKUPTICS][netconsole].forwardmove > MAXPLMOVE || netcmds[faketic%BACKUPTICS][netconsole].forwardmove < -MAXPLMOVE
 				|| netcmds[faketic%BACKUPTICS][netconsole].sidemove > MAXPLMOVE || netcmds[faketic%BACKUPTICS][netconsole].sidemove < -MAXPLMOVE)
 			{
-				XBOXSTATIC char buf[2];
 				CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), netconsole);
 				//D_Clearticcmd(k);
 
-				buf[0] = (char)netconsole;
-				buf[1] = KICK_MSG_CON_FAIL;
-				SendNetXCmd(XD_KICK, &buf, 2);
+				SendKick(netconsole, KICK_MSG_CON_FAIL);
 				break;
 			}
 
@@ -4163,11 +4153,7 @@ FILESTAMP
 				}
 				else
 				{
-					XBOXSTATIC UINT8 buf[3];
-
-					buf[0] = (UINT8)netconsole;
-					buf[1] = KICK_MSG_CON_FAIL;
-					SendNetXCmd(XD_KICK, &buf, 2);
+					SendKick(netconsole, KICK_MSG_CON_FAIL);
 					DEBFILE(va("player %d kicked (synch failure) [%u] %d!=%d\n",
 						netconsole, realstart, consistancy[realstart%BACKUPTICS],
 						SHORT(netbuffer->u.clientpak.consistancy)));
@@ -4280,19 +4266,17 @@ FILESTAMP
 			nodewaiting[node] = 0;
 			if (netconsole != -1 && playeringame[netconsole])
 			{
-				XBOXSTATIC UINT8 buf[2];
-				buf[0] = (UINT8)netconsole;
+				UINT8 kickmsg;
 				if (netbuffer->packettype == PT_NODETIMEOUT)
-					buf[1] = KICK_MSG_TIMEOUT;
+					kickmsg = KICK_MSG_TIMEOUT;
 				else
-					buf[1] = KICK_MSG_PLAYER_QUIT;
-				SendNetXCmd(XD_KICK, &buf, 2);
+					kickmsg = KICK_MSG_PLAYER_QUIT;
+				SendKick(netconsole, kickmsg);
 				nodetoplayer[node] = -1;
 				if (nodetoplayer2[node] != -1 && nodetoplayer2[node] >= 0
 					&& playeringame[(UINT8)nodetoplayer2[node]])
 				{
-					buf[0] = nodetoplayer2[node];
-					SendNetXCmd(XD_KICK, &buf, 2);
+					SendKick(nodetoplayer2[node], kickmsg);
 					nodetoplayer2[node] = -1;
 				}
 			}
@@ -4307,12 +4291,7 @@ FILESTAMP
 				CONS_Alert(CONS_WARNING, M_GetText("%s received from non-host %d\n"), "PT_RESYNCHEND", node);
 
 				if (server)
-				{
-					UINT8 buf[2];
-					buf[0] = (UINT8)netconsole;
-					buf[1] = KICK_MSG_CON_FAIL;
-					SendNetXCmd(XD_KICK, &buf, 2);
-				}
+					SendKick(netconsole, KICK_MSG_CON_FAIL);
 
 				break;
 			}
@@ -4332,12 +4311,7 @@ FILESTAMP
 				CONS_Alert(CONS_WARNING, M_GetText("%s received from non-host %d\n"), "PT_SERVERTICS", node);
 
 				if (server)
-				{
-					UINT8 buf[2];
-					buf[0] = (UINT8)netconsole;
-					buf[1] = KICK_MSG_CON_FAIL;
-					SendNetXCmd(XD_KICK, &buf, 2);
-				}
+					SendKick(netconsole, KICK_MSG_CON_FAIL);
 
 				break;
 			}
@@ -4399,13 +4373,7 @@ FILESTAMP
 				CONS_Alert(CONS_WARNING, M_GetText("%s received from non-host %d\n"), "PT_RESYNCHING", node);
 
 				if (server)
-				{
-					UINT8 buf[2];
-					buf[0] = (UINT8)netconsole;
-					buf[1] = KICK_MSG_CON_FAIL;
-					SendNetXCmd(XD_KICK, &buf, 2);
-				}
-
+					SendKick(netconsole, KICK_MSG_CON_FAIL);
 				break;
 			}
 			resynch_local_inprogress = true;
@@ -4418,12 +4386,7 @@ FILESTAMP
 				CONS_Alert(CONS_WARNING, M_GetText("%s received from non-host %d\n"), "PT_PING", node);
 
 				if (server)
-				{
-					UINT8 buf[2];
-					buf[0] = (UINT8)netconsole;
-					buf[1] = KICK_MSG_CON_FAIL;
-					SendNetXCmd(XD_KICK, &buf, 2);
-				}
+					SendKick(netconsole, KICK_MSG_CON_FAIL);
 
 				break;
 			}
@@ -4453,12 +4416,7 @@ FILESTAMP
 				CONS_Alert(CONS_WARNING, M_GetText("%s received from non-host %d\n"), "PT_FILEFRAGMENT", node);
 
 				if (server)
-				{
-					UINT8 buf[2];
-					buf[0] = (UINT8)netconsole;
-					buf[1] = KICK_MSG_CON_FAIL;
-					SendNetXCmd(XD_KICK, &buf, 2);
-				}
+					SendKick(netconsole, KICK_MSG_CON_FAIL);
 
 				break;
 			}
@@ -5049,13 +5007,8 @@ static inline void PingUpdate(void)
 					if (pingtimeout[i] > cv_pingtimeout.value)
 // ok your net has been bad for too long, you deserve to die.
 					{
-						UINT8 buf[2];
-
 						pingtimeout[i] = 0;
-
-						buf[0] = (UINT8)i;
-						buf[1] = KICK_MSG_PING_HIGH;
-						SendNetXCmd(XD_KICK, &buf, 2);
+						SendKick(i, KICK_MSG_PING_HIGH);
 					}
 				}
 				/*
