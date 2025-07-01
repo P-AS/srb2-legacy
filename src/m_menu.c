@@ -285,6 +285,7 @@ static void M_AddonsOptions(INT32 choice);
 static patch_t *addonsp[NUM_EXT+5];
 
 menu_t OP_LegacyOptionsDef;
+menu_t OP_LegacyCreditsDef;
 
 #define numaddonsshown 4
 
@@ -1477,7 +1478,30 @@ static menuitem_t OP_LegacyOptionsMenu[] =
 	{IT_CVAR|IT_STRING, NULL, "Quake Viewroll",    &cv_quakeiv, 30},
 	{IT_HEADER|IT_STRING, NULL, "System", NULL, 35},
 	{IT_CVAR|IT_STRING, NULL, "Window Shaking",    &cv_quakelive, 40},
+
+	{IT_SUBMENU|IT_STRING, NULL, 	"Credits",  		&OP_LegacyCreditsDef, 50},
 };
+
+static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resolution
+{
+	{IT_HEADER|IT_STRING, NULL, "Contributors:", NULL, 7},
+	{IT_STRING, NULL, "PAS", NULL, 22},
+	{IT_STRING, NULL, "chromaticpipe", NULL, 32},
+	{IT_STRING, NULL, "Hanicef", NULL, 42},
+	{IT_STRING, NULL, "Lugent", NULL, 52},
+	{IT_STRING, NULL, "tempowad", NULL, 62},
+	{IT_STRING, NULL, "tatokis", NULL, 72},
+	{IT_STRING, NULL, "luigi budd", NULL, 82}, // Enhanced server info screen
+	{IT_STRING, NULL, "Lamibe", NULL, 92},
+	{IT_STRING, NULL, "Clusterguy!!", NULL, 102}, // Software sky barreling
+	{IT_STRING, NULL, "Bewer", NULL, 112}, // SRB2Kart text colormaps
+	{IT_STRING, NULL, "alufolie91", NULL, 122},
+	{IT_HEADER|IT_STRING, NULL, "Special Thanks:", NULL, 132},
+	{IT_STRING, NULL, "The Gaming Den", NULL, 142}, // srb2-legacy Co-op server
+	{IT_STRING, NULL, "grindersky", NULL, 152}, // For using it in his 2.1 TAS
+	{IT_STRING, NULL, "SRB2EventZ", NULL, 162}, // Netgame testing and feature ideas
+};
+
 
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
@@ -1833,6 +1857,7 @@ menu_t OP_ScreenshotOptionsDef = DEFAULTSCROLLMENUSTYLE("M_DATA", OP_ScreenshotO
 menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE("M_ADDONS", OP_AddonsOptionsMenu, &OP_MainDef, 30, 30);
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE("M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
 menu_t OP_LegacyOptionsDef = DEFAULTSCROLLMENUSTYLE(NULL, OP_LegacyOptionsMenu, &OP_MainDef, 30, 30);
+menu_t OP_LegacyCreditsDef = DEFAULTMENUSTYLE(NULL, OP_LegacyCreditsMenu, &OP_LegacyOptionsDef, 30, 0);
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
