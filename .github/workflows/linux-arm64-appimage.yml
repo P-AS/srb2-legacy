@@ -2,9 +2,9 @@ name: Linux ARM64 AppImage
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "next", "master" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "next", "master" ]
 
 env:
   CC: gcc
