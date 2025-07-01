@@ -949,15 +949,11 @@ static float HWR_ClipViewSegment(INT32 x, polyvertex_t *v1, polyvertex_t *v2)
 }
 #endif
 
-//
-// HWR_SplitWall
-//
+
+// SoM: split up and light walls according to the lightlist.
+// This may also include leaving out parts of the wall that can't be seen
 static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum, FSurfaceInfo* Surf, INT32 cutflag, ffloor_t *pfloor)
 {
-	/* SoM: split up and light walls according to the
-	 lightlist. This may also include leaving out parts
-	 of the wall that can't be seen */
-
 	float realtop, realbot, top, bot;
 	float pegt, pegb, pegmul;
 	float height = 0.0f, bheight = 0.0f;
@@ -967,39 +963,52 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 	float endpegt, endpegb, endpegmul;
 	float endheight = 0.0f, endbheight = 0.0f;
 
-	fixed_t v1x = FLOAT_TO_FIXED(wallVerts[0].x);
-	fixed_t v1y = FLOAT_TO_FIXED(wallVerts[0].z); // not a typo
-	fixed_t v2x = FLOAT_TO_FIXED(wallVerts[1].x);
-	fixed_t v2y = FLOAT_TO_FIXED(wallVerts[1].z); // not a typo
-	// compiler complains when P_GetZAt is used in FLOAT_TO_FIXED directly
-	// use this as a temp var to store P_GetZAt's return value each time
-	fixed_t temp;
+	fixed_t v1x = FloatToFixed(wallVerts[0].x);
+	fixed_t v1y = FloatToFixed(wallVerts[0].z);
+	fixed_t v2x = FloatToFixed(wallVerts[1].x);
+	fixed_t v2y = FloatToFixed(wallVerts[1].z);
 
 
-	INT32   solid, i;
-	lightlist_t *  list = sector->lightlist;
+	float diff;
+
 	const UINT8 alpha = Surf->PolyColor.s.alpha;
 	FUINT lightnum = HWR_CalcWallLight(sector->lightlevel, v1x, v1y, v2x, v2y);
 	extracolormap_t *colormap = NULL;
 
 	realtop = top = wallVerts[3].y;
 	realbot = bot = wallVerts[0].y;
+	diff = top - bot;
+
 	pegt = wallVerts[3].t;
 	pegb = wallVerts[0].t;
-	pegmul = (pegb - pegt) / (top - bot);
+	
+	// Lactozilla: If both heights of a side lay on the same position, then this wall is a triangle.
+	// To avoid division by zero, which would result in a NaN, we check if the vertical difference
+	// between the two vertices is not zero.
+	if (fpclassify(diff) == FP_ZERO)
+		pegmul = 0.0;
+	else
+		pegmul = (pegb - pegt) / diff;
 
 
 	endrealtop = endtop = wallVerts[2].y;
 	endrealbot = endbot = wallVerts[1].y;
+	diff = endtop - endbot;
+
 	endpegt = wallVerts[2].t;
 	endpegb = wallVerts[1].t;
-	endpegmul = (endpegb - endpegt) / (endtop - endbot);
+	
+	if (fpclassify(diff) == FP_ZERO)
+		endpegmul = 0.0;
+	else
+		endpegmul = (endpegb - endpegt) / diff;
 
-
-	for (i = 0; i < sector->numlights; i++)
+	for (INT32 i = 0; i < sector->numlights; i++)
 	{
 		if (endtop < endrealbot && top < realbot)
 			return;
+
+		lightlist_t *list = sector->lightlist;
 
 		if (!(list[i].flags & FF_NOSHADE))
 		{
@@ -1015,7 +1024,7 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 			}
 		}
 
-		solid = false;
+		boolean solid = false; // Mixed Declarations AAAAA
 
 		if ((sector->lightlist[i].flags & FF_CUTSOLIDS) && !(cutflag & FF_EXTRA))
 			solid = true;
@@ -1033,32 +1042,16 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 			solid = false;
 
 
-		if (list[i].slope)
-		{
-			temp = P_GetZAt(list[i].slope, v1x, v1y);
-			height = FIXED_TO_FLOAT(temp);
-			temp = P_GetZAt(list[i].slope, v2x, v2y);
-			endheight = FIXED_TO_FLOAT(temp);
-		}
-		else
-			height = endheight = FIXED_TO_FLOAT(list[i].height);
+		height = FixedToFloat(P_GetLightZAt(&list[i], v1x, v1y));
+		endheight = FixedToFloat(P_GetLightZAt(&list[i], v2x, v2y));
 		if (solid)
 		{
-			if (*list[i].caster->b_slope)
-			{
-				temp = P_GetZAt(*list[i].caster->b_slope, v1x, v1y);
-				bheight = FIXED_TO_FLOAT(temp);
-				temp = P_GetZAt(*list[i].caster->b_slope, v2x, v2y);
-				endbheight = FIXED_TO_FLOAT(temp);
-			}
-			else
-				bheight = endbheight = FIXED_TO_FLOAT(*list[i].caster->bottomheight);
+			bheight = FixedToFloat(P_GetFFloorBottomZAt(list[i].caster, v1x, v1y));
+			endbheight = FixedToFloat(P_GetFFloorBottomZAt(list[i].caster, v2x, v2y));
 		}
 
 
-
-		if (endheight >= endtop)
-		if (height >= top)
+		if (endheight >= endtop && height >= top)
 		{
 			if (solid && top > bheight)
 				top = bheight;
@@ -1070,15 +1063,8 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 		if (i + 1 < sector->numlights)
 		{
-			if (list[i+1].slope)
-			{
-				temp = P_GetZAt(list[i+1].slope, v1x, v1y);
-				bheight = FIXED_TO_FLOAT(temp);
-				temp = P_GetZAt(list[i+1].slope, v2x, v2y);
-				endbheight = FIXED_TO_FLOAT(temp);
-			}
-			else
-				bheight = endbheight = FIXED_TO_FLOAT(list[i+1].height);
+			bheight = FixedToFloat(P_GetLightZAt(&list[i+1], v1x, v1y));
+			endbheight = FixedToFloat(P_GetLightZAt(&list[i+1], v2x, v2y));
 		}
 		else
 		{
@@ -1088,21 +1074,10 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 
 
-		if (endbheight >= endtop)
-		if (bheight >= top)
-			continue;
-
-		//Found a break;
-		bot = bheight;
-
-		if (bot < realbot)
-			bot = realbot;
-
-
-		endbot = endbheight;
-
-		if (endbot < endrealbot)
-			endbot = endrealbot;
+		// Found a break
+		// The heights are clamped to ensure the polygon doesn't cross itself.
+		bot = min(max(bheight, realbot), top);
+		endbot = min(max(endbheight, endrealbot), endtop);
 
 		Surf->PolyColor.s.alpha = alpha;
 
@@ -1178,6 +1153,87 @@ static void HWR_DrawSkyWall(FOutVector *wallVerts, FSurfaceInfo *Surf, fixed_t b
 	// PF_Occlude is set in HWR_ProjectWall to draw into the depth buffer
 }
 
+
+// Returns true if the midtexture is visible, and false if... it isn't...
+static boolean HWR_BlendMidtextureSurface(FSurfaceInfo *pSurf)
+{
+	FUINT blendmode = PF_Masked;
+
+	pSurf->PolyColor.s.alpha = 0xFF;
+
+	if (!gr_curline->polyseg)
+	{
+		// set alpha for transparent walls (new boom and legacy linedef types)
+		switch (gr_linedef->special)
+		{
+				case 900:
+					blendmode = HWR_TranstableToAlpha(tr_trans10, pSurf);
+					break;
+				case 901:
+					blendmode = HWR_TranstableToAlpha(tr_trans20, pSurf);
+					break;
+				case 902:
+					blendmode = HWR_TranstableToAlpha(tr_trans30, pSurf);
+					break;
+				case 903:
+					blendmode = HWR_TranstableToAlpha(tr_trans40, pSurf);
+					break;
+				case 904:
+					blendmode = HWR_TranstableToAlpha(tr_trans50, pSurf);
+					break;
+				case 905:
+					blendmode = HWR_TranstableToAlpha(tr_trans60, pSurf);
+					break;
+				case 906:
+					blendmode = HWR_TranstableToAlpha(tr_trans70, pSurf);
+					break;
+				case 907:
+					blendmode = HWR_TranstableToAlpha(tr_trans80, pSurf);
+					break;
+				case 908:
+					blendmode = HWR_TranstableToAlpha(tr_trans90, pSurf);
+					break;
+				//  Translucent
+				case 102:
+				case 121:
+				case 123:
+				case 124:
+				case 125:
+				case 141:
+				case 142:
+				case 144:
+				case 145:
+				case 174:
+				case 175:
+				case 192:
+				case 195:
+				case 221:
+				case 253:
+				case 256:
+					blendmode = PF_Translucent;
+					break;
+				default:
+					blendmode = PF_Masked;
+					break;
+		}
+	}
+	else if (gr_curline->polyseg->translucency > 0)
+	{
+		// Polyobject translucency is done differently
+		if (gr_curline->polyseg->translucency >= NUMTRANSMAPS) // wall not drawn
+			return false;
+		else
+			blendmode = HWR_TranstableToAlpha(gr_curline->polyseg->translucency, pSurf);
+	}
+
+	if (blendmode != PF_Masked && pSurf->PolyColor.s.alpha == 0x00)
+		return false;
+
+	pSurf->PolyFlags = blendmode;
+
+	return true;
+}
+
 //
 // HWR_ProcessSeg
 // A portion or all of a wall segment will be drawn, from startfrac to endfrac,
@@ -1197,9 +1253,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 	fixed_t v1x, v1y, v2x, v2y;
 
 
-	GLTexture_t *grTex = NULL;
 	float cliplow = 0.0f, cliphigh = 0.0f;
-	INT32 gr_midtexture;
 	fixed_t h, l; // 3D sides and 2s middle textures
 	fixed_t hS, lS;
 
@@ -1251,26 +1305,22 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 	wallVerts[2].z = wallVerts[1].z = ve.y;
 
 	// x offset the texture
-	{
-
-		fixed_t texturehpeg = gr_sidedef->textureoffset + gr_curline->offset;
-		cliplow = (float)texturehpeg;
-		cliphigh = (float)(texturehpeg + (gr_curline->flength*FRACUNIT));
-
-	}
+	fixed_t texturehpeg = gr_sidedef->textureoffset + gr_curline->offset;
+	cliplow = (float)texturehpeg;
+	cliphigh = (float)(texturehpeg + (gr_curline->flength*FRACUNIT));
 
 	lightnum = HWR_CalcWallLight(gr_frontsector->lightlevel, vs.x, vs.y, ve.x, ve.y);
 	colormap = gr_frontsector->extra_colormap;
 
-	if (gr_frontsector)
-	{
-		Surf.PolyColor.s.alpha = 255;
-	}
+	Surf.PolyColor.s.alpha = 255;
+	
+	INT32 gr_midtexture = R_GetTextureNum(gr_sidedef->midtexture);
+	GLTexture_t *grTex = NULL;
 
+	// two sided line
 	if (gr_backsector)
 	{
 		INT32 gr_toptexture, gr_bottomtexture;
-		// two sided line
 
 
 		SLOPEPARAMS(gr_backsector->c_slope, worldhigh, worldhighslope, gr_backsector->ceilingheight)
@@ -1419,10 +1469,10 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			else
 				HWR_ProjectWall(wallVerts, &Surf, PF_Masked, lightnum, colormap);
 		}
-		gr_midtexture = R_GetTextureNum(gr_sidedef->midtexture);
-		if (gr_midtexture)
+		
+		// Render midtexture if there's one. Determine if it's visible first, though
+		if (gr_midtexture && HWR_BlendMidtextureSurface(&Surf))
 		{
-			FBITFIELD blendmode;
 			sector_t *front, *back;
 			fixed_t  popentop, popenbottom, polytop, polybottom, lowcut, highcut;
 			fixed_t     texturevpeg = 0;
@@ -1593,61 +1643,8 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			}
 
 
-			// set alpha for transparent walls (new boom and legacy linedef types)
-			// ooops ! this do not work at all because render order we should render it in backtofront order
-			switch (gr_linedef->special)
-			{
-				case 900:
-					blendmode = HWR_TranstableToAlpha(tr_trans10, &Surf);
-					break;
-				case 901:
-					blendmode = HWR_TranstableToAlpha(tr_trans20, &Surf);
-					break;
-				case 902:
-					blendmode = HWR_TranstableToAlpha(tr_trans30, &Surf);
-					break;
-				case 903:
-					blendmode = HWR_TranstableToAlpha(tr_trans40, &Surf);
-					break;
-				case 904:
-					blendmode = HWR_TranstableToAlpha(tr_trans50, &Surf);
-					break;
-				case 905:
-					blendmode = HWR_TranstableToAlpha(tr_trans60, &Surf);
-					break;
-				case 906:
-					blendmode = HWR_TranstableToAlpha(tr_trans70, &Surf);
-					break;
-				case 907:
-					blendmode = HWR_TranstableToAlpha(tr_trans80, &Surf);
-					break;
-				case 908:
-					blendmode = HWR_TranstableToAlpha(tr_trans90, &Surf);
-					break;
-				//  Translucent
-				case 102:
-				case 121:
-				case 123:
-				case 124:
-				case 125:
-				case 141:
-				case 142:
-				case 144:
-				case 145:
-				case 174:
-				case 175:
-				case 192:
-				case 195:
-				case 221:
-				case 253:
-				case 256:
-					blendmode = PF_Translucent;
-					break;
-				default:
-					blendmode = PF_Masked;
-					break;
-			}
-
+			// TODO: Actually use the surface's flags so that I don't have to do this
+			FUINT blendmode = Surf.PolyFlags;
 
 			if (gr_curline->polyseg && gr_curline->polyseg->translucency > 0)
 			{
@@ -2600,6 +2597,19 @@ static void HWR_AddLine(seg_t * line)
     else
     {
 		gr_backsector = R_FakeFlat(gr_backsector, &tempsec, NULL, NULL, true);
+
+		if ((gr_backsector->ceilingpic == skyflatnum && gr_frontsector->ceilingpic == skyflatnum) && (gr_backsector->floorpic == skyflatnum && gr_frontsector->floorpic == skyflatnum)) // everything's sky? let's save us a bit of time then
+		{
+			if (!line->polyseg &&
+				!line->sidedef->midtexture
+				&& ((!gr_frontsector->ffloors && !gr_backsector->ffloors)
+					|| gr_frontsector->tag == gr_backsector->tag))
+				return; // line is empty, don't even bother
+			// treat like wide open window instead
+			HWR_ProcessSeg(); // Doesn't need arguments because they're defined globally :D
+			return;
+		}
+
 		if (CheckClip(line, gr_frontsector, gr_backsector))
 		{
 			gld_clipper_SafeAddClipRange(angle2, angle1);

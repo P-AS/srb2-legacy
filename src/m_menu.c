@@ -349,7 +349,8 @@ consvar_t cv_showfocuslost = {"showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL, 0
 
 static CV_PossibleValue_t map_cons_t[] = {
 	{1,"MIN"},
-	{NUMMAPS, "MAX"}
+	{NUMMAPS, "MAX"},
+	{0,NULL}
 };
 consvar_t cv_nextmap = {"nextmap", "1", CV_HIDEN|CV_CALL, map_cons_t, Nextmap_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
@@ -1394,7 +1395,7 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Max Players",                 &cv_maxplayers,        110},
 	{IT_STRING | IT_CVAR,    NULL, "Allow players to join",       &cv_allownewplayer,    120},
 	{IT_STRING | IT_CVAR,    NULL, "Allow WAD Downloading",       &cv_downloading,       130},
-	{IT_STRING | IT_CVAR,    NULL, "Attempts to Resynch",         &cv_resynchattempts,   140},
+	{IT_STRING | IT_CVAR,    NULL, "Attempt to Resynch",         &cv_allowgamestateresend,   140},
 #endif
 };
 
@@ -7602,6 +7603,15 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_name[l - 1] = 0;
+		}
+		else if (itemOn == 2)
+		{
+			UINT8 col = skins[setupm_fakeskin].prefcolor;
+			if (setupm_fakecolor != col && skincolors[col].accessible)
+			{
+				S_StartSound(NULL,sfx_menu1); // Tails
+				setupm_fakecolor = col;
+			}
 		}
 		break;
 

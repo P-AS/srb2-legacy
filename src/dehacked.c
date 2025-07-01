@@ -6965,7 +6965,7 @@ static const char *COLOR_ENUMS[] = {
 	"YELLOW",
 	"GOLD",
 
-	"SUPER1"
+	"SUPER1",
 	"SUPER2",
 	"SUPER3",
 	"SUPER4",
@@ -6981,8 +6981,7 @@ static const char *COLOR_ENUMS[] = {
 	"KSUPER2",
 	"KSUPER3",
 	"KSUPER4",
-	"KSUPER5",
-	NULL
+	"KSUPER5"
 };
 
 struct {
