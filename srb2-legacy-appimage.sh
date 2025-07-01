@@ -17,19 +17,6 @@ make -C src/ LINUX$IS64BIT=1 -j$(nproc)
 install -D bin/lsdl2srb2legacy AppDir/usr/bin/srb2legacy
 install assets/appimage/* AppDir/usr/bin
 
-# Create desktop file
-cat > app.desktop <<EOF
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Sonic Robo Blast 2 Legacy (2.1)
-Comment=Updated fork of Sonic Robo Blast 2 2.1.25
-Exec=AppRun %F
-Icon=srb2legacy
-Terminal=false
-Categories=Game;
-EOF
-
 # Copy icon
 cp srb2.png srb2legacy.png
 
@@ -42,7 +29,7 @@ chmod +x AppDir/AppRun
 # Build AppImage
 curl --retry 9999 --retry-delay 3 --speed-time 10 --retry-max-time 0 -C - -L https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-$(uname -m).AppImage -o linuxdeploy
 chmod +x linuxdeploy
-NO_STRIP=true ./linuxdeploy --appdir AppDir --output appimage -d app.desktop -i srb2legacy.png
+NO_STRIP=true ./linuxdeploy --appdir AppDir --output appimage -d srb2legacy.desktop -i srb2legacy.png
 
 # clean
-rm -rf srb2-legacy assets/appimage
+rm -rf assets/appimage srb2legacy.png linuxdeploy AppDir/
