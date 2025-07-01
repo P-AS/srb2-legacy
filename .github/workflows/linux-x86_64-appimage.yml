@@ -1,0 +1,36 @@
+name: Linux AMD64 AppImage
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CC: gcc
+  date: $(date +"%Y%m%d%H%M%S")
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4.2.2
+
+    - name: Install Dependencies
+      run: sudo apt-get update && sudo apt install -y wget
+
+    - name: Fetch Build Script
+      run: wget https://chromaticpipe.github.io/assets/srb2-legacy-appimage.sh && chmod +x srb2-legacy-appimage.sh # Move in tree?
+
+    - name: Build AppImage
+      run: ./srb2-legacy-appimage.sh
+    
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4.6.2
+      with:
+        name: srb2legacy-linux-x86_64-appimage-${{ github.sha }}
+        path: |
+          srb2legacy-AppImage-$date/Sonic_Robo_Blast_2_Legacy_(2.1)-x86_64.AppImage
+
+
