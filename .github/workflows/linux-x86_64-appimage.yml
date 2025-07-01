@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4.2.2
 
     - name: Install Dependencies
       run: sudo apt-get update && sudo apt install -y wget libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libminiupnpc-dev libopenmpt-dev
@@ -31,6 +30,6 @@ jobs:
       with:
         name: srb2legacy-linux-x86_64-appimage-${{ github.sha }}
         path: |
-          srb2legacy-AppImage-$date/Sonic_Robo_Blast_2_Legacy_(2.1)-x86_64.AppImage
+          srb2legacy-AppImage-$(date)/Sonic_Robo_Blast_2_Legacy_(2.1)-x86_64.AppImage
 
 
