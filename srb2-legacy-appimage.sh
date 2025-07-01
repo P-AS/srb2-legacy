@@ -32,4 +32,4 @@ chmod +x linuxdeploy
 NO_STRIP=true ./linuxdeploy --appdir AppDir --output appimage -d srb2legacy.desktop -i srb2legacy.png
 
 # clean
-rm -rf assets/appimage srb2legacy.png
+rm -rf assets/appimage srb2legacy.png linuxdeploy AppDir/
