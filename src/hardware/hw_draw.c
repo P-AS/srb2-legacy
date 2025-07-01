@@ -127,7 +127,7 @@ void HWR_DrawPatch(GLPatch_t *gpatch, INT32 x, INT32 y, INT32 option)
 	HWD.pfnDrawPolygon(NULL, v, 4, flags);
 }
 
-void HWR_DrawFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, INT32 option, const UINT8 *colormap)
+void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 option, const UINT8 *colormap)
 {
 	FOutVector v[4];
 	FBITFIELD flags;
@@ -139,7 +139,7 @@ void HWR_DrawFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale,
 //  | /|
 //  |/ |
 //  0--1
-	float dupx, dupy, fscale, fwidth, fheight;
+	float dupx, dupy, fscalew, fscaleh, fwidth, fheight;
 
 	if (alphalevel >= 10 && alphalevel < 13)
 		return;
@@ -169,7 +169,9 @@ void HWR_DrawFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale,
 	}
 
 	dupx = dupy = (dupx < dupy ? dupx : dupy);
-	fscale = FIXED_TO_FLOAT(pscale);
+	fscalew = fscaleh = FIXED_TO_FLOAT(pscale);
+	if (vscale != pscale)
+		fscaleh = FIXED_TO_FLOAT(vscale);
 
 	// See my comments in v_video.c's V_DrawFixedPatch
 	// -- Monster Iestyn 29/10/18
@@ -178,13 +180,13 @@ void HWR_DrawFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale,
 
 		// left offset
 		if (option & V_FLIP)
-			offsetx = (float)(SHORT(gpatch->width) - SHORT(gpatch->leftoffset)) * fscale;
+			offsetx = (float)(SHORT(gpatch->width) - SHORT(gpatch->leftoffset)) * fscalew;
 		else
-			offsetx = (float)SHORT(gpatch->leftoffset) * fscale;
+			offsetx = (float)SHORT(gpatch->leftoffset) * fscalew;
 
 		// top offset
 		// TODO: make some kind of vertical version of V_FLIP, maybe by deprecating V_OFFSET in future?!?
-		offsety = (float)SHORT(gpatch->topoffset) * fscale;
+		offsety = (float)SHORT(gpatch->topoffset) * fscaleh;
 
 		if ((option & (V_NOSCALESTART|V_OFFSET)) == (V_NOSCALESTART|V_OFFSET)) // Multiply by dupx/dupy for crosshairs
 		{
@@ -240,8 +242,8 @@ void HWR_DrawFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale,
 
 	if (pscale != FRACUNIT)
 	{
-		fwidth = (float)SHORT(gpatch->width) * fscale * dupx;
-		fheight = (float)SHORT(gpatch->height) * fscale * dupy;
+		fwidth = (float)SHORT(gpatch->width) * fscalew * dupx;
+		fheight = (float)SHORT(gpatch->height) * fscaleh * dupy;
 	}
 	else
 	{
