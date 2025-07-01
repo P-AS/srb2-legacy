@@ -3,8 +3,8 @@
 # Dependencies: sudo apt install make git git-lfs gcc libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libopenmpt-dev libfuse2 file
 
 # Prepare assets with LFS
-git clone https://git.do.srb2.org/STJr/srb2assets-public.git -b SRB2_2.1 assets
-cd assets
+git clone https://git.do.srb2.org/STJr/srb2assets-public.git -b SRB2_2.1 assets/appimage
+cd assets/appimage
 git lfs pull
 echo -e "Downloaded assets: \n\n$(git lfs ls-files)"
 cd ..
@@ -15,7 +15,7 @@ make -C src/ LINUX$IS64BIT=1 -j$(nproc)
 
 # Copy files to bin
 install -D bin/lsdl2srb2legacy AppDir/usr/bin/srb2legacy
-install assets/* AppDir/usr/bin
+install assets/appimage/* AppDir/usr/bin
 
 # Create desktop file
 cat > app.desktop <<EOF
@@ -45,4 +45,4 @@ chmod +x linuxdeploy
 NO_STRIP=true ./linuxdeploy --appdir AppDir --output appimage -d app.desktop -i srb2legacy.png
 
 # clean
-rm -rf srb2-legacy assets
+rm -rf srb2-legacy assets/appimage

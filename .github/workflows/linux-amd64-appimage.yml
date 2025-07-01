@@ -27,4 +27,4 @@ jobs:
       with:
         name: srb2legacy-linux-x86_64-appimage-${{ github.sha }}
         path: |
-          srb2legacy-AppImage/Sonic_Robo_Blast_2_Legacy_(2.1)-x86_64.AppImage
+          Sonic_Robo_Blast_2_Legacy_(2.1)-x86_64.AppImage
