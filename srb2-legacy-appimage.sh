@@ -7,7 +7,7 @@ git clone https://git.do.srb2.org/STJr/srb2assets-public.git -b SRB2_2.1 assets/
 cd assets/appimage
 git lfs pull
 echo -e "Downloaded assets: \n\n$(git lfs ls-files)"
-cd ..
+cd ../..
 
 # Clone the repo and build the application
 [ "$(uname -m)" == "i686" ] && IS64BIT="" || IS64BIT="64"
