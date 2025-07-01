@@ -887,6 +887,14 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT
 	// If here, the blended texture has not been created
 	// So we create it
 
+	if ((blendgpatch && blendgpatch->mipmap->grInfo.format)
+	&& (gpatch->width != blendgpatch->width || gpatch->height != blendgpatch->height))
+	{
+		// Blend image exists, but it's bad.
+		HWD.pfnSetTexture(gpatch->mipmap);
+		return;
+	}
+
 	//BP: WARNING: don't free it manually without clearing the cache of harware renderer
 	//              (it have a liste of mipmap)
 	//    this malloc is cleared in HWR_FreeTextureCache
