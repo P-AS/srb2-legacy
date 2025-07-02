@@ -3776,8 +3776,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	float offset = 0;
 	pslope_t *floorslope;
 	fixed_t slopez;
-	FBITFIELD blendmode = PF_Translucent|PF_Modulated;
-	INT32 shader = SHADER_NONE;
+	FBITFIELD blendmode = 0;
 
 	R_GetShadowZ(spr->mobj, &floorslope);
 
@@ -3915,37 +3914,6 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	sSurf.PolyColor.s.blue = 0x01;
 	sSurf.PolyColor.s.green = 0x01;
 
-
-	/*if (spr->mobj->frame & FF_TRANSMASK || spr->mobj->flags2 & MF2_SHADOW)
-	{
-		sector_t *sector = spr->mobj->subsector->sector;
-		UINT8 lightlevel = 255;
-		extracolormap_t *colormap = sector->extra_colormap;
-
-		if (sector->numlights)
-		{
-			INT32 light = R_GetPlaneLight(sector, spr->mobj->floorz, false);
-
-			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = *sector->lightlist[light].lightlevel;
-
-			if (sector->lightlist[light].extra_colormap)
-				colormap = sector->lightlist[light].extra_colormap;
-		}
-		else
-		{
-			lightlevel = sector->lightlevel;
-
-			if (sector->extra_colormap)
-				colormap = sector->extra_colormap;
-		}
-
-		if (colormap)
-			sSurf.PolyColor.rgba = HWR_Lighting(lightlevel/2, colormap->rgba, colormap->fadergba, false, true);
-		else
-			sSurf.PolyColor.rgba = HWR_Lighting(lightlevel/2, NORMALFOG, FADEFOG, false, true);
-	}*/
-
 	// shadow is always half as translucent as the sprite itself
 	if (!cv_translucency.value) // use default translucency (main sprite won't have any translucency)
 		sSurf.PolyColor.s.alpha = 0x80; // default
@@ -3963,12 +3931,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	if (sSurf.PolyColor.s.alpha > floorheight/4)
 	{
 		sSurf.PolyColor.s.alpha = (UINT8)(sSurf.PolyColor.s.alpha - floorheight/4);
-		if (HWR_UseShader())
-		{
-			shader = SHADER_NONE;
-			blendmode |= PF_ColorMapped;
-		}
-		HWR_ProcessPolygon(&sSurf, swallVerts, 4, blendmode, shader, false);
+		HWR_ProcessPolygon(&sSurf, swallVerts, 4, blendmode|PF_Translucent|PF_Modulated, SHADER_NONE, false);
 	}
 }
 
