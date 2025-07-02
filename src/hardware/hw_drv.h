@@ -46,7 +46,7 @@ EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags);
 EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask, FBOOLEAN DepthMask, FRGBAFloat *ClearColor);
 EXPORT void HWRAPI(SetTexture) (FTextureInfo *TexInfo);
 EXPORT void HWRAPI(UpdateTexture) (FTextureInfo *TexInfo);
-EXPORT void HWRAPI(ReadRect) (int tex, UINT8 *dst_data);
+EXPORT void HWRAPI(ReadScreenTexture) (int tex, UINT8 *dst_data);
 EXPORT void HWRAPI(GClipRect) (INT32 minx, INT32 miny, INT32 maxx, INT32 maxy, float nearclip);
 EXPORT void HWRAPI(ClearMipMapCache) (void);
 
@@ -62,7 +62,6 @@ EXPORT INT32 HWRAPI(GetTextureUsed) (void);
 
 
 EXPORT void HWRAPI(FlushScreenTextures) (void);
-EXPORT void HWRAPI(SwapScreenTextures) (int tex1, int tex2);
 EXPORT void HWRAPI(DoScreenWipe) (int wipeStart, int wipeEnd);
 EXPORT void HWRAPI(DrawScreenTexture) (int tex);
 EXPORT void HWRAPI(MakeScreenTexture) (int tex);
@@ -104,7 +103,7 @@ struct hwdriver_s
 	ClearBuffer         pfnClearBuffer;
 	SetTexture          pfnSetTexture;
 	UpdateTexture       pfnUpdateTexture;
-	ReadRect            pfnReadRect;
+	ReadScreenTexture   pfnReadScreenTexture;
 	GClipRect           pfnGClipRect;
 	ClearMipMapCache    pfnClearMipMapCache;
 	SetSpecialState     pfnSetSpecialState;
@@ -120,7 +119,6 @@ struct hwdriver_s
 #endif
 	PostImgRedraw       pfnPostImgRedraw;
 	FlushScreenTextures pfnFlushScreenTextures;
-	SwapScreenTextures  pfnSwapScreenTextures;
 	DoScreenWipe        pfnDoScreenWipe;
 	DrawScreenTexture   pfnDrawScreenTexture;
 	MakeScreenTexture   pfnMakeScreenTexture;
