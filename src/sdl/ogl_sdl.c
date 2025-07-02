@@ -179,21 +179,20 @@ void OglSdlFinishUpdate(boolean waitvbl)
 
 	// Sryder:	We need to draw the final screen texture again into the other buffer in the original position so that
 	//			effects that want to take the old screen can do so after this
-	HWR_DrawScreenFinalTexture(realwidth, realheight);
+	// Generic2 has the screen image without palette rendering brightness adjustments.
+	// Using that here will prevent brightness adjustments being applied twice.
+	DrawScreenTexture(HWD_SCREENTEXTURE_GENERIC2);
 }
 
 EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette)
 {
-	INT32 i;
-
-	for (i = 0; i < 256; i++)
+	size_t palsize = (sizeof(RGBA_t) * 256);
+	// on a palette change, you have to reload all of the textures
+	if (memcmp(&myPaletteData, palette, palsize))
 	{
-		myPaletteData[i].s.red   = palette[i].s.red;
-		myPaletteData[i].s.green = palette[i].s.green;
-		myPaletteData[i].s.blue  = palette[i].s.blue;
-		myPaletteData[i].s.alpha = palette[i].s.alpha;
+		memcpy(&myPaletteData, palette, palsize);
+		Flush();
 	}
-	Flush();
 }
 
 #endif //HWRENDER

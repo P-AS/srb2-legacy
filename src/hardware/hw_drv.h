@@ -46,7 +46,7 @@ EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags);
 EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask, FBOOLEAN DepthMask, FRGBAFloat *ClearColor);
 EXPORT void HWRAPI(SetTexture) (FTextureInfo *TexInfo);
 EXPORT void HWRAPI(UpdateTexture) (FTextureInfo *TexInfo);
-EXPORT void HWRAPI(ReadRect) (INT32 x, INT32 y, INT32 width, INT32 height, INT32 dst_stride, UINT16 *dst_data);
+EXPORT void HWRAPI(ReadRect) (int tex, UINT8 *dst_data);
 EXPORT void HWRAPI(GClipRect) (INT32 minx, INT32 miny, INT32 maxx, INT32 maxy, float nearclip);
 EXPORT void HWRAPI(ClearMipMapCache) (void);
 
@@ -62,13 +62,11 @@ EXPORT INT32 HWRAPI(GetTextureUsed) (void);
 
 
 EXPORT void HWRAPI(FlushScreenTextures) (void);
-EXPORT void HWRAPI(StartScreenWipe) (void);
-EXPORT void HWRAPI(EndScreenWipe) (void);
-EXPORT void HWRAPI(DoScreenWipe) (void);
-EXPORT void HWRAPI(DrawIntermissionBG) (void);
-EXPORT void HWRAPI(MakeScreenTexture) (void);
-EXPORT void HWRAPI(MakeScreenFinalTexture) (void);
-EXPORT void HWRAPI(DrawScreenFinalTexture) (int width, int height);
+EXPORT void HWRAPI(SwapScreenTextures) (int tex1, int tex2);
+EXPORT void HWRAPI(DoScreenWipe) (int wipeStart, int wipeEnd);
+EXPORT void HWRAPI(DrawScreenTexture) (int tex);
+EXPORT void HWRAPI(MakeScreenTexture) (int tex);
+EXPORT void HWRAPI(DrawScreenFinalTexture) (int tex, int width, int height);
 
 #define SCREENVERTS 10
 EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2]);
@@ -122,12 +120,10 @@ struct hwdriver_s
 #endif
 	PostImgRedraw       pfnPostImgRedraw;
 	FlushScreenTextures pfnFlushScreenTextures;
-	StartScreenWipe     pfnStartScreenWipe;
-	EndScreenWipe       pfnEndScreenWipe;
+	SwapScreenTextures  pfnSwapScreenTextures;
 	DoScreenWipe        pfnDoScreenWipe;
-	DrawIntermissionBG  pfnDrawIntermissionBG;
+	DrawScreenTexture   pfnDrawScreenTexture;
 	MakeScreenTexture   pfnMakeScreenTexture;
-	MakeScreenFinalTexture  pfnMakeScreenFinalTexture;
 	DrawScreenFinalTexture  pfnDrawScreenFinalTexture;
 
 	InitShaders         pfnInitShaders;
