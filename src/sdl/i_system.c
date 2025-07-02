@@ -2150,7 +2150,7 @@ void I_SetTextInputMode(boolean active)
 boolean I_GetTextInputMode(void)
 {
 	boolean inputtextactive = (boolean)SDL_IsTextInputActive();
-	
+
 	return inputtextactive;
 }
 
@@ -2425,6 +2425,7 @@ INT32 I_StartupSystem(void)
 	 SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
+	SDL_SetHint(SDL_HINT_APP_NAME, "SRB2 Legacy");
 	if (SDL_Init(0) < 0)
 		I_Error("SRB2: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
 #ifndef NOMUMBLE

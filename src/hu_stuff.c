@@ -597,6 +597,45 @@ static void Command_CSay_f(void)
 }
 static tic_t stop_spamming[MAXPLAYERS];
 
+static const char *GetChatColorFromSkinColor(INT32 skincolor)
+{
+	const char *textcolor = NULL;
+	UINT16 chatcolor = skincolors[skincolor].chatcolor;
+	if (!chatcolor || chatcolor%0x1000)
+		textcolor = "\x80";
+	else if (chatcolor == V_PURPLEMAP)
+		textcolor = "\x81";
+	else if (chatcolor == V_YELLOWMAP)
+		textcolor = "\x82";
+	else if (chatcolor == V_GREENMAP)
+		textcolor = "\x83";
+	else if (chatcolor == V_BLUEMAP)
+		textcolor = "\x84";
+	else if (chatcolor == V_REDMAP)
+		textcolor = "\x85";
+	else if (chatcolor == V_GRAYMAP)
+		textcolor = "\x86";
+	else if (chatcolor == V_ORANGEMAP)
+		textcolor = "\x87";
+	else if (chatcolor == V_SKYMAP)
+		textcolor = "\x88";
+	else if (chatcolor == V_LAVENDERMAP)
+		textcolor = "\x89";
+	else if (chatcolor == V_GOLDMAP)
+		textcolor = "\x8A";
+	else if (chatcolor == V_TEAMAP)
+		textcolor = "\x8B";
+	else if (chatcolor == V_STEELMAP)
+		textcolor = "\x8C";
+	else if (chatcolor == V_PINKMAP)
+		textcolor = "\x8D";
+	else if (chatcolor == V_BROWNMAP)
+		textcolor = "\x8E";
+	else if (chatcolor == V_PEACHMAP)
+		textcolor = "\x8F";
+	return textcolor;
+}
+
 /** Receives a message, processing an ::XD_SAY command.
   * \sa DoSayCommand
   * \author Graue <graue@oceanbase.org>
@@ -739,69 +778,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		}
 		else
         {
-			const UINT8 color = players[playernum].skincolor;
-
-			cstart = "\x83";
-
-		switch (color)
-			{
-				case SKINCOLOR_WHITE:
-				case SKINCOLOR_SILVER:
-					cstart = "\x80"; // White
-					break;
-				case SKINCOLOR_GREY:
-				case SKINCOLOR_BLACK:
-					cstart = "\x86"; // V_GRAYMAP
-					break;
-				case SKINCOLOR_BEIGE:
-				case SKINCOLOR_BROWN:
-					cstart = "\x8e"; // V_BROWNMAP
-					break;
-				case SKINCOLOR_PINK:
-					cstart = "\x8d"; // V_PINKMAP
-					break;
-				case SKINCOLOR_RED:
-					cstart = "\x85"; // V_REDMAP
-					break;
-				case SKINCOLOR_ORANGE:
-				case SKINCOLOR_ROSEWOOD:
-					cstart = "\x87"; // V_ORANGEMAP
-					break;
-				case SKINCOLOR_PEACH:
-					cstart = "\x8f"; // V_PEACHMAP
-					break;
-				case SKINCOLOR_GOLD:
-					cstart = "\x8A"; // V_GOLDMAP
-					break;
-				case SKINCOLOR_YELLOW:
-				case SKINCOLOR_OLIVE:
-				case SKINCOLOR_ZIM:
-					cstart = "\x82"; // V_YELLOWMAP
-					break;
-				case SKINCOLOR_GREEN:
-				case SKINCOLOR_NEONGREEN:
-					cstart = "\x83"; // V_GREENMAP
-					break;
-				case SKINCOLOR_TEAL:
-				case SKINCOLOR_CYAN:
-					cstart = "\x88"; // V_SKYMAP
-					break;
-				case SKINCOLOR_STEELBLUE:
-					cstart = "\x8c"; // V_STEELMAP
-					break;
-				case SKINCOLOR_BLUE:
-					cstart = "\x84"; // V_BLUEMAP
-					break;
-				case SKINCOLOR_PURPLE:
-					cstart = "\x81"; // V_PURPLEMAP
-					break;
-				case SKINCOLOR_LAVENDER:
-					cstart = "\x89"; // V_LAVENDERMAP
-					break;
-				default:
-					break;
-			}
-		}
+			cstart = GetChatColorFromSkinColor(players[playernum].skincolor);
+        }
 		prefix = cstart;
 
 		// Give admins and remote admins their symbols.
@@ -983,7 +961,7 @@ void HU_Ticker(void)
 
 	if (cechotimer > 0) --cechotimer;
 
-	if (hu_resynching)
+	if (hu_redownloadinggamestate)
 		resynch_ticker++;
 }
 
@@ -2137,7 +2115,7 @@ void HU_Drawer(void)
 		HU_DrawCrosshair2();
 
 	// draw desynch text
-	if (hu_resynching)
+	if (hu_redownloadinggamestate)
 	{
 		char resynch_text[14];
 		UINT32 i;
@@ -2227,7 +2205,7 @@ void HU_Erase(void)
 //
 // HU_drawPing
 //
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, boolean notext, INT32 flags)
+void HU_drawPing(INT32 x, INT32 y, UINT32 ping, UINT32 pl, boolean notext, INT32 flags)
 {
 	UINT8 numbars = 1; // how many ping bars do we draw?
 	UINT8 barcolor = 128; // color we use for the bars (green, yellow or red)
@@ -2248,7 +2226,18 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 ping, boolean notext, INT32 flags)
 	}
 
 	if (!notext || vid.width >= 640) // how sad, we're using a shit resolution.
-		V_DrawSmallString(dx, y+4, V_ALLOWLOWERCASE|flags, va("%dms", ping));
+	{
+		if (cv_pingmeasurement.value)
+			V_DrawSmallString(dx, y+4, V_ALLOWLOWERCASE|flags, va("%dms", ping));
+		else
+		{
+			float lag = ((float)ping * (1.0f / TICRATE));
+			V_DrawSmallString(dx, y+4, V_ALLOWLOWERCASE|flags, va("%.1fd", lag));
+		}	
+	}
+
+	if (pl < UINT32_MAX && (!notext || vid.width >= 640))
+		V_DrawSmallString(dx, y+8, V_ALLOWLOWERCASE|flags, va("%d%%", pl)); // TODO: this is for testing, make a proper indicator soon
 
 	for (i=0; (i<3); i++) // Draw the ping bar
 	{
@@ -2281,7 +2270,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 		if (!splitscreen) // don't draw it on splitscreen,
 		{
 			if (!(tab[i].num == serverplayer))
-				HU_drawPing(x+ 253, y+2, playerpingtable[tab[i].num], false, 0);
+				HU_drawPing(x+ 253, y+2, playerpingtable[tab[i].num], playerpacketlosstable[tab[i].num], false, 0);
 			//else
 			//	V_DrawSmallString(x+ 246, y+4, V_YELLOWMAP, "SERVER");
 		}
@@ -2462,7 +2451,7 @@ static void HU_Draw32TeamTabRankings(playersort_t *tab, INT32 whiteplayer)
 		if (!splitscreen)
 		{
 			if (!(tab[i].num == serverplayer))
-				HU_drawPing(x+ 135, y+3, playerpingtable[tab[i].num], true, 0);
+				HU_drawPing(x+ 135, y+3, playerpingtable[tab[i].num],  playerpacketlosstable[tab[i].num], true, 0);
 		//else
 			//V_DrawSmallString(x+ 129, y+4, V_YELLOWMAP, "HOST");
 		}
@@ -2580,7 +2569,7 @@ void HU_DrawTeamTabRankings(playersort_t *tab, INT32 whiteplayer)
 		if (!splitscreen)
 		{
 			if (!(tab[i].num == serverplayer))
-				HU_drawPing(x+ 113, y+2, playerpingtable[tab[i].num], false, 0);
+				HU_drawPing(x+ 113, y+2, playerpingtable[tab[i].num], playerpacketlosstable[tab[i].num], false, 0);
 		//else
 		//	V_DrawSmallString(x+ 94, y+4, V_YELLOWMAP, "SERVER");
 		}
@@ -2607,7 +2596,7 @@ void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scoreline
 
 		strlcpy(name, tab[i].name, 7);
 		if (!(tab[i].num == serverplayer))
-			HU_drawPing(x+ 113, y+2, playerpingtable[tab[i].num], false, 0);
+			HU_drawPing(x+ 113, y+2, playerpingtable[tab[i].num],  playerpacketlosstable[tab[i].num], false, 0);
 		//else
 		//	V_DrawSmallString(x+ 94, y+4, V_YELLOWMAP, "SERVER");
 
@@ -2706,7 +2695,7 @@ static void HU_Draw32TabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scor
 		if (!splitscreen) // don't draw it on splitscreen,
 		{
 			if (!(tab[i].num == serverplayer))
-				HU_drawPing(x+ 135, y+3, playerpingtable[tab[i].num], true, 0);
+				HU_drawPing(x+ 135, y+3, playerpingtable[tab[i].num], playerpacketlosstable[tab[i].num], true, 0);
 		//else
 		//	V_DrawSmallString(x+ 129, y+4, V_YELLOWMAP, "HOST");
 		}

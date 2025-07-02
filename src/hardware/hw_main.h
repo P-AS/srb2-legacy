@@ -37,7 +37,7 @@ void HWR_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum)
 void HWR_InitTextureMapping(void);
 void HWR_SetViewSize(void);
 void HWR_DrawPatch(GLPatch_t *gpatch, INT32 x, INT32 y, INT32 option);
-void HWR_DrawFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale, INT32 option, const UINT8 *colormap);
+void HWR_DrawStretchyFixedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 option, const UINT8 *colormap);
 void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale, INT32 option, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
 void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, INT32 option, fixed_t scale, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
 void HWR_CreatePlanePolygons(INT32 bspnum);
@@ -90,7 +90,6 @@ extern consvar_t cv_grsolvetjoin;
 extern consvar_t cv_grshearing;
 extern consvar_t cv_grspritebillboarding;
 extern consvar_t cv_grmodellighting;
-extern consvar_t cv_grskydome;
 extern consvar_t cv_glloadingscreen;
 extern consvar_t cv_grfakecontrast;
 extern consvar_t cv_grslopecontrast;

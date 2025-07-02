@@ -519,7 +519,7 @@ static INT32 SCR(INT32 r)
 //
 // Supports different colors! woo!
 static void ST_DrawNightsOverlayNum(INT32 x /* right border */, INT32 y, INT32 a,
-	INT32 num, patch_t **numpat, skincolors_t colornum)
+	INT32 num, patch_t **numpat, skincolornum_t colornum)
 {
 	INT32 w = SHORT(numpat[0]->width);
 	const UINT8 *colormap;
@@ -777,7 +777,7 @@ static void ST_drawLives(void)
 
 static void ST_drawInput(void)
 {
-	INT32 accent = V_SNAPTOLEFT|V_SNAPTOBOTTOM|(stplyr->skincolor ? colortranslations[stplyr->skincolor][4] : 0);
+	INT32 accent = V_SNAPTOLEFT|V_SNAPTOBOTTOM|(stplyr->skincolor ? skincolors[stplyr->skincolor].ramp[4] : 0);
 	INT32 col;
 	UINT8 offs;
 
@@ -1124,7 +1124,7 @@ static void ST_drawFirstPersonHUD(void)
 }
 
 // [21:42] <+Rob> Beige - Lavender - Steel Blue - Peach - Orange - Purple - Silver - Yellow - Pink - Red - Blue - Green - Cyan - Gold
-static skincolors_t linkColor[14] =
+static skincolornum_t linkColor[14] =
 {SKINCOLOR_BEIGE,  SKINCOLOR_LAVENDER, SKINCOLOR_STEELBLUE, SKINCOLOR_PEACH, SKINCOLOR_ORANGE,
  SKINCOLOR_PURPLE, SKINCOLOR_SILVER,   SKINCOLOR_SUPER4,    SKINCOLOR_PINK,  SKINCOLOR_RED,
  SKINCOLOR_BLUE,   SKINCOLOR_GREEN,    SKINCOLOR_CYAN,      SKINCOLOR_GOLD};
@@ -1223,7 +1223,7 @@ static void ST_drawNiGHTSHUD(void)
 	// Link drawing
 	if (LUA_HudEnabled(hud_nightslink) && stplyr->linkcount > minlink)
 	{
-		skincolors_t colornum = linkColor[((stplyr->linkcount-1) / 5) % (sizeof(linkColor) / sizeof(skincolors_t))];
+		skincolornum_t colornum = linkColor[((stplyr->linkcount-1) / 5) % (sizeof(linkColor) / sizeof(skincolornum_t))];
 		if (stplyr->powers[pw_nights_linkfreeze])
 			colornum = SKINCOLOR_WHITE;
 

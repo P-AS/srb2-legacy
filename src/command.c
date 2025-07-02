@@ -53,7 +53,7 @@ static void COM_Toggle_f(void);
 static void CV_EnforceExecVersion(void);
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
 static boolean CV_Command(void);
-static consvar_t *CV_FindVar(const char *name);
+consvar_t *CV_FindVar(const char *name);
 static const char *CV_StringValue(const char *var_name);
 static consvar_t *consvar_vars; // list of registered console variables
 
@@ -543,7 +543,7 @@ static void COM_ExecuteString(char *ptext)
 	// check cvars
 	// Hurdler: added at Ebola's request ;)
 	// (don't flood the console in software mode with bad gr_xxx command)
-	if (!CV_Command() && con_destlines)
+	if (!CV_Command() && (con_destlines || dedicated))
 		CONS_Printf(M_GetText("Unknown command '%s'\n"), COM_Argv(0));
 }
 
@@ -989,7 +989,7 @@ static const char *cv_null_string = "";
   * \return Pointer to the variable if found, or NULL.
   * \sa CV_FindNetVar
   */
-static consvar_t *CV_FindVar(const char *name)
+consvar_t *CV_FindVar(const char *name)
 {
 	consvar_t *cvar;
 
@@ -1177,32 +1177,42 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 
 		if (var->PossibleValue[0].strvalue && !stricmp(var->PossibleValue[0].strvalue, "MIN")) // bounded cvar
 		{
+#define MINVAL 0
+#define MAXVAL 1
 			INT32 i;
-			// search for maximum
-			for (i = 1; var->PossibleValue[i].strvalue; i++)
-				if (!stricmp(var->PossibleValue[i].strvalue, "MAX"))
-					break;
 #ifdef PARANOIA
-			if (!var->PossibleValue[i].strvalue)
+			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
 #endif
 
-			if ((v != INT32_MIN && v < var->PossibleValue[0].value) || !stricmp(valstr, "MIN"))
+			// search for other
+			for (i = MAXVAL+1; var->PossibleValue[i].strvalue; i++)
+				if (v == var->PossibleValue[i].value || !stricmp(var->PossibleValue[i].strvalue, valstr))
+				{
+					var->value = var->PossibleValue[i].value;
+					var->string = var->PossibleValue[i].strvalue;
+					goto finish;
+				}
+
+
+			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
 			{
-				v = var->PossibleValue[0].value;
-				valstr = var->PossibleValue[0].strvalue;
+				v = var->PossibleValue[MINVAL].value;
+				valstr = var->PossibleValue[MINVAL].strvalue;
 				override = true;
 				overrideval = v;
 			}
-			else if ((v != INT32_MIN && v > var->PossibleValue[i].value) || !stricmp(valstr, "MAX"))
+			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || !stricmp(valstr, "MAX"))
 			{
-				v = var->PossibleValue[i].value;
-				valstr = var->PossibleValue[i].strvalue;
+				v = var->PossibleValue[MAXVAL].value;
+				valstr = var->PossibleValue[MAXVAL].strvalue;
 				override = true;
 				overrideval = v;
 			}
 			if (v == INT32_MIN)
 				goto badinput;
+#undef MINVAL
+#undef MAXVAL
 		}
 		else
 		{
@@ -1533,6 +1543,9 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 {
 	INT32 newvalue, max;
 
+	if (!increment)
+		return;
+
 	// count pointlimit better
 	if (var == &cv_pointlimit && (gametype == GT_MATCH))
 		increment *= 50;
@@ -1540,13 +1553,11 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 	if (var->PossibleValue)
 	{
-#define MINVAL 0
 		if (var == &cv_nextmap)
 		{
 			// Special case for the nextmap variable, used only directly from the menu
 			INT32 oldvalue = var->value - 1, gt;
 			gt = cv_newgametype.value;
-			if (increment != 0) // Going up!
 			{
 				newvalue = var->value - 1;
 				do
@@ -1577,21 +1588,59 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				return;
 			}
 		}
+#define MINVAL 0
+#define MAXVAL 1
 		else if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
 		{
-			// search the next to last
-			for (max = 0; var->PossibleValue[max+1].strvalue; max++)
-				;
+#ifdef PARANOIA
+			if (!var->PossibleValue[MAXVAL].strvalue)
+				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
+#endif
 
-			if (newvalue < var->PossibleValue[MINVAL].value) // add the max+1
-				newvalue += var->PossibleValue[max].value - var->PossibleValue[MINVAL].value + 1;
+			if (newvalue < var->PossibleValue[MINVAL].value || newvalue > var->PossibleValue[MAXVAL].value)
+			{
+				INT32 currentindice = -1, newindice;
+				for (max = MAXVAL+1; var->PossibleValue[max].strvalue; max++)
+				{
+					if (var->PossibleValue[max].value == newvalue)
+					{
+						increment = 0;
+						currentindice = max;
+						break; // The value we definitely want, stop here.
+					}
+					else if (var->PossibleValue[max].value == var->value)
+						currentindice = max; // The value we maybe want.
+				}
 
-			newvalue = var->PossibleValue[MINVAL].value + (newvalue - var->PossibleValue[MINVAL].value)
-				% (var->PossibleValue[max].value - var->PossibleValue[MINVAL].value + 1);
+				if (increment)
+				{
+					increment = (increment > 0) ? 1 : -1;
+					if (currentindice == -1 && max != MAXVAL+1)
+						newindice = ((increment > 0) ? MAXVAL : max) + increment;
+					else
+						newindice = currentindice + increment;
 
-			CV_SetValue(var, newvalue);
-#undef MINVAL
+					if (newindice >= max || newindice <= MAXVAL)
+					{
+						if (var == &cv_pointlimit && (gametype == GT_MATCH) && increment > 0)
+							CV_SetValue(var, 50);
+						else
+						{
+							newvalue = var->PossibleValue[((increment > 0) ? MINVAL : MAXVAL)].value;
+							CV_SetValue(var, newvalue);
+						}
+					}
+					else
+						CV_Set(var, var->PossibleValue[newindice].strvalue);
+				}
+				else
+					CV_Set(var, var->PossibleValue[currentindice].strvalue);
+			}
+			else
+				CV_SetValue(var, newvalue);
 		}
+#undef MINVAL
+#undef MAXVAL
 		else
 		{
 			INT32 currentindice = -1, newindice;
@@ -1600,8 +1649,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			for (max = 0; var->PossibleValue[max].strvalue; max++)
 				if (var->PossibleValue[max].value == var->value)
 					currentindice = max;
-
-			max--;
 
 			if (var == &cv_chooseskin)
 			{
@@ -1641,7 +1688,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 					var->value);
 #endif
 
-			newindice = (currentindice + increment + max + 1) % (max+1);
+			newindice = (currentindice + increment + max) % max;
 			CV_Set(var, var->PossibleValue[newindice].strvalue);
 		}
 	}

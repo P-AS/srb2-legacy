@@ -2149,7 +2149,7 @@ static void P_CheckInvincibilityTimer(player_t *player)
 		return;
 
 	if (mariomode && !player->powers[pw_super])
-		player->mo->color = (UINT8)(1 + (leveltime % (MAXSKINCOLORS-1)));
+		player->mo->color = (UINT8)(1 + (leveltime % FIRSTSUPERCOLOR));
 	else if (leveltime % (TICRATE/7) == 0)
 	{
 		mobj_t *sparkle = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_IVSP);
@@ -3410,15 +3410,9 @@ static void P_DoSuperStuff(player_t *player)
 			player->health--;
 			player->mo->health--;
 		}
-
-		// future todo: a skin option for this, and possibly more colors
-		switch (player->skin)
-		{
-			case 1:  /* Tails    */ player->mo->color = SKINCOLOR_TSUPER1; break;
-			case 2:  /* Knux     */ player->mo->color = SKINCOLOR_KSUPER1; break;
-			default: /* everyone */ player->mo->color = SKINCOLOR_SUPER1; break;
-		}
-		player->mo->color += abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4);
+		
+		// This is where super colors is handled.
+		player->mo->color = (UINT8)skins[player->skin].supercolor + (abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4) % numskincolors);
 
 		if ((cmd->forwardmove != 0 || cmd->sidemove != 0 || player->pflags & (PF_CARRIED|PF_ROPEHANG|PF_ITEMHANG|PF_MACESPIN))
 		&& !(leveltime % TICRATE) && (player->mo->momx || player->mo->momy))

@@ -132,7 +132,7 @@ extern boolean looptitle;
 extern boolean useNightsSS;
 
 // CTF colors.
-extern UINT8 skincolor_redteam, skincolor_blueteam, skincolor_redring, skincolor_bluering;
+extern UINT16 skincolor_redteam, skincolor_blueteam, skincolor_redring, skincolor_bluering;
 
 extern tic_t countdowntimer;
 extern boolean countdowntimeup;

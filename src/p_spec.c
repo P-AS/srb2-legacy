@@ -5538,7 +5538,7 @@ static void P_RunLevelLoadExecutors(void)
   *       as they'll just be erased by UnArchiveThinkers.
   * \sa P_SpawnPrecipitation, P_SpawnFriction, P_SpawnPushers, P_SpawnScrollers
   */
-void P_SpawnSpecials(INT32 fromnetsave)
+void P_SpawnSpecials(INT32 fromnetsave, boolean reloadinggamestate)
 {
 	sector_t *sector;
 	size_t i;
@@ -6582,7 +6582,8 @@ void P_SpawnSpecials(INT32 fromnetsave)
 		}
 	}
 
-	P_RunLevelLoadExecutors();
+	if (!reloadinggamestate)
+		P_RunLevelLoadExecutors();
 }
 
 /** Adds 3Dfloors as appropriate based on a common control linedef.
