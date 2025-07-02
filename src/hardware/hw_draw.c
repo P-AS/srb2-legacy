@@ -561,7 +561,7 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 
 	if (color & 0xFF00) // Do COLORMAP fade.
 	{
-		/*if (HWR_ShouldUsePaletteRendering()) /// TODO: Make it not fucked up
+		if (HWR_ShouldUsePaletteRendering())
 		{
 			const hwdscreentexture_t scr_tex = HWD_SCREENTEXTURE_GENERIC2;
 
@@ -573,7 +573,7 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 			HWD.pfnUnSetShader();
 
 			return;
-		}*/
+		}
 		Surf.PolyColor.rgba = UINT2RGBA(0x01010160);
 		Surf.PolyColor.s.alpha = 0xFF - (strength*8);
 	}

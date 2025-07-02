@@ -77,7 +77,7 @@ static void CV_grpaletterendering_OnChange(void);
 static void CV_grpalettedepth_OnChange(void);
 static void CV_grshaders_OnChange(void);
 
-
+static void HWR_SetShaderState(void);
 static void HWR_TogglePaletteRendering(void);
 // ==========================================================================
 //                                          3D ENGINE COMMANDS & CONSOLE VARS
@@ -192,6 +192,8 @@ static void CV_grpalettedepth_OnChange(void)
 
 static void CV_grshaders_OnChange(void)
 {
+	if (rendermode == render_opengl)
+		HWR_SetShaderState();
 	if (cv_grpaletterendering.value)
 	{
 		// can't do palette rendering without shaders, so update the state if needed
@@ -5732,7 +5734,7 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 //
 // Sets the shader state.
 //
-static void HWR_SetShaderState(void)
+void HWR_SetShaderState(void)
 {
 	HWD.pfnSetSpecialState(HWD_SET_SHADERS, (INT32)HWR_UseShader());
 }
@@ -5853,9 +5855,6 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	//04/01/2000: Hurdler: added for T&L
 	//                     Actually it only works on Walls and Planes
 	HWD.pfnSetTransform(&atransform);
-
-	// Reset the shader state.
-	HWR_SetShaderState();
 
 	if (HWR_IsWireframeMode())
 		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 1);
@@ -6046,11 +6045,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	//04/01/2000: Hurdler: added for T&L
 	//                     Actually it only works on Walls and Planes
 	HWD.pfnSetTransform(&atransform);
-
-
-	// Reset the shader state.
-	HWR_SetShaderState();
-
 
 	if (HWR_IsWireframeMode())
 		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 1);
@@ -6251,6 +6245,7 @@ void HWR_Startup(void)
 		HWR_InitMD2();
 
 	gr_shadersavailable = HWR_InitShaders();
+	HWR_SetShaderState();
 	HWR_LoadAllCustomShaders();
 	HWR_TogglePaletteRendering();
 	}
