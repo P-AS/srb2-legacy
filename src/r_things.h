@@ -63,6 +63,15 @@ void R_ClearSprites(void);
 void R_ClipSprites(void);
 void R_DrawMasked(void);
 
+boolean R_ThingVisible (mobj_t *thing);
+
+boolean R_ThingVisibleWithinDist (mobj_t *thing,
+		fixed_t        draw_dist,
+		fixed_t nights_draw_dist);
+
+boolean R_PrecipThingVisible (precipmobj_t *precipthing,
+		fixed_t precip_draw_dist);
+
 // -----------
 // SKINS STUFF
 // -----------
@@ -104,6 +113,7 @@ typedef struct
 	// Definable color translation table
 	UINT8 starttranscolor;
 	UINT8 prefcolor;
+	UINT16 supercolor;
 	fixed_t highresscale; // scale of highres, default is 0.5
 
 	// specific sounds per skin

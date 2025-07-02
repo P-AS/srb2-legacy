@@ -96,6 +96,7 @@ extern UINT32 nflatmask;
 #define BRDR_BR 7
 
 extern lumpnum_t viewborderlump[8];
+extern boolean skincolor_modified[];
 
 // ------------------------------------------------
 // r_draw.c COMMON ROUTINES FOR BOTH 8bpp and 16bpp
@@ -110,10 +111,10 @@ extern lumpnum_t viewborderlump[8];
 
 // Initialize color translation tables, for player rendering etc.
 void R_InitTranslationTables(void);
-UINT8* R_GetTranslationColormap(INT32 skinnum, skincolors_t color, UINT8 flags);
+UINT8* R_GetTranslationColormap(INT32 skinnum, UINT16 color, UINT8 flags);
 void R_FlushTranslationColormapCache(void);
-UINT8 R_GetColorByName(const char *name);
-extern UINT8 colortranslations[MAXTRANSLATIONS][16];
+UINT16 R_GetColorByName(const char *name);
+UINT16 R_GetSuperColorByName(const char *name);
 
 // Custom player skin translation
 void R_InitViewBuffer(INT32 width, INT32 height);

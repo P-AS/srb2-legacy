@@ -38,14 +38,45 @@ UINT8 *screens[5];
 // screens[3] = fade screen start
 // screens[4] = fade screen end, postimage tempoarary buffer
 
-static CV_PossibleValue_t gamma_cons_t[] = {{0, "MIN"}, {4, "MAX"}, {0, NULL}};
-static void CV_usegamma_OnChange(void);
-
 static CV_PossibleValue_t ticrate_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
 static CV_PossibleValue_t tpscounter_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
 consvar_t cv_ticrate = { "showfps", "No", CV_SAVE, ticrate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 consvar_t cv_tpscounter = { "showtps", "No", CV_SAVE, tpscounter_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
-consvar_t cv_usegamma = {"gamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_usegamma_OnChange, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t fpssize_cons_t[] = { {0, "Normal"}, {1, "Thin"}, {2, "Small"}, {0, NULL} };
+consvar_t cv_fpssize = { "fpssize", "Normal", CV_SAVE, fpssize_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+
+static void CV_palette_OnChange(void);
+
+static CV_PossibleValue_t gamma_cons_t[] = {{-15, "MIN"}, {5, "MAX"}, {0, NULL}};
+consvar_t cv_globalgamma = {"gamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+static CV_PossibleValue_t saturation_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
+consvar_t cv_globalsaturation = {"saturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+#define huecoloursteps 4
+
+static CV_PossibleValue_t hue_cons_t[] = {{0, "MIN"}, {(huecoloursteps*6)-1, "MAX"}, {0, NULL}};
+consvar_t cv_rhue = {"rhue",  "0", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_yhue = {"yhue",  "4", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_ghue = {"ghue",  "8", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chue = {"chue", "12", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_bhue = {"bhue", "16", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_mhue = {"mhue", "20", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_rgamma = {"rgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_ygamma = {"ygamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_ggamma = {"ggamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_cgamma = {"cgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_bgamma = {"bgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_mgamma = {"mgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_rsaturation = {"rsaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_ysaturation = {"ysaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_gsaturation = {"gsaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_csaturation = {"csaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_bsaturation = {"bsaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_msaturation = {"msaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange, 0, NULL, NULL, 0, 0, NULL};
+
 
 consvar_t cv_allcaps = {"allcaps", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -55,9 +86,209 @@ static CV_PossibleValue_t constextsize_cons_t[] = {
 static void CV_constextsize_OnChange(void);
 consvar_t cv_constextsize = {"con_textsize", "Medium", CV_SAVE|CV_CALL, constextsize_cons_t, CV_constextsize_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
+// local copy of the palette for V_GetColor()
+RGBA_t *pLocalPalette = NULL;
 
-const UINT8 gammatable[5][256] =
+/*
+The following was an extremely helpful resource when developing my Colour Cube LUT.
+http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter24.html
+Please check it out if you're trying to maintain this.
+toast 18/04/17
+*/
+float Cubepal[2][2][2][3];
+boolean Cubeapply = false;
+
+// returns whether to apply cube, selectively avoiding expensive operations
+static boolean InitCube(void)
 {
+	boolean apply = false;
+	UINT8 q;
+	float working[2][2][2][3] = // the initial positions of the corners of the colour cube!
+	{
+		{
+			{
+				{0.0, 0.0, 0.0}, // black corner
+				{0.0, 0.0, 1.0}  // blue corner
+			},
+			{
+				{0.0, 1.0, 0.0}, // green corner
+				{0.0, 1.0, 1.0}  // cyan corner
+			}
+		},
+		{
+			{
+				{1.0, 0.0, 0.0}, // red corner
+				{1.0, 0.0, 1.0}  // magenta corner
+			},
+			{
+				{1.0, 1.0, 0.0}, // yellow corner
+				{1.0, 1.0, 1.0}  // white corner
+			}
+		}
+	};
+	float desatur[3]; // grey
+	float globalgammamul, globalgammaoffs;
+	boolean doinggamma;
+
+#define diffcons(cv) (cv.value != atoi(cv.defaultvalue))
+
+	doinggamma = diffcons(cv_globalgamma);
+
+#define gammascale 8
+	globalgammamul = (cv_globalgamma.value ? ((255 - (gammascale*abs(cv_globalgamma.value)))/255.0) : 1.0);
+	globalgammaoffs = ((cv_globalgamma.value > 0) ? ((gammascale*cv_globalgamma.value)/255.0) : 0.0);
+	desatur[0] = desatur[1] = desatur[2] = globalgammaoffs + (0.33*globalgammamul);
+
+	if (doinggamma
+		|| diffcons(cv_rhue)
+		|| diffcons(cv_yhue)
+		|| diffcons(cv_ghue)
+		|| diffcons(cv_chue)
+		|| diffcons(cv_bhue)
+		|| diffcons(cv_mhue)
+		|| diffcons(cv_rgamma)
+		|| diffcons(cv_ygamma)
+		|| diffcons(cv_ggamma)
+		|| diffcons(cv_cgamma)
+		|| diffcons(cv_bgamma)
+		|| diffcons(cv_mgamma)) // set the gamma'd/hued positions (saturation is done later)
+	{
+		float mod, tempgammamul, tempgammaoffs;
+
+		apply = true;
+
+		working[0][0][0][0] = working[0][0][0][1] = working[0][0][0][2] = globalgammaoffs;
+		working[1][1][1][0] = working[1][1][1][1] = working[1][1][1][2] = globalgammaoffs+globalgammamul;
+
+#define dohue(hue, gamma, loc) \
+		tempgammamul = (gamma ? ((255 - (gammascale*abs(gamma)))/255.0)*globalgammamul : globalgammamul);\
+		tempgammaoffs = ((gamma > 0) ? ((gammascale*gamma)/255.0) + globalgammaoffs : globalgammaoffs);\
+		mod = ((hue % huecoloursteps)*(tempgammamul)/huecoloursteps);\
+		switch (hue/huecoloursteps)\
+		{\
+			case 0:\
+			default:\
+				loc[0] = tempgammaoffs+tempgammamul;\
+				loc[1] = tempgammaoffs+mod;\
+				loc[2] = tempgammaoffs;\
+				break;\
+			case 1:\
+				loc[0] = tempgammaoffs+tempgammamul-mod;\
+				loc[1] = tempgammaoffs+tempgammamul;\
+				loc[2] = tempgammaoffs;\
+				break;\
+			case 2:\
+				loc[0] = tempgammaoffs;\
+				loc[1] = tempgammaoffs+tempgammamul;\
+				loc[2] = tempgammaoffs+mod;\
+				break;\
+			case 3:\
+				loc[0] = tempgammaoffs;\
+				loc[1] = tempgammaoffs+tempgammamul-mod;\
+				loc[2] = tempgammaoffs+tempgammamul;\
+				break;\
+			case 4:\
+				loc[0] = tempgammaoffs+mod;\
+				loc[1] = tempgammaoffs;\
+				loc[2] = tempgammaoffs+tempgammamul;\
+				break;\
+			case 5:\
+				loc[0] = tempgammaoffs+tempgammamul;\
+				loc[1] = tempgammaoffs;\
+				loc[2] = tempgammaoffs+tempgammamul-mod;\
+				break;\
+		}
+		dohue(cv_rhue.value, cv_rgamma.value, working[1][0][0]);
+		dohue(cv_yhue.value, cv_ygamma.value, working[1][1][0]);
+		dohue(cv_ghue.value, cv_ggamma.value, working[0][1][0]);
+		dohue(cv_chue.value, cv_cgamma.value, working[0][1][1]);
+		dohue(cv_bhue.value, cv_bgamma.value, working[0][0][1]);
+		dohue(cv_mhue.value, cv_mgamma.value, working[1][0][1]);
+#undef dohue
+	}
+
+#define dosaturation(a, e) a = ((1 - work)*e + work*a)
+#define docvsat(cv_sat, hue, gamma, r, g, b) \
+	if diffcons(cv_sat)\
+	{\
+		float work, mod, tempgammamul, tempgammaoffs;\
+		apply = true;\
+		work = (cv_sat.value/10.0);\
+		mod = ((hue % huecoloursteps)*(1.0)/huecoloursteps);\
+		if (hue & huecoloursteps)\
+			mod = 2-mod;\
+		else\
+			mod += 1;\
+		tempgammamul = (gamma ? ((255 - (gammascale*abs(gamma)))/255.0)*globalgammamul : globalgammamul);\
+		tempgammaoffs = ((gamma > 0) ? ((gammascale*gamma)/255.0) + globalgammaoffs : globalgammaoffs);\
+		for (q = 0; q < 3; q++)\
+			dosaturation(working[r][g][b][q], (tempgammaoffs+(desatur[q]*mod*tempgammamul)));\
+	}
+
+	docvsat(cv_rsaturation, cv_rhue.value, cv_rgamma.value, 1, 0, 0);
+	docvsat(cv_ysaturation, cv_yhue.value, cv_ygamma.value, 1, 1, 0);
+	docvsat(cv_gsaturation, cv_ghue.value, cv_ggamma.value, 0, 1, 0);
+	docvsat(cv_csaturation, cv_chue.value, cv_cgamma.value, 0, 1, 1);
+	docvsat(cv_bsaturation, cv_bhue.value, cv_bgamma.value, 0, 0, 1);
+	docvsat(cv_msaturation, cv_mhue.value, cv_mgamma.value, 1, 0, 1);
+
+#undef gammascale
+
+	if diffcons(cv_globalsaturation)
+	{
+		float work = (cv_globalsaturation.value/10.0);
+
+		apply = true;
+
+		for (q = 0; q < 3; q++)
+		{
+			dosaturation(working[1][0][0][q], desatur[q]);
+			dosaturation(working[0][1][0][q], desatur[q]);
+			dosaturation(working[0][0][1][q], desatur[q]);
+
+			dosaturation(working[1][1][0][q], 2*desatur[q]);
+			dosaturation(working[0][1][1][q], 2*desatur[q]);
+			dosaturation(working[1][0][1][q], 2*desatur[q]);
+		}
+	}
+
+#undef dosaturation
+
+#undef diffcons
+
+	if (!apply)
+		return false;
+
+#define dowork(i, j, k, l) \
+	if (working[i][j][k][l] > 1.0)\
+		working[i][j][k][l] = 1.0;\
+	else if (working[i][j][k][l] < 0.0)\
+		working[i][j][k][l] = 0.0;\
+	Cubepal[i][j][k][l] = working[i][j][k][l]
+	for (q = 0; q < 3; q++)
+	{
+		dowork(0, 0, 0, q);
+		dowork(1, 0, 0, q);
+		dowork(0, 1, 0, q);
+		dowork(1, 1, 0, q);
+		dowork(0, 0, 1, q);
+		dowork(1, 0, 1, q);
+		dowork(0, 1, 1, q);
+		dowork(1, 1, 1, q);
+	}
+#undef dowork
+
+	return true;
+}
+
+/*
+So it turns out that the way gamma was implemented previously, the default
+colour profile of the game was messed up. Since this bad decision has been
+around for a long time, and the intent is to keep the base game looking the
+same, I'm not gonna be the one to remove this base modification.
+toast 20/04/17
+*/
+const UINT8 correctiontable[256] =
 	{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,
 	17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,
 	33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,
@@ -73,80 +304,12 @@ const UINT8 gammatable[5][256] =
 	192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,
 	208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,
 	224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,
-	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255},
-
-	{2,4,5,7,8,10,11,12,14,15,16,18,19,20,21,23,24,25,26,27,29,30,31,
-	32,33,34,36,37,38,39,40,41,42,44,45,46,47,48,49,50,51,52,54,55,
-	56,57,58,59,60,61,62,63,64,65,66,67,69,70,71,72,73,74,75,76,77,
-	78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,
-	99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,
-	115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,129,
-	130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,
-	146,147,148,148,149,150,151,152,153,154,155,156,157,158,159,160,
-	161,162,163,163,164,165,166,167,168,169,170,171,172,173,174,175,
-	175,176,177,178,179,180,181,182,183,184,185,186,186,187,188,189,
-	190,191,192,193,194,195,196,196,197,198,199,200,201,202,203,204,
-	205,205,206,207,208,209,210,211,212,213,214,214,215,216,217,218,
-	219,220,221,222,222,223,224,225,226,227,228,229,230,230,231,232,
-	233,234,235,236,237,237,238,239,240,241,242,243,244,245,245,246,
-	247,248,249,250,251,252,252,253,254,255},
-
-	{4,7,9,11,13,15,17,19,21,22,24,26,27,29,30,32,33,35,36,38,39,40,42,
-	43,45,46,47,48,50,51,52,54,55,56,57,59,60,61,62,63,65,66,67,68,69,
-	70,72,73,74,75,76,77,78,79,80,82,83,84,85,86,87,88,89,90,91,92,93,
-	94,95,96,97,98,100,101,102,103,104,105,106,107,108,109,110,111,112,
-	113,114,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,
-	129,130,131,132,133,133,134,135,136,137,138,139,140,141,142,143,144,
-	144,145,146,147,148,149,150,151,152,153,153,154,155,156,157,158,159,
-	160,160,161,162,163,164,165,166,166,167,168,169,170,171,172,172,173,
-	174,175,176,177,178,178,179,180,181,182,183,183,184,185,186,187,188,
-	188,189,190,191,192,193,193,194,195,196,197,197,198,199,200,201,201,
-	202,203,204,205,206,206,207,208,209,210,210,211,212,213,213,214,215,
-	216,217,217,218,219,220,221,221,222,223,224,224,225,226,227,228,228,
-	229,230,231,231,232,233,234,235,235,236,237,238,238,239,240,241,241,
-	242,243,244,244,245,246,247,247,248,249,250,251,251,252,253,254,254,
-	255},
-
-	{8,12,16,19,22,24,27,29,31,34,36,38,40,41,43,45,47,49,50,52,53,55,
-	57,58,60,61,63,64,65,67,68,70,71,72,74,75,76,77,79,80,81,82,84,85,
-	86,87,88,90,91,92,93,94,95,96,98,99,100,101,102,103,104,105,106,107,
-	108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,
-	125,126,127,128,129,130,131,132,133,134,135,135,136,137,138,139,140,
-	141,142,143,143,144,145,146,147,148,149,150,150,151,152,153,154,155,
-	155,156,157,158,159,160,160,161,162,163,164,165,165,166,167,168,169,
-	169,170,171,172,173,173,174,175,176,176,177,178,179,180,180,181,182,
-	183,183,184,185,186,186,187,188,189,189,190,191,192,192,193,194,195,
-	195,196,197,197,198,199,200,200,201,202,202,203,204,205,205,206,207,
-	207,208,209,210,210,211,212,212,213,214,214,215,216,216,217,218,219,
-	219,220,221,221,222,223,223,224,225,225,226,227,227,228,229,229,230,
-	231,231,232,233,233,234,235,235,236,237,237,238,238,239,240,240,241,
-	242,242,243,244,244,245,246,246,247,247,248,249,249,250,251,251,252,
-	253,253,254,254,255},
-
-	{16,23,28,32,36,39,42,45,48,50,53,55,57,60,62,64,66,68,69,71,73,75,76,
-	78,80,81,83,84,86,87,89,90,92,93,94,96,97,98,100,101,102,103,105,106,
-	107,108,109,110,112,113,114,115,116,117,118,119,120,121,122,123,124,
-	125,126,128,128,129,130,131,132,133,134,135,136,137,138,139,140,141,
-	142,143,143,144,145,146,147,148,149,150,150,151,152,153,154,155,155,
-	156,157,158,159,159,160,161,162,163,163,164,165,166,166,167,168,169,
-	169,170,171,172,172,173,174,175,175,176,177,177,178,179,180,180,181,
-	182,182,183,184,184,185,186,187,187,188,189,189,190,191,191,192,193,
-	193,194,195,195,196,196,197,198,198,199,200,200,201,202,202,203,203,
-	204,205,205,206,207,207,208,208,209,210,210,211,211,212,213,213,214,
-	214,215,216,216,217,217,218,219,219,220,220,221,221,222,223,223,224,
-	224,225,225,226,227,227,228,228,229,229,230,230,231,232,232,233,233,
-	234,234,235,235,236,236,237,237,238,239,239,240,240,241,241,242,242,
-	243,243,244,244,245,245,246,246,247,247,248,248,249,249,250,250,251,
-	251,252,252,253,254,254,255,255}
-};
-
-// local copy of the palette for V_GetColor()
-RGBA_t *pLocalPalette = NULL;
+	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255};
 
 // keep a copy of the palette so that we can get the RGB value for a color index at any time.
 static void LoadPalette(const char *lumpname)
 {
-	const UINT8 *usegamma = gammatable[cv_usegamma.value];
+	Cubeapply = InitCube();
 	lumpnum_t lumpnum = W_GetNumForName(lumpname);
 	size_t i, palsize = W_LumpLength(lumpnum)/3;
 	UINT8 *pal;
@@ -158,11 +321,55 @@ static void LoadPalette(const char *lumpname)
 	pal = W_CacheLumpNum(lumpnum, PU_CACHE);
 	for (i = 0; i < palsize; i++)
 	{
-		pLocalPalette[i].s.red = usegamma[*pal++];
-		pLocalPalette[i].s.green = usegamma[*pal++];
-		pLocalPalette[i].s.blue = usegamma[*pal++];
+		pLocalPalette[i].s.red = correctiontable[*pal++];
+		pLocalPalette[i].s.green = correctiontable[*pal++];
+		pLocalPalette[i].s.blue = correctiontable[*pal++];
 		pLocalPalette[i].s.alpha = 0xFF;
+
+		// lerp of colour cubing! if you want, make it smoother yourself
+		if (Cubeapply)
+			V_CubeApply(&pLocalPalette[i].s.red, &pLocalPalette[i].s.green, &pLocalPalette[i].s.blue);
 	}
+}
+
+void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
+{
+	float working[4][3];
+	float linear;
+	UINT8 q;
+
+	if (!Cubeapply)
+		return;
+
+	linear = (*red/255.0);
+#define dolerp(e1, e2) ((1 - linear)*e1 + linear*e2)
+	for (q = 0; q < 3; q++)
+	{
+		working[0][q] = dolerp(Cubepal[0][0][0][q], Cubepal[1][0][0][q]);
+		working[1][q] = dolerp(Cubepal[0][1][0][q], Cubepal[1][1][0][q]);
+		working[2][q] = dolerp(Cubepal[0][0][1][q], Cubepal[1][0][1][q]);
+		working[3][q] = dolerp(Cubepal[0][1][1][q], Cubepal[1][1][1][q]);
+	}
+	linear = (*green/255.0);
+	for (q = 0; q < 3; q++)
+	{
+		working[0][q] = dolerp(working[0][q], working[1][q]);
+		working[1][q] = dolerp(working[2][q], working[3][q]);
+	}
+	linear = (*blue/255.0);
+	for (q = 0; q < 3; q++)
+	{
+		working[0][q] = 255*dolerp(working[0][q], working[1][q]);
+		if (working[0][q] > 255.0)
+			working[0][q] = 255.0;
+		else if (working[0][q]  < 0.0)
+			working[0][q] = 0.0;
+	}
+#undef dolerp
+
+	*red = (UINT8)(working[0][0]);
+	*green = (UINT8)(working[0][1]);
+	*blue = (UINT8)(working[0][2]);
 }
 
 const char *R_GetPalname(UINT16 num)
@@ -224,7 +431,7 @@ void V_SetPaletteLump(const char *pal)
 		I_SetPalette(pLocalPalette);
 }
 
-static void CV_usegamma_OnChange(void)
+static void CV_palette_OnChange(void)
 {
 	// reload palette
 	LoadMapPalette();
@@ -281,12 +488,12 @@ static inline UINT8 transmappedpdraw(const UINT8 *dest, const UINT8 *source, fix
 }
 
 // Draws a patch scaled to arbitrary size.
-void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
+void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
 {
 	UINT8 (*patchdrawfunc)(const UINT8*, const UINT8*, fixed_t);
 	UINT32 alphalevel = 0;
 
-	fixed_t col, ofs, colfrac, rowfrac, fdup;
+	fixed_t col, ofs, colfrac, rowfrac, fdup, vdup;
 	INT32 dupx, dupy;
 	const column_t *column;
 	UINT8 *desttop, *dest, *deststart, *destend;
@@ -301,7 +508,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 	//if (rendermode != render_soft && !con_startup)		// Why?
 	if (rendermode != render_soft)
 	{
-		HWR_DrawFixedPatch((GLPatch_t *)patch, x, y, pscale, scrn, colormap);
+		HWR_DrawStretchyFixedPatch((GLPatch_t *)patch, x, y, pscale, vscale, scrn, colormap);
 		return;
 	}
 #endif
@@ -355,9 +562,11 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 
 	// only use one dup, to avoid stretching (har har)
 	dupx = dupy = (dupx < dupy ? dupx : dupy);
-	fdup = FixedMul(dupx<<FRACBITS, pscale);
+	fdup = vdup = FixedMul(dupx<<FRACBITS, pscale);
+	if (vscale != pscale)
+		vdup = FixedMul(dupx<<FRACBITS, vscale);
 	colfrac = FixedDiv(FRACUNIT, fdup);
-	rowfrac = FixedDiv(FRACUNIT, fdup);
+	rowfrac = FixedDiv(FRACUNIT, vdup);
 
 	// So it turns out offsets aren't scaled in V_NOSCALESTART unless V_OFFSET is applied ...poo, that's terrible
 	// For now let's just at least give V_OFFSET the ability to support V_FLIP
@@ -374,7 +583,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 
 		// top offset
 		// TODO: make some kind of vertical version of V_FLIP, maybe by deprecating V_OFFSET in future?!?
-		offsety = FixedMul(SHORT(patch->topoffset)<<FRACBITS, pscale);
+		offsety = FixedMul(SHORT(patch->topoffset)<<FRACBITS, vscale);
 
 		if ((scrn & (V_NOSCALESTART|V_OFFSET)) == (V_NOSCALESTART|V_OFFSET)) // Multiply by dupx/dupy for crosshairs
 		{
@@ -486,7 +695,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 			dest = desttop;
 			if (scrn & V_FLIP)
 				dest = deststart + (destend - desttop);
-			dest += FixedInt(FixedMul(topdelta<<FRACBITS,fdup))*vid.width;
+			dest += FixedInt(FixedMul(topdelta<<FRACBITS,vdup))*vid.width;
 
 			for (ofs = 0; dest < deststop && (ofs>>FRACBITS) < column->length; ofs += rowfrac)
 			{
@@ -614,7 +823,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 // V_DrawContinueIcon
 // Draw a mini player!  If we can, that is.  Otherwise we draw a star.
 //
-void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT8 skincolor)
+void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor)
 {
 	if (skinnum < 0 || skinnum >= numskins || (skins[skinnum].flags & SF_HIRES))
 		V_DrawScaledPatch(x - 10, y - 14, flags, W_CachePatchName("CONTINS", PU_CACHE)); // Draw a star
@@ -664,9 +873,27 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 {
 	UINT8 *dest;
 	const UINT8 *deststop;
+	UINT32 alphalevel = ((c & V_ALPHAMASK) >> V_ALPHASHIFT);
 
 	if (rendermode == render_none)
 		return;
+
+	
+	v_translevel = NULL;
+	if (alphalevel)
+	{
+		if (alphalevel == 13)
+			alphalevel = hudminusalpha[cv_translucenthud.value];
+		else if (alphalevel == 14)
+			alphalevel = 10 - cv_translucenthud.value;
+		else if (alphalevel == 15)
+			alphalevel = hudplusalpha[cv_translucenthud.value];
+
+		if (alphalevel >= 10)
+			return; // invis
+
+		v_translevel = transtables + ((alphalevel-1)<<FF_TRANSSHIFT);
+	}
 
 #ifdef HWRENDER
 	if (rendermode != render_soft && !con_startup)
@@ -736,40 +963,55 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	c &= 255;
 
-	for (;(--h >= 0) && dest < deststop; dest += vid.width)
-		memset(dest, c, w * vid.bpp);
+
+	// borrowing this from jimitia's new hud drawing functions rq
+	if (alphalevel)
+	{
+		v_translevel += c<<8;
+		for (;(--h >= 0) && dest < deststop; dest += vid.width)
+		{
+			for (x = 0; x < w; x++)
+				dest[x] = v_translevel[dest[x]];
+		}
+	}
+	else
+	{
+		for (;(--h >= 0) && dest < deststop; dest += vid.width)
+			memset(dest, c, w * vid.bpp);
+	}
 }
 
 #ifdef HWRENDER
 // This is now a function since it's otherwise repeated 2 times and honestly looks retarded:
 static UINT32 V_GetHWConsBackColor(void)
 {
-	UINT32 hwcolor;
+	UINT8 r, g, b;
 	switch (cons_backcolor.value)
 	{
-		case 0:		hwcolor = 0xffffff00;	break; 	// White
-		case 1:		hwcolor = 0x80808000;	break; 	// Gray
-		case 2:		hwcolor = 0xdeb88700;	break;	// Sepia
-		case 3:		hwcolor = 0x40201000;	break; 	// Brown
-		case 4:		hwcolor = 0xfa807200;	break; 	// Pink
-		case 5:		hwcolor = 0xff69b400;	break; 	// Raspberry
-		case 6:		hwcolor = 0xff000000;	break; 	// Red
-		case 7:		hwcolor = 0xffd68300;	break;	// Creamsicle
-		case 8:		hwcolor = 0xff800000;	break; 	// Orange
-		case 9:		hwcolor = 0xdaa52000;	break; 	// Gold
-		case 10:	hwcolor = 0x80800000;	break; 	// Yellow
-		case 11:	hwcolor = 0x00ff0000;	break; 	// Emerald
-		case 12:	hwcolor = 0x00800000;	break; 	// Green
-		case 13:	hwcolor = 0x4080ff00;	break; 	// Cyan
-		case 14:	hwcolor = 0x4682b400;	break; 	// Steel
-		case 15:	hwcolor = 0x1e90ff00;	break;	// Periwinkle
-		case 16:	hwcolor = 0x0000ff00;	break; 	// Blue
-		case 17:	hwcolor = 0xff00ff00;	break; 	// Purple
-		case 18:	hwcolor = 0xee82ee00;	break; 	// Lavender
+		case 0:		r = 0xff; g = 0xff; b = 0xff;	break; 	// White
+		case 1:		r = 0x80; g = 0x80; b = 0x80;	break; 	// Black
+		case 2:		r = 0xde; g = 0xb8; b = 0x87;	break;	// Sepia
+		case 3:		r = 0x40; g = 0x20; b = 0x10;	break; 	// Brown
+		case 4:		r = 0xfa; g = 0x80; b = 0x72;	break; 	// Pink
+		case 5:		r = 0xff; g = 0x69; b = 0xb4;	break; 	// Raspberry
+		case 6:		r = 0xff; g = 0x00; b = 0x00;	break; 	// Red
+		case 7:		r = 0xff; g = 0xd6; b = 0x83;	break;	// Creamsicle
+		case 8:		r = 0xff; g = 0x80; b = 0x00;	break; 	// Orange
+		case 9:		r = 0xda; g = 0xa5; b = 0x20;	break; 	// Gold
+		case 10:	r = 0x80; g = 0x80; b = 0x00;	break; 	// Yellow
+		case 11:	r = 0x00; g = 0xff; b = 0x00;	break; 	// Emerald
+		case 12:	r = 0x00; g = 0x80; b = 0x00;	break; 	// Green
+		case 13:	r = 0x40; g = 0x80; b = 0xff;	break; 	// Cyan
+		case 14:	r = 0x46; g = 0x82; b = 0xb4;	break; 	// Steel
+		case 15:	r = 0x1e; g = 0x90; b = 0xff;	break;	// Periwinkle
+		case 16:	r = 0x00; g = 0x00; b = 0xff;	break; 	// Blue
+		case 17:	r = 0xff; g = 0x00; b = 0xff;	break; 	// Purple
+		case 18:	r = 0xee; g = 0x82; b = 0xee;	break; 	// Lavender
 		// Default green
-		default:	hwcolor = 0x00800000;	break;
+		default:	r = 0x00; g = 0x80; b = 0x00;	break;
 	}
-	return hwcolor;
+	V_CubeApply(&r, &g, &b);
+	return (r << 24) | (g << 16) | (b << 8);
 }
 #endif
 
@@ -1066,8 +1308,8 @@ UINT8 *V_GetStringColormap(INT32 colorflags)
 		return steelmap;
 	case 13:// 0x8D, pink
 		return pinkmap;
-	case 14:// 0x8E, teal
-		return tealmap;
+	case 14:// 0x8E, brown
+		return brownmap;
 	case 15:// 0x8F, peach
 		return peachmap;
 	default: // reset
