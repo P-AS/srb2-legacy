@@ -80,7 +80,7 @@ extern customshaderxlat_t shaderxlat[];
 extern CV_PossibleValue_t granisotropicmode_cons_t[];
 
 
-extern consvar_t cv_grshaders;
+extern consvar_t cv_grshaders, cv_grallowshaders;
 extern consvar_t cv_grmd2;
 extern consvar_t cv_grmodelinterpolation;
 extern consvar_t cv_grfiltermode;
