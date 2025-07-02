@@ -835,7 +835,7 @@ static void HWR_SetPaletteLookup(RGBA_t *palette)
 			for (r = 0; r < HWR_PALETTE_LUT_SIZE; r++)
 			{
 				lut[b*HWR_PALETTE_LUT_SIZE*HWR_PALETTE_LUT_SIZE+g*HWR_PALETTE_LUT_SIZE+r] =
-					NearestColor(r*STEP_SIZE, g*STEP_SIZE, b*STEP_SIZE);
+					NearestPaletteColor(r*STEP_SIZE, g*STEP_SIZE, b*STEP_SIZE, palette);
 			}
 		}
 	}
