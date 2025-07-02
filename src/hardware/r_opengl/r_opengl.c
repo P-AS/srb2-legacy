@@ -92,6 +92,8 @@ static GLint anisotropic_filter = 0;
 boolean supportMipMap = false;
 static boolean model_lighting = false;
 
+const GLubyte *gl_version = NULL;
+const GLubyte *gl_renderer = NULL;
 const GLubyte *gl_extensions = NULL;
 
 //Hurdler: 04/10/2000: added for the kick ass coronas as Boris wanted;-)
