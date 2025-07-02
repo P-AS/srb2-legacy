@@ -870,7 +870,6 @@ void W_UnloadWadFile(UINT16 num)
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
 	{
-		HWR_FreeColormaps();
 		HWR_FreeTextureCache();
 	}
 	M_AATreeFree(delwad->hwrcache);
@@ -1684,6 +1683,7 @@ void W_FlushCachedPatches(void)
 		Z_FreeTag(PU_HWRMODELTEXTURE);
 		Z_FreeTag(PU_HWRCACHE);
 		Z_FreeTags(PU_HWRCACHE_UNLOCKED, PU_HWRPATCHINFO_UNLOCKED);
+		Z_FreeTags(PU_HWRCACHE_UNLOCKED, PU_HWRMODELTEXTURE_UNLOCKED);
 	}
 	needpatchflush = false;
 }

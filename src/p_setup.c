@@ -3091,12 +3091,6 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	// Fab : 19-07-98 : start cd music for this level (note: can be remapped)
 	I_PlayCD((UINT8)(gamemap), false);
 
-	// preload graphics
-#ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode == render_opengl)
-		HWR_PrepLevelCache(numtextures);
-#endif
-
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
@@ -3158,6 +3152,18 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 #ifdef HWRENDER
 void HWR_SetupLevel(void)
 {
+
+	// Lactozilla (December 8, 2019)
+	// Level setup used to free EVERY mipmap from memory.
+	// Even mipmaps that aren't related to level textures.
+	// Presumably, the hardware render code used to store textures as level data.
+	// Meaning, they had memory allocated and marked with the PU_LEVEL tag.
+	// Level textures are only reloaded after R_LoadTextures, which is
+	// when the texture list is loaded.
+
+	// Sal: Unfortunately, NOT freeing them causes the dreaded Color Bug.
+	HWR_FreeMipmapCache();
+
 	// Jimita: Don't call this more than once!
 	if (!extrasubsectors)
 		HWR_CreatePlanePolygons((INT32)numnodes - 1);
@@ -3318,6 +3324,11 @@ boolean P_AddWadFile(const char *wadfilename)
 	// reload status bar (warning should have valid player!)
 	if (gamestate == GS_LEVEL)
 		ST_Start();
+
+#ifdef HWRENDER
+	HWR_FreeMipmapCache();
+#endif
+
 
 	// Prevent savefile cheating
 	if (cursaveslot >= 0)

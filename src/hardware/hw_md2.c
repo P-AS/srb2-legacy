@@ -861,9 +861,17 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT
 	// mostly copied from HWR_GetMappedPatch, hence the similarities and comment
 	GLMipmap_t *grmip, *newmip;
 
-	if ((colormap == colormaps || colormap == NULL) && (skinnum > TC_DEFAULT))
+	if (colormap == colormaps || colormap == NULL)
 	{
 		// Don't do any blending
+		HWD.pfnSetTexture(gpatch->mipmap);
+		return;
+	}
+
+	if ((blendgpatch && blendgpatch->mipmap->grInfo.format)
+		&& (gpatch->width != blendgpatch->width || gpatch->height != blendgpatch->height))
+	{
+		// Blend image exists, but it's bad.
 		HWD.pfnSetTexture(gpatch->mipmap);
 		return;
 	}
@@ -873,12 +881,12 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT
 	for (grmip = gpatch->mipmap; grmip->nextcolormap; )
 	{
 		grmip = grmip->nextcolormap;
-		if (grmip->colormap == colormap || grmip->tcindex == skinnum)
+		if (grmip->colormap == colormap)
 		{
 			if (grmip->downloaded && grmip->grInfo.data)
 			{
 				HWD.pfnSetTexture(grmip); // found the colormap, set it to the correct texture
-				Z_ChangeTag(grmip->grInfo.data, PU_HWRMODELTEXTURE);
+				Z_ChangeTag(grmip->grInfo.data, PU_HWRMODELTEXTURE_UNLOCKED);
 				return;
 			}
 		}
@@ -887,29 +895,20 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT
 	// If here, the blended texture has not been created
 	// So we create it
 
-	if ((blendgpatch && blendgpatch->mipmap->grInfo.format)
-	&& (gpatch->width != blendgpatch->width || gpatch->height != blendgpatch->height))
-	{
-		// Blend image exists, but it's bad.
-		HWD.pfnSetTexture(gpatch->mipmap);
-		return;
-	}
-
 	//BP: WARNING: don't free it manually without clearing the cache of harware renderer
 	//              (it have a liste of mipmap)
 	//    this malloc is cleared in HWR_FreeTextureCache
 	//    (...) unfortunately z_malloc fragment alot the memory :(so malloc is better
 	newmip = calloc(1, sizeof (*newmip));
 	if (newmip == NULL)
-		I_Error("%s: Out of memory", "HWR_GetMappedPatch");
+		I_Error("%s: Out of memory", "HWR_GetBlendedTexture");
 	grmip->nextcolormap = newmip;
 	newmip->colormap = colormap;
-	newmip->tcindex = skinnum;
 
 	HWR_CreateBlendedTexture(gpatch, blendgpatch, newmip, skinnum, color);
 
 	HWD.pfnSetTexture(newmip);
-	Z_ChangeTag(newmip->grInfo.data, PU_HWRMODELTEXTURE);
+	Z_ChangeTag(newmip->grInfo.data, PU_HWRMODELTEXTURE_UNLOCKED);
 }
 
 static boolean HWR_CanInterpolateModel(mobj_t *mobj, model_t *model)
@@ -1077,7 +1076,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 			if (md2->blendgrpatch && ((GLPatch_t *)md2->blendgrpatch)->mipmap->grInfo.format
 				&& gpatch->width == ((GLPatch_t *)md2->blendgrpatch)->width && gpatch->height == ((GLPatch_t *)md2->blendgrpatch)->height)
 			{
-				INT32 skinnum = INT32_MAX;
+				INT32 skinnum = TC_DEFAULT;
 				if ((spr->mobj->flags & MF_BOSS) && (spr->mobj->flags2 & MF2_FRET) && (leveltime & 1)) // Bosses "flash"
 				{
 					if (spr->mobj->type == MT_CYBRAKDEMON)
@@ -1096,13 +1095,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 					else skinnum = TC_DEFAULT;
 				}
 				// Translation or skin number found
-				if (skinnum != INT32_MAX)
-					HWR_GetBlendedTexture(gpatch, (GLPatch_t *)md2->blendgrpatch, skinnum, spr->colormap, (skincolornum_t)spr->mobj->color);
-				else
-				{
-					// Sorry nothing
-					HWD.pfnSetTexture(gpatch->mipmap);
-				}
+				HWR_GetBlendedTexture(gpatch, (GLPatch_t *)md2->blendgrpatch, skinnum, spr->colormap, (skincolornum_t)spr->mobj->color);
 			}
 			else
 			{
