@@ -566,8 +566,13 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 	}
 	else // Do TRANSMAP** fade.
 	{
-		Surf.PolyColor.rgba = pLocalPalette[color].rgba;
-		Surf.PolyColor.s.alpha = (UINT8)((float)(10-strength)*25.5f);
+		RGBA_t *palette = HWR_GetTexturePalette();
+		Surf.PolyColor.rgba = palette[color&0xFF].rgba;
+		
+        if (HWR_ShouldUsePaletteRendering())
+			Surf.PolyColor.s.alpha = softwaretranstogl[strength];
+		else
+			Surf.PolyColor.s.alpha = (UINT8)(strength*25.5f);
 	}
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
 }
@@ -741,8 +746,9 @@ void HWR_drawAMline(const fline_t *fl, INT32 color)
 {
 	F2DCoord v1, v2;
 	RGBA_t color_rgba;
+	RGBA_t *palette = HWR_GetTexturePalette();
 
-	color_rgba = V_GetColor(color);
+	color_rgba = palette[color&0xFF];
 
 	v1.x = ((float)fl->a.x-(vid.width/2.0f))*(2.0f/vid.width);
 	v1.y = ((float)fl->a.y-(vid.height/2.0f))*(2.0f/vid.height);
@@ -865,6 +871,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 	FOutVector v[4];
 	FSurfaceInfo Surf;
 	float fx, fy, fw, fh;
+	RGBA_t *palette = HWR_GetTexturePalette();
 	UINT8 alphalevel = ((color & V_ALPHAMASK) >> V_ALPHASHIFT);
 
 	if (w < 0 || h < 0)
@@ -886,7 +893,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 
 		if (x == 0 && y == 0 && w == BASEVIDWIDTH && h == BASEVIDHEIGHT)
 		{
-			RGBA_t rgbaColour = V_GetColor(color);
+			RGBA_t rgbaColour = palette[color&0xFF];
 			FRGBAFloat clearColour;
 			clearColour.red = (float)rgbaColour.s.red / 255;
 			clearColour.green = (float)rgbaColour.s.green / 255;
@@ -956,7 +963,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 	v[0].t = v[1].t = 0.0f;
 	v[2].t = v[3].t = 1.0f;
 
-	Surf.PolyColor = V_GetColor(color);
+	Surf.PolyColor = palette[color&0xFF];
 
 	if (alphalevel)
 	{
