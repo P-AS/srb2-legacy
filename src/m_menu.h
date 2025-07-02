@@ -241,6 +241,12 @@ void Addons_option_Onchange(void);
 // Moviemode menu updating
 void Moviemode_option_Onchange(void);
 
+// Startup skincolors
+void M_InitSkincolors(void);
+boolean M_CheckColor(UINT16 color);
+UINT16 M_GetColorNext(UINT16 base);
+UINT16 M_GetColorPrev(UINT16 base);
+
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(header, source, prev, x, y)\
 {\

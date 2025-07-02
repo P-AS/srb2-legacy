@@ -75,7 +75,7 @@ void COM_Lua_f(void);
 	static UINT8 seen = 0;\
 	if (!seen) {\
 		seen = 1;\
-		CONS_Alert(CONS_WARNING,"\"%s\" is deprecated and will be removed.\nUse \"%s\" instead.\n", this_func, use_instead);\
+		CONS_Alert(CONS_WARNING,"\"%s\" is deprecated.\nUse \"%s\" instead.\n", this_func, use_instead);\
 	}\
 }
 

@@ -26,32 +26,17 @@
 
 
 static CV_PossibleValue_t fpscap_cons_t[] = {
-	{-1, "Match refresh rate"},
-	{0, "Unlimited"},
 #ifdef DEVELOP
 	// Lower values are actually pretty useful for debugging interp problems!
-	{1, "One Singular Frame"},
-	{10, "10"},
-	{20, "20"},
-	{25, "25"},
-	{30, "30"},
+	{1, "MIN"},
+#else
+	{TICRATE, "MIN"},
 #endif
-	{35, "35"},
-	{50, "50"},
-	{60, "60"},
-	{70, "70"},
-	{75, "75"},
-	{90, "90"},
-	{100, "100"},
-	{120, "120"},
-	{144, "144"},
-	{165, "165"},
-	{200, "200"},
-	{240, "240"},
-	{300, "300"},
+	{300, "MAX"},
+	{-1, "Unlimited"},
+	{0, "Match refresh rate"},
 	{0, NULL}
 };
- // Sadly, I haven't been able to get individual cap values to work properly :(
 
 consvar_t cv_fpscap = {"fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -69,9 +54,16 @@ UINT32 R_GetFramerateCap(void)
 		return TICRATE;
 	}
 
+	if (cv_fpscap.value == 0)
+	{
+		// 0: Match refresh rate
+		return I_GetRefreshRate();
+	}
+
 	if (cv_fpscap.value < 0)
 	{
-		return I_GetRefreshRate();
+		// -1: Unlimited
+		return 0;
 	}
 
 	return cv_fpscap.value;
@@ -102,8 +94,6 @@ static viewvars_t sky2view_new;
 
 viewvars_t *oldview = &p1view_old;
 viewvars_t *newview = &p1view_new;
-
-
 
 enum viewcontext_e viewcontext = VIEWCONTEXT_PLAYER1;
 

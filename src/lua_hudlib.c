@@ -588,6 +588,33 @@ static int libd_drawScaled(lua_State *L)
 	return 0;
 }
 
+static int libd_drawStretched(lua_State *L)
+{
+	fixed_t x, y, hscale, vscale;
+	INT32 flags;
+	patch_t *patch;
+	const UINT8 *colormap = NULL;
+
+	HUDONLY
+	x = luaL_checkinteger(L, 1);
+	y = luaL_checkinteger(L, 2);
+	hscale = luaL_checkinteger(L, 3);
+	if (hscale < 0)
+		return luaL_error(L, "negative horizontal scale");
+	vscale = luaL_checkinteger(L, 4);
+	if (vscale < 0)
+		return luaL_error(L, "negative vertical scale");
+	patch = *((patch_t **)luaL_checkudata(L, 5, META_PATCH));
+	flags = luaL_optinteger(L, 6, 0);
+	if (!lua_isnoneornil(L, 7))
+		colormap = *((UINT8 **)luaL_checkudata(L, 7, META_COLORMAP));
+
+	flags &= ~V_PARAMMASK; // Don't let crashes happen.
+
+	V_DrawStretchyFixedPatch(x, y, hscale, vscale, flags, patch, colormap);
+	return 0;
+}
+
 static int libd_drawNum(lua_State *L)
 {
 	INT32 x, y, flags, num;
@@ -747,7 +774,7 @@ static int libd_stringWidth(lua_State *L)
 static int libd_getColormap(lua_State *L)
 {
 	INT32 skinnum = TC_DEFAULT;
-	skincolors_t color = luaL_optinteger(L, 2, 0);
+	skincolornum_t color = luaL_optinteger(L, 2, 0);
 	UINT8* colormap = NULL;
 	HUDONLY
 	if (lua_isnoneornil(L, 1))
@@ -828,6 +855,7 @@ static luaL_Reg lib_draw[] = {
 	{"cachePatch", libd_cachePatch},
 	{"draw", libd_draw},
 	{"drawScaled", libd_drawScaled},
+	{"drawStretched", libd_drawStretched},
 	{"drawNum", libd_drawNum},
 	{"drawPaddedNum", libd_drawPaddedNum},
 	{"drawFill", libd_drawFill},

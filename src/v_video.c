@@ -42,6 +42,8 @@ static CV_PossibleValue_t ticrate_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Comp
 static CV_PossibleValue_t tpscounter_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
 consvar_t cv_ticrate = { "showfps", "No", CV_SAVE, ticrate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 consvar_t cv_tpscounter = { "showtps", "No", CV_SAVE, tpscounter_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+static CV_PossibleValue_t fpssize_cons_t[] = { {0, "Normal"}, {1, "Thin"}, {2, "Small"}, {0, NULL} };
+consvar_t cv_fpssize = { "fpssize", "Normal", CV_SAVE, fpssize_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 
 static void CV_palette_OnChange(void);
 
@@ -486,12 +488,12 @@ static inline UINT8 transmappedpdraw(const UINT8 *dest, const UINT8 *source, fix
 }
 
 // Draws a patch scaled to arbitrary size.
-void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
+void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
 {
 	UINT8 (*patchdrawfunc)(const UINT8*, const UINT8*, fixed_t);
 	UINT32 alphalevel = 0;
 
-	fixed_t col, ofs, colfrac, rowfrac, fdup;
+	fixed_t col, ofs, colfrac, rowfrac, fdup, vdup;
 	INT32 dupx, dupy;
 	const column_t *column;
 	UINT8 *desttop, *dest, *deststart, *destend;
@@ -506,7 +508,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 	//if (rendermode != render_soft && !con_startup)		// Why?
 	if (rendermode != render_soft)
 	{
-		HWR_DrawFixedPatch((GLPatch_t *)patch, x, y, pscale, scrn, colormap);
+		HWR_DrawStretchyFixedPatch((GLPatch_t *)patch, x, y, pscale, vscale, scrn, colormap);
 		return;
 	}
 #endif
@@ -560,9 +562,11 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 
 	// only use one dup, to avoid stretching (har har)
 	dupx = dupy = (dupx < dupy ? dupx : dupy);
-	fdup = FixedMul(dupx<<FRACBITS, pscale);
+	fdup = vdup = FixedMul(dupx<<FRACBITS, pscale);
+	if (vscale != pscale)
+		vdup = FixedMul(dupx<<FRACBITS, vscale);
 	colfrac = FixedDiv(FRACUNIT, fdup);
-	rowfrac = FixedDiv(FRACUNIT, fdup);
+	rowfrac = FixedDiv(FRACUNIT, vdup);
 
 	// So it turns out offsets aren't scaled in V_NOSCALESTART unless V_OFFSET is applied ...poo, that's terrible
 	// For now let's just at least give V_OFFSET the ability to support V_FLIP
@@ -579,7 +583,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 
 		// top offset
 		// TODO: make some kind of vertical version of V_FLIP, maybe by deprecating V_OFFSET in future?!?
-		offsety = FixedMul(SHORT(patch->topoffset)<<FRACBITS, pscale);
+		offsety = FixedMul(SHORT(patch->topoffset)<<FRACBITS, vscale);
 
 		if ((scrn & (V_NOSCALESTART|V_OFFSET)) == (V_NOSCALESTART|V_OFFSET)) // Multiply by dupx/dupy for crosshairs
 		{
@@ -691,7 +695,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 			dest = desttop;
 			if (scrn & V_FLIP)
 				dest = deststart + (destend - desttop);
-			dest += FixedInt(FixedMul(topdelta<<FRACBITS,fdup))*vid.width;
+			dest += FixedInt(FixedMul(topdelta<<FRACBITS,vdup))*vid.width;
 
 			for (ofs = 0; dest < deststop && (ofs>>FRACBITS) < column->length; ofs += rowfrac)
 			{
@@ -819,7 +823,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 // V_DrawContinueIcon
 // Draw a mini player!  If we can, that is.  Otherwise we draw a star.
 //
-void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT8 skincolor)
+void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor)
 {
 	if (skinnum < 0 || skinnum >= numskins || (skins[skinnum].flags & SF_HIRES))
 		V_DrawScaledPatch(x - 10, y - 14, flags, W_CachePatchName("CONTINS", PU_CACHE)); // Draw a star
@@ -869,9 +873,27 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 {
 	UINT8 *dest;
 	const UINT8 *deststop;
+	UINT32 alphalevel = ((c & V_ALPHAMASK) >> V_ALPHASHIFT);
 
 	if (rendermode == render_none)
 		return;
+
+	
+	v_translevel = NULL;
+	if (alphalevel)
+	{
+		if (alphalevel == 13)
+			alphalevel = hudminusalpha[cv_translucenthud.value];
+		else if (alphalevel == 14)
+			alphalevel = 10 - cv_translucenthud.value;
+		else if (alphalevel == 15)
+			alphalevel = hudplusalpha[cv_translucenthud.value];
+
+		if (alphalevel >= 10)
+			return; // invis
+
+		v_translevel = transtables + ((alphalevel-1)<<FF_TRANSSHIFT);
+	}
 
 #ifdef HWRENDER
 	if (rendermode != render_soft && !con_startup)
@@ -941,8 +963,22 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	c &= 255;
 
-	for (;(--h >= 0) && dest < deststop; dest += vid.width)
-		memset(dest, c, w * vid.bpp);
+
+	// borrowing this from jimitia's new hud drawing functions rq
+	if (alphalevel)
+	{
+		v_translevel += c<<8;
+		for (;(--h >= 0) && dest < deststop; dest += vid.width)
+		{
+			for (x = 0; x < w; x++)
+				dest[x] = v_translevel[dest[x]];
+		}
+	}
+	else
+	{
+		for (;(--h >= 0) && dest < deststop; dest += vid.width)
+			memset(dest, c, w * vid.bpp);
+	}
 }
 
 #ifdef HWRENDER
@@ -1272,8 +1308,8 @@ UINT8 *V_GetStringColormap(INT32 colorflags)
 		return steelmap;
 	case 13:// 0x8D, pink
 		return pinkmap;
-	case 14:// 0x8E, teal
-		return tealmap;
+	case 14:// 0x8E, brown
+		return brownmap;
 	case 15:// 0x8F, peach
 		return peachmap;
 	default: // reset

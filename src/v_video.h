@@ -27,7 +27,7 @@
 
 extern UINT8 *screens[5];
 
-extern consvar_t cv_ticrate, cv_tpscounter, cv_allcaps, cv_constextsize, \
+extern consvar_t cv_ticrate, cv_tpscounter, cv_fpssize, cv_allcaps, cv_constextsize, \
 cv_globalgamma, cv_globalsaturation, \
 cv_rhue, cv_yhue, cv_ghue, cv_chue, cv_bhue, cv_mhue,\
 cv_rgamma, cv_ygamma, cv_ggamma, cv_cgamma, cv_bgamma, cv_mgamma, \
@@ -81,8 +81,6 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_MONOSPACE          0x00000C00 // Don't do width checks on characters, all characters 8 width
 
 // use bits 13-16 for colors
-// though we only have 7 colors now, perhaps we can introduce
-// more as needed later
 #define V_CHARCOLORSHIFT     12
 #define V_CHARCOLORMASK      0x0000F000
 // for simplicity's sake, shortcuts to specific colors
@@ -99,7 +97,7 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_TEAMAP             0x0000B000
 #define V_STEELMAP           0x0000C000
 #define V_PINKMAP            0x0000D000
-#define V_TEALMAP            0x0000E000
+#define V_BROWNMAP           0x0000E000
 #define V_PEACHMAP           0x0000F000
 
 // use bits 17-20 for alpha transparency
@@ -151,10 +149,11 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_DrawSmallTranslucentPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT/2, s, p, NULL)
 #define V_DrawTinyTranslucentPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT/4, s, p, NULL)
 #define V_DrawSciencePatch(x,y,s,p,sc) V_DrawFixedPatch(x,y,sc,s,p,NULL)
-void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, const UINT8 *colormap);
+#define V_DrawFixedPatch(x,y,sc,s,p,c) V_DrawStretchyFixedPatch(x,y,sc,sc,s,p,c)
+void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap);
 void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
 
-void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT8 skincolor);
+void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor);
 
 // Draw a linear block of pixels into the view buffer.
 void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const UINT8 *src);

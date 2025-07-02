@@ -36,7 +36,7 @@ extern fixed_t fovtan;
 #define MINFOV 60
 #define MAXFOV 179
 
-extern size_t validcount, linecount, loopcount, framecount; 
+extern size_t validcount, linecount, loopcount, framecount;
 
 // The fraction of a tic being drawn (for interpolation between two tics)
 extern fixed_t rendertimefrac;
@@ -144,12 +144,13 @@ extern consvar_t cv_homremoval;
 extern consvar_t cv_chasecam, cv_chasecam2;
 extern consvar_t cv_flipcam, cv_flipcam2;
 extern consvar_t cv_shadow, cv_shadowoffs;
+extern consvar_t cv_skydome;
 extern consvar_t cv_ffloorclip;
 extern consvar_t cv_translucency;
 extern consvar_t cv_precipdensity, cv_drawdist, cv_drawdist_nights, cv_drawdist_precip;
 extern consvar_t cv_fov, cv_fovchange;
 extern consvar_t cv_skybox;
-extern consvar_t cv_tailspickup; 
+extern consvar_t cv_tailspickup;
 
 
 // Called by startup code.

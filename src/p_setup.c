@@ -78,6 +78,8 @@
 
 #include "p_slopes.h"
 
+boolean g_reloadinggamestate = false;
+
 //
 // Map MD5, calculated on level load.
 // Sent to clients in PT_SERVERINFO.
@@ -2221,14 +2223,13 @@ lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 //
 // Some player initialization for map start.
 //
-static void P_LevelInitStuff(void)
+static void P_LevelInitStuff(boolean reloadinggamestate)
 {
 	INT32 i;
 
 	leveltime = 0;
 
-	localaiming = 0;
-	localaiming2 = 0;
+
 
 	// special stage tokens, emeralds, and ring total
 	tokenbits = 0;
@@ -2252,7 +2253,10 @@ static void P_LevelInitStuff(void)
 	// circuit, race and competition stuff
 	circuitmap = false;
 	numstarposts = 0;
-	totalrings = timeinmap = 0;
+	totalrings = 0;
+
+	if (!reloadinggamestate)
+		timeinmap = 0;
 
 	// special stage
 	stagefailed = false;
@@ -2330,7 +2334,7 @@ void P_LoadThingsOnly(void)
 			P_RemoveMobj(mo);
 	}
 
-	P_LevelInitStuff();
+	P_LevelInitStuff(false);
 
 	if (W_IsLumpWad(lastloadedmaplumpnum)) // welp it's a map wad in a pk3
 	{ // HACK: Open wad file rather quickly so we can use the things lump
@@ -2342,6 +2346,9 @@ void P_LoadThingsOnly(void)
 	}
 	else // phew it's just a WAD
 		P_PrepareThings(lastloadedmaplumpnum + ML_THINGS);
+
+	localaiming = 0;
+	localaiming2 = 0;
 	P_LoadThings();
 
 	P_SpawnSecretItems(true);
@@ -2627,12 +2634,44 @@ static boolean P_CanSave(void)
 			&& (gamemap != lastmapsaved));
 }
 
+void P_InitCamera(void)
+{
+ 	P_SetupCamera();
+
+	// Salt: CV_ClearChangedFlags() messes with your settings :(
+	/*if (!cv_cam_height.changed)
+		CV_Set(&cv_cam_height, cv_cam_height.defaultvalue);
+
+	if (!cv_cam_dist.changed)
+		CV_Set(&cv_cam_dist, cv_cam_dist.defaultvalue);
+
+	if (!cv_cam2_height.changed)
+		CV_Set(&cv_cam2_height, cv_cam2_height.defaultvalue);
+
+	if (!cv_cam2_dist.changed)
+		CV_Set(&cv_cam2_dist, cv_cam2_dist.defaultvalue);*/
+
+	// Though, I don't think anyone would care about cam_rotate being reset back to the only value that makes sense :P
+	if (!cv_cam_rotate.changed)
+		CV_Set(&cv_cam_rotate, cv_cam_rotate.defaultvalue);
+
+	if (!cv_cam2_rotate.changed)
+		CV_Set(&cv_cam2_rotate, cv_cam2_rotate.defaultvalue);
+
+	if (!cv_analog.changed)
+			CV_SetValue(&cv_analog, 0);
+	if (!cv_analog2.changed)
+		CV_SetValue(&cv_analog2, 0);
+
+	displayplayer = consoleplayer; // Start with your OWN view, please!	
+}
+
 /** Loads a level from a lump or external wad.
   *
   * \param skipprecip If true, don't spawn precipitation.
   * \todo Clean up, refactor, split up; get rid of the bloat.
   */
-boolean P_SetupLevel(boolean skipprecip)
+boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 {
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
@@ -2645,6 +2684,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	boolean chase;
 
 	levelloading = true;
+	g_reloadinggamestate = reloadinggamestate;
 
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
@@ -2675,7 +2715,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	if (cv_runscripts.value && mapheaderinfo[gamemap-1]->scriptname[0] != '#')
 		P_RunLevelScript(mapheaderinfo[gamemap-1]->scriptname);
 
-	P_LevelInitStuff();
+	P_LevelInitStuff(reloadinggamestate);
 
 	postimgtype = postimgtype2 = postimg_none;
 
@@ -2729,8 +2769,8 @@ boolean P_SetupLevel(boolean skipprecip)
 			// wait loop
 			while (!((nowtime = I_GetTime()) - lastwipetic))
 			{
-			I_Sleep(cv_sleep.value);
-			I_UpdateTime(cv_timescale.value);
+				I_Sleep(cv_sleep.value);
+				I_UpdateTime(cv_timescale.value);
 			}
 
 			lastwipetic = nowtime;
@@ -2751,7 +2791,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	// Let's fade to black here
 	// But only if we didn't do the special stage wipe
-	if (rendermode != render_none && !ranspecialwipe)
+	if (rendermode != render_none && !ranspecialwipe && !reloadinggamestate)
 	{
 		F_WipeStartScreen();
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -2821,8 +2861,6 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skynum, true);
 
 	P_MakeMapMD5(lastloadedmaplumpnum, &mapmd5);
-
-
 
 	// HACK ALERT: Cache the WAD, get the map data into the tables, free memory.
 	// As it is implemented right now, we're assuming an uncompressed WAD.
@@ -2924,7 +2962,7 @@ boolean P_SetupLevel(boolean skipprecip)
 			break;
 
 	// set up world state
-	P_SpawnSpecials(fromnetsave);
+	P_SpawnSpecials(fromnetsave, reloadinggamestate);
 
 	if (loadprecip) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
@@ -3027,36 +3065,10 @@ boolean P_SetupLevel(boolean skipprecip)
 	// landing point for netgames.
 	netgameskip:
 
-	if (!dedicated)
-	{
-		P_SetupCamera();
-
-		// Salt: CV_ClearChangedFlags() messes with your settings :(
-		/*if (!cv_cam_height.changed)
-			CV_Set(&cv_cam_height, cv_cam_height.defaultvalue);
-
-		if (!cv_cam_dist.changed)
-			CV_Set(&cv_cam_dist, cv_cam_dist.defaultvalue);
-
-		if (!cv_cam2_height.changed)
-			CV_Set(&cv_cam2_height, cv_cam2_height.defaultvalue);
-
-		if (!cv_cam2_dist.changed)
-			CV_Set(&cv_cam2_dist, cv_cam2_dist.defaultvalue);*/
-
-		// Though, I don't think anyone would care about cam_rotate being reset back to the only value that makes sense :P
-		if (!cv_cam_rotate.changed)
-			CV_Set(&cv_cam_rotate, cv_cam_rotate.defaultvalue);
-
-		if (!cv_cam2_rotate.changed)
-			CV_Set(&cv_cam2_rotate, cv_cam2_rotate.defaultvalue);
-
-		if (!cv_analog.changed)
-			CV_SetValue(&cv_analog, 0);
-		if (!cv_analog2.changed)
-			CV_SetValue(&cv_analog2, 0);
-
-		displayplayer = consoleplayer; // Start with your OWN view, please!
+	if (!reloadinggamestate)
+	{	
+		P_InitCamera();
+		localaiming = localaiming2 = 0;
 	}
 
 	if (cv_useranalog.value)
@@ -3088,7 +3100,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
-	if (rendermode != render_none)
+	if (rendermode != render_none && !reloadinggamestate)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, (ranspecialwipe) ? 0 : 31);
 
 	if (precache || dedicated)
@@ -3129,7 +3141,8 @@ boolean P_SetupLevel(boolean skipprecip)
 				G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
 		}
 		P_PreTicker(2);
-		LUAh_MapLoad();
+		if (!reloadinggamestate)
+			LUAh_MapLoad();
 	}
 
 	if (rendermode != render_none)
