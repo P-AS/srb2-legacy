@@ -1169,7 +1169,6 @@ INT32 R_ColormapNumForName(char *name)
 //
 static double deltas[256][3], map[256][3];
 
-UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b);
 static int RoundUp(double number);
 
 INT32 R_CreateColormap(char *p1, char *p2, char *p3)
@@ -1347,31 +1346,6 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 	return (INT32)mapnum;
 }
 
-// Thanks to quake2 source!
-// utils3/qdata/images.c
-UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b)
-{
-	int dr, dg, db;
-	int distortion, bestdistortion = 256 * 256 * 4, bestcolor = 0, i;
-
-	for (i = 0; i < 256; i++)
-	{
-		dr = r - pLocalPalette[i].s.red;
-		dg = g - pLocalPalette[i].s.green;
-		db = b - pLocalPalette[i].s.blue;
-		distortion = dr*dr + dg*dg + db*db;
-		if (distortion < bestdistortion)
-		{
-			if (!distortion)
-				return (UINT8)i;
-
-			bestdistortion = distortion;
-			bestcolor = i;
-		}
-	}
-
-	return (UINT8)bestcolor;
-}
 // Thanks to quake2 source!
 // utils3/qdata/images.c
 UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette)
