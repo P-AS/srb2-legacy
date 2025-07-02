@@ -133,7 +133,7 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 			DIGEST(hash, pSurf->PolyColor.rgba);
 			if (cv_grshaders.value && gr_shadersavailable)
 			{
-				DIGEST(hash, shader);
+				DIGEST(hash, shader_target);
 				DIGEST(hash, pSurf->TintColor.rgba);
 				DIGEST(hash, pSurf->FadeColor.rgba);
 				DIGEST(hash, pSurf->LightInfo.light_level);
