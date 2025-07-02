@@ -6143,10 +6143,10 @@ static void HWR_TogglePaletteRendering(void)
 			HWR_SetMapPalette();
 			HWR_SetPalette(pLocalPalette);
 
-			// If the r_opengl "texture palette" stays the same during this switch, the textures
+			// If the r_opengl "texture palette" stays the same during this switch, these textures
 			// will not be cleared out. However they are still out of date since the
 			// composite texture blending method has changed. Therefore they need to be cleared.
-			HWD.pfnClearMipMapCache();
+			HWR_PrepLevelCache(numtextures);
 		}
 	}
 	else
@@ -6157,10 +6157,10 @@ static void HWR_TogglePaletteRendering(void)
 			gr_palette_rendering_state = false;
 			textureformat = GR_RGBA;
 			HWR_SetPalette(pLocalPalette);
-			// If the r_opengl "texture palette" stays the same during this switch, the textures
+			// If the r_opengl "texture palette" stays the same during this switch, these textures
 			// will not be cleared out. However they are still out of date since the
 			// composite texture blending method has changed. Therefore they need to be cleared.
-			HWD.pfnClearMipMapCache();
+			HWR_LoadMapTextures(numtextures);
 		}
 	}
 }
