@@ -392,7 +392,7 @@ static void md2_loadTexture(md2_t *model)
 			UINT32 size;
 			RGBA_t *image;
 			// Lactozilla: Apply colour cube
-			image = grPatch->mipmap->data;
+			image = grpatch->mipmap->grInfo.data;
 			size = w*h;
 			while (size--)
 			{
