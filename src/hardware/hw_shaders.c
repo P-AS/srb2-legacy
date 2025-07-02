@@ -744,7 +744,6 @@ customshaderxlat_t shaderxlat[] =
 	{"Sky", SHADER_SKY},
 	{"PalettePostprocess", SHADER_PALETTE_POSTPROCESS},
 	{"UIColormapFade", SHADER_UI_COLORMAP_FADE},
-	{"UITintedWipe", SHADER_UI_TINTED_WIPE},
 	{NULL, 0},
 };
 
