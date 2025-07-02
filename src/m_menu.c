@@ -1498,10 +1498,8 @@ static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resoluti
 	{IT_STRING, NULL, "alufolie91", NULL, 122},
 	{IT_HEADER|IT_STRING, NULL, "Special Thanks:", NULL, 132},
 	{IT_STRING, NULL, "The Gaming Den", NULL, 142}, // srb2-legacy Co-op server
-	{IT_STRING, NULL, "grindersky", NULL, 152}, // For using it in his 2.1 TAS
-	{IT_STRING, NULL, "SRB2EventZ", NULL, 162}, // Netgame testing and feature ideas
+	{IT_STRING, NULL, "SRB2EventZ", NULL, 152}, // Netgame testing and feature ideas
 };
-
 
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
@@ -8361,7 +8359,7 @@ boolean M_CheckColor(UINT16 color)
 UINT16 M_GetColorNext(UINT16 base)
 {
 	UINT32 i;
-	
+
 	for (i = base + 1; ; i++)
 	{
 		if (i >= numskincolors)
@@ -8374,7 +8372,7 @@ UINT16 M_GetColorNext(UINT16 base)
 UINT16 M_GetColorPrev(UINT16 base)
 {
 	UINT32 i;
-	
+
 	for (i = base - 1; ; i--)
 	{
 		if (!i)
