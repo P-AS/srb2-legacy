@@ -95,8 +95,6 @@ static viewvars_t sky2view_new;
 viewvars_t *oldview = &p1view_old;
 viewvars_t *newview = &p1view_new;
 
-
-
 enum viewcontext_e viewcontext = VIEWCONTEXT_PLAYER1;
 
 static levelinterpolator_t **levelinterpolators;

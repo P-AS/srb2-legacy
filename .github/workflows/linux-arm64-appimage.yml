@@ -31,3 +31,4 @@ jobs:
         name: srb2legacy-linux-arm64-appimage-${{ github.sha }}
         path: |
           Sonic_Robo_Blast_2_Legacy_(2.1)-x86_64.AppImage
+          src/comptime.h
