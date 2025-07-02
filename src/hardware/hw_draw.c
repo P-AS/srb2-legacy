@@ -547,6 +547,7 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 {
 	FOutVector  v[4];
 	FSurfaceInfo Surf;
+	FBITFIELD poly_flags = PF_NoTexture|PF_Modulated|PF_NoDepthTest;
 
 	v[0].x = v[3].x = -1.0f;
 	v[2].x = v[1].x =  1.0f;
@@ -574,8 +575,12 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 
 			return;
 		}
-		Surf.PolyColor.rgba = UINT2RGBA(0x01010160);
-		Surf.PolyColor.s.alpha = 0xFF - (strength*8);
+		else
+		{
+			Surf.PolyColor.rgba = UINT2RGBA(0x01010160);
+			Surf.PolyColor.s.alpha = (strength*8);
+			poly_flags |= PF_Translucent;
+		}
 	}
 	else // Do TRANSMAP** fade.
 	{
@@ -586,8 +591,9 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 			Surf.PolyColor.s.alpha = softwaretranstogl[strength];
 		else
 			Surf.PolyColor.s.alpha = (UINT8)(strength*25.5f);
+		poly_flags |= PF_Translucent;
 	}
-	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
+	HWD.pfnDrawPolygon(&Surf, v, 4, poly_flags);
 }
 
 // Draw the console background with translucency support
