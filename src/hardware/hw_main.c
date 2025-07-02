@@ -3775,7 +3775,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	pslope_t *floorslope;
 	fixed_t slopez;
 	FBITFIELD blendmode = PF_Translucent|PF_Modulated;
-	INT32 shader = SHADER_DEFAULT;
+	INT32 shader = SHADER_NONE;
 
 	R_GetShadowZ(spr->mobj, &floorslope);
 
@@ -4316,7 +4316,7 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 	FOutVector wallVerts[4];
 	GLPatch_t *gpatch; // sprite patch converted to hardware
 	FSurfaceInfo Surf;
-	INT32 shader = SHADER_DEFAULT;
+	INT32 shader = SHADER_NONE;
 
 	if (spr->mobj)
 		this_scale = spr->scale;
