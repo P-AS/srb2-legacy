@@ -137,7 +137,7 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{9, "Gold"},		{10,"Yellow"},		{11,"Emerald"},
 												{12,"Green"},		{13,"Cyan"},		{14,"Steel"},
 												{15,"Periwinkle"},	{16,"Blue"},		{17,"Purple"},
-												{18,"Lavender"},
+												{18,"Lavender"}, {19,"Gray"},
 												{0, NULL}};
 
 consvar_t cons_backcolor = {"con_backcolor", "Green", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
@@ -280,6 +280,7 @@ void CON_SetupBackColormap(void)
 		case 16:	palindex = 239;	break; 	// Blue
 		case 17:	palindex = 199; shift = 7; 	break; 	// Purple
 		case 18:	palindex = 255; shift = 7; 	break; 	// Lavender
+		case 19:	palindex = 15; shift = 7;	break; 	// Gray
 		// Default green
 		default:	palindex = 175; break;
 
