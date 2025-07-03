@@ -1163,7 +1163,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 
 		sprframe = &sprdef->spriteframes[spr->mobj->frame & FF_FRAMEMASK];
 
-		if (sprframe->rotate || spr->mobj->frame & FF_PAPERSPRITE)
+		if (sprframe->rotate || (spr->mobj->frame & FF_PAPERSPRITE))
 		{
 			const fixed_t anglef = AngleFixed(interp.angle);
 			p.angley = FIXED_TO_FLOAT(anglef);
