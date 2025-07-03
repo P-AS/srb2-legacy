@@ -989,7 +989,7 @@ static UINT32 V_GetHWConsBackColor(void)
 	switch (cons_backcolor.value)
 	{
 		case 0:		r = 0xff; g = 0xff; b = 0xff;	break; 	// White
-		case 1:		r = 0x80; g = 0x80; b = 0x80;	break; 	// Black
+		case 1:		r = 0x01; g = 0x01; b = 0x01;	break; 	// Black -- it was gray, not totally black. Or is it? - Michael Stevens 2025
 		case 2:		r = 0xde; g = 0xb8; b = 0x87;	break;	// Sepia
 		case 3:		r = 0x40; g = 0x20; b = 0x10;	break; 	// Brown
 		case 4:		r = 0xfa; g = 0x80; b = 0x72;	break; 	// Pink
@@ -1007,6 +1007,7 @@ static UINT32 V_GetHWConsBackColor(void)
 		case 16:	r = 0x00; g = 0x00; b = 0xff;	break; 	// Blue
 		case 17:	r = 0xff; g = 0x00; b = 0xff;	break; 	// Purple
 		case 18:	r = 0xee; g = 0x82; b = 0xee;	break; 	// Lavender
+		case 19:	r = 0x80; g = 0x80; b = 0x80;	break; 	// Gray
 		// Default green
 		default:	r = 0x00; g = 0x80; b = 0x00;	break;
 	}
