@@ -19,9 +19,6 @@ jobs:
     - name: Install Dependencies
       run: sudo apt-get update && sudo apt install -y wget libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libminiupnpc-dev libopenmpt-dev
 
-    - name: Fetch Build Script
-      run: wget https://chromaticpipe.github.io/assets/srb2-legacy-appimage.sh && chmod +x srb2-legacy-appimage.sh # Move in tree?
-
     - name: Build SRB2 Legacy AppImage
       run: chmod +x srb2-legacy-appimage.sh && ./srb2-legacy-appimage.sh
     
