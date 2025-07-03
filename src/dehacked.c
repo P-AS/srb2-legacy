@@ -33,6 +33,7 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "d_clisrv.h"
+#include "r_draw.h" // for skincolor_modified
 
 #include "m_cond.h"
 
@@ -52,10 +53,12 @@ int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
 // The crazy word-reading stuff uses these.
 static char *FREE_STATES[NUMSTATEFREESLOTS];
 static char *FREE_MOBJS[NUMMOBJFREESLOTS];
+static char *FREE_SKINCOLORS[NUMCOLORFREESLOTS];
 static UINT8 used_spr[(NUMSPRITEFREESLOTS / 8) + 1]; // Bitwise flag for sprite freeslot in use! I would use ceil() here if I could, but it only saves 1 byte of memory anyway.
 #define initfreeslots() {\
 memset(FREE_STATES,0,sizeof(char *) * NUMSTATEFREESLOTS);\
 memset(FREE_MOBJS,0,sizeof(char *) * NUMMOBJFREESLOTS);\
+memset(FREE_SKINCOLORS, 0, sizeof(FREE_SKINCOLORS));\
 memset(used_spr,0,sizeof(UINT8) * ((NUMSPRITEFREESLOTS / 8) + 1));\
 }
 
@@ -69,6 +72,7 @@ static sfxenum_t get_sfx(const char *word);
 static UINT16 get_mus(const char *word, UINT8 dehacked_mode);
 #endif
 static hudnum_t get_huditem(const char *word);
+static skincolornum_t get_skincolor(const char *word);
 
 boolean deh_loaded = false;
 static int dbg_line;
@@ -657,6 +661,16 @@ static void readfreeslots(MYFILE *f)
 						break;
 					}
 			}
+			else if (fastcmp(type, "SKINCOLOR"))
+			{
+				for (i = 0; i < NUMCOLORFREESLOTS; i++)
+					if (!FREE_SKINCOLORS[i]) {
+						FREE_SKINCOLORS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
+						strcpy(FREE_SKINCOLORS[i],word);
+						numskincolors++;
+						break;
+					}
+			}
 			else
 				deh_warning("Freeslots: unknown enum class '%s' for '%s_%s'", type, type, word);
 		}
@@ -820,6 +834,128 @@ static void readthing(MYFILE *f, INT32 num)
 			}
 			else
 				deh_warning("Thing %d: unknown word '%s'", num, word);
+		}
+	} while (!myfeof(f)); // finish when the line is empty
+
+	Z_Free(s);
+}
+
+void readskincolor(MYFILE *f, INT32 num)
+{
+	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+	char *word = s;
+	char *word2;
+	char *tmp;
+
+	Color_cons_t[num].value = num;
+
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '\n')
+				break;
+
+			// First remove trailing newline, if there is one
+			tmp = strchr(s, '\n');
+			if (tmp)
+				*tmp = '\0';
+
+			tmp = strchr(s, '#');
+			if (tmp)
+				*tmp = '\0';
+			if (s == tmp)
+				continue; // Skip comment lines, but don't break.
+
+			// Get the part before the " = "
+			tmp = strchr(s, '=');
+			if (tmp)
+				*(tmp-1) = '\0';
+			else
+				break;
+			strupr(word);
+
+			// Now get the part after
+			word2 = tmp += 2;
+
+			if (fastcmp(word, "NAME"))
+			{
+				size_t namesize = sizeof(skincolors[num].name);
+				char *truncword = malloc(namesize); // Follow C standard - SSNTails
+
+				UINT16 dupecheck;
+
+				deh_strlcpy(truncword, word2, namesize, va("Skincolor %d: name", num)); // truncate here to check for dupes
+				dupecheck = R_GetColorByName(truncword);
+				if (truncword[0] != '\0' && (!stricmp(truncword, skincolors[SKINCOLOR_NONE].name) || (dupecheck && dupecheck != num)))
+				{
+					size_t lastchar = strlen(truncword);
+					char *oldword = malloc(lastchar + 1); // Follow C standard - SSNTails
+					char dupenum = '1';
+
+					strlcpy(oldword, truncword, lastchar+1);
+					lastchar--;
+					if (lastchar == namesize-2) // exactly max length, replace last character with 0
+						truncword[lastchar] = '0';
+					else // append 0
+					{
+						strcat(truncword, "0");
+						lastchar++;
+					}
+
+					while (R_GetColorByName(truncword))
+					{
+						truncword[lastchar] = dupenum;
+						if (dupenum == '9')
+							dupenum = 'A';
+						else if (dupenum == 'Z') // give up :?
+							break;
+						else
+							dupenum++;
+					}
+
+					deh_warning("Skincolor %d: name %s is a duplicate of another skincolor's name - renamed to %s", num, oldword, truncword);
+					free(oldword);
+				}
+
+				strlcpy(skincolors[num].name, truncword, namesize); // already truncated
+
+				free(truncword);
+			}
+			else if (fastcmp(word, "RAMP"))
+			{
+				UINT8 i;
+				tmp = strtok(word2,",");
+				for (i = 0; i < COLORRAMPSIZE; i++) {
+					skincolors[num].ramp[i] = (UINT8)get_number(tmp);
+					if ((tmp = strtok(NULL,",")) == NULL)
+						break;
+				}
+				skincolor_modified[num] = true;
+			}
+			else if (fastcmp(word, "INVCOLOR"))
+			{
+				UINT16 v = (UINT16)get_number(word2);
+				if (v < numskincolors)
+					skincolors[num].invcolor = v;
+				else
+					skincolors[num].invcolor = SKINCOLOR_GREEN;
+			}
+			else if (fastcmp(word, "INVSHADE"))
+			{
+				skincolors[num].invshade = get_number(word2)%COLORRAMPSIZE;
+			}
+			else if (fastcmp(word, "CHATCOLOR"))
+			{
+				skincolors[num].chatcolor = get_number(word2);
+			}
+			else if (fastcmp(word, "ACCESSIBLE"))
+			{
+				if (num > FIRSTSUPERCOLOR)
+					skincolors[num].accessible = (boolean)(atoi(word2) || word2[0] == 'T' || word2[0] == 'Y');
+			}
+			else
+				deh_warning("Skincolor %d: unknown word '%s'", num, word);
 		}
 	} while (!myfeof(f)); // finish when the line is empty
 
@@ -2823,22 +2959,22 @@ static void readmaincfg(MYFILE *f)
 			else if (fastcmp(word, "REDTEAM"))
 			{
 				DEH_WriteUndoline(word, va("%d", skincolor_redteam), UNDO_NONE);
-				skincolor_redteam = (UINT8)get_number(word2);
+				skincolor_redteam = (UINT16)get_number(word2);
 			}
 			else if (fastcmp(word, "BLUETEAM"))
 			{
 				DEH_WriteUndoline(word, va("%d", skincolor_blueteam), UNDO_NONE);
-				skincolor_blueteam = (UINT8)get_number(word2);
+				skincolor_blueteam = (UINT16)get_number(word2);
 			}
 			else if (fastcmp(word, "REDRING"))
 			{
 				DEH_WriteUndoline(word, va("%d", skincolor_redring), UNDO_NONE);
-				skincolor_redring = (UINT8)get_number(word2);
+				skincolor_redring = (UINT16)get_number(word2);
 			}
 			else if (fastcmp(word, "BLUERING"))
 			{
 				DEH_WriteUndoline(word, va("%d", skincolor_bluering), UNDO_NONE);
-				skincolor_bluering = (UINT8)get_number(word2);
+				skincolor_bluering = (UINT16)get_number(word2);
 			}
 			else if (fastcmp(word, "INVULNTICS"))
 			{
@@ -3422,6 +3558,18 @@ static void DEH_LoadDehackedFile(MYFILE *f, UINT16 wad)
 						ignorelines(f);
 					}
 					DEH_WriteUndoline(word, word2, UNDO_HEADER);
+				}
+				else if (fastcmp(word, "SKINCOLOR") || fastcmp(word, "COLOR"))
+				{
+					if (i == 0 && word2[0] != '0') // If word2 isn't a number
+						i = get_skincolor(word2); // find a skincolor by name
+					if (i && i < numskincolors)
+						readskincolor(f, i);
+					else
+					{
+						deh_warning("Skincolor %d out of range (1 - %d)", i, numskincolors-1);
+						ignorelines(f);
+					}
 				}
 				else if (fastcmp(word, "EMBLEM"))
 				{
@@ -6721,55 +6869,6 @@ static const char *const ML_LIST[16] = {
 	"TFERLINE"
 };
 
-// This DOES differ from r_draw's Color_Names, unfortunately.
-// Also includes Super colors
-static const char *COLOR_ENUMS[] = {
-	"NONE",     	// SKINCOLOR_NONE
-	"WHITE",    	// SKINCOLOR_WHITE
-	"SILVER",   	// SKINCOLOR_SILVER
-	"GREY",	    	// SKINCOLOR_GREY
-	"BLACK",    	// SKINCOLOR_BLACK
-	"CYAN",     	// SKINCOLOR_CYAN
-	"TEAL",     	// SKINCOLOR_TEAL
-	"STEELBLUE",	// SKINCOLOR_STEELBLUE
-	"BLUE",     	// SKINCOLOR_BLUE
-	"PEACH",    	// SKINCOLOR_PEACH
-	"TAN",      	// SKINCOLOR_TAN
-	"PINK",     	// SKINCOLOR_PINK
-	"LAVENDER", 	// SKINCOLOR_LAVENDER
-	"PURPLE",   	// SKINCOLOR_PURPLE
-	"ORANGE",   	// SKINCOLOR_ORANGE
-	"ROSEWOOD", 	// SKINCOLOR_ROSEWOOD
-	"BEIGE",    	// SKINCOLOR_BEIGE
-	"BROWN",    	// SKINCOLOR_BROWN
-	"RED",      	// SKINCOLOR_RED
-	"DARKRED",  	// SKINCOLOR_DARKRED
-	"NEONGREEN",	// SKINCOLOR_NEONGREEN
-	"GREEN",    	// SKINCOLOR_GREEN
-	"ZIM",      	// SKINCOLOR_ZIM
-	"OLIVE",    	// SKINCOLOR_OLIVE
-	"YELLOW",   	// SKINCOLOR_YELLOW
-	"GOLD",     	// SKINCOLOR_GOLD
-	// Super special awesome Super flashing colors!
-	"SUPER1",   	// SKINCOLOR_SUPER1
-	"SUPER2",   	// SKINCOLOR_SUPER2,
-	"SUPER3",   	// SKINCOLOR_SUPER3,
-	"SUPER4",   	// SKINCOLOR_SUPER4,
-	"SUPER5",   	// SKINCOLOR_SUPER5,
-	// Super Tails
-	"TSUPER1",  	// SKINCOLOR_TSUPER1,
-	"TSUPER2",  	// SKINCOLOR_TSUPER2,
-	"TSUPER3",  	// SKINCOLOR_TSUPER3,
-	"TSUPER4",  	// SKINCOLOR_TSUPER4,
-	"TSUPER5",  	// SKINCOLOR_TSUPER5,
-	// Super Knuckles
-	"KSUPER1",  	// SKINCOLOR_KSUPER1,
-	"KSUPER2",  	// SKINCOLOR_KSUPER2,
-	"KSUPER3",  	// SKINCOLOR_KSUPER3,
-	"KSUPER4",  	// SKINCOLOR_KSUPER4,
-	"KSUPER5"   	// SKINCOLOR_KSUPER5,
-};
-
 static const char *const POWERS_LIST[] = {
 	"INVULNERABILITY",
 	"SNEAKERS",
@@ -6843,6 +6942,54 @@ static const char *const HUDITEMS_LIST[] = {
 	"LAP"
 };
 
+static const char *COLOR_ENUMS[] = {
+	"NONE",
+
+	"WHITE",
+	"SILVER",
+	"GREY",
+	"BLACK",
+	"CYAN",
+	"TEAL",
+	"STEELBLUE",
+	"BLUE",
+	"PEACH",
+	"TAN",
+	"PINK",
+	"LAVENDER",
+	"PURPLE",
+	"ORANGE",
+	"ROSEWOOD",
+	"BEIGE",
+	"BROWN",
+	"RED",
+	"DARKRED",
+	"NEONGREEN",
+	"GREEN",
+	"ZIM",
+	"OLIVE",
+	"YELLOW",
+	"GOLD",
+
+	"SUPER1",
+	"SUPER2",
+	"SUPER3",
+	"SUPER4",
+	"SUPER5",
+
+	"TSUPER1",
+	"TSUPER2",
+	"TSUPER3",
+	"TSUPER4",
+	"TSUPER5",
+
+	"KSUPER1",
+	"KSUPER2",
+	"KSUPER3",
+	"KSUPER4",
+	"KSUPER5"
+};
+
 struct {
 	const char *n;
 	// has to be able to hold both fixed_t and angle_t, so drastic measure!!
@@ -6877,8 +7024,6 @@ struct {
 	{"PUSHACCEL",PUSHACCEL},
 	{"MODID",MODID}, // I don't know, I just thought it would be cool for a wad to potentially know what mod it was loaded into.
 	{"CODEBASE",CODEBASE}, // or what release of SRB2 this is.
-	{"VERSION",VERSION}, // Grab the game's version!
-	{"SUBVERSION",SUBVERSION}, // more precise version number
 
 	// Special linedef executor tag numbers!
 	{"LE_PINCHPHASE",LE_PINCHPHASE}, // A boss entered pinch phase (and, in most cases, is preparing their pinch phase attack!)
@@ -6981,7 +7126,8 @@ struct {
 
 	// SKINCOLOR_ doesn't include these..!
 	{"MAXSKINCOLORS",MAXSKINCOLORS},
-	{"MAXTRANSLATIONS",MAXTRANSLATIONS},
+	{"FIRSTSUPERCOLOR",FIRSTSUPERCOLOR},
+	{"NUMSUPERCOLORS",NUMSUPERCOLORS},
 
 	// Precipitation
 	{"PRECIP_NONE",PRECIP_NONE},
@@ -7237,6 +7383,11 @@ struct {
 	{"BT_CUSTOM2",BT_CUSTOM2}, // Lua customizable
 	{"BT_CUSTOM3",BT_CUSTOM3}, // Lua customizable
 
+	// Lua command registration flags
+	{"COM_ADMIN",COM_ADMIN},
+	{"COM_SPLITSCREEN",COM_SPLITSCREEN},
+	{"COM_LOCAL",COM_LOCAL},
+
 	// cvflags_t
 	{"CV_SAVE",CV_SAVE},
 	{"CV_CALL",CV_CALL},
@@ -7444,6 +7595,26 @@ static hudnum_t get_huditem(const char *word)
 	return HUD_LIVESNAME;
 }
 
+static skincolornum_t get_skincolor(const char *word)
+{
+	skincolornum_t i;
+	if (*word >= '0' && *word <= '9')
+		return atoi(word);
+	if (fastncmp("SKINCOLOR_",word,10))
+		word += 10; // take off the SKINCOLOR_
+	for (i = 0; i < NUMCOLORFREESLOTS; i++) {
+		if (!FREE_SKINCOLORS[i])
+			break;
+		if (fastcmp(word, FREE_SKINCOLORS[i]))
+			return SKINCOLOR_FIRSTFREESLOT+i;
+	}
+	for (i = 0; i < numskincolors; i++)
+		if (fastcmp(word, COLOR_ENUMS[i]))
+			return i;
+	deh_warning("Couldn't find skincolor named 'SKINCOLOR_%s'",word);
+	return SKINCOLOR_GREEN;
+}
+
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
 {
@@ -7452,7 +7623,7 @@ fixed_t get_number(const char *word)
 
 void DEH_Check(void)
 {
-#if defined(_DEBUG) || defined(PARANOIA)
+#if defined(_DEBUG) || defined(PARANOIA) || defined(initfreeslots)
 	const size_t dehstates = sizeof(STATE_LIST)/sizeof(const char*);
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
 	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
@@ -7467,8 +7638,8 @@ void DEH_Check(void)
 	if (dehpowers != NUMPOWERS)
 		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d powers defined, versus %s in the Dehacked list)\n", NUMPOWERS, sizeu1(dehpowers));
 
-	if (dehcolors != MAXTRANSLATIONS)
-		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", MAXTRANSLATIONS, sizeu1(dehcolors));
+	if (dehcolors != SKINCOLOR_FIRSTFREESLOT)
+		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", SKINCOLOR_FIRSTFREESLOT, sizeu1(dehcolors));
 #endif
 }
 
@@ -7571,6 +7742,22 @@ static inline int lib_freeslot(lua_State *L)
 					break;
 				}
 			if (i == NUMMOBJFREESLOTS)
+				return r;
+		}
+		else if (fastcmp(type, "SKINCOLOR"))
+		{
+			skincolornum_t i;
+			for (i = 0; i < NUMCOLORFREESLOTS; i++)
+				if (!FREE_SKINCOLORS[i]) {
+					CONS_Printf("Skincolor SKINCOLOR_%s allocated.\n",word);
+					FREE_SKINCOLORS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
+					strcpy(FREE_SKINCOLORS[i],word);
+					lua_pushinteger(L, SKINCOLOR_FIRSTFREESLOT + i);
+					numskincolors++;
+					r++;
+					break;
+				}
+			if (i == NUMCOLORFREESLOTS)
 				return r;
 		}
 		Z_Free(s);
@@ -7817,11 +8004,21 @@ static inline int lib_getenum(lua_State *L)
 	}
 	else if (fastncmp("SKINCOLOR_",word,10)) {
 		p = word+10;
-		for (i = 0; i < MAXTRANSLATIONS; i++)
+		for (i = 0; i < NUMCOLORFREESLOTS; i++) {
+			if (!FREE_SKINCOLORS[i])
+				break;
+			if (fastcmp(p, FREE_SKINCOLORS[i])) {
+				lua_pushinteger(L, SKINCOLOR_FIRSTFREESLOT+i);
+				return 1;
+			}
+		}
+		for (i = 0; i < SKINCOLOR_FIRSTFREESLOT; i++)
+		{
 			if (fastcmp(p, COLOR_ENUMS[i])) {
 				lua_pushinteger(L, i);
 				return 1;
 			}
+		}
 		if (mathlib) return luaL_error(L, "skincolor '%s' could not be found.\n", word);
 		return 0;
 	}
@@ -7961,11 +8158,23 @@ static inline int lib_getenum(lua_State *L)
 			return 0;
 		LUA_PushUserdata(L, &players[adminplayers[0]], META_PLAYER);
 		return 1;
+	} else if (fastcmp(word,"isserver")) {
+		lua_pushboolean(L, server);
+		return 1;
+	} else if (fastcmp(word, "isdedicatedserver")) {
+		lua_pushboolean(L, dedicated);
+		return 1;
 	} else if (fastcmp(word,"emeralds")) {
 		lua_pushinteger(L, emeralds);
 		return 1;
 	} else if (fastcmp(word,"gravity")) {
 		lua_pushinteger(L, gravity);
+		return 1;
+	} else if (fastcmp(word,"VERSION")) {
+		lua_pushinteger(L, VERSION);
+		return 1;
+	} else if (fastcmp(word,"SUBVERSION")) {
+		lua_pushinteger(L, SUBVERSION);
 		return 1;
 	} else if (fastcmp(word,"VERSIONSTRING")) {
 		lua_pushstring(L, VERSIONSTRING);

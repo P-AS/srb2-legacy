@@ -2,9 +2,9 @@ name: Windows x86
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "next", "master" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "next", "master" ]
 
 env:
   PREFIX: i686-w64-mingw32
@@ -15,19 +15,16 @@ jobs:
     steps:
      - uses: actions/checkout@v4.2.2
 
-     - name: Update package list
-       run: sudo apt-get update
-
      - name: Install Dependencies
-       run: sudo apt-get install -y gcc-mingw-w64-i686 binutils-mingw-w64-i686
+       run: sudo apt update && sudo apt install -y gcc-mingw-w64-i686 binutils-mingw-w64-i686
 
      - name: Build SRB2 Legacy
        run: make -C src/ --keep-going  -j$(nproc) MINGW=1
 
      - name: Upload Artifacts
-       uses: actions/upload-artifact@v4.6.1
+       uses: actions/upload-artifact@v4.6.2
        with:
-        name: srb2legacy-windows-x86
+        name: srb2legacy-windows-x86-${{ github.sha }}
         path: |
           bin/
           src/comptime.h

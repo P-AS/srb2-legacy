@@ -104,6 +104,11 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 #include "lua_script.h"
 
+
+// Version numbers for netplay :upside_down_face:
+int    VERSION;
+int SUBVERSION;
+
 // platform independant focus loss
 UINT8 window_notinfocus = false;
 INT32 window_x;
@@ -116,6 +121,7 @@ INT32 window_y;
 static const char *pagename = "MAP1PIC";
 static char *startupwadfiles[MAX_WADFILES];
 
+UINT16 numskincolors;
 boolean devparm = false; // started game with -devparm
 
 boolean singletics = false; // timedemo
@@ -252,7 +258,7 @@ static void D_Display(void)
 	if (vid.recalc)
 		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
 
-	
+
 	if (rendermode == render_soft && !splitscreen)
 		R_CheckViewMorph();
 
@@ -406,7 +412,7 @@ static void D_Display(void)
 			{
 				if (!splitscreen)
 					R_ApplyViewMorph();
-					
+
 				if (postimgtype)
 					V_DoPostProcessor(0, postimgtype, postimgparam);
 				if (postimgtype2)
@@ -767,6 +773,22 @@ void D_AdvanceDemo(void)
 	advancedemo = true;
 }
 
+
+static void
+D_ConvertVersionNumbers (void)
+{
+	/* leave at defaults (0) under DEVELOP */
+#ifndef DEVELOP
+	int major;
+	int minor;
+
+	sscanf(SRB2VERSION, "%d.%d.%d", &major, &minor, &SUBVERSION);
+
+	/* this is stupid */
+	VERSION = ( major * 100 ) + minor;
+#endif
+}
+
 // =========================================================================
 // D_SRB2Main
 // =========================================================================
@@ -779,7 +801,7 @@ void D_StartTitle(void)
 	INT32 i;
 
 	S_StopMusic();
-	
+
 	if (netgame)
 	{
 		if (gametype == GT_COOP)
@@ -1034,6 +1056,9 @@ void D_SRB2Main(void)
 	INT32 pstartmap = 1;
 	boolean autostart = false;
 
+	/* break the version string into version numbers, for netplay */
+	D_ConvertVersionNumbers();
+
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
 	"\n\nSonic Robo Blast 2\n"
@@ -1245,6 +1270,9 @@ void D_SRB2Main(void)
 	// Setup character tables
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
+
+	// load colors
+	M_InitSkincolors();
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
@@ -1525,7 +1553,7 @@ void D_SRB2Main(void)
 		pagename = "TITLESKY";
 		levelstarttic = gametic;
 		G_SetGamestate(GS_LEVEL);
-		if (!P_SetupLevel(false))
+		if (!P_SetupLevel(false, false))
 			I_Quit(); // fail so reset game stuff
 	}
 }
@@ -1583,4 +1611,3 @@ const char *D_Home(void)
 	if (usehome) return userhome;
 	else return NULL;
 }
-

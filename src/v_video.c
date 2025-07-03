@@ -488,12 +488,12 @@ static inline UINT8 transmappedpdraw(const UINT8 *dest, const UINT8 *source, fix
 }
 
 // Draws a patch scaled to arbitrary size.
-void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
+void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
 {
 	UINT8 (*patchdrawfunc)(const UINT8*, const UINT8*, fixed_t);
 	UINT32 alphalevel = 0;
 
-	fixed_t col, ofs, colfrac, rowfrac, fdup;
+	fixed_t col, ofs, colfrac, rowfrac, fdup, vdup;
 	INT32 dupx, dupy;
 	const column_t *column;
 	UINT8 *desttop, *dest, *deststart, *destend;
@@ -508,7 +508,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 	//if (rendermode != render_soft && !con_startup)		// Why?
 	if (rendermode != render_soft)
 	{
-		HWR_DrawFixedPatch((GLPatch_t *)patch, x, y, pscale, scrn, colormap);
+		HWR_DrawStretchyFixedPatch((GLPatch_t *)patch, x, y, pscale, vscale, scrn, colormap);
 		return;
 	}
 #endif
@@ -562,9 +562,11 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 
 	// only use one dup, to avoid stretching (har har)
 	dupx = dupy = (dupx < dupy ? dupx : dupy);
-	fdup = FixedMul(dupx<<FRACBITS, pscale);
+	fdup = vdup = FixedMul(dupx<<FRACBITS, pscale);
+	if (vscale != pscale)
+		vdup = FixedMul(dupx<<FRACBITS, vscale);
 	colfrac = FixedDiv(FRACUNIT, fdup);
-	rowfrac = FixedDiv(FRACUNIT, fdup);
+	rowfrac = FixedDiv(FRACUNIT, vdup);
 
 	// So it turns out offsets aren't scaled in V_NOSCALESTART unless V_OFFSET is applied ...poo, that's terrible
 	// For now let's just at least give V_OFFSET the ability to support V_FLIP
@@ -581,7 +583,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 
 		// top offset
 		// TODO: make some kind of vertical version of V_FLIP, maybe by deprecating V_OFFSET in future?!?
-		offsety = FixedMul(SHORT(patch->topoffset)<<FRACBITS, pscale);
+		offsety = FixedMul(SHORT(patch->topoffset)<<FRACBITS, vscale);
 
 		if ((scrn & (V_NOSCALESTART|V_OFFSET)) == (V_NOSCALESTART|V_OFFSET)) // Multiply by dupx/dupy for crosshairs
 		{
@@ -693,7 +695,7 @@ void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t 
 			dest = desttop;
 			if (scrn & V_FLIP)
 				dest = deststart + (destend - desttop);
-			dest += FixedInt(FixedMul(topdelta<<FRACBITS,fdup))*vid.width;
+			dest += FixedInt(FixedMul(topdelta<<FRACBITS,vdup))*vid.width;
 
 			for (ofs = 0; dest < deststop && (ofs>>FRACBITS) < column->length; ofs += rowfrac)
 			{
@@ -821,7 +823,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 // V_DrawContinueIcon
 // Draw a mini player!  If we can, that is.  Otherwise we draw a star.
 //
-void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT8 skincolor)
+void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor)
 {
 	if (skinnum < 0 || skinnum >= numskins || (skins[skinnum].flags & SF_HIRES))
 		V_DrawScaledPatch(x - 10, y - 14, flags, W_CachePatchName("CONTINS", PU_CACHE)); // Draw a star
@@ -871,9 +873,27 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 {
 	UINT8 *dest;
 	const UINT8 *deststop;
+	UINT32 alphalevel = ((c & V_ALPHAMASK) >> V_ALPHASHIFT);
 
 	if (rendermode == render_none)
 		return;
+
+	
+	v_translevel = NULL;
+	if (alphalevel)
+	{
+		if (alphalevel == 13)
+			alphalevel = hudminusalpha[cv_translucenthud.value];
+		else if (alphalevel == 14)
+			alphalevel = 10 - cv_translucenthud.value;
+		else if (alphalevel == 15)
+			alphalevel = hudplusalpha[cv_translucenthud.value];
+
+		if (alphalevel >= 10)
+			return; // invis
+
+		v_translevel = transtables + ((alphalevel-1)<<FF_TRANSSHIFT);
+	}
 
 #ifdef HWRENDER
 	if (rendermode != render_soft && !con_startup)
@@ -943,8 +963,22 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	c &= 255;
 
-	for (;(--h >= 0) && dest < deststop; dest += vid.width)
-		memset(dest, c, w * vid.bpp);
+
+	// borrowing this from jimitia's new hud drawing functions rq
+	if (alphalevel)
+	{
+		v_translevel += c<<8;
+		for (;(--h >= 0) && dest < deststop; dest += vid.width)
+		{
+			for (x = 0; x < w; x++)
+				dest[x] = v_translevel[dest[x]];
+		}
+	}
+	else
+	{
+		for (;(--h >= 0) && dest < deststop; dest += vid.width)
+			memset(dest, c, w * vid.bpp);
+	}
 }
 
 #ifdef HWRENDER
@@ -1200,25 +1234,42 @@ void V_DrawPatchFill(patch_t *pat)
 //
 // Fade all the screen buffer, so that the menu is more readable,
 // especially now that we use the small hufont in the menus...
-//
-void V_DrawFadeScreen(void)
+// If color is 0x00 to 0xFF, draw transtable (strength range 0-10).
+// Else, use COLORMAP lump (strength range 0-31).
+// IF YOU ARE NOT CAREFUL, THIS CAN AND WILL CRASH!
+// I have kept the safety checks out of this function;
+// the v.fadeScreen Lua interface handles those.
+void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 {
-	const UINT8 *fadetable = (UINT8 *)colormaps + 16*256;
-	const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
-	UINT8 *buf = screens[0];
+	if (!strength)
+		return;
+
+	if (!(color & 0xFF00) && strength == 10)
+	{
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, color);
+		return;
+	}
 
 #ifdef HWRENDER
 	if (rendermode != render_soft && rendermode != render_none)
 	{
-		HWR_FadeScreenMenuBack(0x01010160, 0); // hack, 0 means full height
+		HWR_FadeScreenMenuBack(color, strength);
 		return;
 	}
 #endif
 
-	// heavily simplified -- we don't need to know x or y
-	// position when we're doing a full screen fade
-	for (; buf < deststop; ++buf)
-		*buf = fadetable[*buf];
+	{
+		const UINT8 *fadetable = ((color & 0xFF00) // Color is not palette index?
+		? ((UINT8 *)colormaps + strength*256) // Do COLORMAP fade.
+		: ((UINT8 *)transtables + ((10-strength)<<FF_TRANSSHIFT) + color*256)); // Else, do TRANSMAP** fade.
+		const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
+		UINT8 *buf = screens[0];
+
+		// heavily simplified -- we don't need to know x or y
+		// position when we're doing a full screen fade
+		for (; buf < deststop; ++buf)
+			*buf = fadetable[*buf];
+	}
 }
 
 // Simple translucency with one color, over a set number of lines starting from the top.
