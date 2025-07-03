@@ -223,7 +223,7 @@ static void F_SkyScroll(INT32 scrollspeed)
 
 	pat = W_CachePatchName("TITLESKY", PU_PATCH);
 
-	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width) + (FixedInt((R_GetHudUncap(true)-FRACUNIT) * scrollspeed)/16);
+	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width) + (FixedInt((R_GetHudUncap(true)) * scrollspeed)/16);
 
  if (rendermode != render_none)
 	{ // if only software rendering could be this simple and retarded
@@ -1159,7 +1159,7 @@ void F_CreditDrawer(void)
 		V_DrawSciencePatch(credits_pics[i].x<<FRACBITS, (credits_pics[i].y<<FRACBITS) - 4*(animtimer<<FRACBITS)/5, 0, W_CachePatchName(credits_pics[i].patch, PU_PATCH), FRACUNIT>>1);
 
 	// Dim the background
-	V_DrawFadeScreen();
+	V_DrawFadeScreen(0x0FF00, 16);
 
 	// Draw credits text on top
 	for (i = 0; credits[i]; i++)

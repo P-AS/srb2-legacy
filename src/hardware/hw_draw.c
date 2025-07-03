@@ -543,18 +543,14 @@ void HWR_DrawFlatFill (INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum
 //  | /|
 //  |/ |
 //  0--1
-void HWR_FadeScreenMenuBack(UINT32 color, INT32 height)
+void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 {
 	FOutVector  v[4];
 	FSurfaceInfo Surf;
 
-	// setup some neat-o translucency effect
-	if (!height) //cool hack 0 height is full height
-		height = vid.height;
-
 	v[0].x = v[3].x = -1.0f;
 	v[2].x = v[1].x =  1.0f;
-	v[0].y = v[1].y =  1.0f-((height<<1)/(float)vid.height);
+	v[0].y = v[1].y = -1.0f;
 	v[2].y = v[3].y =  1.0f;
 	v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
 
@@ -563,8 +559,16 @@ void HWR_FadeScreenMenuBack(UINT32 color, INT32 height)
 	v[0].t = v[1].t = 1.0f;
 	v[2].t = v[3].t = 0.0f;
 
-	Surf.PolyColor.rgba = UINT2RGBA(color);
-	Surf.PolyColor.s.alpha = (UINT8)((0xff/2) * ((float)height / vid.height)); //calum: varies console alpha
+	if (color & 0xFF00) // Do COLORMAP fade.
+	{
+		Surf.PolyColor.rgba = UINT2RGBA(0x01010160);
+		Surf.PolyColor.s.alpha = 0xFF - (strength*8);
+	}
+	else // Do TRANSMAP** fade.
+	{
+		Surf.PolyColor.rgba = pLocalPalette[color].rgba;
+		Surf.PolyColor.s.alpha = (UINT8)((float)(10-strength)*25.5f);
+	}
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
 }
 
