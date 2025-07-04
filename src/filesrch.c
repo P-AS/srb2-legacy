@@ -21,11 +21,7 @@
 #define RPC_NO_WINDOWS_H
 #include <windows.h>
 #endif
-#ifdef _WIN32_WCE
-#include "sdl12/SRB2CE/cehelp.h"
-#else
 #include <sys/stat.h>
-#endif
 #include <string.h>
 
 #include "filesrch.h"

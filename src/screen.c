@@ -492,7 +492,7 @@ void SCR_DisplayTicRate(void)
 			++totaltics;
 
 	if (totaltics <= TICRATE/2) ticcntcolor = V_REDMAP;
-	else if (totaltics == TICRATE) ticcntcolor = V_BLUEMAP;
+	else if (totaltics == TICRATE) ticcntcolor = V_SKYMAP;
 
 	if (cv_ticrate.value == 2) // compact counter
 	{

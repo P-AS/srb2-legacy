@@ -3088,9 +3088,6 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	// clear special respawning que
 	iquehead = iquetail = 0;
 
-	// Fab : 19-07-98 : start cd music for this level (note: can be remapped)
-	I_PlayCD((UINT8)(gamemap), false);
-
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
