@@ -80,7 +80,7 @@ const GLubyte *gl_extensions = NULL;
 
 //Hurdler: 04/10/2000: added for the kick ass coronas as Boris wanted;-)
 static GLfloat    modelMatrix[16];
-static GLfloat    projMatrix[16];
+GLfloat    projMatrix[16];
 static GLint       viewport[4];
 
 

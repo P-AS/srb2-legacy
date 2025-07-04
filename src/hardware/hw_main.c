@@ -5677,6 +5677,15 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 	trans->anglex = (float)(gr_aimingangle>>ANGLETOFINESHIFT)*(360.0f/(float)FINEANGLES);
 }
 
+static void HWR_ClearClipper(void)
+{
+	angle_t a1 = gld_FrustumAngle(gr_aimingangle);
+	gld_clipper_Clear();
+	gld_clipper_SafeAddClipRange(viewangle + a1, viewangle - a1);
+#ifdef HAVE_SPHEREFRUSTUM
+	gld_FrustumSetup();
+#endif
+}
 
 // ==========================================================================
 // Same as rendering the player view, but from the skybox object
@@ -5776,16 +5785,8 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 
 	drawcount = 0;
 
-#ifdef NEWCLIP
-	if (rendermode == render_opengl)
-	{
-		angle_t a1 = gld_FrustumAngle(gr_aimingangle);
-		gld_clipper_Clear();
-		gld_clipper_SafeAddClipRange(viewangle + a1, viewangle - a1);
-#ifdef HAVE_SPHEREFRUSTRUM
-		gld_FrustrumSetup();
-#endif
-	}
+#ifdef NEWCLIP /// TODO: Remove pre-NEWCLIP code
+	HWR_ClearClipper();
 #else
 	HWR_ClearClipSegs();
 #endif
@@ -5970,15 +5971,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 
 	drawcount = 0;
 #ifdef NEWCLIP
-	if (rendermode == render_opengl)
-	{
-		angle_t a1 = gld_FrustumAngle(gr_aimingangle);
-		gld_clipper_Clear();
-		gld_clipper_SafeAddClipRange(viewangle + a1, viewangle - a1);
-#ifdef HAVE_SPHEREFRUSTRUM
-		gld_FrustrumSetup();
-#endif
-	}
+	HWR_ClearClipper();
 #else
 	HWR_ClearClipSegs();
 #endif
