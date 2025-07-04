@@ -146,7 +146,7 @@ consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
-consvar_t cv_grpaletterendering = {"gr_paletterendering", "Off", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grpaletterendering = {"gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_grpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_grcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grcurveshader_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -167,13 +167,12 @@ static void CV_anisotropic_ONChange(void)
 
 static void CV_grmodellighting_OnChange(void)
 {
-
 	ONLY_IF_GL_LOADED
 	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
 	// if shaders have been compiled, then they now need to be recompiled.
   if (gr_shadersavailable)
   { 
-		HWR_CompileShaders();
+	HWR_CompileShaders();
   }
 }
 
@@ -198,7 +197,7 @@ static void CV_grpalettedepth_OnChange(void)
 static void CV_grshaders_OnChange(void)
 {
 	ONLY_IF_GL_LOADED
-		HWR_SetShaderState();
+	HWR_SetShaderState();
 	if (cv_grpaletterendering.value)
 	{
 		// can't do palette rendering without shaders, so update the state if needed
