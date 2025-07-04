@@ -75,12 +75,6 @@
 #endif
 #endif
 
-#ifdef PC_DOS
-#include <stdio.h> // for snprintf
-int	snprintf(char *str, size_t n, const char *fmt, ...);
-//int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
-#endif
-
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
 #define STRINGHEIGHT 8
@@ -289,6 +283,7 @@ static void M_AddonsOptions(INT32 choice);
 static patch_t *addonsp[NUM_EXT+5];
 
 menu_t OP_LegacyOptionsDef;
+menu_t OP_LegacyCreditsDef;
 
 #define numaddonsshown 4
 
@@ -362,7 +357,8 @@ consvar_t cv_showfocuslost = {"showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL, 0
 
 static CV_PossibleValue_t map_cons_t[] = {
 	{1,"MIN"},
-	{NUMMAPS, "MAX"}
+	{NUMMAPS, "MAX"},
+	{0,NULL}
 };
 consvar_t cv_nextmap = {"nextmap", "1", CV_HIDEN|CV_CALL, map_cons_t, Nextmap_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
@@ -925,9 +921,9 @@ static menuitem_t MP_SplitServerMenu[] =
 
 static menuitem_t MP_PlayerSetupMenu[] =
 {
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Your name",   M_HandleSetupMultiPlayer,   0},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Your color",  M_HandleSetupMultiPlayer,  16},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Your player", M_HandleSetupMultiPlayer,  96}, // Tails 01-18-2001
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Name",   M_HandleSetupMultiPlayer,   0},
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Character",  M_HandleSetupMultiPlayer,  16},
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Color", M_HandleSetupMultiPlayer,  96}, // Tails 01-18-2001
 };
 
 // ------------------------------------
@@ -1171,9 +1167,10 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,  NULL, "Precip Density",        &cv_precipdensity,        60},
 	{IT_STRING | IT_CVAR,  NULL, "Show FPS",              &cv_ticrate,              65},
 	{IT_STRING | IT_CVAR,  NULL, "Show TPS",              &cv_tpscounter,           70},
-	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",   &cv_homremoval,           75},
-	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",         &cv_vidwait,              80},
-	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",               &cv_fpscap,               85},
+	{IT_STRING | IT_CVAR,  NULL, "FPS/TPS Counter Size",  &cv_fpssize,              75},
+	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",   &cv_homremoval,           80},
+	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",         &cv_vidwait,              85},
+	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",               &cv_fpscap,               90},
 };
 
 static menuitem_t OP_ColorOptionsMenu[] =
@@ -1248,8 +1245,7 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        90},
 	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     100},
 	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,110},
-	{IT_STRING|IT_CVAR,         NULL, "Sky Dome",    &cv_grskydome,            120},
-	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", &cv_glloadingscreen, 130},
+	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", &cv_glloadingscreen, 120},
 };
 
 #endif
@@ -1420,7 +1416,7 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Max Players",                 &cv_maxplayers,        110},
 	{IT_STRING | IT_CVAR,    NULL, "Allow players to join",       &cv_allownewplayer,    120},
 	{IT_STRING | IT_CVAR,    NULL, "Allow WAD Downloading",       &cv_downloading,       130},
-	{IT_STRING | IT_CVAR,    NULL, "Attempts to Resynch",         &cv_resynchattempts,   140},
+	{IT_STRING | IT_CVAR,    NULL, "Attempt to Resynch",         &cv_allowgamestateresend,   140},
 #endif
 };
 
@@ -1490,14 +1486,33 @@ static menuitem_t OP_MonitorToggleMenu[] =
 
 static menuitem_t OP_LegacyOptionsMenu[] =
 {
-	{IT_HEADER|IT_STRING, NULL, "Network", NULL, 5},
-	{IT_CVAR|IT_STRING, NULL, "Net Compatibility", &cv_netcompat, 10},
 	{IT_HEADER|IT_STRING, NULL, "Screen Tilting", NULL, 15},
 	{IT_CVAR|IT_STRING, NULL, "Screen Tilting", &cv_viewroll, 	  20},
 	{IT_CVAR|IT_STRING, NULL, "Earthquake Screen Shaking", &cv_quakeiiiarena,  25},
 	{IT_CVAR|IT_STRING, NULL, "Quake Viewroll",    &cv_quakeiv, 30},
 	{IT_HEADER|IT_STRING, NULL, "System", NULL, 35},
 	{IT_CVAR|IT_STRING, NULL, "Window Shaking",    &cv_quakelive, 40},
+
+	{IT_SUBMENU|IT_STRING, NULL, 	"Credits",  		&OP_LegacyCreditsDef, 50},
+};
+
+static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resolution
+{
+	{IT_HEADER|IT_STRING, NULL, "Contributors:", NULL, 7},
+	{IT_STRING, NULL, "PAS", NULL, 22},
+	{IT_STRING, NULL, "chromaticpipe", NULL, 32},
+	{IT_STRING, NULL, "Hanicef", NULL, 42},
+	{IT_STRING, NULL, "Lugent", NULL, 52},
+	{IT_STRING, NULL, "tempowad", NULL, 62},
+	{IT_STRING, NULL, "tatokis", NULL, 72},
+	{IT_STRING, NULL, "luigi budd", NULL, 82}, // Enhanced server info screen
+	{IT_STRING, NULL, "Lamibe", NULL, 92},
+	{IT_STRING, NULL, "Clusterguy!!", NULL, 102}, // Software sky barreling
+	{IT_STRING, NULL, "Bewer", NULL, 112}, // SRB2Kart text colormaps
+	{IT_STRING, NULL, "alufolie91", NULL, 122},
+	{IT_HEADER|IT_STRING, NULL, "Special Thanks:", NULL, 132},
+	{IT_STRING, NULL, "The Gaming Den", NULL, 142}, // srb2-legacy Co-op server
+	{IT_STRING, NULL, "SRB2EventZ", NULL, 152}, // Netgame testing and feature ideas
 };
 
 // ==========================================================================
@@ -1872,6 +1887,7 @@ menu_t OP_ScreenshotOptionsDef = DEFAULTSCROLLMENUSTYLE("M_DATA", OP_ScreenshotO
 menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE("M_ADDONS", OP_AddonsOptionsMenu, &OP_MainDef, 30, 30);
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE("M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
 menu_t OP_LegacyOptionsDef = DEFAULTSCROLLMENUSTYLE(NULL, OP_LegacyOptionsMenu, &OP_MainDef, 30, 30);
+menu_t OP_LegacyCreditsDef = DEFAULTMENUSTYLE(NULL, OP_LegacyCreditsMenu, &OP_LegacyOptionsDef, 30, 0);
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -2634,7 +2650,6 @@ boolean M_Responder(event_t *ev)
 			}
 			else
 				M_ClearMenus(true);
-
 			return true;
 
 		case KEY_BACKSPACE:
@@ -2678,7 +2693,7 @@ void M_Drawer(void)
 	{
 		// now that's more readable with a faded background (yeah like Quake...)
 		if (!WipeInAction)
-			V_DrawFadeScreen();
+			V_DrawFadeScreen(0xFF00, 16);
 
 		if (currentMenu->drawroutine)
 			currentMenu->drawroutine(); // call current menu Draw routine
@@ -4570,11 +4585,15 @@ static void M_HandleAddons(INT32 choice)
 		case KEY_DOWNARROW:
 			if (dir_on[menudepthleft] < sizedirmenu-1)
 				dir_on[menudepthleft]++;
+			else if (dir_on[menudepthleft] == sizedirmenu-1)
+				dir_on[menudepthleft] = 0;
 			S_StartSound(NULL, sfx_menu1);
 			break;
 		case KEY_UPARROW:
 			if (dir_on[menudepthleft])
 				dir_on[menudepthleft]--;
+			else if (!dir_on[menudepthleft])
+				dir_on[menudepthleft] = sizedirmenu-1;
 			S_StartSound(NULL, sfx_menu1);
 			break;
 		case KEY_PGDN:
@@ -5479,9 +5498,11 @@ static void M_ReadSavegameInfo(UINT32 slot)
 
 	// P_UnArchivePlayer()
 	CHECKPOS
-	savegameinfo[slot].skincolor = READUINT8(save_p);
+	// Skincolor is set by skin prefcolor.
+	(void)READUINT8(save_p);
 	CHECKPOS
 	savegameinfo[slot].skinnum = READUINT8(save_p);
+	savegameinfo[slot].skincolor = skins[savegameinfo[slot].skinnum].prefcolor;
 
 	CHECKPOS
 	(void)READINT32(save_p); // Score
@@ -5498,7 +5519,8 @@ static void M_ReadSavegameInfo(UINT32 slot)
 		if (savegameinfo[slot].botskin-1 >= numskins)
 			savegameinfo[slot].botskin = 0;
 		CHECKPOS
-		savegameinfo[slot].botcolor = READUINT8(save_p); // because why not.
+		(void)READUINT8(save_p);
+		savegameinfo[slot].botcolor = skins[savegameinfo[slot].skinnum].prefcolor; // bot color
 	}
 	else
 		savegameinfo[slot].botskin = 0;
@@ -7327,12 +7349,15 @@ static void M_HandleConnectIP(INT32 choice)
 
 		case KEY_DEL:
 			skullAnimCounter = 4; // For a nice looking cursor
-			if (setupm_ip[0])
+			if (setupm_ip[0] && !shiftdown) // Shift+Delete is used for something else.
 			{
 				//S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_ip[0] = 0;
 			}
-			break;
+			if (!shiftdown) // Shift+Delete is used for something else.
+				break;
+
+			/* FALLTHRU */
 
 		default:
 			skullAnimCounter = 4; // For a nice looking cursor
@@ -7341,26 +7366,63 @@ static void M_HandleConnectIP(INT32 choice)
 			if (l >= 127)
 				break;
 
-			const char *paste = I_ClipboardPaste(); // Paste clipboard into char
-
 			if ( ctrldown ) {
 				switch (choice) {
-					case 118: // ctrl+v, pasting
-						if (paste != NULL)
-							strcat(setupm_ip, paste); // Concat the ip field with clipboard
-						setupm_ip[127] = 0; // Truncate to maximum length
+					case 'v':
+					case 'V': // ctrl+v, pasting
+					{
+						const char *paste = I_ClipboardPaste();
+
+						if (paste != NULL) {
+							strncat(setupm_ip, paste, 28-1 - l); // Concat the ip field with clipboard
+							if (strlen(paste) != 0) // Don't play sound if nothing was pasted
+								S_StartSound(NULL,sfx_menu1); // Tails
+						}
+
 						break;
-					case 99: // ctrl+c, copying
+					}
+					case KEY_INS:
+					case 'c':
+					case 'C': // ctrl+c, ctrl+insert, copying
 						I_ClipboardCopy(setupm_ip, l);
+						S_StartSound(NULL,sfx_menu1); // Tails
 						break;
-					case 120: // ctrl+x, cutting
+
+					case 'x':
+					case 'X': // ctrl+x, cutting
 						I_ClipboardCopy(setupm_ip, l);
+						S_StartSound(NULL,sfx_menu1); // Tails
 						setupm_ip[0] = 0;
 						break;
+
 					default: // otherwise do nothing
 						break;
 				}
-				break; // break
+				break; // don't check for typed keys
+			}
+
+			if ( shiftdown ) {
+				switch (choice) {
+					case KEY_INS: // shift+insert, pasting
+						{
+							const char *paste = I_ClipboardPaste();
+
+							if (paste != NULL) {
+								strncat(setupm_ip, paste, 28-1 - l); // Concat the ip field with clipboard
+								if (strlen(paste) != 0) // Don't play sound if nothing was pasted
+									S_StartSound(NULL,sfx_menu1); // Tails
+							}
+
+							break;
+						}
+					case KEY_DEL: // shift+delete, cutting
+						I_ClipboardCopy(setupm_ip, l);
+						setupm_ip[0] = 0;
+						break;
+					default: // otherwise do nothing.
+						break;
+				}
+				break; // don't check for typed keys
 			}
 
 			// Rudimentary number, letter, period, and colon enforcing
@@ -7411,7 +7473,7 @@ static consvar_t *setupm_cvskin;
 static consvar_t *setupm_cvcolor;
 static consvar_t *setupm_cvname;
 static INT32      setupm_fakeskin;
-static INT32      setupm_fakecolor;
+static UINT16     setupm_fakecolor;
 
 static void M_DrawSetupMultiPlayerMenu(void)
 {
@@ -7432,13 +7494,13 @@ static void M_DrawSetupMultiPlayerMenu(void)
 	V_DrawString(mx + 98, my, V_ALLOWLOWERCASE, setupm_name);
 
 	// draw skin string
-	V_DrawString(mx + 90, my + 96,
+	V_DrawString(208, 72,
 		((MP_PlayerSetupMenu[2].status & IT_TYPE) == IT_SPACE ? V_TRANSLUCENT : 0)|V_YELLOWMAP|V_ALLOWLOWERCASE,
 		skins[setupm_fakeskin].realname);
 
 	// draw the name of the color you have chosen
 	// Just so people don't go thinking that "Default" is Green.
-	V_DrawString(208, 72, V_YELLOWMAP|V_ALLOWLOWERCASE, Color_Names[setupm_fakecolor]);
+	V_DrawRightAlignedString(291, my + 96, V_YELLOWMAP|V_ALLOWLOWERCASE, skincolors[setupm_fakecolor].name);
 
 	// draw text cursor for name
 	if (!itemOn && skullAnimCounter < 4) // blink cursor
@@ -7497,7 +7559,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 	}
 	else
 	{
-		UINT8 *colormap = R_GetTranslationColormap(setupm_fakeskin, setupm_fakecolor, 0);
+		UINT8 *colormap = R_GetTranslationColormap(setupm_fakeskin, setupm_fakecolor, GTC_CACHE);
 
 		if (skins[setupm_fakeskin].flags & SF_HIRES)
 		{
@@ -7508,9 +7570,45 @@ static void M_DrawSetupMultiPlayerMenu(void)
 		}
 		else
 			V_DrawMappedPatch(mx + 98 + (PLBOXW * 8 / 2), my + 16 + (PLBOXH * 8) - 12, flags, patch, colormap);
-
-		Z_Free(colormap);
 	}
+
+	// Draw the palette below!
+	// note: height is always 16
+#define color_width 12
+#define selected_width 80
+
+	int x,y,count,i,j,color;
+	count = 8;
+	x = (BASEVIDWIDTH / 2) - (color_width / 2);
+	y = 148;
+	color = setupm_fakecolor;
+
+	// selected color
+	for (j = 0; j < 16; j++)
+		V_DrawFill(x - (selected_width / 2), y+j, selected_width, 1, skincolors[color].ramp[j]);
+
+	color = M_GetColorPrev(color);
+
+	// prev colors
+	for (i = 0; i < count; i++)
+	{
+		for (j = 0; j < 16; j++)
+			V_DrawFill(x - (i * color_width) - (selected_width / 2), y+j, color_width, 1, skincolors[color].ramp[j]);
+		color = M_GetColorPrev(color);
+	}
+
+	color = M_GetColorNext(setupm_fakecolor);
+
+	// next colors
+	for (i = 0; i < count; i++)
+	{
+		for (j = 0; j < 16; j++)
+			V_DrawFill(x + (i * color_width) + (selected_width / 2), y+j, color_width, 1, skincolors[color].ramp[j]);
+		color = M_GetColorNext(color);
+	}
+
+#undef selected_width
+#undef color_width
 }
 
 // Handle 1P/2P MP Setup
@@ -7532,28 +7630,28 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		break;
 
 	case KEY_LEFTARROW:
-		if (itemOn == 2)       //player skin
+		if (itemOn == 1)       //player skin
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_fakeskin--;
 		}
-		else if (itemOn == 1) // player color
+		else if (itemOn == 2) // player color
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
-			setupm_fakecolor--;
+			setupm_fakecolor = M_GetColorPrev(setupm_fakecolor);
 		}
 		break;
 
 	case KEY_RIGHTARROW:
-		if (itemOn == 2)       //player skin
+		if (itemOn == 1)       //player skin
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_fakeskin++;
 		}
-		else if (itemOn == 1) // player color
+		else if (itemOn == 2) // player color
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
-			setupm_fakecolor++;
+			setupm_fakecolor = M_GetColorNext(setupm_fakecolor);
 		}
 		break;
 
@@ -7566,6 +7664,15 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		{
 			S_StartSound(NULL, sfx_menu1); // Tails
 			setupm_name[l - 1] = 0;
+		}
+		else if (itemOn == 2)
+		{
+			UINT8 col = skins[setupm_fakeskin].prefcolor;
+			if (setupm_fakecolor != col && skincolors[col].accessible)
+			{
+				S_StartSound(NULL,sfx_menu1); // Tails
+				setupm_fakecolor = col;
+			}
 		}
 		break;
 
@@ -7587,12 +7694,6 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		setupm_fakeskin = numskins - 1;
 	if (setupm_fakeskin > numskins - 1)
 		setupm_fakeskin = 0;
-
-	// check color
-	if (setupm_fakecolor < 1)
-		setupm_fakecolor = MAXSKINCOLORS - 1;
-	if (setupm_fakecolor > MAXSKINCOLORS - 1)
-		setupm_fakecolor = 1;
 
 	if (exitmenu)
 	{
@@ -8269,6 +8370,48 @@ static void M_ChangeControl(INT32 choice)
 	strlcpy(controltochangetext, currentMenu->menuitems[choice].text, 33);
 
 	M_StartMessage(tmp, M_ChangecontrolResponse, MM_EVENTHANDLER);
+}
+
+// ===========
+// Color stuff
+// ===========
+
+void M_InitSkincolors(void)
+{
+	numskincolors = SKINCOLOR_FIRSTFREESLOT;
+}
+
+boolean M_CheckColor(UINT16 color)
+{
+	if (!color || color >= numskincolors)
+		return false;
+	return true;
+}
+
+UINT16 M_GetColorNext(UINT16 base)
+{
+	UINT32 i;
+
+	for (i = base + 1; ; i++)
+	{
+		if (i >= numskincolors)
+			i = 0; // Recheck.
+		if (skincolors[i].accessible)
+			return i; // Good.
+	}
+}
+
+UINT16 M_GetColorPrev(UINT16 base)
+{
+	UINT32 i;
+
+	for (i = base - 1; ; i--)
+	{
+		if (!i)
+			i = numskincolors - 1; // Recheck.
+		if (skincolors[i].accessible)
+			return i; // Good.
+	}
 }
 
 // ===============

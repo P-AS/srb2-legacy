@@ -507,6 +507,33 @@ static int libd_drawScaled(lua_State *L)
 	return 0;
 }
 
+static int libd_drawStretched(lua_State *L)
+{
+	fixed_t x, y, hscale, vscale;
+	INT32 flags;
+	patch_t *patch;
+	const UINT8 *colormap = NULL;
+
+	HUDONLY
+	x = luaL_checkinteger(L, 1);
+	y = luaL_checkinteger(L, 2);
+	hscale = luaL_checkinteger(L, 3);
+	if (hscale < 0)
+		return luaL_error(L, "negative horizontal scale");
+	vscale = luaL_checkinteger(L, 4);
+	if (vscale < 0)
+		return luaL_error(L, "negative vertical scale");
+	patch = *((patch_t **)luaL_checkudata(L, 5, META_PATCH));
+	flags = luaL_optinteger(L, 6, 0);
+	if (!lua_isnoneornil(L, 7))
+		colormap = *((UINT8 **)luaL_checkudata(L, 7, META_COLORMAP));
+
+	flags &= ~V_PARAMMASK; // Don't let crashes happen.
+
+	V_DrawStretchyFixedPatch(x, y, hscale, vscale, flags, patch, colormap);
+	return 0;
+}
+
 static int libd_drawNum(lua_State *L)
 {
 	INT32 x, y, flags, num;
@@ -666,7 +693,7 @@ static int libd_stringWidth(lua_State *L)
 static int libd_getColormap(lua_State *L)
 {
 	INT32 skinnum = TC_DEFAULT;
-	skincolors_t color = luaL_optinteger(L, 2, 0);
+	skincolornum_t color = luaL_optinteger(L, 2, 0);
 	UINT8* colormap = NULL;
 	HUDONLY
 	if (lua_isnoneornil(L, 1))
@@ -690,6 +717,23 @@ static int libd_getColormap(lua_State *L)
 	colormap = R_GetTranslationColormap(skinnum, color, GTC_CACHE);
 	LUA_PushUserdata(L, colormap, META_COLORMAP); // push as META_COLORMAP userdata, specifically for patches to use!
 	return 1;
+}
+
+static int libd_fadeScreen(lua_State *L)
+{
+	UINT16 color = luaL_checkinteger(L, 1);
+	UINT8 strength = luaL_checkinteger(L, 2);
+	const UINT8 maxstrength = ((color & 0xFF00) ? 31 : 9);
+
+	HUDONLY
+	if (!strength)
+		return 0;
+
+	if (strength > maxstrength)
+		return luaL_error(L, "%s fade strength %d out of range (0 - %d)", ((color & 0xFF00) ? "COLORMAP" : "TRANSMAP"), strength, maxstrength);
+
+	V_DrawFadeScreen(color, strength);
+	return 0;
 }
 
 static int libd_width(lua_State *L)
@@ -747,6 +791,7 @@ static luaL_Reg lib_draw[] = {
 	{"cachePatch", libd_cachePatch},
 	{"draw", libd_draw},
 	{"drawScaled", libd_drawScaled},
+	{"drawStretched", libd_drawStretched},
 	{"drawNum", libd_drawNum},
 	{"drawPaddedNum", libd_drawPaddedNum},
 	{"drawFill", libd_drawFill},
@@ -754,6 +799,7 @@ static luaL_Reg lib_draw[] = {
 	{"drawString", libd_drawString},
 	{"stringWidth", libd_stringWidth},
 	{"getColormap", libd_getColormap},
+	{"fadeScreen", libd_fadeScreen},
 	{"width", libd_width},
 	{"height", libd_height},
 	{"dupx", libd_dupx},

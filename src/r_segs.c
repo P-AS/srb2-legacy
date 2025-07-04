@@ -2494,22 +2494,28 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	worldtopslope >>= 4;
 	worldbottomslope >>= 4;
 
-	topstep = -FixedMul (rw_scalestep, worldtop);
-	topfrac = (centeryfrac>>4) - FixedMul (worldtop, rw_scale);
+	if (linedef->special == 41) { // HORIZON LINES
+		topstep = bottomstep = 0;
+		topfrac = bottomfrac = (centeryfrac>>4);
+		topfrac++; // Prevent 1px HOM
+	} else {
+		topstep = -FixedMul (rw_scalestep, worldtop);
+		topfrac = (centeryfrac>>4) - FixedMul (worldtop, rw_scale);
 
-	bottomstep = -FixedMul (rw_scalestep,worldbottom);
-	bottomfrac = (centeryfrac>>4) - FixedMul (worldbottom, rw_scale);
+		bottomstep = -FixedMul (rw_scalestep,worldbottom);
+		bottomfrac = (centeryfrac>>4) - FixedMul (worldbottom, rw_scale);
 
 
-	if (frontsector->c_slope) {
-		fixed_t topfracend = (centeryfrac>>4) - FixedMul (worldtopslope, ds_p->scale2);
-		topstep = (topfracend-topfrac)/(range);
+		if (frontsector->c_slope) {
+			fixed_t topfracend = (centeryfrac>>4) - FixedMul (worldtopslope, ds_p->scale2);
+			topstep = (topfracend-topfrac)/(range);
+		}
+		if (frontsector->f_slope) {
+			fixed_t bottomfracend = (centeryfrac>>4) - FixedMul (worldbottomslope, ds_p->scale2);
+			bottomstep = (bottomfracend-bottomfrac)/(range);
+		}
+
 	}
-	if (frontsector->f_slope) {
-		fixed_t bottomfracend = (centeryfrac>>4) - FixedMul (worldbottomslope, ds_p->scale2);
-		bottomstep = (bottomfracend-bottomfrac)/(range);
-	}
-
 
 	dc_numlights = 0;
 

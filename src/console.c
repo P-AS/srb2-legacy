@@ -137,7 +137,7 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{9, "Gold"},		{10,"Yellow"},		{11,"Emerald"},
 												{12,"Green"},		{13,"Cyan"},		{14,"Steel"},
 												{15,"Periwinkle"},	{16,"Blue"},		{17,"Purple"},
-												{18,"Lavender"},
+												{18,"Lavender"}, {19,"Gray"},
 												{0, NULL}};
 
 consvar_t cons_backcolor = {"con_backcolor", "Green", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
@@ -243,7 +243,7 @@ UINT8 *goldmap;
 UINT8 *teamap;
 UINT8 *steelmap;
 UINT8 *pinkmap;
-UINT8 *tealmap;
+UINT8 *brownmap;
 UINT8 *peachmap;
 
 // Console BG color
@@ -280,6 +280,7 @@ void CON_SetupBackColormap(void)
 		case 16:	palindex = 239;	break; 	// Blue
 		case 17:	palindex = 199; shift = 7; 	break; 	// Purple
 		case 18:	palindex = 255; shift = 7; 	break; 	// Lavender
+		case 19:	palindex = 15; shift = 7;	break; 	// Gray
 		// Default green
 		default:	palindex = 175; break;
 
@@ -315,7 +316,7 @@ static void CON_SetupColormaps(void)
 	teamap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
 	steelmap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
 	pinkmap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
-	tealmap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
+	brownmap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
 	peachmap = (UINT8 *)Z_Malloc(256, PU_STATIC, NULL);
 
 	// setup the other colormaps, for console text
@@ -338,7 +339,7 @@ static void CON_SetupColormaps(void)
 		teamap[i] = (UINT8)i;
 		steelmap[i] = (UINT8)i;
 		pinkmap[i] = (UINT8)i;
-		tealmap[i] = (UINT8)i;
+		brownmap[i] = (UINT8)i;
 		peachmap[i] = (UINT8)i;
 	}
 
@@ -368,8 +369,8 @@ static void CON_SetupColormaps(void)
 	steelmap[9] = (UINT8)203;
 	pinkmap[3] = (UINT8)144;
 	pinkmap[9] = (UINT8)148;
-	tealmap[3] = (UINT8)220;
-	tealmap[9] = (UINT8)223;
+	brownmap[3] = (UINT8)48;
+	brownmap[9] = (UINT8)51;
 	peachmap[3] = (UINT8)67;
 	peachmap[9] = (UINT8)69;
 
@@ -1274,24 +1275,11 @@ void CONS_Printf(const char *fmt, ...)
 	DEBFILE(txt);
 #endif
 
-	if (!con_started)
-	{
-#if defined (_XBOX) && defined (__GNUC__)
-		if (!keyboard_started) debugPrint(txt);
-#endif
-#ifdef PC_DOS
-		CON_LogMessage(txt);
-		free(txt);
-		return;
-#endif
-	}
-	else
-		// write message in con text buffer
+	// write message in con text buffer
+	if (con_started)
 		CON_Print(txt);
 
-#ifndef PC_DOS
-	CON_LogMessage(txt);
-#endif
+	CON_LogMessage(txt);	
 
 	// make sure new text is visible
 	con_scrollup = 0;

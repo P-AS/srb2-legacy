@@ -109,6 +109,7 @@ typedef struct
 	// Definable color translation table
 	UINT8 starttranscolor;
 	UINT8 prefcolor;
+	UINT16 supercolor;
 	fixed_t highresscale; // scale of highres, default is 0.5
 
 	// specific sounds per skin

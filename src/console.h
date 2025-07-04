@@ -38,7 +38,7 @@ extern UINT32 con_scalefactor; // console text scale factor
 
 extern consvar_t cons_backcolor;
 
-extern UINT8 *yellowmap, *purplemap, *lgreenmap, *bluemap, *graymap, *redmap, *orangemap, *skymap, *lavendermap, *goldmap, *teamap, *steelmap, *pinkmap, *tealmap , *peachmap;
+extern UINT8 *yellowmap, *purplemap, *lgreenmap, *bluemap, *graymap, *redmap, *orangemap, *skymap, *lavendermap, *goldmap, *teamap, *steelmap, *pinkmap, *brownmap, *peachmap;
 
 // Console bg color (auto updated to match)
 extern UINT8 *consolebgmap;

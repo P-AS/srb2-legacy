@@ -40,12 +40,6 @@
 #include "hardware/hw_main.h"
 #endif
 
-#ifdef PC_DOS
-#include <stdio.h> // for snprintf
-int	snprintf(char *str, size_t n, const char *fmt, ...);
-//int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
-#endif
-
 typedef struct
 {
 	char patch[9];
@@ -96,7 +90,7 @@ typedef union
 		UINT8 continues;
 		patch_t *pcontinues;
 		INT32 *playerchar; // Continue HUD
-		UINT8 *playercolor;
+		UINT16 *playercolor;
 
 		UINT8 gotlife; // Number of extra lives obtained
 	} spec;
@@ -104,7 +98,7 @@ typedef union
 	struct
 	{
 		UINT32 scores[MAXPLAYERS]; // Winner's score
-		UINT8 *color[MAXPLAYERS]; // Winner's color #
+		UINT16 *color[MAXPLAYERS]; // Winner's color #
 		boolean spectator[MAXPLAYERS]; // Spectator list
 		INT32 *character[MAXPLAYERS]; // Winner's character #
 		INT32 num[MAXPLAYERS]; // Winner's player #
@@ -118,7 +112,7 @@ typedef union
 
 	struct
 	{
-		UINT8 *color[MAXPLAYERS]; // Winner's color #
+		UINT16 *color[MAXPLAYERS]; // Winner's color #
 		INT32 *character[MAXPLAYERS]; // Winner's character #
 		INT32 num[MAXPLAYERS]; // Winner's player #
 		char name[MAXPLAYERS][9]; // Winner's name
