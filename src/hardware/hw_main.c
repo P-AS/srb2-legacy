@@ -44,7 +44,6 @@
 #endif
 #include "../r_fps.h"
 #define R_FAKEFLOORS
-#define HWPRECIP
 
 // ==========================================================================
 // the hardware driver object
@@ -58,10 +57,7 @@ struct hwdriver_s hwdriver;
 
 static void HWR_AddSprites(sector_t *sec);
 static void HWR_ProjectSprite(mobj_t *thing);
-#ifdef HWPRECIP
 static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing);
-#endif
-
 
 void HWR_AddTransparentFloor(lumpnum_t lumpnum, extrasubsector_t *xsub, boolean isceiling, fixed_t fixedheight,
                              INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, boolean fogplane, extracolormap_t *planecolormap);
@@ -4348,7 +4344,6 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 	}
 }
 
-#ifdef HWPRECIP
 // Sprite drawer for precipitation
 static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 {
@@ -4452,8 +4447,6 @@ static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 
 	HWR_ProcessPolygon(&Surf, wallVerts, 4, blend|PF_Modulated, shader, false);
 }
-#endif
-
 // --------------------------------------------------------------------------
 // Sort vissprites by distance
 // --------------------------------------------------------------------------
@@ -4848,9 +4841,7 @@ static UINT8 sectorlight;
 static void HWR_AddSprites(sector_t *sec)
 {
 	mobj_t *thing;
-#ifdef HWPRECIP
 	precipmobj_t *precipthing;
-#endif
 	fixed_t limit_dist, hoop_limit_dist;
 
 	// BSP is traversed by subsector.
@@ -4876,7 +4867,6 @@ static void HWR_AddSprites(sector_t *sec)
 			HWR_ProjectSprite(thing);
 	}
 
-#ifdef HWPRECIP
 	// Someone seriously wants infinite draw distance for precipitation?
 	if ((limit_dist = (fixed_t)cv_drawdist_precip.value << FRACBITS))
 	{
@@ -4886,7 +4876,6 @@ static void HWR_AddSprites(sector_t *sec)
 				HWR_ProjectPrecipitationSprite(precipthing);
 		}
 	}
-#endif
 }
 
 // --------------------------------------------------------------------------
@@ -5117,7 +5106,6 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	vis->precip = false;
 }
 
-#ifdef HWPRECIP
 // Precipitation projector for hardware mode
 static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 {
@@ -5237,7 +5225,6 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	vis->precip = true;
 }
-#endif
 
 // ==========================================================================
 // Sky dome rendering, ported from PrBoom+
