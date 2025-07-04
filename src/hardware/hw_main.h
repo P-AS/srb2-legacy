@@ -64,23 +64,15 @@ void HWR_MakeScreenFinalTexture(void);
 void HWR_DrawScreenFinalTexture(int width, int height);
 
 // This stuff is put here so MD2's can use them
+boolean HWR_UseShader(void);
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
 
-
-boolean HWR_CompileShaders(void);
-
-void HWR_LoadAllCustomShaders(void);
-void HWR_LoadCustomShadersFromFile(UINT16 wadnum, boolean PK3);
-const char *HWR_GetShaderName(INT32 shader);
-
-extern customshaderxlat_t shaderxlat[];
-
 extern CV_PossibleValue_t granisotropicmode_cons_t[];
 
-
-extern consvar_t cv_grshaders;
+boolean HWR_ShouldUsePaletteRendering(void);
+extern consvar_t cv_grshaders, cv_grallowshaders;
 extern consvar_t cv_grmd2;
 extern consvar_t cv_grmodelinterpolation;
 extern consvar_t cv_grfiltermode;
@@ -95,6 +87,9 @@ extern consvar_t cv_grfakecontrast;
 extern consvar_t cv_grslopecontrast;
 extern consvar_t cv_grbatching;
 extern consvar_t cv_grwireframe;
+extern consvar_t cv_grpaletterendering;
+extern consvar_t cv_grpalettedepth;
+extern consvar_t cv_grcurveshader; 
 
 extern float gr_viewwidth, gr_viewheight, gr_baseviewwindowy;
 

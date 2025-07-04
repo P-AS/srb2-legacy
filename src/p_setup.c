@@ -3168,6 +3168,9 @@ void HWR_SetupLevel(void)
 	// Build the sky dome
 	HWR_ClearSkyDome();
 	HWR_BuildSkyDome();
+
+	if (HWR_ShouldUsePaletteRendering())
+		HWR_SetMapPalette();
 }
 #endif
 

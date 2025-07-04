@@ -90,6 +90,8 @@ void HWR_FreePolyPool(void);
 // --------
 // hw_cache.c
 // --------
+RGBA_t *HWR_GetTexturePalette(void);
+
 void HWR_InitTextureCache(void);
 void HWR_FreeTextureCache(void);
 void HWR_FreeMipmapCache(void);
@@ -103,6 +105,10 @@ void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap);
 void HWR_MakePatch(patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap);
 void HWR_UnlockCachedPatch(GLPatch_t *gpatch);
 void HWR_SetPalette(RGBA_t *palette);
+void HWR_SetMapPalette(void);
+UINT32 HWR_CreateLightTable(UINT8 *lighttable);
+void HWR_ClearLightTables(void);
+UINT32 HWR_GetLightTableID(extracolormap_t *colormap);
 GLPatch_t *HWR_GetCachedGLPatchPwad(UINT16 wad, UINT16 lump);
 GLPatch_t *HWR_GetCachedGLPatch(lumpnum_t lumpnum);
 void HWR_GetFadeMask(lumpnum_t fademasklumpnum);
@@ -116,5 +122,19 @@ extern consvar_t cv_grrounddown; // on/off
 
 extern INT32 patchformat;
 extern INT32 textureformat;
+
+// --------
+// hw_shaders.c
+// --------
+boolean HWR_InitShaders(void);
+void HWR_CompileShaders(void);
+
+int HWR_GetShaderFromTarget(int shader_target);
+
+void HWR_LoadAllCustomShaders(void);
+void HWR_LoadCustomShadersFromFile(UINT16 wadnum, boolean PK3);
+const char *HWR_GetShaderName(INT32 shader);
+
+extern customshaderxlat_t shaderxlat[];
 
 #endif //_HW_GLOB_

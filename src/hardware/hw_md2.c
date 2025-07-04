@@ -366,8 +366,6 @@ static void md2_loadTexture(md2_t *model)
 	if (!grpatch->mipmap->downloaded && !grpatch->mipmap->grInfo.data)
 	{
 		int w = 0, h = 0;
-		UINT32 size;
-		RGBA_t *image;
 
 #ifdef HAVE_PNG
 		grpatch->mipmap->grInfo.format = PNG_Load(filename, &w, &h, grpatch);
@@ -388,13 +386,19 @@ static void md2_loadTexture(md2_t *model)
 		grpatch->mipmap->width = (UINT16)w;
 		grpatch->mipmap->height = (UINT16)h;
 
-		// Lactozilla: Apply colour cube
-		image = grpatch->mipmap->grInfo.data;
-		size = w*h;
-		while (size--)
+		// for palette rendering, color cube is applied in post-processing instead of here
+		if (!HWR_ShouldUsePaletteRendering())
 		{
-			V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
-			image++;
+			UINT32 size;
+			RGBA_t *image;
+			// Lactozilla: Apply colour cube
+			image = grpatch->mipmap->grInfo.data;
+			size = w*h;
+			while (size--)
+			{
+				V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
+				image++;
+			}
 		}
 
 		// not correct!
@@ -1007,8 +1011,8 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 	// Look at HWR_ProjectSprite for more
 	{
 		GLPatch_t *gpatch;
-		INT32 durs = spr->mobj->state->tics;
-		INT32 tics = spr->mobj->tics;
+		float durs = (float)spr->mobj->state->tics;
+		float tics = (float)spr->mobj->tics;
 		//mdlframe_t *next = NULL;
 		const UINT8 flip = (UINT8)((spr->mobj->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP);
 		spritedef_t *sprdef;
@@ -1113,14 +1117,18 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 		if (spr->mobj->frame & FF_ANIMATE)
 		{
 			// set duration and tics to be the correct values for FF_ANIMATE states
-			durs = spr->mobj->state->var2;
-			tics = spr->mobj->anim_duration;
+			durs = (float)spr->mobj->state->var2;
+			tics = (float)spr->mobj->anim_duration;
 		}
 
 		//FIXME: this is not yet correct
 		frame = (spr->mobj->frame & FF_FRAMEMASK) % md2->model->meshes[0].numFrames;
 
 #ifdef USE_MODEL_NEXTFRAME
+
+		// Interpolate the model interpolation. (lol)
+		tics -= FixedToFloat(rendertimefrac);
+
 		if (HWR_CanInterpolateModel(spr->mobj, md2->model) && tics <= durs)
 		{
 			// frames are handled differently for states with FF_ANIMATE, so get the next frame differently for the interpolation
@@ -1196,7 +1204,8 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 #ifdef USE_FTRANSFORM_MIRROR
 		p.mirror = atransform.mirror; // from Kart
 #endif
-	    HWD.pfnSetShader(SHADER_MODEL);	// model shader
+		if (HWR_UseShader())
+			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_MODEL));
 		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, &Surf);
 	}
 }

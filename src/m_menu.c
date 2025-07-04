@@ -1261,11 +1261,12 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 
 	{IT_STRING|IT_CVAR,         NULL, "Shaders",	     &cv_grshaders,        50},
 	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective", &cv_grshearing,   60},
-	{IT_STRING|IT_CVAR|IT_CV_SLIDER,  NULL, "Field of view",   &cv_fov,            80},
-	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        90},
-	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     100},
-	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,110},
-	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", &cv_glloadingscreen, 120},
+	{IT_STRING|IT_CVAR,         NULL, "Palette Rendering", &cv_grpaletterendering,   70},
+	{IT_STRING|IT_CVAR|IT_CV_SLIDER,  NULL, "Field of view",   &cv_fov,            90},
+	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        100},
+	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_grfiltermode,     110},
+	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_granisotropicmode,120},
+	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", &cv_glloadingscreen, 130},
 };
 
 #endif

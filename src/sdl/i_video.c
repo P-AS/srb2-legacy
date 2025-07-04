@@ -1248,6 +1248,14 @@ void I_FinishUpdate(void)
 #ifdef HWRENDER
 	else if (rendermode == render_opengl)
 	{
+		// Final postprocess step of palette rendering, after everything else has been drawn.
+	if (HWR_ShouldUsePaletteRendering())
+	{
+		HWD.pfnMakeScreenTexture(HWD_SCREENTEXTURE_GENERIC2);
+		HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_PALETTE_POSTPROCESS));
+		HWD.pfnDrawScreenTexture(HWD_SCREENTEXTURE_GENERIC2, NULL, 0);
+		HWD.pfnUnSetShader();
+	}		
 		OglSdlFinishUpdate(cv_vidwait.value);
 	}
 #endif
