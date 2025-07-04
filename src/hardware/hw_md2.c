@@ -366,8 +366,6 @@ static void md2_loadTexture(md2_t *model)
 	if (!grpatch->mipmap->downloaded && !grpatch->mipmap->grInfo.data)
 	{
 		int w = 0, h = 0;
-		UINT32 size;
-		RGBA_t *image;
 
 #ifdef HAVE_PNG
 		grpatch->mipmap->grInfo.format = PNG_Load(filename, &w, &h, grpatch);
@@ -388,13 +386,19 @@ static void md2_loadTexture(md2_t *model)
 		grpatch->mipmap->width = (UINT16)w;
 		grpatch->mipmap->height = (UINT16)h;
 
-		// Lactozilla: Apply colour cube
-		image = grpatch->mipmap->grInfo.data;
-		size = w*h;
-		while (size--)
+		// for palette rendering, color cube is applied in post-processing instead of here
+		if (!HWR_ShouldUsePaletteRendering())
 		{
-			V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
-			image++;
+			UINT32 size;
+			RGBA_t *image;
+			// Lactozilla: Apply colour cube
+			image = grpatch->mipmap->grInfo.data;
+			size = w*h;
+			while (size--)
+			{
+				V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
+				image++;
+			}
 		}
 
 		// not correct!
@@ -1207,7 +1211,8 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 #ifdef USE_FTRANSFORM_MIRROR
 		p.mirror = atransform.mirror; // from Kart
 #endif
-	    HWD.pfnSetShader(SHADER_MODEL);	// model shader
+		if (HWR_UseShader())
+			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_MODEL));
 		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, &Surf);
 	}
 }

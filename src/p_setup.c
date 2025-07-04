@@ -3000,10 +3000,12 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	{
 		HWR_CreatePlanePolygons((INT32)numnodes - 1);
 
-			// Build the sky dome
+		// Build the sky dome
 		HWR_ClearSkyDome();
 		HWR_BuildSkyDome();
 	}
+	if (HWR_ShouldUsePaletteRendering())
+		HWR_SetMapPalette();
 #endif
 
 	// oh god I hope this helps
