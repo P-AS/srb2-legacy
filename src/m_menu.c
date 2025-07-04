@@ -1236,12 +1236,17 @@ static menuitem_t OP_ColorOptionsMenu[] =
 static void M_VideoOptions(INT32 choice)
 {
 	(void)choice;
+
+	OP_VideoOptionsMenu[op_video_renderer].status = (IT_TRANSTEXT | IT_PAIR);
+	OP_VideoOptionsMenu[op_video_renderer].patch = "Renderer";
+	OP_VideoOptionsMenu[op_video_renderer].text = "Software";
+
 #ifdef HWRENDER
 	if (vid.glstate != VID_GL_LIBRARY_ERROR)
 	{
-		OP_VideoOptionsMenu[op_video_renderer].status = (IT_TRANSTEXT | IT_PAIR);
-		OP_VideoOptionsMenu[op_video_renderer].patch = "Renderer";
-		OP_VideoOptionsMenu[op_video_renderer].text = "Software";
+		OP_VideoOptionsMenu[op_video_renderer].status = (IT_STRING | IT_CVAR);
+		OP_VideoOptionsMenu[op_video_renderer].patch = NULL;
+		OP_VideoOptionsMenu[op_video_renderer].text = "Renderer";
 	}
 
 #endif
