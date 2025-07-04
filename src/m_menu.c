@@ -1237,7 +1237,7 @@ static void M_VideoOptions(INT32 choice)
 {
 	(void)choice;
 #ifdef HWRENDER
-	if (vid.glstate != VID_GL_LIBRARY_LOADED)
+	if (vid.glstate != VID_GL_LIBRARY_ERROR)
 	{
 		OP_VideoOptionsMenu[op_video_renderer].status = (IT_TRANSTEXT | IT_PAIR);
 		OP_VideoOptionsMenu[op_video_renderer].patch = "Renderer";
