@@ -50,6 +50,27 @@
 		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
 	"}\0"
 
+//
+// Curve vertex shader
+//
+
+#define GLSL_CURVE_VERTEX_SHADER \
+	"const float pi = 3.14159;\n"\
+	"const float amplitude = 2.0;\n"\
+	"const float speed = 1.0;\n" \
+	"uniform float leveltime;\n" \
+	"void main()\n" \
+	"{\n" \
+		"vec4 position = gl_ModelViewMatrix * gl_Vertex;\n" \
+		"float distance2D = position.x * position.x + position.z * position.z;\n" \
+		"distance2D *= sin(leveltime * speed) * amplitude;\n" \
+		"position.y -= distance2D / 5000.0;\n" \
+		"gl_Position = gl_ProjectionMatrix * position;\n" \
+		"gl_FrontColor = gl_Color;\n" \
+		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
+		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
+	"}\0"
+
 // ==================
 //  Fragment shaders
 // ==================
