@@ -36,11 +36,6 @@ typedef enum
 */
 extern rendermode_t rendermode;
 
-/**	\brief OpenGL state
-	0 = never loaded, 1 = loaded successfully, -1 = failed loading
-*/
-extern INT32 vid_opengl_state;
-
 
 /**	\brief use highcolor modes if true
 */
