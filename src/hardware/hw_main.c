@@ -105,9 +105,6 @@ boolean drawsky = true;
 #ifndef NEWCLIP
 static consvar_t cv_grclipwalls = {"gr_clipwalls", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 #endif
-//development variables for diverse uses
-static consvar_t cv_gralpha = {"gr_alpha", "160", 0, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_grbeta = {"gr_beta", "0", 0, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static float HWRWipeCounter = 1.0f;
 consvar_t cv_grrounddown = {"gr_rounddown", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -2191,7 +2188,7 @@ static cliprange_t     gr_solidsegs[MAXSEGS];
 static void printsolidsegs(void)
 {
 	cliprange_t *       start;
-	if (!hw_newend || cv_grbeta.value != 2)
+	if (!hw_newend)
 		return;
 	for (start = gr_solidsegs;start != hw_newend;start++)
 	{
@@ -6105,12 +6102,6 @@ static inline void HWR_AddEngineCommands(void)
 #ifndef NEWCLIP
 	CV_RegisterVar(&cv_grclipwalls);
 #endif
-
-	// engine development mode variables
-	// - usage may vary from version to version..
-	CV_RegisterVar(&cv_gralpha);
-	CV_RegisterVar(&cv_grbeta);
-
 	// engine commands
 	COM_AddCommand("gr_stats", Command_GrStats_f);
 }
