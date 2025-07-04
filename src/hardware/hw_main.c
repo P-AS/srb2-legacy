@@ -151,25 +151,25 @@ consvar_t cv_grpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, gr
 
 consvar_t cv_grcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grcurveshader_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
+#define ONLY_IF_GL_LOADED if (vid.glstate != VID_GL_LIBRARY_LOADED) return;
 
 static void CV_filtermode_ONChange(void)
 {
-  if (rendermode == render_opengl)
+  	ONLY_IF_GL_LOADED
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREFILTERMODE, cv_grfiltermode.value);
 }
 
 static void CV_anisotropic_ONChange(void)
 {
-  if (rendermode == render_opengl)
+  	ONLY_IF_GL_LOADED
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_granisotropicmode.value);
 }
 
 static void CV_grmodellighting_OnChange(void)
 {
-  if (rendermode == render_opengl)
-	{
-		HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
-	}
+
+	ONLY_IF_GL_LOADED
+	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
 	// if shaders have been compiled, then they now need to be recompiled.
   if (gr_shadersavailable)
   { 
@@ -179,6 +179,7 @@ static void CV_grmodellighting_OnChange(void)
 
 static void CV_grpaletterendering_OnChange(void)
 {
+	ONLY_IF_GL_LOADED
 	if (gr_shadersavailable)
 	{
 		HWR_CompileShaders();
@@ -187,7 +188,8 @@ static void CV_grpaletterendering_OnChange(void)
 }
 
 static void CV_grpalettedepth_OnChange(void)
-{
+{	
+	ONLY_IF_GL_LOADED
 	// refresh the screen palette
 	if (HWR_ShouldUsePaletteRendering())
 		HWR_SetPalette(pLocalPalette);
@@ -195,7 +197,7 @@ static void CV_grpalettedepth_OnChange(void)
 
 static void CV_grshaders_OnChange(void)
 {
-	if (rendermode == render_opengl)
+	ONLY_IF_GL_LOADED
 		HWR_SetShaderState();
 	if (cv_grpaletterendering.value)
 	{
@@ -206,11 +208,9 @@ static void CV_grshaders_OnChange(void)
 
 static void CV_grcurveshader_OnChange(void)
 {
-	if (rendermode == render_opengl)
-	{
-		if (gr_shadersavailable)
+	ONLY_IF_GL_LOADED
+	if (gr_shadersavailable)
 			HWR_CompileShaders();
-	}
 }
 
 
