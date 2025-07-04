@@ -89,6 +89,7 @@ extern consvar_t cv_grbatching;
 extern consvar_t cv_grwireframe;
 extern consvar_t cv_grpaletterendering;
 extern consvar_t cv_grpalettedepth;
+extern consvar_t cv_grcurveshader; 
 
 extern float gr_viewwidth, gr_viewheight, gr_baseviewwindowy;
 
