@@ -20,13 +20,13 @@
 #include "p_local.h" // camera
 #include "p_slopes.h"
 #include "z_zone.h" // Check R_Prep3DFloors
+#include "r_portal.h"
 
 seg_t *curline;
 side_t *sidedef;
 line_t *linedef;
 sector_t *frontsector;
 sector_t *backsector;
-boolean portalline; // is curline a portal seg?
 
 // very ugly realloc() of drawsegs at run-time, I upped it to 512
 // instead of 256.. and someone managed to send me a level with
@@ -401,8 +401,6 @@ static void R_AddLine(seg_t *line)
 	angle_t angle1, angle2, span, tspan;
 	static sector_t tempsec;
 
-	portalline = false;
-
 	if (line->polyseg && !(line->polyseg->flags & POF_RENDERSIDES))
 		return;
 
@@ -469,7 +467,7 @@ static void R_AddLine(seg_t *line)
 				line2 = P_FindSpecialLineFromTag(40, line->linedef->tag, line2);
 			if (line2 >= 0) // found it!
 			{
-				R_AddPortal(line->linedef-lines, line2, x1, x2); // Remember the lines for later rendering
+				Portal_Add2Lines(line->linedef-lines, line2, x1, x2); // Remember the lines for later rendering
 				//return; // Don't fill in that space now!
 				goto clipsolid;
 			}
