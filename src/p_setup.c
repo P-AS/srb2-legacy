@@ -3116,9 +3116,6 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	// clear special respawning que
 	iquehead = iquetail = 0;
 
-	// Fab : 19-07-98 : start cd music for this level (note: can be remapped)
-	I_PlayCD((UINT8)(gamemap), false);
-
 	// preload graphics
 #ifdef HWRENDER // not win32 only 19990829 by Kin
 	if (rendermode != render_soft && rendermode != render_none)
