@@ -665,7 +665,6 @@ static void W_ReadFileShaders(wadfile_t *wadfile)
 {
 #ifdef HWRENDER
 	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED))
-	{
 		HWR_LoadCustomShadersFromFile(numwadfiles - 1, W_FileHasFolders(wadfile));
 #else
 	(void)wadfile;
