@@ -570,7 +570,7 @@ void SCR_DisplayLocalPing(void)
 
 	if (cv_showping.value == 1 || shitping)	// only show 2 (warning) if our ping is at a bad level
 	{
-		INT32 dispy = 189;
+		INT32 dispy = 187;
 		INT32 transflag = shitping ? V_10TRANS*(leveltime/2) : 0;
 
 		if(cv_tpscounter.value && cv_ticrate.value)
