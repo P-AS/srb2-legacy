@@ -30,19 +30,12 @@
 	"void main()\n" \
 	"{\n" \
 	"#ifdef SRB2_CURVE_SHADER\n" \
-		"vec4 position = gl_ModelViewMatrix * gl_Vertex;\n" \
-		"float distance2D = position.x * position.x + position.z * position.z;\n" \
-		"distance2D *= sin(leveltime * speed) * amplitude;\n" \
-		"position.y -= distance2D / 5000.0;\n" \
-		"gl_Position = gl_ProjectionMatrix * position;\n" \
-		"gl_FrontColor = gl_Color;\n" \
-		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
-		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
-		"#else\n" \
-		"gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n" \
-		"gl_FrontColor = gl_Color;\n" \
-		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
-		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
+	GLSL_CURVE_VERTEX_SHADER \
+	"#else\n" \
+	"gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n" \
+	"gl_FrontColor = gl_Color;\n" \
+	"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
+	"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
 	"#endif\n" \
 	"}\n" \
 
@@ -50,19 +43,40 @@
 // stores the lighting result to gl_Color
 // (ambient lighting of 0.75 and diffuse lighting from above)
 #define GLSL_MODEL_VERTEX_SHADER \
+	"const float amplitude = 2.0;\n"\
+	"const float speed = 32.0;\n" \
+	"uniform float leveltime;\n" \
 	"void main()\n" \
 	"{\n" \
 		"#ifdef SRB2_MODEL_LIGHTING\n" \
 		"float nDotVP = dot(gl_Normal, vec3(0, 1, 0));\n" \
 		"float light = min(0.75 + max(nDotVP, 0.0), 1.0);\n" \
-		"gl_FrontColor = vec4(light, light, light, 1.0);\n" \
 		"#else\n" \
 		"gl_FrontColor = gl_Color;\n" \
 		"#endif\n" \
 		"gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n" \
 		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
 		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
+		"#ifdef SRB2_CURVE_SHADER\n" \
+		 GLSL_CURVE_VERTEX_SHADER \
+		"#endif\n" \
+		"#ifdef SRB2_MODEL_LIGHTING\n" \
+		"gl_FrontColor = vec4(light, light, light, 1.0);\n" \
+		"#endif\n" \
 	"}\0"
+	
+//	
+// Curve Vertex Shader
+//
+#define GLSL_CURVE_VERTEX_SHADER \
+	"vec4 position = gl_ModelViewMatrix * gl_Vertex;\n" \
+	"float distance2D = position.x * position.x + position.z * position.z;\n" \
+	"distance2D *= sin(leveltime * speed) * amplitude;\n" \
+	"position.y -= distance2D / 5000.0;\n" \
+	"gl_Position = gl_ProjectionMatrix * position;\n" \
+	"gl_FrontColor = gl_Color;\n" \
+	"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
+	"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
 
 // ==================
 //  Fragment shaders
@@ -129,7 +143,7 @@
 		GLSL_DOOM_COLORMAP_NODITHER \
 		"#endif\n" \
 	"}\n"
-	
+
 // lighting cap adjustment:
 // first num (155.0), increase to make it start to go dark sooner
 // second num (0.26), increase to make it go dark faster
