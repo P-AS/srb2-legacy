@@ -4044,18 +4044,6 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	HWR_GetMappedPatch(gpatch, spr->colormap);
 
-	// Draw shadow BEFORE sprite
-	if (cv_shadow.value // Shadows enabled
-		&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
-		&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
-		&& (spr->mobj->z >= spr->mobj->floorz)) // Without this, your shadow shows on the floor, even after you die and fall through the ground.
-	{
-		////////////////////
-		// SHADOW SPRITE! //
-		////////////////////
-		HWR_DrawSpriteShadow(spr, gpatch, this_scale);
-	}
-
 	baseWallVerts[0].x = baseWallVerts[3].x = spr->x1;
 	baseWallVerts[2].x = baseWallVerts[1].x = spr->x2;
 	baseWallVerts[0].z = baseWallVerts[3].z = spr->z1;
@@ -4374,18 +4362,6 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 	//12/12/99: Hurdler: same comment as above (for md2)
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	HWR_GetMappedPatch(gpatch, spr->colormap);
-
-	// Draw shadow BEFORE sprite
-	if (cv_shadow.value // Shadows enabled
-		&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
-		&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
-		&& (spr->mobj->z >= spr->mobj->floorz)) // Without this, your shadow shows on the floor, even after you die and fall through the ground.
-	{
-		////////////////////
-		// SHADOW SPRITE! //
-		////////////////////
-		HWR_DrawSpriteShadow(spr, gpatch, this_scale);
-	}
 
 	// Let dispoffset work first since this adjust each vertex
 	HWR_RotateSpritePolyToAim(spr, wallVerts);
@@ -4926,9 +4902,18 @@ static void HWR_DrawSprites(void)
 	for (i = 0; i < gr_visspritecount; i++)
 	{
 		gr_vissprite_t *spr = gr_vsprorder[i];
+		GLPatch_t *gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
+		HWR_GetMappedPatch(gpatch, spr->colormap);
 		if (spr->precip)
 			HWR_DrawPrecipitationSprite(spr);
 		else
+		{
+			if (cv_shadow.value // Shadows enabled
+			&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
+			&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
+			&& (spr->mobj->z >= spr->mobj->floorz)) // Without this, your shadow shows on the floor, even after you die and fall through the ground.
+				HWR_DrawSpriteShadow(spr, gpatch, 1.0f);
+
 			if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			{
 				// 8/1/19: Only don't display player models if no default SPR_PLAY is found.
@@ -4944,6 +4929,7 @@ static void HWR_DrawSprites(void)
 				else
 					HWR_DrawMD2(spr);
 			}
+		}
 	}
 }
 
