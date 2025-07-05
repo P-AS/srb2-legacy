@@ -1547,7 +1547,7 @@ boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox)
 	else
 		chasecam = (cv_chasecam.value != 0);
 
-	if (player->climbing || (player->pflags & PF_NIGHTSMODE)  || player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN)
+	if (player->climbing || (player->pflags & PF_NIGHTSMODE) || player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN)
 		chasecam = true; // force chasecam on
 	else if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off

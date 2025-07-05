@@ -89,11 +89,13 @@ static int patch_fields_ref = LUA_NOREF;
 
 enum hudhook {
 	hudhook_game = 0,
-	hudhook_scores
+	hudhook_scores,
+	hudhook_title
 };
 static const char *const hudhook_opt[] = {
 	"game",
 	"scores",
+	"title",
 	NULL};
 
 // alignment types for v.drawString
@@ -889,6 +891,9 @@ int LUA_HudLib(lua_State *L)
 
 		lua_newtable(L);
 		lua_rawseti(L, -2, 3); // HUD[2] = scores rendering functions array
+
+		lua_newtable(L);
+		lua_rawseti(L, -2, 4); // HUD[3] = title rendering functions array
 	lua_setfield(L, LUA_REGISTRYINDEX, "HUD");
 
 	luaL_newmetatable(L, META_HUDINFO);
@@ -991,6 +996,31 @@ void LUAh_ScoresHUD(void)
 	lua_getfield(gL, LUA_REGISTRYINDEX, "HUD");
 	I_Assert(lua_istable(gL, -1));
 	lua_rawgeti(gL, -1, 3); // HUD[3] = rendering funcs
+	I_Assert(lua_istable(gL, -1));
+
+	lua_rawgeti(gL, -2, 1); // HUD[1] = lib_draw
+	I_Assert(lua_istable(gL, -1));
+	lua_remove(gL, -3); // pop HUD
+	lua_pushnil(gL);
+	while (lua_next(gL, -3) != 0) {
+		lua_pushvalue(gL, -3); // graphics library (HUD[1])
+		LUA_Call(gL, 1);
+	}
+	lua_pop(gL, -1);
+	hud_running = false;
+}
+
+void LUAh_TitleHUD(void)
+{
+	if (!gL || !(hudAvailable & (1<<hudhook_title)))
+		return;
+
+	hud_running = true;
+	lua_pop(gL, -1);
+
+	lua_getfield(gL, LUA_REGISTRYINDEX, "HUD");
+	I_Assert(lua_istable(gL, -1));
+	lua_rawgeti(gL, -1, 4); // HUD[4] = rendering funcs
 	I_Assert(lua_istable(gL, -1));
 
 	lua_rawgeti(gL, -2, 1); // HUD[1] = lib_draw
