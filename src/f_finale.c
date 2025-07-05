@@ -32,11 +32,17 @@
 #include "m_random.h"
 #include "y_inter.h"
 #include "m_cond.h"
+#include "p_local.h"
+#include "p_setup.h"
+
+#include "lua_hud.h"
+
 
 // Stage of animation:
 // 0 = text, 1 = art screen
 static INT32 finalecount;
 INT32 titlescrollspeed = 80;
+UINT8 titlemapinaction = TITLEMAP_OFF;
 
 static INT32 timetonext; // Delay between screen changes
 static INT32 continuetime; // Short delay when continuing
@@ -279,6 +285,8 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 void F_StartIntro(void)
 {
+	S_StopMusic();
+
 	if (introtoplay)
 	{
 		if (!cutscenes[introtoplay - 1])
@@ -1442,18 +1450,75 @@ void F_GameEndTicker(void)
 // ==============
 //  TITLE SCREEN
 // ==============
+mobj_t *titlemapcameraref = NULL;
+
 void F_StartTitleScreen(void)
 {
+	S_ChangeMusicInternal("titles", looptitle);
+
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 		finalecount = 0;
 	else
 		wipegamestate = GS_TITLESCREEN;
+
+	if (titlemap)
+	{
+		gamestate_t prevwipegamestate = wipegamestate;
+		titlemapinaction = TITLEMAP_LOADING;
+		gamemap = titlemap;
+
+		if (!mapheaderinfo[gamemap-1])
+			P_AllocMapHeader(gamemap-1);
+
+		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
+		globalweather = mapheaderinfo[gamemap-1]->weather;
+
+		G_DoLoadLevel(true);
+		if (!titlemap)
+			return;
+
+		players[displayplayer].playerstate = PST_DEAD; // Don't spawn the player in dummy (I'm still a filthy cheater)
+
+		// Set Default Position
+		mapthing_t *startpos;
+		if (playerstarts[0])
+			startpos = playerstarts[0];
+		else if (deathmatchstarts[0])
+			startpos = deathmatchstarts[0];
+		else
+			startpos = NULL;
+
+		if (startpos)
+		{
+			camera.x = startpos->x << FRACBITS;
+			camera.y = startpos->y << FRACBITS;
+			camera.subsector = R_PointInSubsector(camera.x, camera.y);
+			camera.z = camera.subsector->sector->floorheight + ((startpos->options >> ZSHIFT) << FRACBITS);
+			camera.angle = (startpos->angle % 360)*ANG1;
+			camera.aiming = 0;
+		}
+		else
+		{
+			camera.x = camera.y = camera.z = camera.angle = camera.aiming = 0;
+			camera.subsector = NULL; // toast is filthy too
+		}
+
+		camera.chase = true;
+		camera.height = 0;
+
+		wipegamestate = prevwipegamestate;
+	}
+	else
+	{
+		titlemapinaction = TITLEMAP_OFF;
+		gamemap = 1; // g_game.c
+		S_ChangeMusicInternal("titles", looptitle);
+		CON_ClearHUD();
+	}
+
 	G_SetGamestate(GS_TITLESCREEN);
-	CON_ClearHUD();
 
 	// IWAD dependent stuff.
-
-	S_ChangeMusicInternal("titles", looptitle);
 
 	animtimer = 0;
 
@@ -1484,11 +1549,16 @@ void F_TitleScreenDrawer(void)
 		return; // We likely came here from retrying. Don't do a damn thing.
 
 	// Draw that sky!
-	F_SkyScroll(titlescrollspeed);
+	if (!titlemapinaction)
+		F_SkyScroll(titlescrollspeed);
 
 	// Don't draw outside of the title screewn, or if the patch isn't there.
 	if (!ttwing || (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS))
 		return;
+
+	// rei|miru: use title pics?
+	if (hidetitlepics)
+		goto luahook;
 
 	V_DrawScaledPatch(30, 14, 0, ttwing);
 
@@ -1526,6 +1596,9 @@ void F_TitleScreenDrawer(void)
 	}
 
 	V_DrawScaledPatch(48, 142, 0,ttbanner);
+
+luahook:
+	LUAh_TitleHUD();
 }
 
 // (no longer) De-Demo'd Title Screen
@@ -1538,6 +1611,51 @@ void F_TitleScreenTicker(boolean run)
 	if (gameaction != ga_nothing || gamestate != GS_TITLESCREEN)
 		return;
 
+	// Execute the titlemap camera settings
+	if (titlemapinaction)
+	{
+		thinker_t *th;
+		mobj_t *mo2;
+		mobj_t *cameraref = NULL;
+
+		// If there's a Line 422 Switch Cut-Away view, don't force us.
+		if (!titlemapcameraref || titlemapcameraref->type != MT_ALTVIEWMAN)
+		{
+			for (th = thinkercap.next; th != &thinkercap; th = th->next)
+			{
+				if (th->function != (actionf_p1)P_MobjThinker) // Not a mobj thinker
+					continue;
+
+				mo2 = (mobj_t *)th;
+
+				if (!mo2)
+					continue;
+
+				if (mo2->type != MT_ALTVIEWMAN)
+					continue;
+
+				cameraref = titlemapcameraref = mo2;
+				break;
+			}
+		}
+		else
+			cameraref = titlemapcameraref;
+
+		if (cameraref)
+		{
+			camera.x = cameraref->x;
+			camera.y = cameraref->y;
+			camera.z = cameraref->z;
+			camera.angle = cameraref->angle;
+			camera.aiming = cameraref->cusval;
+			camera.subsector = cameraref->subsector;
+		}
+		else
+		{
+			// Default behavior: Do a lil' camera spin if a title map is loaded;
+			camera.angle += titlescrollspeed*ANG1/64;
+		}
+	}
 	// no demos to play? or, are they disabled?
 	if (!cv_rollingdemos.value || !numDemos)
 		return;
