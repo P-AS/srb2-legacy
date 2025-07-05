@@ -78,8 +78,9 @@ typedef struct
 // =========================================================================
 
 #define MAX_WADPATH 512
-#define MAX_WADFILES 48 // maximum of wad files used at the same time
-// (there is a max of simultaneous open files anyway, and this should be plenty)
+#define MAX_WADFILES 255 // maximum of wad files used at the same time
+// Can be set all the way up to 255 but not 256,
+// because a UINT8 will never be >= 256, probably breaking some conditionals.
 
 #define lumpcache_t void *
 
