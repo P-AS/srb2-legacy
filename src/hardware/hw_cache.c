@@ -355,15 +355,13 @@ void HWR_MakePatch (patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, bo
 //             CACHING HANDLING
 // =================================================
 
-static size_t gr_numtextures;
+static size_t gr_numtextures = 0;
 static GLTexture_t *gr_textures; // for ALL Doom textures
 
 void HWR_InitTextureCache(void)
 {
-	gr_numtextures = 0;
 	gr_textures = NULL;
 }
-
 
 // Callback function for HWR_FreeTextureCache.
 static void FreeMipmapColormap(INT32 patchnum, void *patch)
@@ -408,22 +406,28 @@ static void FreeMipmapColormap(INT32 patchnum, void *patch)
 	}
 }
 
-void HWR_FreeTextureCache(void)
+void HWR_FreeMipmapCache(void)
 {
 	INT32 i;
+
 	// free references to the textures
 	HWD.pfnClearMipMapCache();
 
 	// free all hardware-converted graphics cached in the heap
 	// our gool is only the textures since user of the texture is the texture cache
-	Z_FreeTags(PU_HWRCACHE, PU_HWRCACHE);
-	Z_FreeTags(PU_HWRCACHE_UNLOCKED, PU_HWRCACHE_UNLOCKED);
+	Z_FreeTag(PU_HWRCACHE);
+	Z_FreeTag(PU_HWRCACHE_UNLOCKED);
 
 	// Alam: free the Z_Blocks before freeing it's users
-
-	// free all skin after each level: must be done after pfnClearMipMapCache!
+	// free all patch colormaps after each level: must be done after ClearMipMapCache!
 	for (i = 0; i < numwadfiles; i++)
 		M_AATreeIterate(wadfiles[i]->hwrcache, FreeMipmapColormap);
+}
+
+void HWR_FreeTextureCache(void)
+{
+	// free references to the textures
+	HWR_FreeMipmapCache();
 
 	// now the heap don't have any 'user' pointing to our
 	// texturecache info, we can free it
@@ -433,20 +437,15 @@ void HWR_FreeTextureCache(void)
 	gr_numtextures = 0;
 }
 
-void HWR_PrepLevelCache(size_t pnumtextures)
+void HWR_LoadTextures(size_t pnumtextures)
 {
-	// problem: the mipmap cache management hold a list of mipmaps.. but they are
-	//           reallocated on each level..
-	//sub-optimal, but 1) just need re-download stuff in hardware cache VERY fast
-	//   2) sprite/menu stuff mixed with level textures so can't do anything else
-
 	// we must free it since numtextures changed
 	HWR_FreeTextureCache();
 
 	gr_numtextures = pnumtextures;
 	gr_textures = calloc(pnumtextures, sizeof (*gr_textures));
 	if (gr_textures == NULL)
-		I_Error("HWR_PrepLevelCache: can't alloc gr_textures");
+		I_Error("HWR_LoadTextures: ran out of memory for OpenGL textures. Sad!");
 }
 
 // --------------------------------------------------------------------------
@@ -459,6 +458,10 @@ GLTexture_t *HWR_GetTexture(INT32 tex)
 	if ((unsigned)tex >= gr_numtextures)
 		I_Error("HWR_GetTexture: tex >= numtextures\n");
 #endif
+	// Jimita
+	if (needpatchrecache && (!gr_textures))
+		HWR_LoadTextures(gr_numtextures);
+
 	grtex = &gr_textures[tex];
 
 	if (!grtex->mipmap.grInfo.data && !grtex->mipmap.downloaded)
@@ -572,6 +575,10 @@ static void HWR_LoadMappedPatch(GLMipmap_t *grmip, GLPatch_t *gpatch)
 // -----------------+
 void HWR_GetPatch(GLPatch_t *gpatch)
 {
+
+	if (needpatchflush)
+		Z_FlushCachedPatches();
+
 	// is it in hardware cache
 	if (!gpatch->mipmap->downloaded && !gpatch->mipmap->grInfo.data)
 	{
@@ -598,6 +605,9 @@ void HWR_GetPatch(GLPatch_t *gpatch)
 void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap)
 {
 	GLMipmap_t *grmip, *newmip;
+
+	if (needpatchflush)
+		W_FlushCachedPatches();
 
 	if (colormap == colormaps || colormap == NULL)
 	{
@@ -753,6 +763,10 @@ static void HWR_CacheFadeMask(GLMipmap_t *grMipmap, lumpnum_t fademasklumpnum)
 void HWR_GetFadeMask(lumpnum_t fademasklumpnum)
 {
 	GLMipmap_t *grmip;
+
+
+	if (needpatchflush)
+		W_FlushCachedPatches();
 
 	grmip = HWR_GetCachedGLPatch(fademasklumpnum)->mipmap;
 
