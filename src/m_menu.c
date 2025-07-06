@@ -918,9 +918,10 @@ static menuitem_t MP_SplitServerMenu[] =
 
 static menuitem_t MP_PlayerSetupMenu[] =
 {
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Name",   M_HandleSetupMultiPlayer,   0},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Character",  M_HandleSetupMultiPlayer,  16},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Color", M_HandleSetupMultiPlayer,  96}, // Tails 01-18-2001
+	{IT_KEYHANDLER | IT_STRING, NULL, "Name", M_HandleSetupMultiPlayer, 0}, // name
+	{IT_KEYHANDLER | IT_STRING, NULL, "Character", M_HandleSetupMultiPlayer, 16}, // skin
+	{IT_KEYHANDLER, NULL, "Color", M_HandleSetupMultiPlayer, 96}, // colour
+	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // default
 };
 
 // ------------------------------------
@@ -7485,6 +7486,9 @@ static player_t  *setupm_player;
 static consvar_t *setupm_cvskin;
 static consvar_t *setupm_cvcolor;
 static consvar_t *setupm_cvname;
+static consvar_t *setupm_cvdefaultskin;
+static consvar_t *setupm_cvdefaultcolor;
+static consvar_t *setupm_cvdefaultname;
 static INT32      setupm_fakeskin;
 static UINT16     setupm_fakecolor;
 
@@ -7518,8 +7522,6 @@ static void M_DrawSetupMultiPlayerMenu(void)
 	// draw text cursor for name
 	if (!itemOn && skullAnimCounter < 4) // blink cursor
 		V_DrawCharacter(mx + 98 + V_StringWidth(setupm_name, 0), my, '_', false);
-
-
 
 	// anim the player in the box
 	multi_tics -= renderdeltatics;
@@ -7622,6 +7624,18 @@ static void M_DrawSetupMultiPlayerMenu(void)
 
 #undef selected_width
 #undef color_width
+
+	x = MP_PlayerSetupDef.x;
+	y += 20;
+
+	V_DrawString(x, y,
+		((R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
+		|| setupm_cvdefaultcolor->value != setupm_fakecolor
+		|| strcmp(setupm_name, setupm_cvdefaultname->string))
+			? 0
+			: V_TRANSLUCENT)
+		| ((itemOn == 3) ? V_YELLOWMAP : 0),
+		"Save as default");
 }
 
 // Handle 1P/2P MP Setup
@@ -7654,7 +7668,20 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			setupm_fakecolor = M_GetColorPrev(setupm_fakecolor);
 		}
 		break;
-
+	
+	case KEY_ENTER:
+	if (itemOn == 3
+		&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
+		|| setupm_cvdefaultcolor->value != setupm_fakecolor
+		|| strcmp(setupm_name, setupm_cvdefaultname->string)))
+		{
+			S_StartSound(NULL,sfx_strpst);
+			// you know what? always putting these in the buffer won't hurt anything.
+			COM_BufAddText (va("%s \"%s\"\n",setupm_cvdefaultskin->name,skins[setupm_fakeskin].name));
+			COM_BufAddText (va("%s %d\n",setupm_cvdefaultcolor->name,setupm_fakecolor));
+			COM_BufAddText (va("%s %s\n",setupm_cvdefaultname->name,setupm_name));
+			break;
+		}
 	case KEY_RIGHTARROW:
 		if (itemOn == 1)       //player skin
 		{
@@ -7731,6 +7758,9 @@ static void M_SetupMultiPlayer(INT32 choice)
 	setupm_cvskin = &cv_skin;
 	setupm_cvcolor = &cv_playercolor;
 	setupm_cvname = &cv_playername;
+	setupm_cvdefaultskin = &cv_defaultskin;
+	setupm_cvdefaultcolor = &cv_defaultplayercolor;
+	setupm_cvdefaultname = &cv_defaultplayername;
 
 	// For whatever reason this doesn't work right if you just use ->value
 	setupm_fakeskin = R_SkinAvailable(setupm_cvskin->string);
@@ -7762,6 +7792,9 @@ static void M_SetupMultiPlayer2(INT32 choice)
 	setupm_cvskin = &cv_skin2;
 	setupm_cvcolor = &cv_playercolor2;
 	setupm_cvname = &cv_playername2;
+	setupm_cvdefaultskin = &cv_defaultskin2;
+	setupm_cvdefaultcolor = &cv_defaultplayercolor2;
+	setupm_cvdefaultname = &cv_defaultplayername2;
 
 	// For whatever reason this doesn't work right if you just use ->value
 	setupm_fakeskin = R_SkinAvailable(setupm_cvskin->string);
