@@ -3826,7 +3826,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 
 		// The shadow is falling ABOVE it's mobj?
 		// Don't draw it, then!
-		if (spr->mobj->z < floorheight)
+		if (interp.z < floorheight)
 			return;
 		else
 		{
@@ -3928,7 +3928,8 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	sSurf.PolyColor.s.blue = 0x01;
 	sSurf.PolyColor.s.green = 0x01;
 
-	HWR_Lighting(&sSurf, 0, NULL);
+	if (HWR_UseShader())
+		HWR_Lighting(&sSurf, 0, NULL);
 
 	// shadow is always half as translucent as the sprite itself
 	if (!cv_translucency.value) // use default translucency (main sprite won't have any translucency)
