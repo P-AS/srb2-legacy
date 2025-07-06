@@ -89,7 +89,7 @@ boolean LoadGL(void)
 		CONS_Alert(CONS_ERROR, "Could not load OpenGL Library: %s\n"
 					"Falling back to Software mode.\n", SDL_GetError());
 		if (!M_CheckParm ("-OGLlib"))
-			CONS_Printf("If you know what is the OpenGL library's name, use -OGLlib\n");
+			CONS_Alert(CONS_ERROR, "If you know what is the OpenGL library's name, use -OGLlib\n");
 		return 0;
 	}
 #endif
@@ -107,21 +107,17 @@ boolean LoadGL(void)
 boolean OglSdlSurface(INT32 w, INT32 h)
 {
 	INT32 cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
-	const GLvoid *glvendor = NULL, *glrenderer = NULL, *glversion = NULL;
-
 	static int majorGL = 0, minorGL = 0;
 
-	glvendor = pglGetString(GL_VENDOR);
 	// Get info and extensions.
 	//BP: why don't we make it earlier ?
 	//Hurdler: we cannot do that before intialising gl context
-	glrenderer = pglGetString(GL_RENDERER);
-	glversion = pglGetString(GL_VERSION);
+	gl_renderer = pglGetString(GL_RENDERER);
+	gl_version = pglGetString(GL_VERSION);
 	gl_extensions = pglGetString(GL_EXTENSIONS);
 
-	GL_DBG_Printf("Vendor     : %s\n", glvendor);
-	GL_DBG_Printf("Renderer   : %s\n", glrenderer);
-	GL_DBG_Printf("Version    : %s\n", glversion);
+	GL_DBG_Printf("Renderer   : %s\n", gl_renderer);
+	GL_DBG_Printf("Version    : %s\n", gl_version);
 	GL_DBG_Printf("Extensions : %s\n", gl_extensions);
 	oglflags = 0;
 
@@ -130,7 +126,7 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	else
 		maximumAnisotropy = 1;
 
-	if (sscanf((const char*)glversion, "%d.%d", &majorGL, &minorGL)
+	if (sscanf((const char*)gl_version, "%d.%d", &majorGL, &minorGL)
 		&& (!(majorGL == 1 && minorGL <= 3)))
 		supportMipMap = true;
 	else
@@ -179,7 +175,9 @@ void OglSdlFinishUpdate(boolean waitvbl)
 
 	// Sryder:	We need to draw the final screen texture again into the other buffer in the original position so that
 	//			effects that want to take the old screen can do so after this
-	HWR_DrawScreenFinalTexture(realwidth, realheight);
+	// Generic2 has the screen image without palette rendering brightness adjustments.
+	// Using that here will prevent brightness adjustments being applied twice.
+	DrawScreenTexture(HWD_SCREENTEXTURE_GENERIC2, NULL, 0);
 }
 
 EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette)

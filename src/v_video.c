@@ -989,7 +989,7 @@ static UINT32 V_GetHWConsBackColor(void)
 	switch (cons_backcolor.value)
 	{
 		case 0:		r = 0xff; g = 0xff; b = 0xff;	break; 	// White
-		case 1:		r = 0x80; g = 0x80; b = 0x80;	break; 	// Black
+		case 1:		r = 0x01; g = 0x01; b = 0x01;	break; 	// Black -- it was gray, not totally black. Or is it? - Michael Stevens 2025
 		case 2:		r = 0xde; g = 0xb8; b = 0x87;	break;	// Sepia
 		case 3:		r = 0x40; g = 0x20; b = 0x10;	break; 	// Brown
 		case 4:		r = 0xfa; g = 0x80; b = 0x72;	break; 	// Pink
@@ -1007,6 +1007,7 @@ static UINT32 V_GetHWConsBackColor(void)
 		case 16:	r = 0x00; g = 0x00; b = 0xff;	break; 	// Blue
 		case 17:	r = 0xff; g = 0x00; b = 0xff;	break; 	// Purple
 		case 18:	r = 0xee; g = 0x82; b = 0xee;	break; 	// Lavender
+		case 19:	r = 0x80; g = 0x80; b = 0x80;	break; 	// Gray
 		// Default green
 		default:	r = 0x00; g = 0x80; b = 0x00;	break;
 	}
@@ -1234,25 +1235,42 @@ void V_DrawPatchFill(patch_t *pat)
 //
 // Fade all the screen buffer, so that the menu is more readable,
 // especially now that we use the small hufont in the menus...
-//
-void V_DrawFadeScreen(void)
+// If color is 0x00 to 0xFF, draw transtable (strength range 0-10).
+// Else, use COLORMAP lump (strength range 0-31).
+// IF YOU ARE NOT CAREFUL, THIS CAN AND WILL CRASH!
+// I have kept the safety checks out of this function;
+// the v.fadeScreen Lua interface handles those.
+void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 {
-	const UINT8 *fadetable = (UINT8 *)colormaps + 16*256;
-	const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
-	UINT8 *buf = screens[0];
+	if (!strength)
+		return;
+
+	if (!(color & 0xFF00) && strength == 10)
+	{
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, color);
+		return;
+	}
 
 #ifdef HWRENDER
 	if (rendermode != render_soft && rendermode != render_none)
 	{
-		HWR_FadeScreenMenuBack(0x01010160, 0); // hack, 0 means full height
+		HWR_FadeScreenMenuBack(color, strength);
 		return;
 	}
 #endif
 
-	// heavily simplified -- we don't need to know x or y
-	// position when we're doing a full screen fade
-	for (; buf < deststop; ++buf)
-		*buf = fadetable[*buf];
+	{
+		const UINT8 *fadetable = ((color & 0xFF00) // Color is not palette index?
+		? ((UINT8 *)colormaps + strength*256) // Do COLORMAP fade.
+		: ((UINT8 *)transtables + ((10-strength)<<FF_TRANSSHIFT) + color*256)); // Else, do TRANSMAP** fade.
+		const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
+		UINT8 *buf = screens[0];
+
+		// heavily simplified -- we don't need to know x or y
+		// position when we're doing a full screen fade
+		for (; buf < deststop; ++buf)
+			*buf = fadetable[*buf];
+	}
 }
 
 // Simple translucency with one color, over a set number of lines starting from the top.
@@ -2787,7 +2805,7 @@ void InitColorLUT(RGBA_t *palette)
 		for (r = 0; r < CLUTSIZE; r++)
 			for (g = 0; g < CLUTSIZE; g++)
 				for (b = 0; b < CLUTSIZE; b++)
-					colorlookup[r][g][b] = NearestColor(r << SHIFTCOLORBITS, g << SHIFTCOLORBITS, b << SHIFTCOLORBITS);
+					colorlookup[r][g][b] = NearestPaletteColor(r << SHIFTCOLORBITS, g << SHIFTCOLORBITS, b << SHIFTCOLORBITS, palette);
 		clutinit = true;
 		lastpalette = palette;
 	}

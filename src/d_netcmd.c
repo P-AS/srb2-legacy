@@ -815,13 +815,10 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_midimusicvolume);
 	CV_RegisterVar(&cv_numChannels);
 
-	// i_cdmus.c
-	CV_RegisterVar(&cd_volume);
-	CV_RegisterVar(&cdUpdate);
-
 	// screen.c
 	CV_RegisterVar(&cv_fullscreen);
 	CV_RegisterVar(&cv_renderview);
+	CV_RegisterVar(&cv_renderer);
 	CV_RegisterVar(&cv_scr_depth);
 	CV_RegisterVar(&cv_scr_width);
 	CV_RegisterVar(&cv_scr_height);

@@ -23,10 +23,11 @@
 
 // Startup & Shutdown the hardware mode renderer
 void HWR_Startup(void);
+void HWR_Switch(void);
 void HWR_Shutdown(void);
 
 void HWR_drawAMline(const fline_t *fl, INT32 color);
-void HWR_FadeScreenMenuBack(UINT32 color, INT32 height);
+void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength);
 void HWR_DrawConsoleBack(UINT32 color, INT32 height);
 void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player);
 void HWR_RenderPlayerView(INT32 viewnumber, player_t *player);
@@ -42,7 +43,7 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t scale
 void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, INT32 option, fixed_t scale, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
 void HWR_CreatePlanePolygons(INT32 bspnum);
 void HWR_CreateStaticLightmaps(INT32 bspnum);
-void HWR_PrepLevelCache(size_t pnumtextures);
+void HWR_LoadTextures(size_t pnumtextures);
 void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color);
 void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, UINT32 color, INT32 options);	// Lat: separate flags from color since color needs to be an uint to work right.
 
@@ -51,7 +52,6 @@ boolean HWR_Screenshot(const char *pathname);
 
 void HWR_AddCommands(void);
 void HWR_AddSessionCommands(void);
-void HWR_CorrectSWTricks(void);
 void transform(float *cx, float *cy, float *cz);
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
 INT32 HWR_GetTextureUsed(void);
@@ -64,23 +64,15 @@ void HWR_MakeScreenFinalTexture(void);
 void HWR_DrawScreenFinalTexture(int width, int height);
 
 // This stuff is put here so MD2's can use them
+boolean HWR_UseShader(void);
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
 
-
-boolean HWR_CompileShaders(void);
-
-void HWR_LoadAllCustomShaders(void);
-void HWR_LoadCustomShadersFromFile(UINT16 wadnum, boolean PK3);
-const char *HWR_GetShaderName(INT32 shader);
-
-extern customshaderxlat_t shaderxlat[];
-
 extern CV_PossibleValue_t granisotropicmode_cons_t[];
 
-
-extern consvar_t cv_grshaders;
+boolean HWR_ShouldUsePaletteRendering(void);
+extern consvar_t cv_grshaders, cv_grallowshaders;
 extern consvar_t cv_grmd2;
 extern consvar_t cv_grmodelinterpolation;
 extern consvar_t cv_grfiltermode;
@@ -95,6 +87,10 @@ extern consvar_t cv_grfakecontrast;
 extern consvar_t cv_grslopecontrast;
 extern consvar_t cv_grbatching;
 extern consvar_t cv_grwireframe;
+extern consvar_t cv_grpaletterendering;
+extern consvar_t cv_grpalettedepth;
+extern consvar_t cv_grcurveshader; 
+extern consvar_t cv_grlightdither;
 
 extern float gr_viewwidth, gr_viewheight, gr_baseviewwindowy;
 

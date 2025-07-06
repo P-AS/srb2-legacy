@@ -5433,8 +5433,8 @@ void G_AddGhost(char *defdemoname)
 	p += 16;
 
 	// Color
-	M_Memcpy(color,demo_p, (demoversion < 0x000B) ? 16 : MAXCOLORNAME);
-	demo_p += (demoversion < 0x000B) ? 16 : MAXCOLORNAME;
+	M_Memcpy(color,p, (ghostversion < 0x000B) ? 16 : MAXCOLORNAME);
+	p += (ghostversion < 0x000B) ? 16 : MAXCOLORNAME;
 
 	// Ghosts do not have a player structure to put this in.
 	p++; // charability

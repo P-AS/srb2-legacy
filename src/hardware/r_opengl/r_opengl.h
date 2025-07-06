@@ -45,6 +45,7 @@
 #define  _CREATE_DLL_  // necessary for Unix AND Windows
 #include "../../doomdef.h"
 #include "../hw_drv.h"
+#include "../../z_zone.h"
 
 // ==========================================================================
 //                                                                DEFINITIONS
@@ -137,6 +138,8 @@ extern boolean		supportMipMap;
 */
 extern INT32            oglflags;
 extern GLint            textureformatGL;
+
+extern GLfloat projMatrix[16];
 
 typedef enum
 {

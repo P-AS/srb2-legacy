@@ -45,6 +45,7 @@ enum
 	PU_SOUND                 = 11, // static while playing
 	PU_MUSIC                 = 12, // static while playing
 	PU_HUDGFX                = 13, // HUD patch, static until WAD added
+	PU_PATCH             	 = 14, // static until renderer change
 
 	PU_HWRPATCHINFO          = 21, // Hardware GLPatch_t struct for OpenGL texture cache
 	PU_HWRPATCHCOLMIPMAP     = 22, // Hardware GLMipmap_t struct colormap variation of patch
@@ -65,6 +66,7 @@ enum
 									// 'second-level' cache for graphics
                                     // stored in hardware format and downloaded as needed
 	PU_HWRPATCHINFO_UNLOCKED = 103, // 'unlocked' PU_HWRPATCHINFO memory
+	PU_HWRMODELTEXTURE_UNLOCKED = 104, // 'unlocked' PU_HWRMODELTEXTURE memory
 };
 
 //
@@ -106,6 +108,11 @@ void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignb
 // (perhaps this should be changed in future?)
 #define Z_FreeTag(tagnum) Z_FreeTags(tagnum, tagnum)
 void Z_FreeTags(INT32 lowtag, INT32 hightag);
+
+// for renderer switching, free a bunch of stuff
+extern boolean needpatchflush;
+extern boolean needpatchrecache;
+void Z_FlushCachedPatches(void);
 
 // Iterate memory by tag
 #define Z_IterateTag(tagnum, func) Z_IterateTags(tagnum, tagnum, func)

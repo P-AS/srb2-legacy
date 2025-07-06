@@ -137,7 +137,7 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{9, "Gold"},		{10,"Yellow"},		{11,"Emerald"},
 												{12,"Green"},		{13,"Cyan"},		{14,"Steel"},
 												{15,"Periwinkle"},	{16,"Blue"},		{17,"Purple"},
-												{18,"Lavender"},
+												{18,"Lavender"}, {19,"Gray"},
 												{0, NULL}};
 
 consvar_t cons_backcolor = {"con_backcolor", "Green", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
@@ -280,6 +280,7 @@ void CON_SetupBackColormap(void)
 		case 16:	palindex = 239;	break; 	// Blue
 		case 17:	palindex = 199; shift = 7; 	break; 	// Purple
 		case 18:	palindex = 255; shift = 7; 	break; 	// Lavender
+		case 19:	palindex = 15; shift = 7;	break; 	// Gray
 		// Default green
 		default:	palindex = 175; break;
 
@@ -1274,33 +1275,20 @@ void CONS_Printf(const char *fmt, ...)
 	DEBFILE(txt);
 #endif
 
-	if (!con_started)
-	{
-#if defined (_XBOX) && defined (__GNUC__)
-		if (!keyboard_started) debugPrint(txt);
-#endif
-#ifdef PC_DOS
-		CON_LogMessage(txt);
-		free(txt);
-		return;
-#endif
-	}
-	else
-		// write message in con text buffer
+	// write message in con text buffer
+	if (con_started)
 		CON_Print(txt);
 
-#ifndef PC_DOS
-	CON_LogMessage(txt);
-#endif
+	CON_LogMessage(txt);	
 
 	// make sure new text is visible
 	con_scrollup = 0;
 
 	// if not in display loop, force screen update
-	if (con_startup)
+	if (con_startup && (!setrenderneeded))
 	{
 #if (defined (_WINDOWS)) || (defined (__OS2__) && !defined (HAVE_SDL))
-		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_CACHE);
+		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_PATCH);
 
 		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
 		V_DrawScaledPatch(0, 0, 0, con_backpic);
@@ -1557,7 +1545,7 @@ static void CON_DrawConsole(void)
 	// draw console background
 	if (cons_backpic.value || con_forcepic)
 	{
-		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_CACHE);
+		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_PATCH);
 
 		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
 		V_DrawScaledPatch(0, 0, 0, con_backpic);
@@ -1614,8 +1602,20 @@ void CON_Drawer(void)
 	if (!con_started || !graphics_started)
 		return;
 
+	
+	if (needpatchrecache)
+	{
+		W_FlushCachedPatches();
+		HU_LoadGraphics();
+	}
+		
+
 	if (con_recalc)
+	{
 		CON_RecalcSize();
+		if (con_curlines <= 0)
+			CON_ClearHUD();
+	}
 	
 		// console movement
 	if (con_curlines != con_destlines)
