@@ -107,8 +107,8 @@ typedef enum
 	MF_NOSECTOR         = 1<<3,
 	// Don't use the blocklinks (inert but displayable)
 	MF_NOBLOCKMAP       = 1<<4,
-	// Thin, paper-like collision bound (for visual equivalent, see FF_PAPERSPRITE)
-	MF_PAPERCOLLISION            = 1<<5,
+	// Not to be activated by sound, deaf monster.
+	MF_AMBUSH            = 1<<5,
 	// You can push this object. It can activate switches and things by pushing it on top.
 	MF_PUSHABLE         = 1<<6,
 	// Object is a boss.
@@ -160,7 +160,9 @@ typedef enum
 	MF_GRENADEBOUNCE    = 1<<28,
 	// Run the action thinker on spawn.
 	MF_RUNSPAWNFUNC     = 1<<29,
-	// free: 1<<30 and 1<<31
+	// Thin, paper-like collision bound (for visual equivalent, see FF_PAPERSPRITE)
+	MF_PAPERCOLLISION  = 1<<30,
+	// free: 1<<31
 } mobjflag_t;
 
 typedef enum
@@ -193,7 +195,6 @@ typedef enum
 	MF2_BOSSNOTRAP     = 1<<25, // No Egg Trap after boss
 	MF2_BOSSFLEE       = 1<<26, // Boss is fleeing!
 	MF2_BOSSDEAD       = 1<<27, // Boss is dead! (Not necessarily fleeing, if a fleeing point doesn't exist.)
-	MF2_AMBUSH         = 1<<28, // Alternate behaviour typically set by MTF_AMBUSH
 	// free: to and including 1<<31
 } mobjflag2_t;
 
