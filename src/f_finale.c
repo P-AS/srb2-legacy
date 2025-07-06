@@ -221,7 +221,7 @@ static void F_SkyScroll(INT32 scrollspeed)
 	INT32 scrolled, x;
 	patch_t *pat;
 
-	pat = W_CachePatchName("TITLESKY", PU_CACHE);
+	pat = W_CachePatchName("TITLESKY", PU_PATCH);
 
 	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width) + (FixedInt((R_GetHudUncap(true)) * scrollspeed)/16);
 
@@ -459,63 +459,63 @@ static void F_IntroDrawScene(void)
 	// DRAW A FULL PIC INSTEAD OF FLAT!
 	if (intro_scenenum == 0);
 	else if (intro_scenenum == 1)
-		background = W_CachePatchName("INTRO1", PU_CACHE);
+		background = W_CachePatchName("INTRO1", PU_PATCH);
 	else if (intro_scenenum == 2)
 	{
-		background = W_CachePatchName("INTRO2", PU_CACHE);
+		background = W_CachePatchName("INTRO2", PU_PATCH);
 		highres = true;
 	}
 	else if (intro_scenenum == 3)
-		background = W_CachePatchName("INTRO3", PU_CACHE);
+		background = W_CachePatchName("INTRO3", PU_PATCH);
 	else if (intro_scenenum == 4)
-		background = W_CachePatchName("INTRO4", PU_CACHE);
+		background = W_CachePatchName("INTRO4", PU_PATCH);
 	else if (intro_scenenum == 5)
 	{
 		if (intro_curtime >= 5*TICRATE)
-			background = W_CachePatchName("RADAR", PU_CACHE);
+			background = W_CachePatchName("RADAR", PU_PATCH);
 		else
 		{
-			background = W_CachePatchName("DRAT", PU_CACHE);
+			background = W_CachePatchName("DRAT", PU_PATCH);
 			highres = true;
 		}
 	}
 	else if (intro_scenenum == 6)
 	{
-		background = W_CachePatchName("INTRO6", PU_CACHE);
+		background = W_CachePatchName("INTRO6", PU_PATCH);
 		cx = 180;
 		cy = 8;
 	}
 	else if (intro_scenenum == 7)
 	{
 		if (intro_curtime >= 6*TICRATE)
-			background = W_CachePatchName("SGRASS5", PU_CACHE);
+			background = W_CachePatchName("SGRASS5", PU_PATCH);
 		else
-			background = W_CachePatchName("SGRASS1", PU_CACHE);
+			background = W_CachePatchName("SGRASS1", PU_PATCH);
 	}
 	else if (intro_scenenum == 8)
 	{
-		background = W_CachePatchName("WATCHING", PU_CACHE);
+		background = W_CachePatchName("WATCHING", PU_PATCH);
 		highres = true;
 	}
 	else if (intro_scenenum == 9)
 	{
-		background = W_CachePatchName("ZOOMING", PU_CACHE);
+		background = W_CachePatchName("ZOOMING", PU_PATCH);
 		highres = true;
 	}
 	else if (intro_scenenum == 10);
 	else if (intro_scenenum == 11)
-		background = W_CachePatchName("INTRO5", PU_CACHE);
+		background = W_CachePatchName("INTRO5", PU_PATCH);
 	else if (intro_scenenum == 12)
 	{
 		if (intro_curtime >= 7*TICRATE)
-			background = W_CachePatchName("CONFRONT", PU_CACHE);
+			background = W_CachePatchName("CONFRONT", PU_PATCH);
 		else
-			background = W_CachePatchName("REVENGE", PU_CACHE);
+			background = W_CachePatchName("REVENGE", PU_PATCH);
 		highres = true;
 	}
 	else if (intro_scenenum == 13)
 	{
-		background = W_CachePatchName("TAILSSAD", PU_CACHE);
+		background = W_CachePatchName("TAILSSAD", PU_PATCH);
 		highres = true;
 		bgxoffs = 144;
 		cx = 8;
@@ -524,16 +524,16 @@ static void F_IntroDrawScene(void)
 	else if (intro_scenenum == 14)
 	{
 		if (intro_curtime >= 7*TICRATE)
-			background = W_CachePatchName("SONICDO2", PU_CACHE);
+			background = W_CachePatchName("SONICDO2", PU_PATCH);
 		else
-			background = W_CachePatchName("SONICDO1", PU_CACHE);
+			background = W_CachePatchName("SONICDO1", PU_PATCH);
 		highres = true;
 		cx = 224;
 		cy = 8;
 	}
 	else if (intro_scenenum == 15)
 	{
-		background = W_CachePatchName("INTRO7", PU_CACHE);
+		background = W_CachePatchName("INTRO7", PU_PATCH);
 		highres = true;
 	}
 
@@ -561,30 +561,30 @@ static void F_IntroDrawScene(void)
 					S_ChangeMusicInternal("stjr", false);
 				x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(334<<FRACBITS, aspect)/2;
 				y = (BASEVIDHEIGHT<<FRACBITS)/2 - FixedMul(358<<FRACBITS, aspect)/2;
-				V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH1", PU_CACHE)), aspect);
+				V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH1", PU_PATCH)), aspect);
 				W_UnlockCachedPatch(patch);
 				if (finalecount > 6) {
-					V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH2", PU_CACHE)), aspect);
+					V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH2", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 				}
 				if (finalecount > 10) {
-					V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH3", PU_CACHE)), aspect);
+					V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH3", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 				}
 				if (finalecount > 14) {
-					V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH4", PU_CACHE)), aspect);
+					V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH4", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 				}
 			}
 			else if (finalecount-30 < 20) { // Big eggy
-				background = W_CachePatchName("FEEDIN", PU_CACHE);
+				background = W_CachePatchName("FEEDIN", PU_PATCH);
 				x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(560<<FRACBITS, aspect)/2;
 				y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(477<<FRACBITS, aspect);
 				V_DrawSciencePatch(x, y, V_SNAPTOBOTTOM, background, aspect);
 			}
 			else if (finalecount-50 < 30) { // Zoom out
 				fixed_t scale = FixedDiv(aspect, FixedDiv((finalecount-50)<<FRACBITS, (15<<FRACBITS))+FRACUNIT);
-				background = W_CachePatchName("FEEDIN", PU_CACHE);
+				background = W_CachePatchName("FEEDIN", PU_PATCH);
 				x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(560<<FRACBITS, aspect)/2 + (FixedMul(560<<FRACBITS, aspect) - FixedMul(560<<FRACBITS, scale));
 				y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(477<<FRACBITS, scale);
 				V_DrawSciencePatch(x, y, V_SNAPTOBOTTOM, background, scale);
@@ -594,7 +594,7 @@ static void F_IntroDrawScene(void)
 				{
 					// Draw tiny eggy
 					fixed_t scale = FixedMul(FRACUNIT/3, aspect);
-					background = W_CachePatchName("FEEDIN", PU_CACHE);
+					background = W_CachePatchName("FEEDIN", PU_PATCH);
 					x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(560<<FRACBITS, aspect)/2 + (FixedMul(560<<FRACBITS, aspect) - FixedMul(560<<FRACBITS, scale));
 					y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(477<<FRACBITS, scale);
 					V_DrawSciencePatch(x, y, V_SNAPTOBOTTOM, background, scale);
@@ -605,34 +605,34 @@ static void F_IntroDrawScene(void)
 					x = (-189*FRACUNIT) + (FixedMul((6<<FRACBITS)+FRACUNIT/3, ftime<<FRACBITS) - FixedMul((6<<FRACBITS)+FRACUNIT/3, FixedDiv(FixedMul(ftime<<FRACBITS, ftime<<FRACBITS), 120<<FRACBITS)));
 					y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(417<<FRACBITS, aspect);
 					// Draw the body
-					V_DrawSciencePatch(x, y, V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT1", PU_CACHE)), aspect);
+					V_DrawSciencePatch(x, y, V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT1", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 					// Draw the door
-					V_DrawSciencePatch(x+FixedMul(344<<FRACBITS, aspect), y+FixedMul(292<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT2", PU_CACHE)), aspect);
+					V_DrawSciencePatch(x+FixedMul(344<<FRACBITS, aspect), y+FixedMul(292<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT2", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 					// Draw the wheel
-					V_DrawSciencePatch(x+FixedMul(178<<FRACBITS, aspect), y+FixedMul(344<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName(va("TYRE%02u",(abs(finalecount-144)/3)%16), PU_CACHE)), aspect);
+					V_DrawSciencePatch(x+FixedMul(178<<FRACBITS, aspect), y+FixedMul(344<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName(va("TYRE%02u",(abs(finalecount-144)/3)%16), PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 					// Draw the wheel cover
-					V_DrawSciencePatch(x+FixedMul(88<<FRACBITS, aspect), y+FixedMul(238<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT3", PU_CACHE)), aspect);
+					V_DrawSciencePatch(x+FixedMul(88<<FRACBITS, aspect), y+FixedMul(238<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT3", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 				} else { // Pure Fat has stopped!
 					y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(417<<FRACBITS, aspect);
 					// Draw the body
-					V_DrawSciencePatch(0, y, V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT1", PU_CACHE)), aspect);
+					V_DrawSciencePatch(0, y, V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT1", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 					// Draw the wheel
-					V_DrawSciencePatch(FixedMul(178<<FRACBITS, aspect), y+FixedMul(344<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("TYRE00", PU_CACHE)), aspect);
+					V_DrawSciencePatch(FixedMul(178<<FRACBITS, aspect), y+FixedMul(344<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("TYRE00", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 					// Draw the wheel cover
-					V_DrawSciencePatch(FixedMul(88<<FRACBITS, aspect), y+FixedMul(238<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT3", PU_CACHE)), aspect);
+					V_DrawSciencePatch(FixedMul(88<<FRACBITS, aspect), y+FixedMul(238<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT3", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 					// Draw the door
 					if (finalecount-TICRATE/2 > 4*TICRATE) { // Door is being raised!
 						int ftime = (finalecount-TICRATE/2-4*TICRATE);
 						y -= FixedDiv((ftime*ftime)<<FRACBITS, 23<<FRACBITS);
 					}
-					V_DrawSciencePatch(FixedMul(344<<FRACBITS, aspect), y+FixedMul(292<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT2", PU_CACHE)), aspect);
+					V_DrawSciencePatch(FixedMul(344<<FRACBITS, aspect), y+FixedMul(292<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT2", PU_PATCH)), aspect);
 					W_UnlockCachedPatch(patch);
 				}
 			}
@@ -646,27 +646,27 @@ static void F_IntroDrawScene(void)
 		if (timetonext > 5*TICRATE && timetonext < 6*TICRATE)
 		{
 			if (!(finalecount & 3))
-				background = W_CachePatchName("BRITEGG1", PU_CACHE);
+				background = W_CachePatchName("BRITEGG1", PU_PATCH);
 			else
-				background = W_CachePatchName("DARKEGG1", PU_CACHE);
+				background = W_CachePatchName("DARKEGG1", PU_PATCH);
 
 			V_DrawScaledPatch(0, 0, 0, background);
 		}
 		else if (timetonext > 3*TICRATE && timetonext < 4*TICRATE)
 		{
 			if (!(finalecount & 3))
-				background = W_CachePatchName("BRITEGG2", PU_CACHE);
+				background = W_CachePatchName("BRITEGG2", PU_PATCH);
 			else
-				background = W_CachePatchName("DARKEGG2", PU_CACHE);
+				background = W_CachePatchName("DARKEGG2", PU_PATCH);
 
 			V_DrawScaledPatch(0, 0, 0, background);
 		}
 		else if (timetonext > 1*TICRATE && timetonext < 2*TICRATE)
 		{
 			if (!(finalecount & 3))
-				background = W_CachePatchName("BRITEGG3", PU_CACHE);
+				background = W_CachePatchName("BRITEGG3", PU_PATCH);
 			else
-				background = W_CachePatchName("DARKEGG3", PU_CACHE);
+				background = W_CachePatchName("DARKEGG3", PU_PATCH);
 
 			V_DrawScaledPatch(0, 0, 0, background);
 		}
@@ -691,16 +691,16 @@ static void F_IntroDrawScene(void)
 
 			if (finalecount & 1)
 			{
-				V_DrawScaledPatch(deplete, 8, 0, (patch = W_CachePatchName("RUN2", PU_CACHE)));
+				V_DrawScaledPatch(deplete, 8, 0, (patch = W_CachePatchName("RUN2", PU_PATCH)));
 				W_UnlockCachedPatch(patch);
-				V_DrawScaledPatch(deplete, 72, 0, (patch = W_CachePatchName("PEELOUT2", PU_CACHE)));
+				V_DrawScaledPatch(deplete, 72, 0, (patch = W_CachePatchName("PEELOUT2", PU_PATCH)));
 				W_UnlockCachedPatch(patch);
 			}
 			else
 			{
-				V_DrawScaledPatch(deplete, 8, 0, (patch = W_CachePatchName("RUN1", PU_CACHE)));
+				V_DrawScaledPatch(deplete, 8, 0, (patch = W_CachePatchName("RUN1", PU_PATCH)));
 				W_UnlockCachedPatch(patch);
-				V_DrawScaledPatch(deplete, 72, 0, (patch = W_CachePatchName("PEELOUT1", PU_CACHE)));
+				V_DrawScaledPatch(deplete, 72, 0, (patch = W_CachePatchName("PEELOUT1", PU_PATCH)));
 				W_UnlockCachedPatch(patch);
 			}
 
@@ -727,7 +727,7 @@ static void F_IntroDrawScene(void)
 		if (roidtics >= 0)
 		{
 			V_DrawScaledPatch(roidtics, 24, 0,
-				(patch = W_CachePatchName(va("ROID00%.2d", intro_curtime%35), PU_CACHE)));
+				(patch = W_CachePatchName(va("ROID00%.2d", intro_curtime%35), PU_PATCH)));
 			W_UnlockCachedPatch(patch);
 		}
 	}
@@ -740,11 +740,11 @@ static void F_IntroDrawScene(void)
 		patch_t *sgrass;
 
 		if (intro_curtime >= 7*TICRATE + ((TICRATE/7)*2))
-			sgrass = W_CachePatchName("SGRASS4", PU_CACHE);
+			sgrass = W_CachePatchName("SGRASS4", PU_PATCH);
 		else if (intro_curtime >= 7*TICRATE + (TICRATE/7))
-			sgrass = W_CachePatchName("SGRASS3", PU_CACHE);
+			sgrass = W_CachePatchName("SGRASS3", PU_PATCH);
 		else
-			sgrass = W_CachePatchName("SGRASS2", PU_CACHE);
+			sgrass = W_CachePatchName("SGRASS2", PU_PATCH);
 		V_DrawScaledPatch(123, 4, 0, sgrass);
 
 		W_UnlockCachedPatch(sgrass);
@@ -825,7 +825,7 @@ void F_IntroDrawer(void)
 	{
 		if (intro_scenenum == 5 && intro_curtime == 5*TICRATE)
 		{
-			patch_t *radar = W_CachePatchName("RADAR", PU_CACHE);
+			patch_t *radar = W_CachePatchName("RADAR", PU_PATCH);
 
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -838,7 +838,7 @@ void F_IntroDrawer(void)
 		}
 		else if (intro_scenenum == 7 && intro_curtime == 6*TICRATE) // Force a wipe here
 		{
-			patch_t *grass = W_CachePatchName("SGRASS5", PU_CACHE);
+			patch_t *grass = W_CachePatchName("SGRASS5", PU_PATCH);
 
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -851,7 +851,7 @@ void F_IntroDrawer(void)
 		}
 		else if (intro_scenenum == 12 && intro_curtime == 7*TICRATE)
 		{
-			patch_t *confront = W_CachePatchName("CONFRONT", PU_CACHE);
+			patch_t *confront = W_CachePatchName("CONFRONT", PU_PATCH);
 
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -864,7 +864,7 @@ void F_IntroDrawer(void)
 		}
 		if (intro_scenenum == 14 && intro_curtime == 7*TICRATE)
 		{
-			patch_t *sdo = W_CachePatchName("SONICDO2", PU_CACHE);
+			patch_t *sdo = W_CachePatchName("SONICDO2", PU_PATCH);
 
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -1156,7 +1156,7 @@ void F_CreditDrawer(void)
 
 	// Draw background pictures first
 	for (i = 0; credits_pics[i].patch; i++)
-		V_DrawSciencePatch(credits_pics[i].x<<FRACBITS, (credits_pics[i].y<<FRACBITS) - 4*(animtimer<<FRACBITS)/5, 0, W_CachePatchName(credits_pics[i].patch, PU_CACHE), FRACUNIT>>1);
+		V_DrawSciencePatch(credits_pics[i].x<<FRACBITS, (credits_pics[i].y<<FRACBITS) - 4*(animtimer<<FRACBITS)/5, 0, W_CachePatchName(credits_pics[i].patch, PU_PATCH), FRACUNIT>>1);
 
 	// Dim the background
 	V_DrawFadeScreen(0x0FF00, 16);
@@ -1335,9 +1335,9 @@ void F_GameEvaluationDrawer(void)
 
 		patchname[4] = 'A'+(char)i;
 		if (emeralds & (1<<i))
-			V_DrawScaledPatch(x, y, 0, W_CachePatchName(patchname, PU_CACHE));
+			V_DrawScaledPatch(x, y, 0, W_CachePatchName(patchname, PU_PATCH));
 		else
-			V_DrawTranslucentPatch(x, y, TRANSLEVEL, W_CachePatchName(patchname, PU_CACHE));
+			V_DrawTranslucentPatch(x, y, TRANSLEVEL, W_CachePatchName(patchname, PU_PATCH));
 
 		eemeralds_cur += INTERVAL;
 	}
@@ -1350,7 +1350,6 @@ void F_GameEvaluationDrawer(void)
 
 			if (ALL7EMERALDS(emeralds))
 				++timesBeatenWithEmeralds;
-
 			if (ultimatemode)
 				++timesBeatenUltimate;
 
@@ -1364,10 +1363,10 @@ void F_GameEvaluationDrawer(void)
 	if (finalecount >= 5*TICRATE)
 	{
 		if (drawemblem)
-			V_DrawScaledPatch(120, 192, 0, W_CachePatchName("NWNGA0", PU_CACHE));
+			V_DrawScaledPatch(120, 192, 0, W_CachePatchName("NWNGA0", PU_PATCH));
 
 		if (drawchaosemblem)
-			V_DrawScaledPatch(200, 192, 0, W_CachePatchName("NWNGA0", PU_CACHE));
+			V_DrawScaledPatch(200, 192, 0, W_CachePatchName("NWNGA0", PU_PATCH));
 
 		V_DrawString(8, 16, V_YELLOWMAP, "Unlocked:");
 
@@ -1438,10 +1437,28 @@ void F_GameEndTicker(void)
 		D_StartTitle();
 }
 
-
 // ==============
 //  TITLE SCREEN
 // ==============
+static void F_CacheTitleScreen(void)
+{
+	ttbanner = W_CachePatchName("TTBANNER", PU_PATCH);
+	ttwing = W_CachePatchName("TTWING", PU_PATCH);
+	ttsonic = W_CachePatchName("TTSONIC", PU_PATCH);
+	ttswave1 = W_CachePatchName("TTSWAVE1", PU_PATCH);
+	ttswave2 = W_CachePatchName("TTSWAVE2", PU_PATCH);
+	ttswip1 = W_CachePatchName("TTSWIP1", PU_PATCH);
+	ttsprep1 = W_CachePatchName("TTSPREP1", PU_PATCH);
+	ttsprep2 = W_CachePatchName("TTSPREP2", PU_PATCH);
+	ttspop1 = W_CachePatchName("TTSPOP1", PU_PATCH);
+	ttspop2 = W_CachePatchName("TTSPOP2", PU_PATCH);
+	ttspop3 = W_CachePatchName("TTSPOP3", PU_PATCH);
+	ttspop4 = W_CachePatchName("TTSPOP4", PU_PATCH);
+	ttspop5 = W_CachePatchName("TTSPOP5", PU_PATCH);
+	ttspop6 = W_CachePatchName("TTSPOP6", PU_PATCH);
+	ttspop7 = W_CachePatchName("TTSPOP7", PU_PATCH);
+}
+
 void F_StartTitleScreen(void)
 {
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
@@ -1460,21 +1477,7 @@ void F_StartTitleScreen(void)
 	demoDelayLeft = demoDelayTime;
 	demoIdleLeft = demoIdleTime;
 
-	ttbanner = W_CachePatchName("TTBANNER", PU_LEVEL);
-	ttwing = W_CachePatchName("TTWING", PU_LEVEL);
-	ttsonic = W_CachePatchName("TTSONIC", PU_LEVEL);
-	ttswave1 = W_CachePatchName("TTSWAVE1", PU_LEVEL);
-	ttswave2 = W_CachePatchName("TTSWAVE2", PU_LEVEL);
-	ttswip1 = W_CachePatchName("TTSWIP1", PU_LEVEL);
-	ttsprep1 = W_CachePatchName("TTSPREP1", PU_LEVEL);
-	ttsprep2 = W_CachePatchName("TTSPREP2", PU_LEVEL);
-	ttspop1 = W_CachePatchName("TTSPOP1", PU_LEVEL);
-	ttspop2 = W_CachePatchName("TTSPOP2", PU_LEVEL);
-	ttspop3 = W_CachePatchName("TTSPOP3", PU_LEVEL);
-	ttspop4 = W_CachePatchName("TTSPOP4", PU_LEVEL);
-	ttspop5 = W_CachePatchName("TTSPOP5", PU_LEVEL);
-	ttspop6 = W_CachePatchName("TTSPOP6", PU_LEVEL);
-	ttspop7 = W_CachePatchName("TTSPOP7", PU_LEVEL);
+	F_CacheTitleScreen();
 }
 
 // (no longer) De-Demo'd Title Screen
@@ -1482,6 +1485,10 @@ void F_TitleScreenDrawer(void)
 {
 	if (modeattacking)
 		return; // We likely came here from retrying. Don't do a damn thing.
+
+	// Jimita: Load title screen patches.
+	if (needpatchrecache)
+		F_CacheTitleScreen();
 
 	// Draw that sky!
 	F_SkyScroll(titlescrollspeed);
@@ -1635,9 +1642,9 @@ void F_ContinueDrawer(void)
 		ncontinues = 20;
 
 	if (imcontinuing)
-		contsonic = W_CachePatchName("CONT2", PU_CACHE);
+		contsonic = W_CachePatchName("CONT2", PU_PATCH);
 	else
-		contsonic = W_CachePatchName("CONT1", PU_CACHE);
+		contsonic = W_CachePatchName("CONT1", PU_PATCH);
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 	V_DrawCenteredString(BASEVIDWIDTH/2, 100, 0, "CONTINUE?");
@@ -1847,10 +1854,10 @@ void F_CutsceneDrawer(void)
 	{
 		if (cutscenes[cutnum]->scene[scenenum].pichires[picnum])
 			V_DrawSmallScaledPatch(picxpos, picypos, 0,
-				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_CACHE));
+				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH));
 		else
 			V_DrawScaledPatch(picxpos,picypos, 0,
-				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_CACHE));
+				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH));
 	}
 
 

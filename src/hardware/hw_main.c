@@ -146,40 +146,40 @@ consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
-consvar_t cv_grpaletterendering = {"gr_paletterendering", "Off", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grpaletterendering = {"gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_grpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_grcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grlightdither = {"gr_lightdithering", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
+#define ONLY_IF_GL_LOADED if (vid.glstate != VID_GL_LIBRARY_LOADED) return;
 
 static void CV_filtermode_ONChange(void)
 {
-  if (rendermode == render_opengl)
+  	ONLY_IF_GL_LOADED
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREFILTERMODE, cv_grfiltermode.value);
 }
 
 static void CV_anisotropic_ONChange(void)
 {
-  if (rendermode == render_opengl)
+  	ONLY_IF_GL_LOADED
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_granisotropicmode.value);
 }
 
 static void CV_grmodellighting_OnChange(void)
 {
-  if (rendermode == render_opengl)
-	{
-		HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
-	}
+	ONLY_IF_GL_LOADED
+	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
 	// if shaders have been compiled, then they now need to be recompiled.
   if (gr_shadersavailable)
   { 
-		HWR_CompileShaders();
+	HWR_CompileShaders();
   }
 }
 
 static void CV_grpaletterendering_OnChange(void)
 {
+	ONLY_IF_GL_LOADED
 	if (gr_shadersavailable)
 	{
 		HWR_CompileShaders();
@@ -188,7 +188,8 @@ static void CV_grpaletterendering_OnChange(void)
 }
 
 static void CV_grpalettedepth_OnChange(void)
-{
+{	
+	ONLY_IF_GL_LOADED
 	// refresh the screen palette
 	if (HWR_ShouldUsePaletteRendering())
 		HWR_SetPalette(pLocalPalette);
@@ -196,8 +197,8 @@ static void CV_grpalettedepth_OnChange(void)
 
 static void CV_grshaders_OnChange(void)
 {
-	if (rendermode == render_opengl)
-		HWR_SetShaderState();
+	ONLY_IF_GL_LOADED
+	HWR_SetShaderState();
 	if (cv_grpaletterendering.value)
 	{
 		// can't do palette rendering without shaders, so update the state if needed
@@ -207,11 +208,9 @@ static void CV_grshaders_OnChange(void)
 
 static void CV_grshaderoption_OnChange(void)
 {
-	if (rendermode == render_opengl)
-	{
-		if (gr_shadersavailable)
+	ONLY_IF_GL_LOADED
+	if (gr_shadersavailable)
 			HWR_CompileShaders();
-	}
 }
 
 
@@ -879,7 +878,7 @@ static void HWR_DrawSegsSplats(FSurfaceInfo * pSurf)
 		if (!M_PointInBox(segbbox,splat->v1.x,splat->v1.y) && !M_PointInBox(segbbox,splat->v2.x,splat->v2.y))
 			continue;
 
-		gpatch = W_CachePatchNum(splat->patch, PU_CACHE);
+		gpatch = W_CachePatchNum(splat->patch, PU_PATCH);
 		HWR_GetPatch(gpatch);
 
 		wallVerts[0].x = wallVerts[3].x = FIXED_TO_FLOAT(splat->v1.x);
@@ -4038,7 +4037,7 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 	if (hires)
 		this_scale = this_scale * FIXED_TO_FLOAT(((skin_t *)spr->mobj->skin)->highresscale);
 
-	gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
+	gpatch = W_CachePatchNum(spr->patchlumpnum, PU_PATCH);
 
 	// cache the patch in the graphics card memory
 	//12/12/99: Hurdler: same comment as above (for md2)
@@ -4315,7 +4314,7 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 	//          sure to do it the right way. So actually, we keep normal sprite
 	//          in memory and we add the md2 model if it exists for that sprite
 
-	gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
+	gpatch = W_CachePatchNum(spr->patchlumpnum, PU_PATCH);
 
 	// create the sprite billboard
 	//
@@ -4450,7 +4449,7 @@ static inline void HWR_DrawPrecipitationSprite(gr_vissprite_t *spr)
 		return;
 
 	// cache sprite graphics
-	gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
+	gpatch = W_CachePatchNum(spr->patchlumpnum, PU_PATCH);
 
 	// create the sprite billboard
 	//
@@ -6107,7 +6106,7 @@ static void HWR_TogglePaletteRendering(void)
 			// If the r_opengl "texture palette" stays the same during this switch, these textures
 			// will not be cleared out. However they are still out of date since the
 			// composite texture blending method has changed. Therefore they need to be cleared.
-			HWR_PrepLevelCache(numtextures);
+			HWR_LoadTextures(numtextures);
 		}
 	}
 	else
@@ -6121,7 +6120,7 @@ static void HWR_TogglePaletteRendering(void)
 			// If the r_opengl "texture palette" stays the same during this switch, these textures
 			// will not be cleared out. However they are still out of date since the
 			// composite texture blending method has changed. Therefore they need to be cleared.
-			HWR_PrepLevelCache(numtextures);
+			HWR_LoadTextures(numtextures);
 		}
 	}
 }
@@ -6222,6 +6221,17 @@ void HWR_Startup(void)
 	startupdone = true;
 }
 
+// --------------------------------------------------------------------------
+// Called after switching to the hardware renderer
+// --------------------------------------------------------------------------
+void HWR_Switch(void)
+{
+	// Set special states from CVARs
+	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
+	HWD.pfnSetSpecialState(HWD_SET_TEXTUREFILTERMODE, cv_grfiltermode.value);
+	HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_granisotropicmode.value);
+}
+
 
 // --------------------------------------------------------------------------
 // Free resources allocated by the hardware renderer
@@ -6232,6 +6242,7 @@ void HWR_Shutdown(void)
 	HWR_FreeExtraSubsectors();
 	HWR_FreePolyPool();
 	HWR_FreeTextureCache();
+	HWR_FreeMipmapCache();
 	HWD.pfnFlushScreenTextures();
 }
 

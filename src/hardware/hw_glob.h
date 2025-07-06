@@ -94,6 +94,8 @@ RGBA_t *HWR_GetTexturePalette(void);
 
 void HWR_InitTextureCache(void);
 void HWR_FreeTextureCache(void);
+void HWR_FreeMipmapCache(void);
+void HWR_FreeColormaps(void);
 void HWR_FreeExtraSubsectors(void);
 
 void HWR_GetFlat(lumpnum_t flatlumpnum);

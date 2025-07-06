@@ -32,6 +32,10 @@
 #include <malloc.h> // alloca(sizeof)
 #endif
 
+#ifdef HWRENDER
+#include "hardware/hw_main.h" // HWR_LoadTextures
+#endif
+
 #if defined(_MSC_VER)
 #pragma pack(1)
 #endif
@@ -536,6 +540,10 @@ void R_LoadTextures(void)
 			i++;
 		}
 	}
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+		HWR_LoadTextures(numtextures);
+#endif
 }
 
 static texpatch_t *R_ParsePatch(boolean actuallyLoadPatch)
@@ -1621,7 +1629,7 @@ void R_PrecacheLevel(void)
 				lump = sf->lumppat[k];
 				if (devparm)
 					spritememory += W_LumpLength(lump);
-				W_CachePatchNum(lump, PU_CACHE);
+				W_CachePatchNum(lump, PU_PATCH);
 			}
 		}
 	}
