@@ -7668,20 +7668,21 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			setupm_fakecolor = M_GetColorPrev(setupm_fakecolor);
 		}
 		break;
-	
+
 	case KEY_ENTER:
-	if (itemOn == 3
-		&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
-		|| setupm_cvdefaultcolor->value != setupm_fakecolor
-		|| strcmp(setupm_name, setupm_cvdefaultname->string)))
-		{
-			S_StartSound(NULL,sfx_strpst);
-			// you know what? always putting these in the buffer won't hurt anything.
-			COM_BufAddText (va("%s \"%s\"\n",setupm_cvdefaultskin->name,skins[setupm_fakeskin].name));
-			COM_BufAddText (va("%s %d\n",setupm_cvdefaultcolor->name,setupm_fakecolor));
-			COM_BufAddText (va("%s %s\n",setupm_cvdefaultname->name,setupm_name));
-			break;
-		}
+		if (itemOn == 3
+			&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
+			|| setupm_cvdefaultcolor->value != setupm_fakecolor
+			|| strcmp(setupm_name, setupm_cvdefaultname->string)))
+			{
+				S_StartSound(NULL,sfx_strpst);
+				// you know what? always putting these in the buffer won't hurt anything.
+				COM_BufAddText (va("%s \"%s\"\n",setupm_cvdefaultskin->name,skins[setupm_fakeskin].name));
+				COM_BufAddText (va("%s %d\n",setupm_cvdefaultcolor->name,setupm_fakecolor));
+				COM_BufAddText (va("%s %s\n",setupm_cvdefaultname->name,setupm_name));
+			}
+		break;
+
 	case KEY_RIGHTARROW:
 		if (itemOn == 1)       //player skin
 		{
@@ -8630,7 +8631,7 @@ static void M_DrawVideoMode(void)
 	j = OP_VideoModeDef.y + 14 + ((vidm_selected % vidm_column_size)*8);
 
 	V_DrawScaledPatch(i - 8, j, 0,
-		W_CachePatchName("M_CURSOR", PU_PATCH)); 
+		W_CachePatchName("M_CURSOR", PU_PATCH));
 }
 
 
