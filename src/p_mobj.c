@@ -7225,33 +7225,33 @@ void P_MobjThinker(mobj_t *mobj)
 								else if (players[consoleplayer].ctfteam == 1)
 									S_StartSound(NULL, sfx_hoop3);
 
-								blueflag = flagmo;
-							}
+							blueflag = flagmo;
 						}
-						P_RemoveMobj(mobj);
-						return;
-					case MT_YELLOWTV: // Ring shield box
-					case MT_BLUETV: // Force shield box
-					case MT_GREENTV: // Water shield box
-					case MT_BLACKTV: // Bomb shield box
-					case MT_WHITETV: // Jump shield box
-					case MT_SNEAKERTV: // Super Sneaker box
-					case MT_SUPERRINGBOX: // 10-Ring box
-					case MT_REDRINGBOX: // Red Team 10-Ring box
-					case MT_BLUERINGBOX: // Blue Team 10-Ring box
-					case MT_INV: // Invincibility box
-					case MT_MIXUPBOX: // Teleporter Mixup box
-					case MT_RECYCLETV: // Recycler box
-					case MT_SCORETVSMALL:
-					case MT_SCORETVLARGE:
-					case MT_PRUP: // 1up!
-					case MT_EGGMANBOX: // Eggman box
-					case MT_GRAVITYBOX: // Gravity box
-					case MT_QUESTIONBOX:
-						if ((mobj->flags & MF_AMBUSH || mobj->flags2 & MF2_STRONGBOX) && mobj->type != MT_QUESTIONBOX)
-						{
-							mobjtype_t spawnchance[64];
-							INT32 numchoices = 0, i = 0;
+					}
+					P_RemoveMobj(mobj);
+					return;
+				case MT_YELLOWTV: // Ring shield box
+				case MT_BLUETV: // Force shield box
+				case MT_GREENTV: // Water shield box
+				case MT_BLACKTV: // Bomb shield box
+				case MT_WHITETV: // Jump shield box
+				case MT_SNEAKERTV: // Super Sneaker box
+				case MT_SUPERRINGBOX: // 10-Ring box
+				case MT_REDRINGBOX: // Red Team 10-Ring box
+				case MT_BLUERINGBOX: // Blue Team 10-Ring box
+				case MT_INV: // Invincibility box
+				case MT_MIXUPBOX: // Teleporter Mixup box
+				case MT_RECYCLETV: // Recycler box
+				case MT_SCORETVSMALL:
+				case MT_SCORETVLARGE:
+				case MT_PRUP: // 1up!
+				case MT_EGGMANBOX: // Eggman box
+				case MT_GRAVITYBOX: // Gravity box
+				case MT_QUESTIONBOX:
+					if ((mobj->flags & MF_AMBUSH || mobj->flags2 & MF2_STRONGBOX) && mobj->type != MT_QUESTIONBOX)
+					{
+						mobjtype_t spawnchance[64];
+						INT32 numchoices = 0, i = 0;
 
 	// This define should make it a lot easier to organize and change monitor weights
 	#define SETMONITORCHANCES(type, strongboxamt, weakboxamt) \
@@ -7276,16 +7276,12 @@ void P_MobjThinker(mobj_t *mobj)
 							i = P_RandomKey(numchoices); // Gotta love those random numbers!
 							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, spawnchance[i]);
 
-							// If the monitor respawns randomly, transfer the flag.
-							if (mobj->flags & MF_AMBUSH)
-								newmobj->flags |= MF_AMBUSH;
-
-							// Transfer flags2 (strongbox, objectflip)
-							newmobj->flags2 = mobj->flags2;
-						}
-						else
-						{
-							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
+						// Transfer flags2 (strongbox, objectflip, ambush)
+						newmobj->flags2 = mobj->flags2;
+					}
+					else
+					{
+						newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
 
 							// Transfer flags2 (strongbox, objectflip)
 							newmobj->flags2 = mobj->flags2;
@@ -9336,7 +9332,7 @@ ML_NOCLIMB : Direction not controllable
 				mthing->type != mobjinfo[MT_AXISTRANSFERLINE].doomednum &&
 				mthing->type != mobjinfo[MT_NIGHTSBUMPER].doomednum &&
 				mthing->type != mobjinfo[MT_STARPOST].doomednum)
-				mobj->flags |= MF_AMBUSH;
+				mobj->flags2 |= MF_AMBUSH;
 		}
 
 		if (mthing->options & MTF_OBJECTSPECIAL)
