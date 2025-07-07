@@ -24,6 +24,8 @@
 #ifdef HAVE_SDL
 #define _MATH_DEFINES_DEFINED
 
+#include <time.h>
+
 #include "SDL.h"
 
 #include "sdlmain.h"
@@ -114,15 +116,34 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 
 	if (!gllogstream)
 	{
+		time_t my_time; // Never let me cook again - chromaticpipe
+		struct tm *timeinfo;
+		char buf[32];
+		char gllogfilename[MAX_WADPATH]; 
 		gllogdir = D_Home();
+
+		my_time = time(NULL);
+		timeinfo = localtime(&my_time);
+
+		strftime(buf, 32, "%Y-%m-%d %H-%M-%S", timeinfo);
+		strcpy(gllogfilename, va("ogllog-%s.txt", buf));
 
 #ifdef DEBUG_TO_FILE
 #ifdef DEFAULTDIR
 		if (gllogdir)
-				gllogstream = fopen(va("%s/"DEFAULTDIR"/ogllog.txt",gllogdir), "wt");
+		{
+			I_mkdir(va("%s%s"DEFAULTDIR, gllogdir, PATHSEP), 0755);
+			I_mkdir(va("%s%s"DEFAULTDIR"%sgllogs", gllogdir, PATHSEP, PATHSEP), 0755);
+			strcpy(gllogfilename, va("%s%s"DEFAULTDIR"%sgllogs%s%s",gllogdir, PATHSEP, PATHSEP, PATHSEP, gllogfilename));
+		}
 		else
 #endif
-			gllogstream = fopen("./ogllog.txt", "wt");
+		{
+			I_mkdir("."PATHSEP"gllogs"PATHSEP, 0755);
+			strcpy(logfilename, va("."PATHSEP"gllogs"PATHSEP"%s", gllogfilename));
+		}
+
+	gllogstream = fopen(gllogfilename, "wt");
 #endif
 	}
 
