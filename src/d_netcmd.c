@@ -1388,7 +1388,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 {
 	player_t *p = &players[playernum];
 	char name[MAXPLAYERNAME+1];
-	UINT8 color;
+	UINT16 color;
 	UINT8 skin;
 
 #ifdef PARANOIA
