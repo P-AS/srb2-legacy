@@ -60,6 +60,9 @@ void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum);
 #endif
 void P_LoadThingsOnly(void);
 boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate);
+#ifdef HWRENDER
+void HWR_SetupLevel(void);
+#endif
 boolean P_AddWadFile(const char *wadfilename);
 boolean P_RunSOC(const char *socfilename);
 void P_WriteThings(lumpnum_t lump);

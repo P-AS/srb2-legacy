@@ -547,6 +547,7 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 {
 	FOutVector  v[4];
 	FSurfaceInfo Surf;
+	FBITFIELD poly_flags = PF_NoTexture|PF_Modulated|PF_NoDepthTest;
 
 	v[0].x = v[3].x = -1.0f;
 	v[2].x = v[1].x =  1.0f;
@@ -561,15 +562,38 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 
 	if (color & 0xFF00) // Do COLORMAP fade.
 	{
-		Surf.PolyColor.rgba = UINT2RGBA(0x01010160);
-		Surf.PolyColor.s.alpha = 0xFF - (strength*8);
+		if (HWR_ShouldUsePaletteRendering())
+		{
+			const hwdscreentexture_t scr_tex = HWD_SCREENTEXTURE_GENERIC2;
+
+			Surf.LightTableId = HWR_GetLightTableID(NULL);
+			Surf.LightInfo.light_level = strength;
+			HWD.pfnMakeScreenTexture(scr_tex);
+			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_UI_COLORMAP_FADE));
+			HWD.pfnDrawScreenTexture(scr_tex, &Surf, PF_ColorMapped|PF_NoDepthTest);
+			HWD.pfnUnSetShader();
+
+			return;
+		}
+		else
+		{
+			Surf.PolyColor.rgba = UINT2RGBA(0x01010160);
+			Surf.PolyColor.s.alpha = (strength*8);
+			poly_flags |= PF_Translucent;
+		}
 	}
 	else // Do TRANSMAP** fade.
 	{
-		Surf.PolyColor.rgba = pLocalPalette[color].rgba;
-		Surf.PolyColor.s.alpha = (UINT8)((float)(10-strength)*25.5f);
+		RGBA_t *palette = HWR_GetTexturePalette();
+		Surf.PolyColor.rgba = palette[color&0xFF].rgba;
+		
+        if (HWR_ShouldUsePaletteRendering())
+			Surf.PolyColor.s.alpha = softwaretranstogl[strength];
+		else
+			Surf.PolyColor.s.alpha = (UINT8)(strength*25.5f);
+		poly_flags |= PF_Translucent;
 	}
-	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
+	HWD.pfnDrawPolygon(&Surf, v, 4, poly_flags);
 }
 
 // Draw the console background with translucency support
@@ -666,7 +690,7 @@ void HWR_DrawViewBorder(INT32 clearlines)
 	// top edge
 	if (clearlines > basewindowy - 8)
 	{
-		patch = W_CachePatchNum(viewborderlump[BRDR_T], PU_CACHE);
+		patch = W_CachePatchNum(viewborderlump[BRDR_T], PU_PATCH);
 		for (x = 0; x < baseviewwidth; x += 8)
 			HWR_DrawPatch(patch, basewindowx + x, basewindowy - 8,
 				0);
@@ -675,7 +699,7 @@ void HWR_DrawViewBorder(INT32 clearlines)
 	// bottom edge
 	if (clearlines > basewindowy + baseviewheight)
 	{
-		patch = W_CachePatchNum(viewborderlump[BRDR_B], PU_CACHE);
+		patch = W_CachePatchNum(viewborderlump[BRDR_B], PU_PATCH);
 		for (x = 0; x < baseviewwidth; x += 8)
 			HWR_DrawPatch(patch, basewindowx + x,
 				basewindowy + baseviewheight, 0);
@@ -684,7 +708,7 @@ void HWR_DrawViewBorder(INT32 clearlines)
 	// left edge
 	if (clearlines > basewindowy)
 	{
-		patch = W_CachePatchNum(viewborderlump[BRDR_L], PU_CACHE);
+		patch = W_CachePatchNum(viewborderlump[BRDR_L], PU_PATCH);
 		for (y = 0; y < baseviewheight && basewindowy + y < clearlines;
 			y += 8)
 		{
@@ -696,7 +720,7 @@ void HWR_DrawViewBorder(INT32 clearlines)
 	// right edge
 	if (clearlines > basewindowy)
 	{
-		patch = W_CachePatchNum(viewborderlump[BRDR_R], PU_CACHE);
+		patch = W_CachePatchNum(viewborderlump[BRDR_R], PU_PATCH);
 		for (y = 0; y < baseviewheight && basewindowy+y < clearlines;
 			y += 8)
 		{
@@ -708,22 +732,22 @@ void HWR_DrawViewBorder(INT32 clearlines)
 	// Draw beveled corners.
 	if (clearlines > basewindowy - 8)
 		HWR_DrawPatch(W_CachePatchNum(viewborderlump[BRDR_TL],
-				PU_CACHE),
+				PU_PATCH),
 			basewindowx - 8, basewindowy - 8, 0);
 
 	if (clearlines > basewindowy - 8)
 		HWR_DrawPatch(W_CachePatchNum(viewborderlump[BRDR_TR],
-				PU_CACHE),
+				PU_PATCH),
 			basewindowx + baseviewwidth, basewindowy - 8, 0);
 
 	if (clearlines > basewindowy+baseviewheight)
 		HWR_DrawPatch(W_CachePatchNum(viewborderlump[BRDR_BL],
-				PU_CACHE),
+				PU_PATCH),
 			basewindowx - 8, basewindowy + baseviewheight, 0);
 
 	if (clearlines > basewindowy + baseviewheight)
 		HWR_DrawPatch(W_CachePatchNum(viewborderlump[BRDR_BR],
-				PU_CACHE),
+				PU_PATCH),
 			basewindowx + baseviewwidth,
 			basewindowy + baseviewheight, 0);
 }
@@ -741,8 +765,9 @@ void HWR_drawAMline(const fline_t *fl, INT32 color)
 {
 	F2DCoord v1, v2;
 	RGBA_t color_rgba;
+	RGBA_t *palette = HWR_GetTexturePalette();
 
-	color_rgba = V_GetColor(color);
+	color_rgba = palette[color&0xFF];
 
 	v1.x = ((float)fl->a.x-(vid.width/2.0f))*(2.0f/vid.width);
 	v1.y = ((float)fl->a.y-(vid.height/2.0f))*(2.0f/vid.height);
@@ -865,6 +890,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 	FOutVector v[4];
 	FSurfaceInfo Surf;
 	float fx, fy, fw, fh;
+	RGBA_t *palette = HWR_GetTexturePalette();
 	UINT8 alphalevel = ((color & V_ALPHAMASK) >> V_ALPHASHIFT);
 
 	if (w < 0 || h < 0)
@@ -886,7 +912,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 
 		if (x == 0 && y == 0 && w == BASEVIDWIDTH && h == BASEVIDHEIGHT)
 		{
-			RGBA_t rgbaColour = V_GetColor(color);
+			RGBA_t rgbaColour = palette[color&0xFF];
 			FRGBAFloat clearColour;
 			clearColour.red = (float)rgbaColour.s.red / 255;
 			clearColour.green = (float)rgbaColour.s.green / 255;
@@ -956,7 +982,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 	v[0].t = v[1].t = 0.0f;
 	v[2].t = v[3].t = 1.0f;
 
-	Surf.PolyColor = V_GetColor(color);
+	Surf.PolyColor = palette[color&0xFF];
 
 	if (alphalevel)
 	{
@@ -1044,11 +1070,12 @@ static inline boolean saveTGA(const char *file_name, void *buffer,
 UINT8 *HWR_GetScreenshot(void)
 {
 	UINT8 *buf = malloc(vid.width * vid.height * 3 * sizeof (*buf));
+	int tex = HWR_ShouldUsePaletteRendering() ? HWD_SCREENTEXTURE_GENERIC3 : HWD_SCREENTEXTURE_GENERIC2;
 
 	if (!buf)
 		return NULL;
 	// returns 24bit 888 RGB
-	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (void *)buf);
+	HWD.pfnReadScreenTexture(tex, (void *)buf);
 	return buf;
 }
 
@@ -1056,6 +1083,7 @@ boolean HWR_Screenshot(const char *pathname)
 {
 	boolean ret;
 	UINT8 *buf = malloc(vid.width * vid.height * 3 * sizeof (*buf));
+	int tex = HWR_ShouldUsePaletteRendering() ? HWD_SCREENTEXTURE_GENERIC3 : HWD_SCREENTEXTURE_GENERIC2;
 
 	if (!buf)
 	{
@@ -1064,7 +1092,7 @@ boolean HWR_Screenshot(const char *pathname)
 	}
 
 	// returns 24bit 888 RGB
-	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (void *)buf);
+	HWD.pfnReadScreenTexture(tex, (void *)buf);
 
 #ifdef USE_PNG
 	ret = M_SavePNG(pathname, buf, vid.width, vid.height, NULL);

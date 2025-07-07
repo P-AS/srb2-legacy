@@ -2425,7 +2425,9 @@ INT32 I_StartupSystem(void)
 	 SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
+#if SDL_VERSION_ATLEAST(2,0,22)
 	SDL_SetHint(SDL_HINT_APP_NAME, "SRB2 Legacy");
+#endif
 	if (SDL_Init(0) < 0)
 		I_Error("SRB2: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
 #ifndef NOMUMBLE
