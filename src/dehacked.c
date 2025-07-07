@@ -8177,6 +8177,10 @@ static inline int lib_getenum(lua_State *L)
 		lua_pushinteger(L, token);
 		return 1;
 	}
+	else if (fastcmp(word, "MAXTRANSLATIONS")) {
+		lua_pushinteger(L, numskincolors);
+		return 1;
+	}
 	return 0;
 }
 
