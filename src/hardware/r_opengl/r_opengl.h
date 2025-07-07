@@ -59,9 +59,9 @@
 
 // todo: find some way of getting SDL to log to ogllog.txt, without
 // interfering with r_opengl.dll
-#ifdef HAVE_SDL
-#undef DEBUG_TO_FILE
-#endif
+//#ifdef HAVE_SDL
+//#undef DEBUG_TO_FILE
+//#endif
 //#if defined(HAVE_SDL) && !defined(_DEBUG)
 //#undef DEBUG_TO_FILE
 //#endif
