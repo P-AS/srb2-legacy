@@ -108,15 +108,10 @@ endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-# Set EXE names so the assets CMakeLists can refer to its target
-set(SRB2_SDL2_EXE_NAME srb2 CACHE STRING "Executable binary output name")
-set(SRB2_WIN_EXE_NAME srb2dd CACHE STRING "Executable binary output name for DirectDraw build")
-
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 
 add_subdirectory(src)
 add_subdirectory(assets)
-
 
 ## config.h generation
 set(GIT_EXECUTABLE "git" CACHE FILEPATH "Path to git binary")
