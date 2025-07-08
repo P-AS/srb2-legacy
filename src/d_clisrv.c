@@ -534,12 +534,14 @@ typedef enum
 #endif
 	CL_CONNECTED,
 	CL_ABORTED,
+	CL_ASKFULLFILELIST,
 	CL_VIEWSERVER
 } cl_mode_t;
 
 static void GetPackets(void);
 
 static cl_mode_t cl_mode = CL_SEARCHING;
+static UINT16 cl_lastcheckedfilecount = 0;
 
 
 static void CL_DrawPlayerList(void)
@@ -702,6 +704,9 @@ static inline void CL_DrawConnectionStatus(void)
 			case CL_CHECKFILES:
 				cltext = M_GetText("Checking server files...");
 				break;
+			case CL_ASKFULLFILELIST:
+				cltext = M_GetText("This server has a LOT of files!");
+				break;
 			case CL_ASKJOIN:
 			case CL_WAITJOINRESPONSE:
 				cltext = M_GetText("Requesting to join...");
@@ -745,7 +750,7 @@ static inline void CL_DrawConnectionStatus(void)
 			}
 
 
-			if (serverlist[joinnode].info.isdedicated)
+			if (serverlist[joinnode].info.flags & SV_DEDICATED)
 				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 58, V_ALLOWLOWERCASE|V_ORANGEMAP, "Dedicated");
 			else
 				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 58, V_ALLOWLOWERCASE|V_GREENMAP, "Listen");
@@ -816,6 +821,15 @@ static inline void CL_DrawConnectionStatus(void)
 }
 #endif
 
+static boolean CL_AskFileList(INT32 firstfile)
+{
+	netbuffer->packettype = PT_TELLFILESNEEDED;
+	netbuffer->u.filesneedednum = firstfile;
+
+	return HSendPacket(servernode, true, 0, sizeof (INT32));
+}
+
+
 /** Sends a special packet to declare how many players in local
   * Used only in arbitratrenetstart()
   * Sends a PT_CLIENTJOIN packet to the server
@@ -858,7 +872,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.gametype = (UINT8)gametype;
 	netbuffer->u.serverinfo.modifiedgame = (UINT8)modifiedgame;
 	netbuffer->u.serverinfo.cheatsenabled = CV_CheatsEnabled();
-	netbuffer->u.serverinfo.isdedicated = (UINT8)dedicated;
+	netbuffer->u.serverinfo.flags = (dedicated ? SV_DEDICATED : 0);
 	strncpy(netbuffer->u.serverinfo.servername, cv_servername.string,
 		sizeof(netbuffer->u.serverinfo.servername)-1);
 	strncpy(netbuffer->u.serverinfo.mapname, G_BuildMapName(gamemap), 7);
@@ -879,7 +893,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 
 	netbuffer->u.serverinfo.actnum = mapheaderinfo[gamemap-1]->actnum;
 
-	p = PutFileNeeded();
+	p = PutFileNeeded(0);
 
 	HSendPacket(node, false, 0, p - ((UINT8 *)&netbuffer->u));
 }
@@ -1476,8 +1490,13 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 
 		if (client)
 		{
-			D_ParseFileneeded(serverlist[i].info.fileneedednum,
-				serverlist[i].info.fileneeded);
+			D_ParseFileneeded(serverlist[i].info.fileneedednum, serverlist[i].info.fileneeded, 0);
+			if (serverlist[i].info.flags & SV_LOTSOFADDONS)
+			{
+				cl_mode = CL_ASKFULLFILELIST;
+				cl_lastcheckedfilecount = 0;
+				return true;
+			}
 			cl_mode = CL_VIEWSERVER;
 		}
 		else
@@ -1530,6 +1549,22 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		case CL_CHECKFILES:
 			if (!CL_ServerConnectionCheckFiles())
 				return false;
+			break;
+
+		case CL_ASKFULLFILELIST:
+			if (cl_lastcheckedfilecount == UINT16_MAX) // All files retrieved
+			{
+				if (!CL_ServerConnectionCheckFiles())
+					return false;
+			}
+			else if (fileneedednum != cl_lastcheckedfilecount || *asksent + NEWTICRATE < I_GetTime())
+			{
+				if (CL_AskFileList(fileneedednum))
+				{
+					cl_lastcheckedfilecount = fileneedednum;
+					*asksent = I_GetTime();
+				}
+			}
 			break;
 
 		case CL_DOWNLOADFILES:
@@ -3373,6 +3408,39 @@ static void HandlePacketFromAwayNode(SINT8 node)
 #else
 			Net_CloseConnection(node);
 #endif
+			break;
+			
+		case PT_TELLFILESNEEDED:
+			if (server && serverrunning)
+			{
+				UINT8 *p;
+				INT32 firstfile = netbuffer->u.filesneedednum;
+
+				netbuffer->packettype = PT_MOREFILESNEEDED;
+				netbuffer->u.filesneededcfg.first = firstfile;
+				netbuffer->u.filesneededcfg.more = 0;
+
+				p = PutFileNeeded(firstfile);
+
+				HSendPacket(node, false, 0, p - ((UINT8 *)&netbuffer->u));
+			}
+			else // Shouldn't get this if you aren't the server...?
+				Net_CloseConnection(node);
+			break;
+
+		case PT_MOREFILESNEEDED:
+			if (server && serverrunning)
+			{ // But wait I thought I'm the server?
+				Net_CloseConnection(node);
+				break;
+			}
+			SERVERONLY
+			if (cl_mode == CL_ASKFULLFILELIST && netbuffer->u.filesneededcfg.first == fileneedednum)
+			{
+				D_ParseFileneeded(netbuffer->u.filesneededcfg.num, netbuffer->u.filesneededcfg.files, netbuffer->u.filesneededcfg.first);
+				if (!netbuffer->u.filesneededcfg.more)
+					cl_lastcheckedfilecount = UINT16_MAX; // Got the whole file list
+			}
 			break;
 
 		case PT_ASKINFO:

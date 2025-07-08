@@ -76,7 +76,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
 #include "keys.h"
-#include "filesrch.h" // refreshdirmenu, mainwadstally
+#include "filesrch.h" // refreshdirmenu
 #include "r_fps.h"
 #include "m_perfstats.h"
 
@@ -1296,8 +1296,6 @@ void D_SRB2Main(void)
 	//mainwads++; // music.dta does not increment mainwads (see <= 2.1.21)
 
 #endif //ifndef DEVELOP
-
-	mainwadstally = packetsizetally;
 
 	cht_Init();
 
