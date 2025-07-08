@@ -667,6 +667,6 @@ void SCR_DisplayLocalPing(void)
 		if (paused || P_AutoPause())
 			transflag = 0;
 
-		HU_drawPing(307, dispy, ping, packetloss, true, transflag|V_SNAPTORIGHT|V_SNAPTOBOTTOM);
+		HU_drawPing(307, dispy, ping, packetloss, true, transflag|V_SNAPTORIGHT|V_SNAPTOBOTTOM, consoleplayer);
 	}
 }
