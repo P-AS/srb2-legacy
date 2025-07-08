@@ -1278,7 +1278,6 @@ boolean F_CreditResponder(event_t *event)
 // ============
 #define INTERVAL 50
 #define TRANSLEVEL V_80TRANS
-static INT32 eemeralds_start;
 static boolean drawemblem = false, drawchaosemblem = false;
 
 void F_StartGameEvaluation(void)
@@ -1306,13 +1305,11 @@ void F_StartGameEvaluation(void)
 	CON_ToggleOff();
 
 	finalecount = 0;
-	eemeralds_start = I_GetTime();
 }
 
 void F_GameEvaluationDrawer(void)
 {
 	INT32 x, y, i;
-	const fixed_t radius = 48*FRACUNIT;
 	angle_t fa;
 	INT32 eemeralds_cur;
 	char patchname[7] = "CEMGx0";
@@ -1325,21 +1322,17 @@ void F_GameEvaluationDrawer(void)
 	else
 		V_DrawString(124, 16, 0, "TRY AGAIN!");
 
-	eemeralds_cur = (I_GetTime() - eemeralds_start) % 360;
+	eemeralds_cur = (finalecount % 360)<<FRACBITS;
 
 	for (i = 0; i < 7; ++i)
 	{
-		fa = (FixedAngle(eemeralds_cur*FRACUNIT)>>ANGLETOFINESHIFT) & FINEMASK;
-		x = 160 + FixedInt(FixedMul(FINECOSINE(fa),radius));
-		y = 100 + FixedInt(FixedMul(FINESINE(fa),radius));
+		fa = (FixedAngle(eemeralds_cur)>>ANGLETOFINESHIFT) & FINEMASK;
+		x = (BASEVIDWIDTH<<(FRACBITS-1)) + (60*FINECOSINE(fa));
+		y = ((BASEVIDHEIGHT+16)<<(FRACBITS-1)) + (60*FINESINE(fa));
+		eemeralds_cur += (360<<FRACBITS)/7;
 
 		patchname[4] = 'A'+(char)i;
-		if (emeralds & (1<<i))
-			V_DrawScaledPatch(x, y, 0, W_CachePatchName(patchname, PU_PATCH));
-		else
-			V_DrawTranslucentPatch(x, y, TRANSLEVEL, W_CachePatchName(patchname, PU_PATCH));
-
-		eemeralds_cur += INTERVAL;
+		V_DrawFixedPatch(x, y, FRACUNIT, ((emeralds & (1<<i)) ? 0 : TRANSLEVEL), W_CachePatchName(patchname, PU_PATCH), NULL);
 	}
 
 	if (finalecount == 5*TICRATE)
