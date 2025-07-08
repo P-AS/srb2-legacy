@@ -13,6 +13,7 @@
 ///	        FS_FOUND
 
 #include <stdio.h>
+#include <errno.h>
 #ifdef __GNUC__
 #include <dirent.h>
 #endif
@@ -32,7 +33,6 @@
 
 #if (defined (_WIN32) && !defined (_WIN32_WCE)) && defined (_MSC_VER) && !defined (_XBOX)
 
-#include <errno.h>
 #include <io.h>
 #include <tchar.h>
 
