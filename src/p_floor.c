@@ -3232,8 +3232,8 @@ INT32 EV_MarioBlock(sector_t *sec, sector_t *roversector, fixed_t topheight, mob
 		block->vars[6] = 1; // low
 
 		// interpolation
-		R_CreateInterpolator_SectorPlane(&block->thinker, roversector, false);
-		R_CreateInterpolator_SectorPlane(&block->thinker, roversector, true);
+		R_CreateInterpolator_SectorPlane(&block->thinker, sec, false);
+		R_CreateInterpolator_SectorPlane(&block->thinker, sec, true);
 
 		if (itsamonitor)
 		{
