@@ -28,15 +28,6 @@
 #define BACKUPTICS 1024
 #define CLIENTBACKUPTICS 32
 #define MAXTEXTCMD 256
-
-// No. of tics your controls can be delayed by.
-
-// TODO: Instead of storing a ton of extra cmds for gentlemens' delay,
-// keep them in a linked-list, with timestamps to discard everything that's older than already sent.
-// That will support any amount of lag, and be less wasteful for clients who don't use it.
-// This just works as a quick implementation.
-#define MAXGENTLEMENDELAY TICRATE
-
 //
 // Packet structure
 //
@@ -334,8 +325,6 @@ extern UINT32 realpingtable[MAXPLAYERS];
 extern UINT32 playerpingtable[MAXPLAYERS];
 extern UINT32 playerpacketlosstable[MAXPLAYERS];
 extern tic_t servermaxping;
-
-extern boolean server_lagless;
 
 extern consvar_t cv_joinnextround, cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_allowgamestateresend, cv_blamecfail,
 cv_maxsend, cv_noticedownload, cv_downloadspeed, cv_dedicatedidletime;

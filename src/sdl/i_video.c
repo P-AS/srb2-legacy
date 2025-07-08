@@ -1221,7 +1221,7 @@ void I_FinishUpdate(void)
 
 	SCR_DisplayTicRate();
 
-	if (cv_showping.value && netgame && ( consoleplayer != serverplayer || !server_lagless))
+	if (cv_showping.value && netgame && consoleplayer != serverplayer)
 		SCR_DisplayLocalPing();
 
 	if (rendermode == render_soft && screens[0])

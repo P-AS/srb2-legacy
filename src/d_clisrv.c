@@ -105,11 +105,6 @@ SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (spl
 UINT8 playerpernode[MAXNETNODES]; // used specialy for scplitscreen
 boolean nodeingame[MAXNETNODES]; // set false as nodes leave game
 tic_t servermaxping = 800; // server's max ping. Defaults to 800
-#define GENTLEMANSMOOTHING (TICRATE)
-static tic_t reference_lag;
-static UINT8 spike_time; 
-static tic_t lowest_lag;
-boolean server_lagless;
 static tic_t nettics[MAXNETNODES]; // what tic the client have received
 static tic_t supposedtics[MAXNETNODES]; // nettics prevision for smaller packet
 static UINT8 nodewaiting[MAXNETNODES];
@@ -133,8 +128,8 @@ UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
 
 // Client specific
-static ticcmd_t localcmds[MAXGENTLEMENDELAY];
-static ticcmd_t localcmds2[MAXGENTLEMENDELAY];
+static ticcmd_t localcmds;
+static ticcmd_t localcmds2;
 static boolean cl_packetmissed;
 // here it is for the secondary local player (splitscreen)
 static UINT8 mynode; // my address pointofview server
@@ -455,11 +450,8 @@ void D_ResetTiccmds(void)
 {
 	INT32 i;
 
-	for (i = 0; i< MAXGENTLEMENDELAY; i++)
-	{ 
-		memset(&localcmds[i], 0, sizeof(ticcmd_t));
-		memset(&localcmds2[i], 0, sizeof(ticcmd_t));
-	}
+	memset(&localcmds, 0, sizeof(ticcmd_t));
+	memset(&localcmds2, 0, sizeof(ticcmd_t));
 
 	// Reset the net command list
 	for (i = 0; i < TEXTCMD_HASH_SIZE; i++)
@@ -4116,45 +4108,14 @@ static void CL_SendClientCmd(void)
 	}
 	else if (gamestate != GS_NULL)
 	{
-		UINT8 lagDelay = 0;
-
-		if (lowest_lag > 0)
-		{
-			// Gentlemens' ping.
-			lagDelay = min(lowest_lag, MAXGENTLEMENDELAY);
-
-			// Is our connection worse than our current gentleman point?
-			// Make sure it stays that way for a bit before increasing delay levels.
-			if (lagDelay > reference_lag)
-			{
-				spike_time++;
-				if (spike_time >= GENTLEMANSMOOTHING)
-				{
-					// Okay, this is genuinely the new baseline delay.
-					reference_lag = lagDelay;
-					spike_time = 0;
-				}
-				else
-				{
-					// Just a temporary fluctuation, ignore it.
-					lagDelay = reference_lag;
-				}
-			}
-			else 
-			{
-				reference_lag = lagDelay; // Adjust quickly if the connection improves.
-				spike_time = 0;
-			}
-		}
-
-		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds[lagDelay], 1);
+		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds, 1);
 		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic%BACKUPTICS]);
 
 		// Send a special packet with 2 cmd for splitscreen
 		if (splitscreen || botingame)
 		{
 			netbuffer->packettype += 2;
-			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds2[lagDelay], 1);
+			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds2, 1);
 			packetsize = sizeof (client2cmd_pak);
 		}
 		else
@@ -4304,20 +4265,6 @@ static void SV_SendTics(void)
 	supposedtics[0] = maketic;
 }
 
-static void CreateNewLocalCMD(UINT8 p, INT32 realtics)
-{
-	(void)p;
-	INT32 i;
-
-	for (i = MAXGENTLEMENDELAY-1; i > 0; i--)
-	{
-		G_MoveTiccmd(&localcmds[i], &localcmds[i-1], 1);
-	}
-
-	G_BuildTiccmd(&localcmds[0], realtics);
-	localcmds[0].angleturn |= TICCMD_RECEIVED;
-}
-
 //
 // TryRunTics
 //
@@ -4329,7 +4276,11 @@ static void Local_Maketic(INT32 realtics)
 	                   // and G_MapEventsToControls
 	if (!dedicated) rendergametic = gametic;
 	// translate inputs (keyboard/mouse/joystick) into game controls
-	CreateNewLocalCMD(0, realtics); // Doesn't really matter
+	G_BuildTiccmd(&localcmds, realtics);
+	if (splitscreen || botingame)
+		G_BuildTiccmd2(&localcmds2, realtics);
+
+	localcmds.angleturn |= TICCMD_RECEIVED;
 }
 
 void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
@@ -4598,58 +4549,17 @@ static tic_t gametime = 0;
 
 static void UpdatePingTable(void)
 {
-	tic_t fastest;
-	tic_t lag;
 	INT32 i;
 
 	if (server)
 	{
 		if (netgame && !(gametime % 35)) // update once per second.
 			PingUpdate();
-
-		fastest = 0;
-
 		// update node latency values so we can take an average later.
 		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] && playernode[i] > 0)
-			{
-				if (! server_lagless && playernode[i] > 0 && !players[i].spectator)
-				{
-					lag = GetLag(playernode[i]);
-					realpingtable[i] += G_TicsToMilliseconds(lag);
-
-					if (! fastest || lag < fastest)
-						fastest = lag;
-				}
-				else
-					realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
-			}
-		}	
+			if (playeringame[i] && playernode[i] != UINT8_MAX)
+				realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
 		pingmeasurecount++;
-
-		if (server_lagless)
-			lowest_lag = 0;
-		else
-		{
-			lowest_lag = fastest;
-
-			if (fastest)
-				lag = fastest;
-			else
-				lag = GetLag(0);
-
-			lag = ( realpingtable[0] + G_TicsToMilliseconds(lag) );
-
-			switch (playerpernode[0])
-			{
-				case 2:
-					realpingtable[nodetoplayer2[0]] = lag;
-					/*FALLTHRU*/
-				case 1:
-					realpingtable[nodetoplayer[0]] = lag;
-			}
-		}
 	}
 }
 
