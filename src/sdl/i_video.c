@@ -1221,7 +1221,7 @@ void I_FinishUpdate(void)
 
 	SCR_DisplayTicRate();
 
-	if (cv_showping.value && netgame && consoleplayer != serverplayer)
+	if (cv_showping.value && ((netgame && consoleplayer != serverplayer) || (simulated_lag != 0 && consoleplayer == serverplayer && Playing())))
 		SCR_DisplayLocalPing();
 
 	if (rendermode == render_soft && screens[0])
@@ -1249,13 +1249,13 @@ void I_FinishUpdate(void)
 	else if (rendermode == render_opengl)
 	{
 		// Final postprocess step of palette rendering, after everything else has been drawn.
-	if (HWR_ShouldUsePaletteRendering())
-	{
-		HWD.pfnMakeScreenTexture(HWD_SCREENTEXTURE_GENERIC2);
-		HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_PALETTE_POSTPROCESS));
-		HWD.pfnDrawScreenTexture(HWD_SCREENTEXTURE_GENERIC2, NULL, 0);
-		HWD.pfnUnSetShader();
-	}		
+		if (HWR_ShouldUsePaletteRendering())
+		{
+			HWD.pfnMakeScreenTexture(HWD_SCREENTEXTURE_GENERIC2);
+			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_PALETTE_POSTPROCESS));
+			HWD.pfnDrawScreenTexture(HWD_SCREENTEXTURE_GENERIC2, NULL, 0);
+			HWD.pfnUnSetShader();
+		}		
 		OglSdlFinishUpdate(cv_vidwait.value);
 	}
 #endif
