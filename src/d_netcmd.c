@@ -1747,7 +1747,7 @@ static void Command_Map_f(void)
 
 	if (!(netgame || multiplayer) && (!modifiedgame || savemoddata))
 	{
-		if (COM_CheckParm("-force"))
+		if (COM_CheckParm("-force") || COM_CheckParm("-f"))
 			G_SetGameModified(false);
 		else
 		{
@@ -1798,7 +1798,7 @@ static void Command_Map_f(void)
 	}
 
 	// don't use a gametype the map doesn't support
-	if (cv_debug || COM_CheckParm("-force") || cv_skipmapcheck.value)
+	if (cv_debug || COM_CheckParm("-force") || COM_CheckParm("-f") || cv_skipmapcheck.value)
 		; // The player wants us to trek on anyway.  Do so.
 	// G_TOLFlag handles both multiplayer gametype and ignores it for !multiplayer
 	// Alternatively, bail if the map header is completely missing anyway.
