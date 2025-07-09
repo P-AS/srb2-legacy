@@ -146,7 +146,7 @@ consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
-consvar_t cv_grpaletterendering = {"gr_paletterendering", "Off", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grpaletterendering = {"gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_grpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_grcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -6117,7 +6117,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 // Can't have palette rendering if shaders are disabled.
 boolean HWR_ShouldUsePaletteRendering(void)
 {
-	return (cv_grpaletterendering.value && HWR_UseShader());
+	return (pLocalPalette != NULL && cv_grpaletterendering.value && HWR_UseShader());
 }
 
 // enable or disable palette rendering state depending on settings and availability
