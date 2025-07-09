@@ -25,7 +25,7 @@
 
 #define GLSL_DEFAULT_VERTEX_SHADER \
 	"const float amplitude = 2.0;\n"\
-	"const float speed = 32.0;\n" \
+	"const float speed = 1.0;\n" \
 	"uniform float leveltime;\n" \
 	"void main()\n" \
 	"{\n" \
@@ -39,12 +39,34 @@
 	"#endif\n" \
 	"}\n" \
 
+
+// adjust the amplitude for beeegger wäves on ze wöter
+// this is pretty meh but idk what im doing lmao
+#define GLSL_WAVE_VERTEX_SHADER \
+	"uniform float leveltime;\n" \
+	"const float waveSpeed = 2.5;\n" \
+	"const float waveFrequency = 0.5;\n" \
+	"const float waveAmplitude = 1.8;\n" \
+	"void main()\n" \
+	"{\n" \
+		"vec4 modelPos = gl_Vertex;\n" \
+		"float timeF = leveltime * waveSpeed;\n" \
+		"float wave1 = sin(modelPos.z * waveFrequency + timeF) * waveAmplitude;\n" \
+		"float wave2 = cos(modelPos.x * waveFrequency * 0.7 + timeF * 1.3) * waveAmplitude;\n" \
+		"modelPos.y += wave1 + wave2;\n" \
+		"vec4 worldPos = gl_ModelViewMatrix * modelPos;\n" \
+		"gl_Position = gl_ProjectionMatrix * worldPos;\n" \
+		"gl_FrontColor = gl_Color;\n" \
+		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
+		"gl_ClipVertex = worldPos;\n" \
+	"}\0"
+
 // replicates the way fixed function lighting is used by the model lighting option,
 // stores the lighting result to gl_Color
 // (ambient lighting of 0.75 and diffuse lighting from above)
 #define GLSL_MODEL_VERTEX_SHADER \
 	"const float amplitude = 2.0;\n"\
-	"const float speed = 32.0;\n" \
+	"const float speed = 1.0;\n" \
 	"uniform float leveltime;\n" \
 	"void main()\n" \
 	"{\n" \
