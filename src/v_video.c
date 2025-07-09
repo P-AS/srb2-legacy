@@ -16,6 +16,7 @@
 #include "doomdef.h"
 #include "r_local.h"
 #include "v_video.h"
+#include "st_stuff.h"
 #include "hu_stuff.h"
 #include "r_draw.h"
 #include "console.h"
@@ -519,11 +520,11 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	if ((alphalevel = ((scrn & V_ALPHAMASK) >> V_ALPHASHIFT)))
 	{
 		if (alphalevel == 13)
-			alphalevel = hudminusalpha[cv_translucenthud.value];
+			alphalevel = hudminusalpha[st_translucency];
 		else if (alphalevel == 14)
-			alphalevel = 10 - cv_translucenthud.value;
+			alphalevel = 10 - st_translucency;
 		else if (alphalevel == 15)
-			alphalevel = hudplusalpha[cv_translucenthud.value];
+			alphalevel = hudplusalpha[st_translucency];
 
 		if (alphalevel >= 10)
 			return; // invis
@@ -883,11 +884,11 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	if (alphalevel)
 	{
 		if (alphalevel == 13)
-			alphalevel = hudminusalpha[cv_translucenthud.value];
+			alphalevel = hudminusalpha[st_translucency];
 		else if (alphalevel == 14)
-			alphalevel = 10 - cv_translucenthud.value;
+			alphalevel = 10 - st_translucency;
 		else if (alphalevel == 15)
-			alphalevel = hudplusalpha[cv_translucenthud.value];
+			alphalevel = hudplusalpha[st_translucency];
 
 		if (alphalevel >= 10)
 			return; // invis
@@ -1096,11 +1097,11 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	if ((alphalevel = ((c & V_ALPHAMASK) >> V_ALPHASHIFT)))
 	{
 		if (alphalevel == 13)
-			alphalevel = hudminusalpha[cv_translucenthud.value];
+			alphalevel = hudminusalpha[st_translucency];
 		else if (alphalevel == 14)
-			alphalevel = 10 - cv_translucenthud.value;
+			alphalevel = 10 - st_translucency;
 		else if (alphalevel == 15)
-			alphalevel = hudplusalpha[cv_translucenthud.value];
+			alphalevel = hudplusalpha[st_translucency];
 
 		if (alphalevel >= 10)
 			return; // invis

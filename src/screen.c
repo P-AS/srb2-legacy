@@ -502,7 +502,7 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_StringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
 				V_DrawString(vid.width-width, h,
-					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
+					fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
 				break;
 			}
 
@@ -510,7 +510,7 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_ThinStringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
 				V_DrawThinString(vid.width-width, h,
-					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
+					fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
 				break;
 			}
 
@@ -518,7 +518,7 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_SmallStringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
 				V_DrawSmallString(vid.width-width, h,
-					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
+					fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
 				break;
 			}
 		}
@@ -544,9 +544,9 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
 				V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
-						V_YELLOWMAP|V_NOSCALESTART, "FPS:");
+						V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
 				V_DrawString(vid.width - width, h,
-						fpscntcolor|V_NOSCALESTART, drawnstr);
+						fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
 				break;
 			}
 
@@ -554,9 +554,9 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_ThinStringWidth(drawnstr, V_NOSCALESTART); //same here
 				V_DrawThinString((vid.width - 92 * vid.dupx + V_ThinStringWidth("FPS: ", V_NOSCALESTART)), h,
-						V_YELLOWMAP|V_NOSCALESTART, "FPS:");
+						V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
 				V_DrawThinString(vid.width - width, h,
-						fpscntcolor|V_NOSCALESTART, drawnstr);
+						fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
 				break;
 			}
 
@@ -564,9 +564,9 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_SmallStringWidth(drawnstr, V_NOSCALESTART); //same here
 				V_DrawSmallString((vid.width - 92 * vid.dupx + V_SmallStringWidth("FPS: ", V_NOSCALESTART)), h,
-						V_YELLOWMAP|V_NOSCALESTART, "FPS:");
+						V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
 				V_DrawSmallString(vid.width - width, h,
-						fpscntcolor|V_NOSCALESTART, drawnstr);
+						fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
 				break;
 			}
 		}
@@ -585,7 +585,7 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_StringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
 				V_DrawString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
+					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
 				break;
 			}
 
@@ -593,7 +593,7 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_ThinStringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
 				V_DrawThinString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
+					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
 				break;
 			}
 
@@ -601,7 +601,7 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_SmallStringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
 				V_DrawSmallString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
+					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
 				break;
 			}
 		}
@@ -618,9 +618,9 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
 				V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART, "TPS:");
+					V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
 				V_DrawString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, drawnstr);
+					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
 				break;
 			}
 
@@ -628,9 +628,9 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_ThinStringWidth(drawnstr, V_NOSCALESTART); //same here
 				V_DrawThinString((vid.width - 92 * vid.dupx + V_ThinStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART, "TPS:");
+					V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
 				V_DrawThinString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, drawnstr);
+					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
 				break;
 			}
 
@@ -638,9 +638,9 @@ void SCR_DisplayTicRate(void)
 			{
 				width = vid.dupx*V_SmallStringWidth(drawnstr, V_NOSCALESTART); //same here
 				V_DrawSmallString((vid.width - 92 * vid.dupx + V_SmallStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART, "TPS:");
+					V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
 				V_DrawSmallString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, drawnstr);
+					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
 				break;
 			}
 		}

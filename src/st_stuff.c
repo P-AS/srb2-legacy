@@ -201,6 +201,7 @@ void ST_Ticker(void)
 
 // 0 is default, any others are special palettes.
 INT32 st_palette = 0;
+INT32 st_translucency = 10;
 
 void ST_doPaletteStuff(void)
 {
@@ -2130,6 +2131,8 @@ void ST_Drawer(void)
 	if (rendermode == render_soft || HWR_ShouldUsePaletteRendering())
 #endif
 		if (rendermode != render_none) ST_doPaletteStuff();
+
+	st_translucency = cv_translucenthud.value;
 
 	if (st_overlay)
 	{
