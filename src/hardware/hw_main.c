@@ -3780,8 +3780,9 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 	return false;
 }
 
-static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float this_scale)
+static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch)
 {
+	float this_scale = 1.0f;
 	FOutVector swallVerts[4];
 	FSurfaceInfo sSurf;
 	fixed_t floorheight, mobjfloor;
@@ -3803,6 +3804,11 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	{
 	  R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
 	}
+
+	if (spr->mobj)
+		this_scale = FixedToFloat(interp.scale);
+	if (spr->mobj && spr->mobj->skin && ((skin_t *)spr->mobj->skin)->flags & SF_HIRES)
+		this_scale *= FixedToFloat(((skin_t *)spr->mobj->skin)->highresscale);
 
 	mobjfloor = HWR_OpaqueFloorAtPos(
 		interp.x, interp.y,
@@ -4906,7 +4912,7 @@ static void HWR_DrawSprites(void)
 	{
 		gr_vissprite_t *spr = gr_vsprorder[i];
 		GLPatch_t *gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
-		HWR_GetMappedPatch(gpatch, spr->colormap);
+		HWR_GetPatch(gpatch);
 		if (spr->precip)
 			HWR_DrawPrecipitationSprite(spr);
 		else
@@ -4915,7 +4921,7 @@ static void HWR_DrawSprites(void)
 			&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
 			&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
 			&& (spr->mobj->z >= spr->mobj->floorz)) // Without this, your shadow shows on the floor, even after you die and fall through the ground.
-				HWR_DrawSpriteShadow(spr, gpatch, 1.0f);
+				HWR_DrawSpriteShadow(spr, gpatch);
 
 			if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			{
