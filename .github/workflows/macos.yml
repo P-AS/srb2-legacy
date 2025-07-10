@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "next", "master" ]
 
-env:
-  CC: gcc
-
 jobs:
   build:
     continue-on-error: true
@@ -18,7 +15,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install dependencies
-      run: brew install sdl2 sdl2_mixer game-music-emu miniupnpc libopenmpt cmake
+      run: brew install --formula sdl2 sdl2_mixer game-music-emu miniupnpc libopenmpt cmake
 
     - name: Configure CMake
       run: |
@@ -28,12 +25,15 @@ jobs:
       run: ninja -C build
 
     - name: Package SRB2 Legacy
-      run: ninja -C build package
+      run: |
+        VERSION=$(awk '/#define SRB2VERSION/ { gsub(/["\/\*]/, "", $3); print $3 }' src/version.h)
+        ninja -C build package
+        codesign --deep --force --sign - build/_CPack_Packages/Darwin/TGZ/SRB2-$VERSION-Darwin/Sonic\ Robo\ Blast\ 2\ Legacy.app
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: srb2legacy-macOS-${{ github.sha }}
+        name: srb2legacy-macOS-aarch64-${{ github.sha }}
         path: |
-          build/
+          build/_CPack_Packages/Darwin/TGZ/SRB2-$VERSION-Darwin
           src/comptime.h
