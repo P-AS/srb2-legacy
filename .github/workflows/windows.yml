@@ -1,0 +1,43 @@
+name: Windows
+
+on:
+  push:
+    branches: [ "next", "master", "ci" ]
+  pull_request:
+    branches: [ "next", "master" ]
+
+jobs:
+  build:
+    continue-on-error: true
+    strategy:
+      matrix:
+        arch:
+          - name: x86
+            prefix: i686-w64-mingw32
+          - name: x86_64
+            prefix: x86_64-w64-mingw32
+
+    runs-on: ubuntu-latest
+    env:
+      PREFIX: ${{ matrix.arch.prefix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          [ "${{ matrix.arch.name }}" = "x86" ] && PKGSUFFIX="i686" || PKGSUFFIX="x86-64"
+          sudo apt install -y gcc-mingw-w64-$PKGSUFFIX binutils-mingw-w64-$PKGSUFFIX
+
+      - name: Build SRB2 Legacy
+        run: |
+          [ "${{ matrix.arch.name }}" = "x86" ] && IS64BIT="" || IS64BIT="64"
+          make -C src/ --keep-going  -j$(nproc) MINGW$IS64BIT=1
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: srb2legacy-windows-${{ matrix.arch.name }}-${{ github.sha }}
+          path: |
+            bin/
+            src/comptime.h
