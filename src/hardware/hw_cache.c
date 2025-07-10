@@ -348,12 +348,12 @@ void HWR_MakePatch (patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, bo
 //             CACHING HANDLING
 // =================================================
 
-static size_t gr_numtextures = 0;
-static GLMapTexture_t *gr_textures; // for ALL Doom textures
+static size_t gl_numtextures = 0;
+static GLMapTexture_t *gl_textures; // for ALL Doom textures
 
 void HWR_InitTextureCache(void)
 {
-	gr_textures = NULL;
+	gl_textures = NULL;
 }
 
 // Callback function for HWR_FreeTextureCache.
@@ -425,16 +425,16 @@ void HWR_FreeTextureCache(void)
 
 	// now the heap don't have any 'user' pointing to our
 	// texturecache info, we can free it
-	if (gr_textures)
+	if (gl_textures)
 	{
-		for (i = 0; i < gr_numtextures; i++)
+		for (i = 0; i < gl_numtextures; i++)
 		{
-			Z_Free(gr_textures[i].mipmap.data);
+			Z_Free(gl_textures[i].mipmap.data);
 		}
-		free(gr_textures);
+		free(gl_textures);
 	}
-	gr_textures = NULL;
-	gr_numtextures = 0;
+	gl_textures = NULL;
+	gl_numtextures = 0;
 }
 
 void HWR_LoadTextures(size_t pnumtextures)
@@ -442,9 +442,9 @@ void HWR_LoadTextures(size_t pnumtextures)
 	// we must free it since numtextures changed
 	HWR_FreeTextureCache();
 
-	gr_numtextures = pnumtextures;
-	gr_textures = calloc(pnumtextures, sizeof (*gr_textures));
-	if (gr_textures == NULL)
+	gl_numtextures = pnumtextures;
+	gl_textures = calloc(pnumtextures, sizeof (*gl_textures));
+	if (gl_textures == NULL)
 		I_Error("HWR_LoadTextures: ran out of memory for OpenGL textures. Sad!");
 }
 
@@ -455,14 +455,14 @@ GLMapTexture_t *HWR_GetTexture(INT32 tex)
 {
 	GLMapTexture_t *grtex;
 #ifdef PARANOIA
-	if ((unsigned)tex >= gr_numtextures)
+	if ((unsigned)tex >= gl_numtextures)
 		I_Error("HWR_GetTexture: tex >= numtextures\n");
 #endif
 	// Jimita
-	if (needpatchrecache && (!gr_textures))
-		HWR_LoadTextures(gr_numtextures);
+	if (needpatchrecache && (!gl_textures))
+		HWR_LoadTextures(gl_numtextures);
 
-	grtex = &gr_textures[tex];
+	grtex = &gl_textures[tex];
 
 	if (!grtex->mipmap.data && !grtex->mipmap.downloaded)
 		HWR_GenerateTexture(tex, grtex);
@@ -785,7 +785,7 @@ void HWR_SetPalette(RGBA_t *palette)
 	if (HWR_ShouldUsePaletteRendering())
 	{
 		// set the palette for palette postprocessing
-		if (cv_grpalettedepth.value == 16)
+		if (cv_glpalettedepth.value == 16)
 		{
 			// crush to 16-bit rgb565, like software currently does in the standard configuration
 			// Note: Software's screenshots have the 24-bit palette, but the screen gets

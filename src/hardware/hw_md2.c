@@ -911,9 +911,9 @@ static void HWR_GetBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, INT
 
 static boolean HWR_CanInterpolateModel(mobj_t *mobj, model_t *model)
 {
-	if (!cv_grmodelinterpolation.value)
+	if (!cv_glmodelinterpolation.value)
 		return false;
-	else if (cv_grmodelinterpolation.value == 2)
+	else if (cv_glmodelinterpolation.value == 2)
 		return true;
 	return model->interpolate[(mobj->frame & FF_FRAMEMASK)];
 }
@@ -938,7 +938,7 @@ static boolean HWR_CanInterpolateModel(mobj_t *mobj, model_t *model)
 	res?
 	run?
 	*/
-void HWR_DrawMD2(gr_vissprite_t *spr)
+void HWR_DrawMD2(gl_vissprite_t *spr)
 {
 	FSurfaceInfo Surf;
 
@@ -949,7 +949,7 @@ void HWR_DrawMD2(gr_vissprite_t *spr)
 	md2_t *md2;
 	interpmobjstate_t interp;
 
-	if (!cv_grmd2.value)
+	if (!cv_glmd2.value)
 		return;
 
 	if (spr->precip)
