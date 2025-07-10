@@ -1,0 +1,43 @@
+name: macOS
+
+on:
+  push:
+    branches: [ "next", "master", "ci" ]
+  pull_request:
+    branches: [ "next", "master" ]
+
+env:
+  CC: gcc
+
+jobs:
+  build:
+    continue-on-error: true
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: brew install sdl2 sdl2_mixer libpng curl game-music-emu miniupnpc libopenmpt
+
+    - name: Set up CMake
+        uses: lukka/get-cmake@latest
+
+    - name: Configure
+      run: |
+        mkdir build
+        cmake build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build SRB2 Legacy
+      run: cmake --build build
+
+    - name: Package SRB2 Legacy
+      run: ninja -C build package
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: srb2legacy-macOS-${{ github.sha }}
+        path: |
+          build/
+          src/comptime.h
