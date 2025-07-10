@@ -69,7 +69,7 @@ void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *col
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
 
-extern CV_PossibleValue_t granisotropicmode_cons_t[];
+extern CV_PossibleValue_t glanisotropicmode_cons_t[];
 
 boolean HWR_ShouldUsePaletteRendering(void);
 extern consvar_t cv_glshaders, cv_glallowshaders;
@@ -77,7 +77,6 @@ extern consvar_t cv_glmd2;
 extern consvar_t cv_glmodelinterpolation;
 extern consvar_t cv_glfiltermode;
 extern consvar_t cv_glanisotropicmode;
-extern consvar_t cv_glcorrecttricks;
 extern consvar_t cv_glsolvetjoin;
 extern consvar_t cv_glshearing;
 extern consvar_t cv_glspritebillboarding;
