@@ -35,11 +35,17 @@ jobs:
     - name: Build SRB2 Legacy AppImage
       run: chmod +x srb2-legacy-appimage.sh && ./srb2-legacy-appimage.sh s
 
-    - name: Upload Artifacts
+    - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: srb2legacy-linux-${{ matrix.arch.name }}-${{ github.sha }}
+        name: srb2legacy-ubuntu-${{ matrix.arch.name }}-${{ github.sha }}
         path: |
           bin/
-          Sonic_Robo_Blast_2_Legacy_(2.1)-${{ matrix.arch.name }}.AppImage
           src/comptime.h
+
+    - name: Upload Appimage Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: srb2legacy-appimage-${{ matrix.arch.name }}-${{ github.sha }}
+        path: |
+          Sonic_Robo_Blast_2_Legacy_(2.1)-${{ matrix.arch.name }}.AppImage
