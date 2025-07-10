@@ -245,7 +245,7 @@ static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_
 	fclose(png_FILE);
 	*w = (int)width;
 	*h = (int)height;
-	return GR_RGBA;
+	return GL_TEXFMT_RGBA;
 }
 #endif
 
@@ -340,7 +340,7 @@ static GLTextureFormat_t PCX_Load(const char *filename, int *w, int *h,
 		}
 	}
 	fclose(file);
-	return GR_RGBA;
+	return GL_TEXFMT_RGBA;
 }
 
 // -----------------+
@@ -664,7 +664,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 		// no wrap around, no chroma key
 		grmip->flags = 0;
 		// setup the texture info
-		grmip->format = GR_RGBA;
+		grmip->format = GL_TEXFMT_RGBA;
 	}
 
 	if (grmip->data)

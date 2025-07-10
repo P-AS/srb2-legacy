@@ -25,8 +25,8 @@
 #include "../v_video.h"
 #include "../r_draw.h"
 
-INT32 patchformat = GR_TEXFMT_AP_88; // use alpha for holes
-INT32 textureformat = GR_TEXFMT_P_8; // use chromakey for hole
+INT32 patchformat = GL_TEXFMT_AP_88; // use alpha for holes
+INT32 textureformat = GL_TEXFMT_P_8; // use chromakey for hole
 
 RGBA_t mapPalette[256] = {0}; // the palette for the currently loaded level or menu etc.
 
@@ -171,24 +171,21 @@ static void HWR_DrawPatchInCache(GLMipmap_t *mipmap,
 	}
 }
 
-static const INT32 format2bpp[16] =
+
+static INT32 format2bpp(GLTextureFormat_t format)
 {
-	0, //0
-	0, //1
-	1, //2  GR_TEXFMT_ALPHA_8
-	1, //3  GR_TEXFMT_INTENSITY_8
-	1, //4  GR_TEXFMT_ALPHA_INTENSITY_44
-	1, //5  GR_TEXFMT_P_8
-	4, //6  GR_RGBA
-	0, //7
-	0, //8
-	0, //9
-	2, //10 GR_TEXFMT_RGB_565
-	2, //11 GR_TEXFMT_ARGB_1555
-	2, //12 GR_TEXFMT_ARGB_4444
-	2, //13 GR_TEXFMT_ALPHA_INTENSITY_88
-	2, //14 GR_TEXFMT_AP_88
-};
+	if (format == GL_TEXFMT_RGBA)
+		return 4;
+	else if (format == GL_TEXFMT_RGB_565
+		|| format == GL_TEXFMT_ARGB_1555
+		|| format == GL_TEXFMT_ARGB_4444
+		|| format == GL_TEXFMT_ALPHA_INTENSITY_88
+		|| format == GL_TEXFMT_AP_88)
+		return 2;
+	else
+		return 1;
+}
+
 
 static UINT8 *MakeBlock(GLMipmap_t *grMipmap)
 {
@@ -197,7 +194,7 @@ static UINT8 *MakeBlock(GLMipmap_t *grMipmap)
 	UINT16 bu16 = ((0x00 <<8) | HWR_CHROMAKEY_EQUIVALENTCOLORINDEX);
 	INT32 blocksize = (grMipmap->width * grMipmap->height);
 
-	bpp =  format2bpp[grMipmap->format];
+	bpp =  format2bpp(grMipmap->format);
 	block = Z_Malloc(blocksize*bpp, PU_HWRCACHE, &(grMipmap->data));
 
 	switch (bpp)
@@ -219,7 +216,7 @@ static UINT8 *MakeBlock(GLMipmap_t *grMipmap)
 // Create a composite texture from patches, adapt the texture size to a power of 2
 // height and width for the hardware texture cache.
 //
-static void HWR_GenerateTexture(INT32 texnum, GLTexture_t *grtex)
+static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 {
 	UINT8 *block;
 	texture_t *texture;
@@ -252,7 +249,7 @@ static void HWR_GenerateTexture(INT32 texnum, GLTexture_t *grtex)
 	grtex->mipmap.width = (UINT16)texture->width;
 	grtex->mipmap.height = (UINT16)texture->height;
 	if (skyspecial)
-		grtex->mipmap.format = GR_RGBA; // that skyspecial code below assumes this format ...
+		grtex->mipmap.format = GL_TEXFMT_RGBA; // that skyspecial code below assumes this format ...
 	else
 		grtex->mipmap.format = textureformat;
 
@@ -285,15 +282,15 @@ static void HWR_GenerateTexture(INT32 texnum, GLTexture_t *grtex)
 		realpatch = W_CacheLumpNumPwad(patch->wad, patch->lump, PU_CACHE);
 		HWR_DrawPatchInCache(&grtex->mipmap,
 			blockwidth, blockheight,
-			blockwidth*format2bpp[grtex->mipmap.format],
+			blockwidth*format2bpp(grtex->mipmap.format),
 			texture->width, texture->height,
 			patch->originx, patch->originy,
 			realpatch,
-			format2bpp[grtex->mipmap.format], palette);
+			format2bpp(grtex->mipmap.format), palette);
 		Z_Unlock(realpatch);
 	}
 	//Hurdler: not efficient at all but I don't remember exactly how HWR_DrawPatchInCache works :(
-	if (format2bpp[grtex->mipmap.format]==4)
+	if (format2bpp(grtex->mipmap.format)==4)
 	{
 		for (i = 3; i < blocksize*4; i += 4) // blocksize*4 because blocksize doesn't include the bpp
 		{
@@ -341,11 +338,11 @@ void HWR_MakePatch (patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, bo
 		MakeBlock(grMipmap);
 		HWR_DrawPatchInCache(grMipmap,
 			grPatch->width, grPatch->height,
-			(grPatch->width)*format2bpp[grMipmap->format],
+			(grPatch->width)*format2bpp(grMipmap->format),
 			grPatch->width, grPatch->height,
 			0, 0,
 			patch,
-			format2bpp[grMipmap->format], palette);
+			format2bpp(grMipmap->format), palette);
 	}
 
 	grPatch->max_s = grPatch->max_t = 1.0f;
@@ -356,7 +353,7 @@ void HWR_MakePatch (patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, bo
 // =================================================
 
 static size_t gr_numtextures = 0;
-static GLTexture_t *gr_textures; // for ALL Doom textures
+static GLMapTexture_t *gr_textures; // for ALL Doom textures
 
 void HWR_InitTextureCache(void)
 {
@@ -458,9 +455,9 @@ void HWR_LoadTextures(size_t pnumtextures)
 // --------------------------------------------------------------------------
 // Make sure texture is downloaded and set it as the source
 // --------------------------------------------------------------------------
-GLTexture_t *HWR_GetTexture(INT32 tex)
+GLMapTexture_t *HWR_GetTexture(INT32 tex)
 {
-	GLTexture_t *grtex;
+	GLMapTexture_t *grtex;
 #ifdef PARANOIA
 	if ((unsigned)tex >= gr_numtextures)
 		I_Error("HWR_GetTexture: tex >= numtextures\n");
@@ -492,7 +489,7 @@ static void HWR_CacheFlat(GLMipmap_t *grMipmap, lumpnum_t flatlumpnum)
 	size_t size, pflatsize;
 
 	// setup the texture info
-	grMipmap->format = GR_TEXFMT_P_8;
+	grMipmap->format = GL_TEXFMT_P_8;
 	grMipmap->flags = TF_WRAPXY|TF_CHROMAKEYED;
 
 	size = W_LumpLength(flatlumpnum);
@@ -724,7 +721,7 @@ static void HWR_CacheFadeMask(GLMipmap_t *grMipmap, lumpnum_t fademasklumpnum)
 	UINT16 fmheight = 0, fmwidth = 0;
 
 	// setup the texture info
-	grMipmap->format = GR_TEXFMT_ALPHA_8; // put the correct alpha levels straight in so I don't need to convert it later
+	grMipmap->format = GL_TEXFMT_ALPHA_8; // put the correct alpha levels straight in so I don't need to convert it later
 	grMipmap->flags = 0;
 
 	size = W_LumpLength(fademasklumpnum);
@@ -831,7 +828,7 @@ void HWR_SetPalette(RGBA_t *palette)
 		// now flush data texture cache so 32 bit texture are recomputed
 
 		//if (patchformat == GL_TEXFMT_RGBA || textureformat == GL_TEXFMT_RGBA)
-		if (patchformat == GR_RGBA || textureformat == GR_RGBA)
+		if (patchformat == GL_TEXFMT_RGBA || textureformat == GL_TEXFMT_RGBA)
 		{
 			Z_FreeTag(PU_HWRCACHE);
 			Z_FreeTag(PU_HWRCACHE_UNLOCKED);
@@ -908,7 +905,7 @@ void HWR_SetMapPalette(void)
 		HWD.pfnSetTexturePalette(mapPalette);
 
 		//if (patchformat == GL_TEXFMT_RGBA || textureformat == GL_TEXFMT_RGBA)
-		if (patchformat == GR_RGBA || textureformat == GR_RGBA)
+		if (patchformat == GL_TEXFMT_RGBA || textureformat == GL_TEXFMT_RGBA)
 		{
 			Z_FreeTag(PU_HWRCACHE);
 			Z_FreeTag(PU_HWRCACHE_UNLOCKED);

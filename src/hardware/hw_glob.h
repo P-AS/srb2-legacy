@@ -99,7 +99,7 @@ void HWR_FreeColormaps(void);
 void HWR_FreeExtraSubsectors(void);
 
 void HWR_GetFlat(lumpnum_t flatlumpnum);
-GLTexture_t *HWR_GetTexture(INT32 tex);
+GLMapTexture_t *HWR_GetTexture(INT32 tex);
 void HWR_GetPatch(GLPatch_t *gpatch);
 void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap);
 void HWR_MakePatch(patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap);
