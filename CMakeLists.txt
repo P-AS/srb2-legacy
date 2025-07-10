@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
+if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
+	message(FATAL_ERROR "In-source builds will bring you a world of pain. Please make a separate directory to invoke CMake from.")
+endif()
+
 file(STRINGS src/version.h SRB2_VERSION)
 string(REGEX MATCH "[0-9]+\\.[0-9.]+" SRB2_VERSION ${SRB2_VERSION})
 
@@ -21,22 +25,21 @@ project(SRB2
 	VERSION ${SRB2_VERSION}
 	LANGUAGES C)
 
-if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
-	message(FATAL_ERROR "In-source builds will bring you a world of pain. Please make a separate directory to invoke CMake from.")
-endif()
-
 ##### PACKAGE CONFIGURATION #####
 
-if(${CMAKE_SYSTEM} MATCHES "Windows")
-	set(CPACK_GENERATOR "ZIP")
-endif()
-if(${CMAKE_SYSTEM} MATCHES "Linux")
-	set(CPACK_GENERATOR "TGZ")
-endif()
-if(${CMAKE_SYSTEM} MATCHES "Darwin")
-	set(CPACK_GENERATOR "DragNDrop")
+set(SRB2_CPACK_GENERATOR "" CACHE STRING "Generator to use for making a package. E.g., ZIP, TGZ, DragNDrop (OSX only). Leave blank for default generator.")
+
+if("${SRB2_CPACK_GENERATOR}" STREQUAL "")
+	if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+		set(SRB2_CPACK_GENERATOR "ZIP")
+	elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+		set(SRB2_CPACK_GENERATOR "TGZ")
+	elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+		set(SRB2_CPACK_GENERATOR "TGZ")
+	endif()
 endif()
 
+set(CPACK_GENERATOR ${SRB2_CPACK_GENERATOR})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Sonic Robo Blast 2 Legacy" CACHE STRING "Program name for display purposes")
 set(CPACK_PACKAGE_VENDOR "Sonic Team Jr." CACHE STRING "Vendor name for display purposes")
 #set(CPACK_PACKAGE_DESCRIPTION_FILE )
