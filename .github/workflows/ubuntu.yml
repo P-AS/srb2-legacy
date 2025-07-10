@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "next", "master", "ci" ]
   pull_request:
-    branches: [ "next", "master", "ci" ]
+    branches: [ "next", "master" ]
 
 env:
   CC: gcc
@@ -26,7 +26,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Dependencies
+    - name: Install dependencies
       run: sudo apt-get update && sudo apt install -y libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libminiupnpc-dev libopenmpt-dev
 
     - name: Build SRB2 Legacy
@@ -35,15 +35,15 @@ jobs:
     - name: Build SRB2 Legacy AppImage
       run: chmod +x srb2-legacy-appimage.sh && ./srb2-legacy-appimage.sh s
 
-    - name: Upload Build Artifact
+    - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: srb2legacy-ubuntu-${{ matrix.arch.name }}-${{ github.sha }}
+        name: srb2legacy-linux-${{ matrix.arch.name }}-${{ github.sha }}
         path: |
           bin/
           src/comptime.h
 
-    - name: Upload Appimage Artifact
+    - name: Upload Appimage artifact
       uses: actions/upload-artifact@v4
       with:
         name: srb2legacy-appimage-${{ matrix.arch.name }}-${{ github.sha }}
