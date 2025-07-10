@@ -421,9 +421,9 @@ static consvar_t cv_dummymares = {"dummymares", "Overall", CV_HIDEN|CV_CALL, dum
 // ---------
 static menuitem_t MainMenu[] =
 {
-	{IT_CALL   |IT_STRING, NULL, "Secrets",     M_SecretsMenu,      76},
-	{IT_CALL   |IT_STRING, NULL, "1  player",   M_SinglePlayerMenu, 84},
-	{IT_SUBMENU|IT_STRING, NULL, "multiplayer", &MP_MainDef,        92},
+	{IT_CALL   |IT_STRING, NULL, "1  player",   M_SinglePlayerMenu, 76},
+	{IT_SUBMENU|IT_STRING, NULL, "multiplayer", &MP_MainDef,        84},
+	{IT_STRING|IT_CALL,    NULL, "Secrets",     M_SecretsMenu,    	92},
 	{IT_CALL   |IT_STRING, NULL, "options",     M_Options,         100},
 	{IT_CALL   |IT_STRING, NULL, "Addons",      M_Addons,          108},
 	{IT_CALL   |IT_STRING, NULL, "quit  game",  M_QuitSRB2,        116},
@@ -431,9 +431,9 @@ static menuitem_t MainMenu[] =
 
 typedef enum
 {
-	secrets = 0,
-	singleplr,
+	singleplr = 0,
 	multiplr,
+	secrets,
 	options,
 	addons,
 	quitdoom
@@ -2753,6 +2753,8 @@ void M_StartControlPanel(void)
 	if (!Playing())
 	{
 		// Secret menu!
+		MainMenu[singleplr].alphaKey = (M_AnySecretUnlocked()) ? 76 : 84;
+		MainMenu[multiplr].alphaKey = (M_AnySecretUnlocked()) ? 84 : 92;
 		MainMenu[secrets].status = (M_AnySecretUnlocked()) ? (IT_STRING | IT_CALL) : (IT_DISABLED);
 
 		currentMenu = &MainDef;
