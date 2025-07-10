@@ -22,7 +22,7 @@ jobs:
 
     - name: Configure CMake
       run: |
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSRB2_CONFIG_HAVE_GME=OFF -DSRB2_CONFIG_HAVE_OPENMPT=OFF
 
     - name: Build SRB2 Legacy
       run: ninja -C build
