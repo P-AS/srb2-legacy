@@ -569,7 +569,7 @@ void R_DelSpriteDefs(UINT16 wadnum)
 //
 // GAME FUNCTIONS
 //
-UINT32 visspritecount;
+UINT32 visspritecount, numvisiblesprites;
 static UINT32 clippedvissprites;
 static vissprite_t *visspritechunks[MAXVISSPRITES >> VISSPRITECHUNKBITS] = {NULL};
 
@@ -634,7 +634,7 @@ void R_InitSprites(void)
 //
 void R_ClearSprites(void)
 {
-	visspritecount = clippedvissprites = 0;
+	visspritecount = numvisiblesprites = clippedvissprites = 0;
 }
 
 //
@@ -1940,12 +1940,15 @@ void R_SortVisSprites(void)
 				best = ds;
 			}
 		}
-		best->next->prev = best->prev;
-		best->prev->next = best->next;
-		best->next = &vsprsortedhead;
-		best->prev = vsprsortedhead.prev;
-		vsprsortedhead.prev->next = best;
-		vsprsortedhead.prev = best;
+		if (best)
+		{
+			best->next->prev = best->prev;
+			best->prev->next = best->next;
+			best->next = &vsprsortedhead;
+			best->prev = vsprsortedhead.prev;
+			vsprsortedhead.prev->next = best;
+			vsprsortedhead.prev = best;
+		}
 	}
 }
 
@@ -2300,6 +2303,44 @@ static void R_DrawPrecipitationSprite(vissprite_t *spr)
 	R_DrawPrecipitationVisSprite(spr);
 }
 
+static boolean R_CheckSpriteVisible(vissprite_t *spr, INT32 x1, INT32 x2)
+{
+	INT16 sz = spr->sz;
+	INT16 szt = spr->szt;
+
+	fixed_t texturemid, yscale, scalestep = spr->scalestep;
+	INT32 height;
+	patch_t *patch = W_CacheLumpNum(spr->patch, PU_CACHE);
+
+	if (scalestep)
+	{
+		height = patch->height;
+		yscale = spr->scale;
+
+		if (spr->thingscale != FRACUNIT)
+			texturemid = FixedDiv(spr->texturemid, max(spr->thingscale, 1));
+		else
+			texturemid = spr->texturemid;
+	}
+
+	for (INT32 x = x1; x <= x2; x++)
+	{
+		if (scalestep)
+		{
+			fixed_t top = centeryfrac - FixedMul(texturemid, yscale);
+			fixed_t bottom = top + (height * yscale);
+			szt = (INT16)(top >> FRACBITS);
+			sz = (INT16)(bottom >> FRACBITS);
+			yscale += scalestep;
+		}
+
+		if (spr->cliptop[x] < spr->clipbot[x] && sz > spr->cliptop[x] && szt < spr->clipbot[x])
+			return true;
+	}
+
+	return false;
+}
+
 // R_ClipSprites
 // Clips vissprites without drawing, so that portals can work. -Red
 void R_ClipSprites(void)
@@ -2373,6 +2414,13 @@ void R_ClipSprites(void)
 
 		spr = R_GetVisSprite(clippedvissprites);
 
+		if (cv_spriteclip.value
+		&& (spr->szt > vid.height || spr->sz < 0))
+		{
+			spr->cut |= SC_NOTVISIBLE;
+			continue;
+		}
+
 		for (x = spr->x1; x <= spr->x2; x++)
 			spr->clipbot[x] = spr->cliptop[x] = -2;
 
@@ -2391,6 +2439,9 @@ void R_ClipSprites(void)
 			drawsegs_xrange = drawsegs_xranges[0].items;
 			drawsegs_xrange_count = drawsegs_xranges[0].count;
 		}
+
+		if ((spr->cut & SC_NOTVISIBLE) == 0)
+			numvisiblesprites++;
 
 		// Scan drawsegs from end to start for obscuring segs.
 		// The first drawseg that has a greater scale
@@ -2558,8 +2609,15 @@ void R_ClipSprites(void)
 				spr->clipbot[x] = (INT16)viewheight;
 
 			if (spr->cliptop[x] == -2)
-				//Fab : 26-04-98: was -1, now clips against console bottom
 				spr->cliptop[x] = (INT16)con_clipviewtop;
+		}
+
+		// Check if it'll be visible
+		// Not done for floorsprites.
+		if (cv_spriteclip.value)
+		{
+			if (!R_CheckSpriteVisible(spr, spr->x1, spr->x2))
+				spr->cut |= SC_NOTVISIBLE;
 		}
 	}
 }
