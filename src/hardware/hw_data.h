@@ -56,20 +56,12 @@ typedef long GLTextureFormat_t;
 #define GR_TEXFMT_AP_88                 0xe /* 8-bit alpha 8-bit palette */
 #define GR_RGBA                         0x6 // 32 bit RGBA !
 
-typedef struct
-{
-	GLlod_t           smallLodLog2;
-	GLlod_t           largeLodLog2;
-	GLAspectRatio_t   aspectRatioLog2;
-	GLTextureFormat_t format;
-	void              *data;
-} GLTexInfo;
-
-// grInfo.data holds the address of the graphics data cached in heap memory
+// data holds the address of the graphics data cached in heap memory
 //                NULL if the texture is not in Doom heap cache.
 struct GLMipmap_s
 {
-	GLTexInfo 				grInfo;
+	GLTextureFormat_t format;
+	void              *data;
 	unsigned long 			flags;
 	UINT16          height;
 	UINT16          width;
