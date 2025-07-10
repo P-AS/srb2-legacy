@@ -35,5 +35,5 @@ jobs:
       with:
         name: srb2legacy-macOS-aarch64-${{ github.sha }}
         path: |
-          build/_CPack_Packages/Darwin/TGZ/SRB2-$VERSION-Darwin
+          build/_CPack_Packages/Darwin/TGZ/SRB2-*-Darwin*/
           src/comptime.h
