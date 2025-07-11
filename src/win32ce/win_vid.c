@@ -42,8 +42,8 @@
 rendermode_t rendermode = render_soft;
 
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = {"vid_wait", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_stretch = {"stretch", "On", CV_SAVE|CV_NOSHOWHELP, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", CV_SAVE, CV_OnOff, NULL);
+static consvar_t cv_stretch = CVAR_INIT ("stretch", "On", CV_SAVE|CV_NOSHOWHELP, CV_OnOff, NULL);
 
 boolean highcolor;
 

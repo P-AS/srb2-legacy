@@ -21,9 +21,9 @@
 #include "../i_sound.h"
 #include "../s_sound.h"
 
-consvar_t cd_volume = {"cd_volume","31",CV_SAVE,soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cd_volume = CVAR_INIT ("cd_volume","31",CV_SAVE,soundvolume_cons_t, NULL);
 
-consvar_t cdUpdate  = {"cd_update","1",CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cdUpdate  = CVAR_INIT ("cd_update","1",CV_SAVE, NULL, NULL);
 
 /**	\brief Sound subsystem runing and waiting
 */

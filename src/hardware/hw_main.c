@@ -99,11 +99,11 @@ static CV_PossibleValue_t grfakecontrast_cons_t[] = {{0, "Off"}, {1, "On"}, {2, 
 static CV_PossibleValue_t grshearing_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Third-person"}, {0, NULL}};
 
 static CV_PossibleValue_t grshaders_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Ignore custom shaders"}, {0, NULL}};
-consvar_t cv_grshaders = {"gr_shaders", "On", CV_SAVE|CV_CALL, grshaders_cons_t, CV_grshaders_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grallowshaders = {"gr_allowshaders", "On", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grshaders = CVAR_INIT ("gr_shaders", "On", CV_SAVE|CV_CALL, grshaders_cons_t, CV_grshaders_OnChange);
+consvar_t cv_grallowshaders = CVAR_INIT ("gr_allowshaders", "On", CV_NETVAR, CV_OnOff, NULL);
 
-consvar_t cv_grfakecontrast = {"gr_fakecontrast", "Smooth", CV_SAVE, grfakecontrast_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grslopecontrast = {"gr_slopecontrast", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grfakecontrast = CVAR_INIT ("gr_fakecontrast", "Smooth", CV_SAVE, grfakecontrast_cons_t, NULL);
+consvar_t cv_grslopecontrast = CVAR_INIT ("gr_slopecontrast", "Off", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t grmodelinterpolation_cons_t[] = {{0, "Off"}, {1, "Sometimes"}, {2, "Always"}, {0, NULL}};
 
@@ -112,45 +112,45 @@ boolean drawsky = true;
 
 // needs fix: walls are incorrectly clipped one column less
 #ifndef NEWCLIP
-static consvar_t cv_grclipwalls = {"gr_clipwalls", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cv_grclipwalls = CVAR_INIT ("gr_clipwalls", "Off", 0, CV_OnOff, NULL);
 #endif
 //development variables for diverse uses
-static consvar_t cv_gralpha = {"gr_alpha", "160", 0, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-static consvar_t cv_grbeta = {"gr_beta", "0", 0, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cv_gralpha = CVAR_INIT ("gr_alpha", "160", 0, CV_Unsigned, NULL);
+static consvar_t cv_grbeta = CVAR_INIT ("gr_beta", "0", 0, CV_Unsigned, NULL);
 
 static float HWRWipeCounter = 1.0f;
-consvar_t cv_grrounddown = {"gr_rounddown", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grrounddown = CVAR_INIT ("gr_rounddown", "Off", 0, CV_OnOff, NULL);
 
 // Unfortunately, this can no longer be saved..
-consvar_t cv_grfiltermode = {"gr_filtermode", "Nearest", CV_CALL|CV_SAVE, grfiltermode_cons_t,
-                             CV_filtermode_ONChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_granisotropicmode = {"gr_anisotropicmode", "1", CV_CALL|CV_SAVE, granisotropicmode_cons_t,
-                             CV_anisotropic_ONChange, 0, NULL, NULL, 0, 0, NULL};
-//static consvar_t cv_grzbuffer = {"gr_zbuffer", "On", 0, CV_OnOff};
-consvar_t cv_grcorrecttricks = {"gr_correcttricks", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grfiltermode = CVAR_INIT ("gr_filtermode", "Nearest", CV_CALL|CV_SAVE, grfiltermode_cons_t,
+                             CV_filtermode_ONChange);
+consvar_t cv_granisotropicmode = CVAR_INIT ("gr_anisotropicmode", "1", CV_CALL|CV_SAVE, granisotropicmode_cons_t,
+                             CV_anisotropic_ONChange);
+//static consvar_t cv_grzbuffer = CVAR_INIT ("gr_zbuffer", "On", 0, CV_OnOff};
+consvar_t cv_grcorrecttricks = CVAR_INIT ("gr_correcttricks", "Off", 0, CV_OnOff, NULL);
+consvar_t cv_grsolvetjoin = CVAR_INIT ("gr_solvetjoin", "On", 0, CV_OnOff, NULL);
 
-consvar_t cv_grbatching = {"gr_batching", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grbatching = CVAR_INIT ("gr_batching", "On", 0, CV_OnOff, NULL);
 
-consvar_t cv_grwireframe = {"gr_wireframe", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grwireframe = CVAR_INIT ("gr_wireframe", "Off", 0, CV_OnOff, NULL);
 
-consvar_t cv_grmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grmodellighting = CVAR_INIT ("gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grmodellighting_OnChange);
 
-consvar_t cv_grshearing = {"gr_shearing", "Off", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grshearing = CVAR_INIT ("gr_shearing", "Off", CV_SAVE, grshearing_cons_t, NULL);
 
-consvar_t cv_glloadingscreen = {"glloadingscreen", "Off", CV_SAVE, glloadingscreen_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glloadingscreen = CVAR_INIT ("glloadingscreen", "Off", CV_SAVE, glloadingscreen_cons_t, NULL);
 
-consvar_t cv_grmd2 = {"gr_md2", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grmodelinterpolation = {"gr_modelinterpolation", "Sometimes", CV_SAVE, grmodelinterpolation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grmd2 = CVAR_INIT ("gr_md2", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_grmodelinterpolation = CVAR_INIT ("gr_modelinterpolation", "Sometimes", CV_SAVE, grmodelinterpolation_cons_t, NULL);
+consvar_t cv_grspritebillboarding = CVAR_INIT ("gr_spritebillboarding", "Off", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
-consvar_t cv_grpaletterendering = {"gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_grpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grpaletterendering = CVAR_INIT ("gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange);
+consvar_t cv_grpalettedepth = CVAR_INIT ("gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_grpalettedepth_OnChange);
 
-consvar_t cv_grcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grlightdither = {"gr_lightdithering", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grcurveshader = CVAR_INIT ("gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange);
+consvar_t cv_grlightdither = CVAR_INIT ("gr_lightdithering", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange);
 
 #define ONLY_IF_GL_LOADED if (vid.glstate != VID_GL_LIBRARY_LOADED) return;
 
