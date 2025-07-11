@@ -1242,7 +1242,7 @@ static void CL_ReloadReceivedSavegame(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		camera.subsector = R_PointInSubsector(camera.x, camera.y);
+		camera.subsector = R_PointInSubsectorFast(camera.x, camera.y);
 	}
 
 	cl_redownloadinggamestate = false;
@@ -3405,7 +3405,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			Net_CloseConnection(node);
 #endif
 			break;
-			
+
 		case PT_TELLFILESNEEDED:
 			if (server && serverrunning)
 			{
@@ -3946,7 +3946,7 @@ FILESTAMP
 			if (client)
 				Got_Filetxpak();
 			break;
-		
+
 		case PT_WILLRESENDGAMESTATE:
 			PT_WillResendGamestate();
 			break;
@@ -4600,7 +4600,7 @@ static void UpdatePingTable(void)
 
 void NetUpdate(void)
 {
-	
+
 	static tic_t resptime = 0;
 	tic_t nowtime;
 	INT32 i;

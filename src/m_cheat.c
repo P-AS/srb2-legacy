@@ -520,7 +520,7 @@ void Command_Teleport_f(void)
 		return;
 	}
 
-	ss = R_PointInSubsector(intx*FRACUNIT, inty*FRACUNIT);
+	ss = R_PointInSubsectorFast(intx*FRACUNIT, inty*FRACUNIT);
 	if (!ss || ss->sector->ceilingheight - ss->sector->floorheight < p->mo->height)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Not a valid location.\n"));

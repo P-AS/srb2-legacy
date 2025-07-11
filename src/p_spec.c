@@ -2354,7 +2354,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					z = line->frontsector->ceilingheight;
 
 					P_SetOrigin(mo, mo->x + x, mo->y + y, mo->z + z);
-					
+
 					if (mo->player)
 					{
 						if (bot) // This might put poor Tails in a wall if he's too far behind! D: But okay, whatever! >:3
@@ -2365,7 +2365,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 							camera2.x += x;
 							camera2.y += y;
 							camera2.z += z;
-							camera2.subsector = R_PointInSubsector(camera2.x, camera2.y);
+							camera2.subsector = R_PointInSubsectorFast(camera2.x, camera2.y);
 						}
 						else if (camera.chase && mo->player == &players[displayplayer])
 						{
@@ -2373,7 +2373,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 							camera.x += x;
 							camera.y += y;
 							camera.z += z;
-							camera.subsector = R_PointInSubsector(camera.x, camera.y);
+							camera.subsector = R_PointInSubsectorFast(camera.x, camera.y);
 						}
 					}
 				}

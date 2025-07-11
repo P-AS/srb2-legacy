@@ -795,7 +795,7 @@ void P_SetThingPosition(mobj_t *thing)
 	if (thing->player && thing->z <= thing->floorz && thing->subsector)
 		oldsec = thing->subsector->sector;
 
-	ss = thing->subsector = R_OldPointInSubsector(thing->x, thing->y);
+	ss = thing->subsector = R_PointInSubsector(thing->x, thing->y);
 
 	if (!(thing->flags & MF_NOSECTOR))
 	{
@@ -882,7 +882,7 @@ void P_SetUnderlayPosition(mobj_t *thing)
 	mobj_t **link, *lend;
 	I_Assert(thing);
 
-	ss = thing->subsector = R_OldPointInSubsector(thing->x, thing->y);
+	ss = thing->subsector = R_PointInSubsector(thing->x, thing->y);
 	link = &ss->sector->thinglist;
 	for (lend = *link; lend && lend->snext; lend = lend->snext)
 		;
@@ -905,7 +905,7 @@ void P_SetUnderlayPosition(mobj_t *thing)
 
 void P_SetPrecipitationThingPosition(precipmobj_t *thing)
 {
-	subsector_t *ss = thing->subsector = R_OldPointInSubsector(thing->x, thing->y);
+	subsector_t *ss = thing->subsector = R_PointInSubsector(thing->x, thing->y);
 
 	precipmobj_t **link = &ss->sector->preciplist;
 	precipmobj_t *snext = *link;

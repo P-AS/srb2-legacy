@@ -3013,7 +3013,7 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 	{
 		for (b = topy; b > bottomy; b -= (32<<FRACBITS))
 		{
-			if (R_PointInSubsector(a, b)->sector == sec)
+			if (R_PointInSubsectorFast(a, b)->sector == sec)
 			{
 				mobj_t *spawned = NULL;
 				for (c = topz; c > *rover->bottomheight; c -= (32<<FRACBITS))

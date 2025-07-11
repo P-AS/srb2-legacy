@@ -49,8 +49,6 @@ extern boolean renderisnewtic;
 
 INT32 R_GetHudUncap(boolean menu);
 
-
-
 //
 // Lighting LUT.
 // Used for z-depth cuing per column/row,
@@ -79,15 +77,98 @@ extern lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 #define NUMCOLORMAPS 32
 
 // Utility functions.
-INT32 R_OldPointOnSide(fixed_t x, fixed_t y, const node_t *node);
 
-ATTRINLINE FUNCINLINE INT32 PUREFUNC R_PointOnSide(fixed_t x, fixed_t y, const node_t *node)
+//
+// R_PointOnSide
+// Traverse BSP (sub) tree,
+// check point against partition plane.
+// Returns side 0 (front) or 1 (back).
+//
+// killough 5/2/98: reformatted
+//
+ATTRINLINE static FUNCINLINE INT32 PUREFUNC R_PointOnSide(fixed_t x, fixed_t y, const node_t *restrict node)
+{
+	if (!node->dx)
+		return x <= node->x ? node->dy > 0 : node->dy < 0;
+
+	if (!node->dy)
+		return y <= node->y ? node->dx < 0 : node->dx > 0;
+
+	x -= node->x;
+	y -= node->y;
+
+	// Try to quickly decide by looking at sign bits.
+	INT32 mask = (node->dy ^ node->dx ^ x ^ y) >> 31;
+	return (mask & ((node->dy ^ x) < 0)) |	// (left is negative)
+		(~mask & (FixedMul(y, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, x)));
+}
+
+// This is not as accurate
+// SHOULD NOT BE USED FOR ANYTHING GAMEPLAY RELATED!!
+ATTRINLINE static FUNCINLINE INT32 PUREFUNC R_PointOnSideFast(fixed_t x, fixed_t y, const node_t *node)
 {
 	// use cross product to determine side quickly
 	return ((INT64)y - node->y) * node->dx - ((INT64)x - node->x) * node->dy > 0;
 }
 
-ATTRINLINE FUNCINLINE INT32 PUREFUNC R_PointOnSegSide(fixed_t x, fixed_t y, const seg_t *line)
+//
+// R_PointInSubsectorFast
+//
+FUNCINLINE static ATTRINLINE subsector_t *R_PointInSubsectorFast(fixed_t x, fixed_t y)
+{
+	size_t nodenum = numnodes-1;
+
+	while (!(nodenum & NF_SUBSECTOR))
+		nodenum = nodes[nodenum].children[R_PointOnSideFast(x, y, nodes+nodenum)];
+
+	return &subsectors[nodenum & ~NF_SUBSECTOR];
+}
+
+//
+// R_PointInSubsector
+//
+FUNCINLINE static ATTRINLINE subsector_t *R_PointInSubsector(fixed_t x, fixed_t y)
+{
+	size_t nodenum = numnodes-1;
+
+	while (!(nodenum & NF_SUBSECTOR))
+		nodenum = nodes[nodenum].children[R_PointOnSide(x, y, nodes+nodenum)];
+
+	return &subsectors[nodenum & ~NF_SUBSECTOR];
+}
+
+//
+// R_IsPointInSubsector, same as above but returns 0 if not in subsector
+//
+FUNCINLINE static ATTRINLINE subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y)
+{
+	node_t *node;
+	INT32 side, i;
+	size_t nodenum;
+	subsector_t *ret;
+
+	// single subsector is a special case
+	if (numnodes == 0)
+		return subsectors;
+
+	nodenum = numnodes - 1;
+
+	while (!(nodenum & NF_SUBSECTOR))
+	{
+		node = &nodes[nodenum];
+		side = R_PointOnSide(x, y, node);
+		nodenum = node->children[side];
+	}
+
+	ret = &subsectors[nodenum & ~NF_SUBSECTOR];
+	for (i = 0; i < ret->numlines; i++)
+		if (P_PointOnLineSide(x, y, segs[ret->firstline + i].linedef) != segs[ret->firstline + i].side)
+			return 0;
+
+	return ret;
+}
+
+ATTRINLINE static FUNCINLINE INT32 PUREFUNC R_PointOnSegSide(fixed_t x, fixed_t y, const seg_t *line)
 {
 	fixed_t lx = line->v1->x;
 	fixed_t ly = line->v1->y;

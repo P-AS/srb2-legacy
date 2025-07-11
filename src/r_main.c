@@ -282,31 +282,6 @@ static void FlipCam2_OnChange(void)
 }
 
 //
-// R_OldPointOnSide
-// Traverse BSP (sub) tree,
-// check point against partition plane.
-// Returns side 0 (front) or 1 (back).
-//
-// killough 5/2/98: reformatted
-//
-PUREFUNC INT32 R_OldPointOnSide(fixed_t x, fixed_t y, const node_t *restrict node)
-{
-	if (!node->dx)
-		return x <= node->x ? node->dy > 0 : node->dy < 0;
-
-	if (!node->dy)
-		return y <= node->y ? node->dx < 0 : node->dx > 0;
-
-	x -= node->x;
-	y -= node->y;
-
-	// Try to quickly decide by looking at sign bits.
-	INT32 mask = (node->dy ^ node->dx ^ x ^ y) >> 31;
-	return (mask & ((node->dy ^ x) < 0)) |	// (left is negative)
-		(~mask & (FixedMul(y, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, x)));
-}
-
-//
 // R_PointToAngle
 // To get a global angle from cartesian coordinates,
 //  the coordinates are flipped until they are in
@@ -1116,67 +1091,8 @@ boolean R_IsPointInSector(sector_t *sector, fixed_t x, fixed_t y)
 }
 
 //
-// R_PointInSubsector
-//
-subsector_t *R_PointInSubsector(fixed_t x, fixed_t y)
-{
-	size_t nodenum = numnodes-1;
-
-	while (!(nodenum & NF_SUBSECTOR))
-		nodenum = nodes[nodenum].children[R_PointOnSide(x, y, nodes+nodenum)];
-
-	return &subsectors[nodenum & ~NF_SUBSECTOR];
-}
-
-//
-// R_OldPointInSubsector
-//
-subsector_t *R_OldPointInSubsector(fixed_t x, fixed_t y)
-{
-	size_t nodenum = numnodes-1;
-
-	while (!(nodenum & NF_SUBSECTOR))
-		nodenum = nodes[nodenum].children[R_OldPointOnSide(x, y, nodes+nodenum)];
-
-	return &subsectors[nodenum & ~NF_SUBSECTOR];
-}
-
-//
-// R_IsPointInSubsector, same as above but returns 0 if not in subsector
-//
-subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y)
-{
-	node_t *node;
-	INT32 side, i;
-	size_t nodenum;
-	subsector_t *ret;
-
-	// single subsector is a special case
-	if (numnodes == 0)
-		return subsectors;
-
-	nodenum = numnodes - 1;
-
-	while (!(nodenum & NF_SUBSECTOR))
-	{
-		node = &nodes[nodenum];
-		side = R_PointOnSide(x, y, node);
-		nodenum = node->children[side];
-	}
-
-	ret = &subsectors[nodenum & ~NF_SUBSECTOR];
-	for (i = 0; i < ret->numlines; i++)
-		if (P_PointOnLineSide(x, y, segs[ret->firstline + i].linedef) != segs[ret->firstline + i].side)
-			return 0;
-
-	return ret;
-}
-
-//
 // R_SetupFrame
 //
-
-
 void R_SetupFrame(player_t *player, boolean skybox)
 {
 	camera_t *thiscam;
@@ -1279,7 +1195,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		if (thiscam->subsector)
 			newview->sector = thiscam->subsector->sector;
 		else
-			newview->sector = R_PointInSubsector(viewx, viewy)->sector;
+			newview->sector = R_PointInSubsectorFast(viewx, viewy)->sector;
 	}
 	else
 	{
@@ -1291,7 +1207,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 		if (r_viewmobj->subsector)
 			newview->sector = r_viewmobj->subsector->sector;
 		else
-			newview->sector = R_PointInSubsector(viewx, viewy)->sector;
+			newview->sector = R_PointInSubsectorFast(viewx, viewy)->sector;
 	}
 
 	//newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
@@ -1531,7 +1447,7 @@ void R_SkyboxFrame(player_t *player)
 	if (r_viewmobj->subsector)
 		newview->sector = r_viewmobj->subsector->sector;
 	else
-		newview->sector = R_PointInSubsector(viewx, viewy)->sector;
+		newview->sector = R_PointInSubsectorFast(viewx, viewy)->sector;
 
 	//newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	//newview->cos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);

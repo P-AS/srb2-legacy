@@ -769,7 +769,7 @@ static void Polyobj_attachToSubsec(polyobj_t *po)
 	po->centerPt.x = center_x;
 	po->centerPt.y = center_y;
 
-	ss = R_OldPointInSubsector(po->centerPt.x, po->centerPt.y);
+	ss = R_PointInSubsector(po->centerPt.x, po->centerPt.y);
 
 	M_DLListInsert(&po->link, (mdllistitem_t **)(void *)(&ss->polyList));
 
