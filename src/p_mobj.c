@@ -1038,7 +1038,7 @@ fixed_t P_CameraFloorZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, fix
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_OldPointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -1114,7 +1114,7 @@ fixed_t P_CameraCeilingZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, f
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_OldPointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -3497,7 +3497,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 	if (!itsatwodlevel)
 		P_CheckCameraPosition(thiscam->x, thiscam->y, thiscam);
 
-	thiscam->subsector = R_PointInSubsector(thiscam->x, thiscam->y);
+	thiscam->subsector = R_OldPointInSubsector(thiscam->x, thiscam->y);
 	thiscam->floorz = tmfloorz;
 	thiscam->ceilingz = tmceilingz;
 
@@ -7180,7 +7180,7 @@ void P_MobjThinker(mobj_t *mobj)
 						{
 							x = mobj->spawnpoint->x << FRACBITS;
 							y = mobj->spawnpoint->y << FRACBITS;
-							ss = R_PointInSubsector(x, y);
+							ss = R_OldPointInSubsector(x, y);
 							if (mobj->spawnpoint->options & MTF_OBJECTFLIP)
 							{
 								z = ss->sector->ceilingheight - mobjinfo[mobj->type].height;
@@ -7482,7 +7482,7 @@ void P_PushableThinker(mobj_t *mobj)
 				x = mobj->spawnpoint->x << FRACBITS;
 				y = mobj->spawnpoint->y << FRACBITS;
 
-				ss = R_PointInSubsector(x, y);
+				ss = R_OldPointInSubsector(x, y);
 
 				if (mobj->spawnpoint->z != 0)
 					z = mobj->spawnpoint->z << FRACBITS;
@@ -8177,7 +8177,7 @@ void P_PrecipitationEffects(void)
 		for (y = yl; y <= yh; y += FRACUNIT*64)
 			for (x = xl; x <= xh; x += FRACUNIT*64)
 			{
-				if (R_PointInSubsector(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
+				if (R_OldPointInSubsector(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
 				{
 					newdist = S_CalculateSoundDistance(players[displayplayer].mo->x, players[displayplayer].mo->y, 0, x, y, 0);
 					if (newdist < closedist)
@@ -8255,7 +8255,7 @@ void P_RespawnSpecials(void)
 		mobjtype_t i;
 		x = mthing->x << FRACBITS;
 		y = mthing->y << FRACBITS;
-		ss = R_PointInSubsector(x, y);
+		ss = R_OldPointInSubsector(x, y);
 
 		// find which type to spawn
 		for (i = 0; i < NUMMOBJTYPES; i++)
@@ -8478,7 +8478,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	//spawn at the origin as a desperation move if there is no mapthing
 
 	// set Z height
-	sector = R_PointInSubsector(x, y)->sector;
+	sector = R_OldPointInSubsector(x, y)->sector;
 
 	floor =
 	sector->f_slope ? P_GetZAt(sector->f_slope, x, y) :
@@ -8547,7 +8547,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	mobj->x = p->starpostx << FRACBITS;
 	mobj->y = p->starposty << FRACBITS;
 	P_SetThingPosition(mobj);
-	sector = R_PointInSubsector(mobj->x, mobj->y)->sector;
+	sector = R_OldPointInSubsector(mobj->x, mobj->y)->sector;
 
 	floor =
 	sector->f_slope ? P_GetZAt(sector->f_slope, mobj->x, mobj->y) : sector->floorheight;
@@ -8714,7 +8714,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 		if (gametype != GT_COOP)
 			return;
 
-		ss = R_PointInSubsector(mthing->x << FRACBITS, mthing->y << FRACBITS);
+		ss = R_OldPointInSubsector(mthing->x << FRACBITS, mthing->y << FRACBITS);
 		mthing->z = (INT16)(((
 							ss->sector->f_slope ? P_GetZAt(ss->sector->f_slope, mthing->x << FRACBITS, mthing->y << FRACBITS) :
 							ss->sector->floorheight)>>FRACBITS) + (mthing->options >> ZSHIFT));
@@ -8832,7 +8832,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 	// spawn it
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
-	ss = R_PointInSubsector(x, y);
+	ss = R_OldPointInSubsector(x, y);
 
 	if (i == MT_NIGHTSBUMPER)
 		z = (
@@ -9381,7 +9381,7 @@ void P_SpawnHoopsAndRings(mapthing_t *mthing)
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
 
-	sec = R_PointInSubsector(x, y)->sector;
+	sec = R_OldPointInSubsector(x, y)->sector;
 
 	// NiGHTS hoop!
 	if (mthing->type == 1705)
