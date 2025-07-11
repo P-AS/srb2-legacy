@@ -64,9 +64,6 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate);
 void HWR_SetupLevel(void);
 #endif
 boolean P_AddWadFile(const char *wadfilename);
-#ifdef DELFILE
-boolean P_DelWadFile(void);
-#endif
 boolean P_RunSOC(const char *socfilename);
 void P_WriteThings(lumpnum_t lump);
 size_t P_PrecacheLevelFlats(void);
