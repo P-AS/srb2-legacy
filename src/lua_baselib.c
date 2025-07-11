@@ -1733,7 +1733,7 @@ static int lib_rPointInSubsector(lua_State *L)
 	fixed_t x = luaL_checkfixed(L, 1);
 	fixed_t y = luaL_checkfixed(L, 2);
 	//HUDSAFE
-	LUA_PushUserdata(L, R_PointInSubsector(x, y), META_SUBSECTOR);
+	LUA_PushUserdata(L, R_PointInSubsectorFast(x, y), META_SUBSECTOR);
 	return 1;
 }
 

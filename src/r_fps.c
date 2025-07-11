@@ -211,7 +211,7 @@ void R_InterpolateView(fixed_t frac)
 	// this is gonna create some interesting visual errors for long distance teleports...
 	// might want to recalculate the view sector every frame instead...
 	viewplayer = newview->player;
-	viewsector = R_PointInSubsector(viewx, viewy)->sector;
+	viewsector = R_PointInSubsectorFast(viewx, viewy)->sector;
 	viewsky = newview->sky;
 
 	// well, this ain't pretty
@@ -307,7 +307,7 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
 	(void)frac;
-	
+
 	out->x =  mobj->x;
 	out->y =  mobj->y;
 	out->z =  mobj->z;
