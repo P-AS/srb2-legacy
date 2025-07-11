@@ -2708,12 +2708,23 @@ void M_Drawer(void)
 			}
 			else
 			{
+				char *menucompnote = Z_StrDup(compnote);
+				if(strlen(compnote) > 15) // Don't want it to potentially cross over into the menu, somewhat of a magic number but ehh it works on most resolutions
+				{
+				   strncpy(menucompnote, compnote, 15);
+				   menucompnote[15] = '\0';
+				   strcat(menucompnote, "...");
+				}
 #ifdef DEVELOP // Development -- show revision / branch info
 				V_DrawThinString(vid.dupx, vid.height - 17*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);
 				V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy,  V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, comprevision);
 #else // Regular build
+#ifdef BETAVERSION
+				V_DrawThinString(vid.dupx, vid.height - 20*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s %s", comprevision, menucompnote));
+#endif
 				V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", VERSIONSTRING));
 #endif
+				Z_Free(menucompnote);
 			}
 		}
 	}
