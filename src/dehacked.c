@@ -6546,6 +6546,7 @@ static const char *const MOBJFLAG_LIST[] = {
 	"NOCLIPTHING",
 	"GRENADEBOUNCE",
 	"RUNSPAWNFUNC",
+	"PAPERCOLLISION",
 	NULL
 };
 
@@ -6861,6 +6862,7 @@ struct {
 
 	// Frame settings
 	{"FF_FRAMEMASK",FF_FRAMEMASK},
+	{"FF_PAPERSPRITE",FF_PAPERSPRITE},
 	{"FF_ANIMATE",FF_ANIMATE},
 	{"FF_FULLBRIGHT",FF_FULLBRIGHT},
 	{"FF_TRANSMASK",FF_TRANSMASK},
@@ -8006,6 +8008,10 @@ static inline int lib_getenum(lua_State *L)
 		return 1;
 	} else if (fastcmp(word, "token")) {
 		lua_pushinteger(L, token);
+		return 1;
+	}
+	else if (fastcmp(word, "MAXTRANSLATIONS")) {
+		lua_pushinteger(L, numskincolors);
 		return 1;
 	}
 	return 0;

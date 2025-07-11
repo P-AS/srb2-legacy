@@ -70,6 +70,9 @@ typedef enum
 	PT_TEXTCMD2,      // Splitscreen text commands.
 	PT_CLIENTJOIN,    // Client wants to join; used in start game.
 	PT_NODETIMEOUT,   // Packet sent to self if the connection times out.
+	
+	PT_TELLFILESNEEDED, // Client, to server: "what other files do I need starting from this number?"
+	PT_MOREFILESNEEDED, // Server, to client: "you need these (+ more on top of those)"
 
 	PT_LOGIN,         // Login attempt from the client.
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
@@ -159,6 +162,9 @@ typedef struct
 	UINT8 mode;
 } ATTRPACK clientconfig_pak;
 
+#define SV_DEDICATED    0x40 // server is dedicated
+#define SV_LOTSOFADDONS 0x20 // flag used to ask for full file list in d_netfil
+
 #define MAXSERVERNAME 32
 #define MAXFILENEEDED 915
 // This packet is too large
@@ -171,7 +177,7 @@ typedef struct
 	UINT8 gametype;
 	UINT8 modifiedgame;
 	UINT8 cheatsenabled;
-	UINT8 isdedicated;
+	UINT8 flags;
 	UINT8 fileneedednum;
 	SINT8 adminplayer;
 	tic_t time;
@@ -226,6 +232,14 @@ typedef struct
 	UINT8 ctfteam;
 } ATTRPACK plrconfig;
 
+typedef struct
+{
+	INT32 first;
+	UINT8 num;
+	UINT8 more;
+	UINT8 files[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
+} ATTRPACK filesneededconfig_pak;
+
 typedef struct 
 {
 	UINT32 pingtable[MAXPLAYERS+1];
@@ -260,6 +274,8 @@ typedef struct
 		plrinfo playerinfo[MAXPLAYERS];     //         576 bytes(?)
 		plrconfig playerconfig[MAXPLAYERS]; // (up to) 528 bytes(?)
 		netinfo_pak netinfo;					// Don't believe their lies
+		INT32 filesneedednum;               //           4 bytes
+		filesneededconfig_pak filesneededcfg; //       ??? bytes
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK doomdata_t;
 
@@ -337,6 +353,7 @@ void D_ClientServerInit(void);
 void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum));
 void SendNetXCmd(netxcmd_t id, const void *param, size_t nparam);
 void SendNetXCmd2(netxcmd_t id, const void *param, size_t nparam); // splitsreen player
+void SendKick(UINT8 playernum, UINT8 msg);
 
 // Create any new ticcmds and broadcast to other players.
 void NetUpdate(void);

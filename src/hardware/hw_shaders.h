@@ -25,7 +25,7 @@
 
 #define GLSL_DEFAULT_VERTEX_SHADER \
 	"const float amplitude = 2.0;\n"\
-	"const float speed = 32.0;\n" \
+	"const float speed = 1.0;\n" \
 	"uniform float leveltime;\n" \
 	"void main()\n" \
 	"{\n" \
@@ -44,7 +44,7 @@
 // (ambient lighting of 0.75 and diffuse lighting from above)
 #define GLSL_MODEL_VERTEX_SHADER \
 	"const float amplitude = 2.0;\n"\
-	"const float speed = 32.0;\n" \
+	"const float speed = 1.0;\n" \
 	"uniform float leveltime;\n" \
 	"void main()\n" \
 	"{\n" \

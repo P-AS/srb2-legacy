@@ -1038,7 +1038,7 @@ fixed_t P_CameraFloorZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, fix
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_OldPointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -1114,7 +1114,7 @@ fixed_t P_CameraCeilingZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, f
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_OldPointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -3497,7 +3497,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 	if (!itsatwodlevel)
 		P_CheckCameraPosition(thiscam->x, thiscam->y, thiscam);
 
-	thiscam->subsector = R_PointInSubsector(thiscam->x, thiscam->y);
+	thiscam->subsector = R_OldPointInSubsector(thiscam->x, thiscam->y);
 	thiscam->floorz = tmfloorz;
 	thiscam->ceilingz = tmceilingz;
 
@@ -7180,7 +7180,7 @@ void P_MobjThinker(mobj_t *mobj)
 						{
 							x = mobj->spawnpoint->x << FRACBITS;
 							y = mobj->spawnpoint->y << FRACBITS;
-							ss = R_PointInSubsector(x, y);
+							ss = R_OldPointInSubsector(x, y);
 							if (mobj->spawnpoint->options & MTF_OBJECTFLIP)
 							{
 								z = ss->sector->ceilingheight - mobjinfo[mobj->type].height;
@@ -7225,33 +7225,33 @@ void P_MobjThinker(mobj_t *mobj)
 								else if (players[consoleplayer].ctfteam == 1)
 									S_StartSound(NULL, sfx_hoop3);
 
-								blueflag = flagmo;
-							}
+							blueflag = flagmo;
 						}
-						P_RemoveMobj(mobj);
-						return;
-					case MT_YELLOWTV: // Ring shield box
-					case MT_BLUETV: // Force shield box
-					case MT_GREENTV: // Water shield box
-					case MT_BLACKTV: // Bomb shield box
-					case MT_WHITETV: // Jump shield box
-					case MT_SNEAKERTV: // Super Sneaker box
-					case MT_SUPERRINGBOX: // 10-Ring box
-					case MT_REDRINGBOX: // Red Team 10-Ring box
-					case MT_BLUERINGBOX: // Blue Team 10-Ring box
-					case MT_INV: // Invincibility box
-					case MT_MIXUPBOX: // Teleporter Mixup box
-					case MT_RECYCLETV: // Recycler box
-					case MT_SCORETVSMALL:
-					case MT_SCORETVLARGE:
-					case MT_PRUP: // 1up!
-					case MT_EGGMANBOX: // Eggman box
-					case MT_GRAVITYBOX: // Gravity box
-					case MT_QUESTIONBOX:
-						if ((mobj->flags & MF_AMBUSH || mobj->flags2 & MF2_STRONGBOX) && mobj->type != MT_QUESTIONBOX)
-						{
-							mobjtype_t spawnchance[64];
-							INT32 numchoices = 0, i = 0;
+					}
+					P_RemoveMobj(mobj);
+					return;
+				case MT_YELLOWTV: // Ring shield box
+				case MT_BLUETV: // Force shield box
+				case MT_GREENTV: // Water shield box
+				case MT_BLACKTV: // Bomb shield box
+				case MT_WHITETV: // Jump shield box
+				case MT_SNEAKERTV: // Super Sneaker box
+				case MT_SUPERRINGBOX: // 10-Ring box
+				case MT_REDRINGBOX: // Red Team 10-Ring box
+				case MT_BLUERINGBOX: // Blue Team 10-Ring box
+				case MT_INV: // Invincibility box
+				case MT_MIXUPBOX: // Teleporter Mixup box
+				case MT_RECYCLETV: // Recycler box
+				case MT_SCORETVSMALL:
+				case MT_SCORETVLARGE:
+				case MT_PRUP: // 1up!
+				case MT_EGGMANBOX: // Eggman box
+				case MT_GRAVITYBOX: // Gravity box
+				case MT_QUESTIONBOX:
+					if ((mobj->flags & MF_AMBUSH || mobj->flags2 & MF2_STRONGBOX) && mobj->type != MT_QUESTIONBOX)
+					{
+						mobjtype_t spawnchance[64];
+						INT32 numchoices = 0, i = 0;
 
 	// This define should make it a lot easier to organize and change monitor weights
 	#define SETMONITORCHANCES(type, strongboxamt, weakboxamt) \
@@ -7276,16 +7276,12 @@ void P_MobjThinker(mobj_t *mobj)
 							i = P_RandomKey(numchoices); // Gotta love those random numbers!
 							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, spawnchance[i]);
 
-							// If the monitor respawns randomly, transfer the flag.
-							if (mobj->flags & MF_AMBUSH)
-								newmobj->flags |= MF_AMBUSH;
-
-							// Transfer flags2 (strongbox, objectflip)
-							newmobj->flags2 = mobj->flags2;
-						}
-						else
-						{
-							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
+						// Transfer flags2 (strongbox, objectflip, ambush)
+						newmobj->flags2 = mobj->flags2;
+					}
+					else
+					{
+						newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
 
 							// Transfer flags2 (strongbox, objectflip)
 							newmobj->flags2 = mobj->flags2;
@@ -7486,7 +7482,7 @@ void P_PushableThinker(mobj_t *mobj)
 				x = mobj->spawnpoint->x << FRACBITS;
 				y = mobj->spawnpoint->y << FRACBITS;
 
-				ss = R_PointInSubsector(x, y);
+				ss = R_OldPointInSubsector(x, y);
 
 				if (mobj->spawnpoint->z != 0)
 					z = mobj->spawnpoint->z << FRACBITS;
@@ -8181,7 +8177,7 @@ void P_PrecipitationEffects(void)
 		for (y = yl; y <= yh; y += FRACUNIT*64)
 			for (x = xl; x <= xh; x += FRACUNIT*64)
 			{
-				if (R_PointInSubsector(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
+				if (R_OldPointInSubsector(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
 				{
 					newdist = S_CalculateSoundDistance(players[displayplayer].mo->x, players[displayplayer].mo->y, 0, x, y, 0);
 					if (newdist < closedist)
@@ -8259,7 +8255,7 @@ void P_RespawnSpecials(void)
 		mobjtype_t i;
 		x = mthing->x << FRACBITS;
 		y = mthing->y << FRACBITS;
-		ss = R_PointInSubsector(x, y);
+		ss = R_OldPointInSubsector(x, y);
 
 		// find which type to spawn
 		for (i = 0; i < NUMMOBJTYPES; i++)
@@ -8482,7 +8478,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	//spawn at the origin as a desperation move if there is no mapthing
 
 	// set Z height
-	sector = R_PointInSubsector(x, y)->sector;
+	sector = R_OldPointInSubsector(x, y)->sector;
 
 	floor =
 	sector->f_slope ? P_GetZAt(sector->f_slope, x, y) :
@@ -8551,7 +8547,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	mobj->x = p->starpostx << FRACBITS;
 	mobj->y = p->starposty << FRACBITS;
 	P_SetThingPosition(mobj);
-	sector = R_PointInSubsector(mobj->x, mobj->y)->sector;
+	sector = R_OldPointInSubsector(mobj->x, mobj->y)->sector;
 
 	floor =
 	sector->f_slope ? P_GetZAt(sector->f_slope, mobj->x, mobj->y) : sector->floorheight;
@@ -8718,7 +8714,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 		if (gametype != GT_COOP)
 			return;
 
-		ss = R_PointInSubsector(mthing->x << FRACBITS, mthing->y << FRACBITS);
+		ss = R_OldPointInSubsector(mthing->x << FRACBITS, mthing->y << FRACBITS);
 		mthing->z = (INT16)(((
 							ss->sector->f_slope ? P_GetZAt(ss->sector->f_slope, mthing->x << FRACBITS, mthing->y << FRACBITS) :
 							ss->sector->floorheight)>>FRACBITS) + (mthing->options >> ZSHIFT));
@@ -8836,7 +8832,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 	// spawn it
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
-	ss = R_PointInSubsector(x, y);
+	ss = R_OldPointInSubsector(x, y);
 
 	if (i == MT_NIGHTSBUMPER)
 		z = (
@@ -9336,7 +9332,7 @@ ML_NOCLIMB : Direction not controllable
 				mthing->type != mobjinfo[MT_AXISTRANSFERLINE].doomednum &&
 				mthing->type != mobjinfo[MT_NIGHTSBUMPER].doomednum &&
 				mthing->type != mobjinfo[MT_STARPOST].doomednum)
-				mobj->flags |= MF_AMBUSH;
+				mobj->flags2 |= MF_AMBUSH;
 		}
 
 		if (mthing->options & MTF_OBJECTSPECIAL)
@@ -9385,7 +9381,7 @@ void P_SpawnHoopsAndRings(mapthing_t *mthing)
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
 
-	sec = R_PointInSubsector(x, y)->sector;
+	sec = R_OldPointInSubsector(x, y)->sector;
 
 	// NiGHTS hoop!
 	if (mthing->type == 1705)

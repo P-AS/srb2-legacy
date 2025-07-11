@@ -223,7 +223,7 @@ static void M_ModeAttackRetry(INT32 choice);
 static void M_ModeAttackEndGame(INT32 choice);
 static void M_SetGuestReplay(INT32 choice);
 static void M_ChoosePlayer(INT32 choice);
-menu_t SP_GameStatsDef, SP_LevelStatsDef;
+menu_t SP_LevelStatsDef;
 static menu_t SP_TimeAttackDef, SP_ReplayDef, SP_GuestReplayDef, SP_GhostDef;
 static menu_t SP_NightsAttackDef, SP_NightsReplayDef, SP_NightsGuestReplayDef, SP_NightsGhostDef;
 
@@ -299,7 +299,6 @@ static void M_DrawLevelSelectMenu(void);
 static void M_DrawImageDef(void);
 static void M_DrawLoad(void);
 static void M_DrawLevelStats(void);
-static void M_DrawGameStats(void);
 static void M_DrawTimeAttackMenu(void);
 static void M_DrawNightsAttackMenu(void);
 static void M_DrawSetupChoosePlayerMenu(void);
@@ -325,7 +324,6 @@ static void M_HandleAddons(INT32 choice);
 static void M_HandleSoundTest(INT32 choice);
 static void M_HandleImageDef(INT32 choice);
 static void M_HandleLoadSave(INT32 choice);
-static void M_HandleGameStats(INT32 choice);
 static void M_HandleLevelStats(INT32 choice);
 #ifndef NONET
 static void M_HandleConnectIP(INT32 choice);
@@ -423,9 +421,9 @@ static consvar_t cv_dummymares = {"dummymares", "Overall", CV_HIDEN|CV_CALL, dum
 // ---------
 static menuitem_t MainMenu[] =
 {
-	{IT_CALL   |IT_STRING, NULL, "Secrets",     M_SecretsMenu,      76},
-	{IT_CALL   |IT_STRING, NULL, "1  player",   M_SinglePlayerMenu, 84},
-	{IT_SUBMENU|IT_STRING, NULL, "multiplayer", &MP_MainDef,        92},
+	{IT_CALL   |IT_STRING, NULL, "1  player",   M_SinglePlayerMenu, 76},
+	{IT_SUBMENU|IT_STRING, NULL, "multiplayer", &MP_MainDef,        84},
+	{IT_STRING|IT_CALL,    NULL, "Secrets",     M_SecretsMenu,    	92},
 	{IT_CALL   |IT_STRING, NULL, "options",     M_Options,         100},
 	{IT_CALL   |IT_STRING, NULL, "Addons",      M_Addons,          108},
 	{IT_CALL   |IT_STRING, NULL, "quit  game",  M_QuitSRB2,        116},
@@ -433,9 +431,9 @@ static menuitem_t MainMenu[] =
 
 typedef enum
 {
-	secrets = 0,
-	singleplr,
+	singleplr = 0,
 	multiplr,
+	secrets,
 	options,
 	addons,
 	quitdoom
@@ -798,11 +796,6 @@ enum
 };
 
 // Statistics
-static menuitem_t SP_GameStatsMenu[] =
-{
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleGameStats, '\0'},     // dummy menuitem for the control func
-};
-
 static menuitem_t SP_LevelStatsMenu[] =
 {
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleLevelStats, '\0'},     // dummy menuitem for the control func
@@ -1640,18 +1633,6 @@ menu_t SP_LoadDef =
 	NULL
 };
 menu_t SP_LevelSelectDef = MAPICONMENUSTYLE(NULL, SP_LevelSelectMenu, &SP_LoadDef);
-
-menu_t SP_GameStatsDef =
-{
-	"M_STATS",
-	1,
-	&SP_MainDef,
-	SP_GameStatsMenu,
-	M_DrawGameStats,
-	280, 185,
-	0,
-	NULL
-};
 menu_t SP_LevelStatsDef =
 {
 	"M_STATS",
@@ -2496,6 +2477,12 @@ boolean M_Responder(event_t *ev)
 	// Handle menuitems which need a specific key handling
 	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)
 	{
+		// block text input if ctrl is held, to allow using ctrl+c ctrl+v and ctrl+x
+		if (ctrldown)
+		{
+			routine(ch);
+			return true;
+		}
 		// ignore ev_keydown events if the key maps to a character, since
 		// the ev_text event will follow immediately after in that case.
 		if (ev->type == ev_keydown && ch >= 32 && ch <= 127)
@@ -2766,6 +2753,8 @@ void M_StartControlPanel(void)
 	if (!Playing())
 	{
 		// Secret menu!
+		MainMenu[singleplr].alphaKey = (M_AnySecretUnlocked()) ? 76 : 84;
+		MainMenu[multiplr].alphaKey = (M_AnySecretUnlocked()) ? 84 : 92;
 		MainMenu[secrets].status = (M_AnySecretUnlocked()) ? (IT_STRING | IT_CALL) : (IT_DISABLED);
 
 		currentMenu = &MainDef;
@@ -4363,10 +4352,7 @@ static void M_DrawAddons(void)
 		y = FRACUNIT;
 	else
 	{
-		x = FixedDiv(((ssize_t)(numwadfiles) - (ssize_t)(mainwads+1))<<FRACBITS, ((ssize_t)MAX_WADFILES - (ssize_t)(mainwads+1))<<FRACBITS);
-		y = FixedDiv((((ssize_t)packetsizetally-(ssize_t)mainwadstally)<<FRACBITS), ((((ssize_t)MAXFILENEEDED*sizeof(UINT8)-(ssize_t)mainwadstally)-(5+22))<<FRACBITS)); // 5+22 = (a.ext + checksum length) is minimum addition to packet size tally
-		if (x > y)
-			y = x;
+		y = FixedDiv(((ssize_t)(numwadfiles) - (ssize_t)(mainwads+1))<<FRACBITS, ((ssize_t)MAX_WADFILES - (ssize_t)(mainwads+1))<<FRACBITS);
 		if (y > FRACUNIT) // happens because of how we're shrinkin' it a little
 			y = FRACUNIT;
 	}
@@ -5864,13 +5850,13 @@ static void M_Statistics(INT32 choice)
 		statsMapList[j++] = i;
 	}
 	statsMapList[j] = -1;
-	statsMax = j - 13 + numextraemblems;
+	statsMax = j - 11 + numextraemblems;
 	statsLocation = 0;
 
 	if (statsMax < 0)
 		statsMax = 0;
 
-	M_SetupNextMenu(&SP_GameStatsDef);
+	M_SetupNextMenu(&SP_LevelStatsDef);
 }
 
 static void M_DrawStatsMaps(int location)
@@ -5878,9 +5864,8 @@ static void M_DrawStatsMaps(int location)
 	INT32 y = 76, i = -1;
 	INT16 mnum;
 	extraemblem_t *exemblem;
+	boolean dotopname = true, dobottomarrow = (location < statsMax);
 
-	V_DrawString(20,  y-12, 0, "LEVEL NAME");
-	V_DrawString(248, y-12, 0, "EMBLEMS");
 
 	while (statsMapList[++i] != -1)
 	{
@@ -5888,6 +5873,13 @@ static void M_DrawStatsMaps(int location)
 		{
 			--location;
 			continue;
+		}
+		else if (dotopname)
+		{
+			V_DrawString(20,  y, V_GREENMAP, "LEVEL NAME");
+			V_DrawString(248, y, V_GREENMAP, "EMBLEMS");
+			y += 8;
+			dotopname = false;
 		}
 
 		mnum = statsMapList[i];
@@ -5901,21 +5893,36 @@ static void M_DrawStatsMaps(int location)
 		y += 8;
 
 		if (y >= BASEVIDHEIGHT-8)
-			return;
+			goto bottomarrow;
 	}
+	if (dotopname && !location)
+	{
+		V_DrawString(20,  y, V_GREENMAP, "LEVEL NAME");
+		V_DrawString(248, y, V_GREENMAP, "EMBLEMS");
+		y += 8;
+	}
+	else if (location)
+		--location;
 
 	// Extra Emblems
 	for (i = -2; i < numextraemblems; ++i)
 	{
+		if (i == -1)
+		{
+			V_DrawString(20, y, V_GREENMAP, "EXTRA EMBLEMS");
+			if (location)
+			{
+				y += 8;
+				location++;
+			}
+		}
 		if (location)
 		{
 			--location;
 			continue;
 		}
 
-		if (i == -1)
-			V_DrawString(20, y, V_GREENMAP, "EXTRA EMBLEMS");
-		else if (i >= 0)
+		if (i >= 0)
 		{
 			exemblem = &extraemblems[i];
 
@@ -5931,17 +5938,87 @@ static void M_DrawStatsMaps(int location)
 		y += 8;
 
 		if (y >= BASEVIDHEIGHT-8)
-			return;
+			goto bottomarrow;
 	}
+bottomarrow:
+	if (dobottomarrow)
+		V_DrawString(10, y-8 + (skullAnimCounter/5), V_YELLOWMAP, "\x1B");
 }
 
 static void M_DrawLevelStats(void)
 {
-	M_DrawMenuTitle();
-	V_DrawCenteredString(BASEVIDWIDTH/2, 24, V_YELLOWMAP, "PAGE 2 OF 2");
+	char beststr[40];
 
-	V_DrawString(72, 48, 0, va("x %d/%d", M_CountEmblems(), numemblems+numextraemblems));
-	V_DrawScaledPatch(40, 48-4, 0, W_CachePatchName("EMBLICON", PU_PATCH));
+	tic_t besttime = 0;
+	UINT32 bestscore = 0;
+	UINT32 bestrings = 0;
+
+	INT32 i;
+	INT32 mapsunfinished = 0;
+	boolean bestunfinished[3] = {false, false, false};
+
+	M_DrawMenuTitle();
+
+	V_DrawString(20, 24, V_YELLOWMAP, "Total Play Time:");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 32, 0, va("%i hours, %i minutes, %i seconds",
+	                         G_TicsToHours(totalplaytime),
+	                         G_TicsToMinutes(totalplaytime, false),
+	                         G_TicsToSeconds(totalplaytime)));
+
+	for (i = 0; i < NUMMAPS; i++)
+	{
+		boolean mapunfinished = false;
+
+		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_RECORDATTACK))
+			continue;
+
+		if (!mainrecords[i])
+		{
+			mapsunfinished++;
+			bestunfinished[0] = bestunfinished[1] = bestunfinished[2] = true;
+			continue;
+		}
+
+		if (mainrecords[i]->score > 0)
+			bestscore += mainrecords[i]->score;
+		else
+			mapunfinished = bestunfinished[0] = true;
+
+		if (mainrecords[i]->time > 0)
+			besttime += mainrecords[i]->time;
+		else
+			mapunfinished = bestunfinished[1] = true;
+
+		if (mainrecords[i]->rings > 0)
+			bestrings += mainrecords[i]->rings;
+		else
+			mapunfinished = bestunfinished[2] = true;
+
+		if (mapunfinished)
+			mapsunfinished++;
+	}
+
+	V_DrawString(20, 48, 0, "Combined records:");
+
+	if (mapsunfinished)
+		V_DrawString(20, 56, V_REDMAP, va("(%d unfinished)", mapsunfinished));
+	else
+		V_DrawString(20, 56, V_GREENMAP, "(complete)");
+
+	V_DrawString(36, 64, 0, va("x %d/%d", M_CountEmblems(), numemblems+numextraemblems));
+	V_DrawSmallScaledPatch(20, 64, 0, W_CachePatchName("EMBLICON", PU_STATIC));
+
+	sprintf(beststr, "%u", bestscore);
+	V_DrawString(BASEVIDWIDTH/2, 48, V_YELLOWMAP, "SCORE:");
+	V_DrawRightAlignedString(BASEVIDWIDTH-16, 48, (bestunfinished[0] ? V_REDMAP : 0), beststr);
+
+	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
+	V_DrawString(BASEVIDWIDTH/2, 56, V_YELLOWMAP, "TIME:");
+	V_DrawRightAlignedString(BASEVIDWIDTH-16, 56, (bestunfinished[1] ? V_REDMAP : 0), beststr);
+
+	sprintf(beststr, "%u", bestrings);
+	V_DrawString(BASEVIDWIDTH/2, 64, V_YELLOWMAP, "RINGS:");
+	V_DrawRightAlignedString(BASEVIDWIDTH-16, 64, (bestunfinished[2] ? V_REDMAP : 0), beststr);
 
 	M_DrawStatsMaps(statsLocation);
 }
@@ -5965,119 +6042,18 @@ static void M_HandleLevelStats(INT32 choice)
 				--statsLocation;
 			break;
 
-		case KEY_RIGHTARROW:
+		case KEY_PGDN:
 			S_StartSound(NULL, sfx_menu1);
-			statsLocation += (statsLocation+15 >= statsMax) ? statsMax-statsLocation : 15;
+			statsLocation += (statsLocation+13 >= statsMax) ? statsMax-statsLocation : 13;
 			break;
 
-		case KEY_LEFTARROW:
+		case KEY_PGUP:
 			S_StartSound(NULL, sfx_menu1);
-			statsLocation -= (statsLocation < 15) ? statsLocation : 15;
+			statsLocation -= (statsLocation < 13) ? statsLocation : 13;
 			break;
 
 		case KEY_ESCAPE:
 			exitmenu = true;
-			break;
-
-		case KEY_ENTER:
-			S_StartSound(NULL, sfx_menu1);
-			M_SetupNextMenu(&SP_GameStatsDef);
-			break;
-	}
-	if (exitmenu)
-	{
-		if (currentMenu->prevMenu)
-			M_SetupNextMenu(currentMenu->prevMenu);
-		else
-			M_ClearMenus(true);
-	}
-}
-
-// Handle GAME statistics.
-static void M_DrawGameStats(void)
-{
-	char beststr[40];
-
-	tic_t besttime = 0;
-	UINT32 bestscore = 0;
-	UINT32 bestrings = 0;
-
-	INT32 i;
-	INT32 mapsunfinished[3] = {0, 0, 0};
-
-	M_DrawMenuTitle();
-	V_DrawCenteredString(BASEVIDWIDTH/2, 24, V_YELLOWMAP, "PAGE 1 OF 2");
-
-	V_DrawString(32, 60, V_YELLOWMAP, "Total Play Time:");
-	V_DrawRightAlignedString(BASEVIDWIDTH-32, 70, 0, va("%i hours, %i minutes, %i seconds",
-	                         G_TicsToHours(totalplaytime),
-	                         G_TicsToMinutes(totalplaytime, false),
-	                         G_TicsToSeconds(totalplaytime)));
-
-	for (i = 0; i < NUMMAPS; i++)
-	{
-		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_RECORDATTACK))
-			continue;
-
-		if (!mainrecords[i])
-		{
-			mapsunfinished[0]++;
-			mapsunfinished[1]++;
-			mapsunfinished[2]++;
-			continue;
-		}
-
-		if (mainrecords[i]->score > 0)
-			bestscore += mainrecords[i]->score;
-		else
-			mapsunfinished[0]++;
-
-		if (mainrecords[i]->time > 0)
-			besttime += mainrecords[i]->time;
-		else
-			mapsunfinished[1]++;
-
-		if (mainrecords[i]->rings > 0)
-			bestrings += mainrecords[i]->rings;
-		else
-			mapsunfinished[2]++;
-
-	}
-
-	V_DrawCenteredString(BASEVIDWIDTH/2, 90, 0, "* COMBINED RECORDS *");
-
-	sprintf(beststr, "%u", bestscore);
-	V_DrawString(32, 100, V_YELLOWMAP, "SCORE:");
-	V_DrawRightAlignedString(BASEVIDWIDTH-32, 100, 0, beststr);
-	if (mapsunfinished[0])
-		V_DrawRightAlignedString(BASEVIDWIDTH-32, 108, V_REDMAP, va("(%d unfinished)", mapsunfinished[0]));
-
-	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
-	V_DrawString(32, 120, V_YELLOWMAP, "TIME:");
-	V_DrawRightAlignedString(BASEVIDWIDTH-32, 120, 0, beststr);
-	if (mapsunfinished[1])
-		V_DrawRightAlignedString(BASEVIDWIDTH-32, 128, V_REDMAP, va("(%d unfinished)", mapsunfinished[1]));
-
-	sprintf(beststr, "%u", bestrings);
-	V_DrawString(32, 140, V_YELLOWMAP, "RINGS:");
-	V_DrawRightAlignedString(BASEVIDWIDTH-32, 140, 0, beststr);
-	if (mapsunfinished[2])
-		V_DrawRightAlignedString(BASEVIDWIDTH-32, 148, V_REDMAP, va("(%d unfinished)", mapsunfinished[2]));
-}
-
-static void M_HandleGameStats(INT32 choice)
-{
-	boolean exitmenu = false; // exit to previous menu
-
-	switch (choice)
-	{
-		case KEY_ESCAPE:
-			exitmenu = true;
-			break;
-
-		case KEY_ENTER:
-			S_StartSound(NULL, sfx_menu1);
-			M_SetupNextMenu(&SP_LevelStatsDef);
 			break;
 	}
 	if (exitmenu)
@@ -6137,6 +6113,13 @@ void M_DrawTimeAttackMenu(void)
 
 			// Should see nothing but strings
 			V_DrawString(BASEVIDWIDTH - x - soffset - V_StringWidth(cv->string, 0), y, V_YELLOWMAP, cv->string);
+			if (i == itemOn)
+			{
+				V_DrawCharacter(BASEVIDWIDTH - x - soffset - 10 - V_StringWidth(cv->string, 0) - (skullAnimCounter/5), y,
+					'\x1C' | V_YELLOWMAP, false);
+				V_DrawCharacter(BASEVIDWIDTH - x - soffset + 2 + (skullAnimCounter/5), y,
+					'\x1D' | V_YELLOWMAP, false);
+			}
 		}
 	}
 
@@ -7335,7 +7318,6 @@ static void M_HandleConnectIP(INT32 choice)
 
 			if ( ctrldown ) {
 				switch (choice) {
-					case 'v':
 					case 'V': // ctrl+v, pasting
 					{
 						const char *paste = I_ClipboardPaste();
@@ -7349,14 +7331,12 @@ static void M_HandleConnectIP(INT32 choice)
 						break;
 					}
 					case KEY_INS:
-					case 'c':
-					case 'C': // ctrl+c, ctrl+insert, copying
+					case 'c': // ctrl+c, ctrl+insert, copying
 						I_ClipboardCopy(setupm_ip, l);
 						S_StartSound(NULL,sfx_menu1); // Tails
 						break;
 
-					case 'x':
-					case 'X': // ctrl+x, cutting
+					case 'x': // ctrl+x, cutting
 						I_ClipboardCopy(setupm_ip, l);
 						S_StartSound(NULL,sfx_menu1); // Tails
 						setupm_ip[0] = 0;
@@ -7623,18 +7603,19 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		break;
 
 	case KEY_ENTER:
-	if (itemOn == 3
-		&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
-		|| setupm_cvdefaultcolor->value != setupm_fakecolor
-		|| strcmp(setupm_name, setupm_cvdefaultname->string)))
-		{
-			S_StartSound(NULL,sfx_strpst);
-			// you know what? always putting these in the buffer won't hurt anything.
-			COM_BufAddText (va("%s \"%s\"\n",setupm_cvdefaultskin->name,skins[setupm_fakeskin].name));
-			COM_BufAddText (va("%s %d\n",setupm_cvdefaultcolor->name,setupm_fakecolor));
-			COM_BufAddText (va("%s %s\n",setupm_cvdefaultname->name,setupm_name));
-			break;
-		}
+		if (itemOn == 3
+			&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
+			|| setupm_cvdefaultcolor->value != setupm_fakecolor
+			|| strcmp(setupm_name, setupm_cvdefaultname->string)))
+			{
+				S_StartSound(NULL,sfx_strpst);
+				// you know what? always putting these in the buffer won't hurt anything.
+				COM_BufAddText (va("%s \"%s\"\n",setupm_cvdefaultskin->name,skins[setupm_fakeskin].name));
+				COM_BufAddText (va("%s %d\n",setupm_cvdefaultcolor->name,setupm_fakecolor));
+				COM_BufAddText (va("%s %s\n",setupm_cvdefaultname->name,setupm_name));
+			}
+		break;
+
 	case KEY_RIGHTARROW:
 		if (itemOn == 1)       //player skin
 		{

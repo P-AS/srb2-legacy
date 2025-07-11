@@ -426,13 +426,20 @@ void HWR_FreeMipmapCache(void)
 
 void HWR_FreeTextureCache(void)
 {
+	size_t i;
 	// free references to the textures
 	HWR_FreeMipmapCache();
 
 	// now the heap don't have any 'user' pointing to our
 	// texturecache info, we can free it
 	if (gr_textures)
+	{
+		for (i = 0; i < gr_numtextures; i++)
+		{
+			Z_Free(gr_textures[i].mipmap.grInfo.data);
+		}
 		free(gr_textures);
+	}
 	gr_textures = NULL;
 	gr_numtextures = 0;
 }

@@ -138,7 +138,7 @@ consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
-consvar_t cv_grpaletterendering = {"gr_paletterendering", "Off", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_grpaletterendering = {"gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_grpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_grpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_grcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -3710,8 +3710,9 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 	return false;
 }
 
-static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float this_scale)
+static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch)
 {
+	float this_scale = 1.0f;
 	FOutVector swallVerts[4];
 	FSurfaceInfo sSurf;
 	fixed_t floorheight, mobjfloor;
@@ -3733,6 +3734,11 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 	{
 	  R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
 	}
+
+	if (spr->mobj)
+		this_scale = FixedToFloat(interp.scale);
+	if (spr->mobj && spr->mobj->skin && ((skin_t *)spr->mobj->skin)->flags & SF_HIRES)
+		this_scale *= FixedToFloat(((skin_t *)spr->mobj->skin)->highresscale);
 
 	mobjfloor = HWR_OpaqueFloorAtPos(
 		interp.x, interp.y,
@@ -3891,7 +3897,9 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float t
 // This is expecting a pointer to an array containing 4 wallVerts for a sprite
 static void HWR_RotateSpritePolyToAim(gr_vissprite_t *spr, FOutVector *wallVerts)
 {
-	if (cv_grspritebillboarding.value && spr && spr->mobj && wallVerts)
+	if (cv_grspritebillboarding.value
+		&& spr && spr->mobj && !(spr->mobj->frame & FF_PAPERSPRITE)
+		&& wallVerts)
 	{
 
 		// uncapped/interpolation
@@ -4150,7 +4158,8 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 		wallVerts[1].y = endbot;
 
 		// The x and y only need to be adjusted in the case that it's not a papersprite
-		if (cv_grspritebillboarding.value && spr->mobj)
+		if (cv_grspritebillboarding.value
+			&& spr->mobj && !(spr->mobj->frame & FF_PAPERSPRITE))
 		{
 			// Get the x and z of the vertices so billboarding draws correctly
 			realheight = realbot - realtop;
@@ -4830,7 +4839,7 @@ static void HWR_DrawSprites(void)
 	{
 		gr_vissprite_t *spr = gr_vsprorder[i];
 		GLPatch_t *gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
-		HWR_GetMappedPatch(gpatch, spr->colormap);
+		HWR_GetPatch(gpatch);
 		if (spr->precip)
 			HWR_DrawPrecipitationSprite(spr);
 		else
@@ -4839,7 +4848,7 @@ static void HWR_DrawSprites(void)
 			&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
 			&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
 			&& (spr->mobj->z >= spr->mobj->floorz)) // Without this, your shadow shows on the floor, even after you die and fall through the ground.
-				HWR_DrawSpriteShadow(spr, gpatch, 1.0f);
+				HWR_DrawSpriteShadow(spr, gpatch);
 
 			if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			{
@@ -4916,7 +4925,6 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	float tr_x, tr_y;
 	float tz;
 	float x1, x2;
-	float z1, z2;
 	float rightsin, rightcos;
 	float this_scale;
 	float gz, gzt;
@@ -4928,6 +4936,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	UINT8 flip;
 	angle_t ang;
 	INT32 heightsec, phs;
+	const boolean papersprite = (thing->frame & FF_PAPERSPRITE);
+	float z1, z2;
 
 	// uncapped/interpolation
 	interpmobjstate_t interp = {0};
@@ -4956,7 +4966,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	// thing is behind view plane?
 
-	if (tz < ZCLIP_PLANE)
+	if (tz < ZCLIP_PLANE && !papersprite)
 	{
 		if (cv_grmd2.value) //Yellow: Only MD2's dont disappear
 		{
@@ -5009,28 +5019,60 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		I_Error("sprframes NULL for sprite %d\n", thing->sprite);
 #endif
 
-	if (sprframe->rotate)
-	{
-		// choose a different rotation based on player view
-		ang = R_PointToAngle (interp.x, interp.y);
-		rot = (ang-interp.angle+ANGLE_202h)>>29;
-		//Fab: lumpid is the index for spritewidth,spriteoffset... tables
-		lumpoff = sprframe->lumpid[rot];
-		flip = sprframe->flip & (1<<rot);
-	}
-	else
+	ang = R_PointToAngle (interp.x, interp.y) - interp.angle;
+
+	if (sprframe->rotate == SRF_SINGLE)
 	{
 		// use single rotation for all views
 		rot = 0;                        //Fab: for vis->patch below
 		lumpoff = sprframe->lumpid[0];     //Fab: see note above
 		flip = sprframe->flip; // Will only be 0x00 or 0xFF
+
+		if (papersprite && ang < ANGLE_180)
+		{
+			if (flip)
+				flip = 0;
+			else
+				flip = 255;
+		}
+	}
+	else
+	{
+		// choose a different rotation based on player view
+		if ((ang < ANGLE_180) && (sprframe->rotate & SRF_RIGHT)) // See from right
+			rot = 6; // F7 slot
+		else if ((ang >= ANGLE_180) && (sprframe->rotate & SRF_LEFT)) // See from left
+			rot = 2; // F3 slot
+		else // Normal behaviour
+			rot = (ang+ANGLE_202h)>>29;
+
+		//Fab: lumpid is the index for spritewidth,spriteoffset... tables
+		lumpoff = sprframe->lumpid[rot];
+		flip = sprframe->flip & (1<<rot);
+
+		if (papersprite && ang < ANGLE_180)
+		{
+			if (flip)
+				flip = 0;
+			else
+				flip = 1<<rot;
+		}
 	}
 
 	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
 		this_scale = this_scale * FIXED_TO_FLOAT(((skin_t *)thing->skin)->highresscale);
 
-	rightsin = FIXED_TO_FLOAT(FINESINE((viewangle + ANGLE_90)>>ANGLETOFINESHIFT));
-	rightcos = FIXED_TO_FLOAT(FINECOSINE((viewangle + ANGLE_90)>>ANGLETOFINESHIFT));
+	if (papersprite)
+	{
+		rightsin = FIXED_TO_FLOAT(FINESINE((interp.angle)>>ANGLETOFINESHIFT));
+		rightcos = FIXED_TO_FLOAT(FINECOSINE((interp.angle)>>ANGLETOFINESHIFT));
+	}
+	else
+	{
+		rightsin = FIXED_TO_FLOAT(FINESINE((viewangle + ANGLE_90)>>ANGLETOFINESHIFT));
+		rightcos = FIXED_TO_FLOAT(FINECOSINE((viewangle + ANGLE_90)>>ANGLETOFINESHIFT));
+	}
+
 	if (flip)
 	{
 		x1 = (FIXED_TO_FLOAT(spritecachedinfo[lumpoff].width - spritecachedinfo[lumpoff].offset) * this_scale);
@@ -5093,6 +5135,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	vis->patchlumpnum = sprframe->lumppat[rot];
 	vis->flip = flip;
 	vis->mobj = thing;
+	vis->z1 = z1;
+	vis->z2 = z2;
 	vis->scale = this_scale;
 
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
@@ -6000,7 +6044,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 // Can't have palette rendering if shaders are disabled.
 boolean HWR_ShouldUsePaletteRendering(void)
 {
-	return (cv_grpaletterendering.value && HWR_UseShader());
+	return (pLocalPalette != NULL && cv_grpaletterendering.value && HWR_UseShader());
 }
 
 // enable or disable palette rendering state depending on settings and availability

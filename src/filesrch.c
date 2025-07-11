@@ -13,6 +13,7 @@
 ///	        FS_FOUND
 
 #include <stdio.h>
+#include <errno.h>
 #ifdef __GNUC__
 #include <dirent.h>
 #endif
@@ -32,12 +33,12 @@
 
 #if (defined (_WIN32) && !defined (_WIN32_WCE)) && defined (_MSC_VER) && !defined (_XBOX)
 
-#include <errno.h>
 #include <io.h>
 #include <tchar.h>
 
 #define SUFFIX	"*"
 #define	SLASH	"\\"
+#define	S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 #define	S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
 
 #ifndef INVALID_FILE_ATTRIBUTES
@@ -306,6 +307,39 @@ closedir (DIR * dirp)
 }
 #endif
 
+// fopen but it REALLY only works on regular files
+// Turns out, on linux, anyway, you can fopen directories
+// in read mode. (It's supposed to fail in write mode
+// though!!)
+FILE *fopenfile(const char *path, const char *mode)
+{
+	FILE *h = fopen(path, mode);
+
+	if (h != NULL)
+	{
+		struct stat st;
+		int eno;
+
+		if (fstat(fileno(h), &st) == -1)
+		{
+			eno = errno;
+		}
+		else if (!S_ISREG(st.st_mode))
+		{
+			eno = EACCES; // set some kinda error
+		}
+		else
+		{
+			return h; // ok
+		}
+
+		fclose(h);
+		errno = eno;
+	}
+
+	return NULL;
+}
+
 static CV_PossibleValue_t addons_cons_t[] = {{0, "Default"},
 #if 1
 												{1, "HOME"}, {2, "SRB2"},
@@ -336,9 +370,6 @@ size_t sizedirmenu, sizecoredirmenu; // ditto
 size_t dir_on[menudepth];
 UINT8 refreshdirmenu = 0;
 char *refreshdirname = NULL;
-
-size_t packetsizetally = 0;
-size_t mainwadstally = 0;
 
 #if defined (_XBOX) && defined (_MSC_VER)
 filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *wantedmd5sum,

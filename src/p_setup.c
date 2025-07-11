@@ -2663,7 +2663,7 @@ void P_InitCamera(void)
 	if (!cv_analog2.changed)
 		CV_SetValue(&cv_analog2, 0);
 
-	displayplayer = consoleplayer; // Start with your OWN view, please!	
+	displayplayer = consoleplayer; // Start with your OWN view, please!
 }
 
 /** Loads a level from a lump or external wad.
@@ -3066,7 +3066,7 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	netgameskip:
 
 	if (!reloadinggamestate)
-	{	
+	{
 		P_InitCamera();
 		localaiming = localaiming2 = 0;
 	}
@@ -3164,7 +3164,7 @@ void HWR_SetupLevel(void)
 	// Jimita: Don't call this more than once!
 	if (!extrasubsectors)
 		HWR_CreatePlanePolygons((INT32)numnodes - 1);
-	
+
 	// Build the sky dome
 	HWR_ClearSkyDome();
 	HWR_BuildSkyDome();
@@ -3326,9 +3326,9 @@ boolean P_AddWadFile(const char *wadfilename)
 		ST_Start();
 
 #ifdef HWRENDER
-	HWR_FreeMipmapCache();
+	if (rendermode == render_opengl)
+		HWR_FreeMipmapCache();
 #endif
-
 
 	// Prevent savefile cheating
 	if (cursaveslot >= 0)
