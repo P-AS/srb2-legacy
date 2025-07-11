@@ -69,32 +69,31 @@ void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *col
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
 
-extern CV_PossibleValue_t granisotropicmode_cons_t[];
+extern CV_PossibleValue_t glanisotropicmode_cons_t[];
 
 boolean HWR_ShouldUsePaletteRendering(void);
-extern consvar_t cv_grshaders, cv_grallowshaders;
-extern consvar_t cv_grmd2;
-extern consvar_t cv_grmodelinterpolation;
-extern consvar_t cv_grfiltermode;
-extern consvar_t cv_granisotropicmode;
-extern consvar_t cv_grcorrecttricks;
-extern consvar_t cv_grsolvetjoin;
-extern consvar_t cv_grshearing;
-extern consvar_t cv_grspritebillboarding;
-extern consvar_t cv_grmodellighting;
+extern consvar_t cv_glshaders, cv_glallowshaders;
+extern consvar_t cv_glmd2;
+extern consvar_t cv_glmodelinterpolation;
+extern consvar_t cv_glfiltermode;
+extern consvar_t cv_glanisotropicmode;
+extern consvar_t cv_glsolvetjoin;
+extern consvar_t cv_glshearing;
+extern consvar_t cv_glspritebillboarding;
+extern consvar_t cv_glmodellighting;
 extern consvar_t cv_glloadingscreen;
-extern consvar_t cv_grfakecontrast;
-extern consvar_t cv_grslopecontrast;
-extern consvar_t cv_grbatching;
-extern consvar_t cv_grwireframe;
-extern consvar_t cv_grpaletterendering;
-extern consvar_t cv_grpalettedepth;
-extern consvar_t cv_grcurveshader; 
-extern consvar_t cv_grlightdither;
+extern consvar_t cv_glfakecontrast;
+extern consvar_t cv_glslopecontrast;
+extern consvar_t cv_glbatching;
+extern consvar_t cv_glwireframe;
+extern consvar_t cv_glpaletterendering;
+extern consvar_t cv_glpalettedepth;
+extern consvar_t cv_glcurveshader; 
+extern consvar_t cv_gllightdither;
 
-extern float gr_viewwidth, gr_viewheight, gr_baseviewwindowy;
+extern float gl_viewwidth, gl_viewheight, gl_baseviewwindowy;
 
-extern float gr_viewwindowx, gr_basewindowcentery;
+extern float gl_viewwindowx, gl_basewindowcentery;
 
 // BP: big hack for a test in lighting ref : 1249753487AB
 extern fixed_t *hwbbox;
@@ -119,6 +118,6 @@ extern ps_metric_t ps_hw_batchdrawtime;
 
 //bye bye floorinfo
 
-extern boolean gr_shadersavailable;
+extern boolean gl_shadersavailable;
 
 #endif

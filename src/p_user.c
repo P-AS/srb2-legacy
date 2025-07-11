@@ -8032,7 +8032,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if ((camorbit) && player->playerstate != PST_DEAD && !(mo->flags2 & MF2_TWOD) &&  !twodlevel)
 	{
 #ifdef HWRENDER
-		if (rendermode == render_opengl && !cv_grshearing.value)
+		if (rendermode == render_opengl && !cv_glshearing.value)
 			distxy = FixedMul(dist, FINECOSINE((focusaiming>>ANGLETOFINESHIFT) & FINEMASK));
 		else
 #endif

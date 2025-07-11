@@ -22,7 +22,7 @@
 #include "p_polyobj.h"
 #include "z_zone.h"
 #include "d_net.h" //MAXSPLITSCREENPLAYERS
-#include "hardware/hw_main.h" //cv_grshearing
+#include "hardware/hw_main.h" //cv_glshearing
 
 
 static CV_PossibleValue_t fpscap_cons_t[] = {
@@ -151,8 +151,8 @@ static void R_SetupFreelook(player_t *player, boolean skybox)
 	if (rendermode == render_soft
 #ifdef HWRENDER
 		|| (rendermode == render_opengl
-			&& (cv_grshearing.value == 1
-			|| (cv_grshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
+			&& (cv_glshearing.value == 1
+			|| (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
 #endif
 		)
 	{
