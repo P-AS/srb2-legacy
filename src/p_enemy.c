@@ -220,7 +220,7 @@ static boolean P_WaterInSector(mobj_t *mobj, fixed_t x, fixed_t y)
 {
 	sector_t *sector;
 
-	sector = R_PointInSubsector(x, y)->sector;
+	sector = R_OldPointInSubsector(x, y)->sector;
 
 	if (sector->ffloors)
 	{
@@ -3928,7 +3928,7 @@ void A_JetbThink(void *thing)
 		return;
 	}
 
-	nextsector = R_PointInSubsector(actor->x + actor->momx, actor->y + actor->momy)->sector;
+	nextsector = R_OldPointInSubsector(actor->x + actor->momx, actor->y + actor->momy)->sector;
 
 	// Move downwards or upwards to go through a passageway.
 	if (nextsector->ceilingheight < actor->z + actor->height)
@@ -4177,7 +4177,7 @@ void A_JetgThink(void *thing)
 		return;
 	}
 
-	nextsector = R_PointInSubsector(actor->x + actor->momx, actor->y + actor->momy)->sector;
+	nextsector = R_OldPointInSubsector(actor->x + actor->momx, actor->y + actor->momy)->sector;
 
 	// Move downwards or upwards to go through a passageway.
 	if (nextsector->ceilingheight < actor->z + actor->height)
@@ -4961,7 +4961,7 @@ void A_CrawlaCommanderThink(void *thing)
 		}
 	}
 
-	nextsector = R_PointInSubsector(actor->x + actor->momx, actor->y + actor->momy)->sector;
+	nextsector = R_OldPointInSubsector(actor->x + actor->momx, actor->y + actor->momy)->sector;
 
 	// Move downwards or upwards to go through a passageway.
 	if (nextsector->floorheight > actor->z && nextsector->floorheight - actor->z < FixedMul(128*FRACUNIT, actor->scale))
