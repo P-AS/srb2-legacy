@@ -2149,7 +2149,7 @@ void I_SetTextInputMode(boolean active)
 
 boolean I_GetTextInputMode(void)
 {
-	boolean inputtextactive = (boolean)SDL_IsTextInputActive();
+	boolean inputtextactive = (SDL_IsTextInputActive()) ? true : false;
 
 	return inputtextactive;
 }

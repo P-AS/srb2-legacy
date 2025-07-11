@@ -2995,8 +2995,11 @@ static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, boolean isceiling, 
 	}
 
 	// reference point for flat texture coord for each vertex around the polygon
-	flatxref = (float)(((fixed_t)FIXED_TO_FLOAT(polysector->origVerts[0].x) & (~flatflag)) / fflatsize);
-	flatyref = (float)(((fixed_t)FIXED_TO_FLOAT(polysector->origVerts[0].y) & (~flatflag)) / fflatsize);
+	flatxref = FixedToFloat(polysector->origVerts[0].x);
+	flatyref = FixedToFloat(polysector->origVerts[0].y);
+
+	flatxref = (float)(((fixed_t)flatxref & (~flatflag)) / fflatsize);
+	flatyref = (float)(((fixed_t)flatyref & (~flatflag)) / fflatsize);
 
 	// transform
 	v3d = planeVerts;
@@ -5752,7 +5755,7 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 //
 void HWR_SetShaderState(void)
 {
-	HWD.pfnSetSpecialState(HWD_SET_SHADERS, (INT32)HWR_UseShader());
+	HWD.pfnSetSpecialState(HWD_SET_SHADERS, (HWR_UseShader()) ? 1 : 0);
 }
 
 static void HWR_ClearClipper(void)

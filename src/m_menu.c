@@ -7263,7 +7263,7 @@ static void M_ConnectIP(INT32 choice)
 
 static boolean M_CheckIfValidIPv4(const char *str)
 {
-    int segs = 0;   // Segment count.
+    int segments = 0;   // Segment count.
     int chcnt = 0;  // Character count within segment.
     int accum = 0;  // Accumulator for segment.
     // Catch NULL pointer.
@@ -7277,7 +7277,7 @@ static boolean M_CheckIfValidIPv4(const char *str)
             if (chcnt == 0)
                 return false;
             // Limit number of segments.
-            if (++segs == 4)
+            if (++segments == 4)
                 return false;
             // Reset segment values and restart loop.
             chcnt = accum = 0;
@@ -7295,7 +7295,7 @@ static boolean M_CheckIfValidIPv4(const char *str)
         str++;
     }
     // Check enough segments and enough characters in last segment.
-    if (segs != 3)
+    if (segments != 3)
         return false;
     if (chcnt == 0)
         return false;
