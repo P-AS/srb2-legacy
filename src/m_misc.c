@@ -68,7 +68,7 @@ typedef off_t off64_t;
 #elif defined(_WIN32) && defined(__MINGW64__)
 #define PRIdS PRIuPTR
 #else
-#define PRIdS "%zu"
+#define PRIdS "zu"
 #endif
 
 #ifdef HAVE_PNG
