@@ -905,7 +905,7 @@ void P_SetUnderlayPosition(mobj_t *thing)
 
 void P_SetPrecipitationThingPosition(precipmobj_t *thing)
 {
-	subsector_t *ss = thing->subsector = R_PointInSubsector(thing->x, thing->y);
+	subsector_t *ss = thing->subsector = R_PointInSubsectorFast(thing->x, thing->y);
 
 	precipmobj_t **link = &ss->sector->preciplist;
 	precipmobj_t *snext = *link;

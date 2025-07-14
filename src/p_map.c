@@ -2487,7 +2487,7 @@ static boolean P_IsClimbingValid(player_t *player, angle_t angle)
 	platx = P_ReturnThrustX(player->mo, angle, player->mo->radius + FixedMul(8*FRACUNIT, player->mo->scale));
 	platy = P_ReturnThrustY(player->mo, angle, player->mo->radius + FixedMul(8*FRACUNIT, player->mo->scale));
 
-	glidesector = R_PointInSubsectorFast(player->mo->x + platx, player->mo->y + platy);
+	glidesector = R_PointInSubsector(player->mo->x + platx, player->mo->y + platy);
 
 
 	floorz = glidesector->sector->f_slope ? P_GetZAt(glidesector->sector->f_slope, player->mo->x, player->mo->y) : glidesector->sector->floorheight;
@@ -4107,7 +4107,7 @@ void P_MapEnd(void)
 // Tails 05-26-2003
 fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 {
-	sector_t *sec = R_PointInSubsectorFast(x, y)->sector;
+	sector_t *sec = R_PointInSubsector(x, y)->sector;
 	fixed_t floorz = sec->floorheight;
 
 
