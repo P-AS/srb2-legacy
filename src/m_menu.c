@@ -5299,10 +5299,8 @@ static void M_DrawLoadGameData(void)
 		V_DrawScaledPatch(SP_LoadDef.x,144+8,0,W_CachePatchName(skins[savegameinfo[saveSlotSelected].skinnum].face, PU_PATCH));
 	else
 	{
-		UINT8 *colormap = R_GetTranslationColormap(savegameinfo[saveSlotSelected].skinnum, savegameinfo[saveSlotSelected].skincolor, 0);
+		UINT8 *colormap = R_GetTranslationColormap(savegameinfo[saveSlotSelected].skinnum, savegameinfo[saveSlotSelected].skincolor, GTC_CACHE);
 		V_DrawMappedPatch(SP_LoadDef.x,144+8,0,W_CachePatchName(skins[savegameinfo[saveSlotSelected].skinnum].face, PU_PATCH), colormap);
-
-		Z_Free(colormap);
 	}
 
 	V_DrawString(ecks + 12, 152, 0, savegameinfo[saveSlotSelected].playername);
