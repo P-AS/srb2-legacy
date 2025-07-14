@@ -26,8 +26,8 @@
 // GIFs are always little-endian
 #include "byteptr.h"
 
-consvar_t cv_gif_optimize = {"gif_optimize", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_gif_downscale =  {"gif_downscale", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_gif_optimize = CVAR_INIT ("gif_optimize", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_gif_downscale =  CVAR_INIT("gif_downscale", "On", CV_SAVE, CV_OnOff, NULL);
 
 #ifdef HAVE_ANIGIF
 static boolean gif_optimize = false; // So nobody can do something dumb

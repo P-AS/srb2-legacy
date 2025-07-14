@@ -20,11 +20,12 @@
 #include "m_fixed.h"
 #include "i_system.h"
 #include "d_netcmd.h"
+#include "command.h"
 
 timestate_t g_time;
 
 static CV_PossibleValue_t timescale_cons_t[] = {{FRACUNIT/20, "MIN"}, {20*FRACUNIT, "MAX"}, {0, NULL}};
-consvar_t cv_timescale = {"timescale", "1.0", CV_NETVAR|CV_CHEAT|CV_FLOAT, timescale_cons_t, NULL, FRACUNIT, NULL, NULL, 0, 0, NULL};
+consvar_t cv_timescale = CVAR_INIT ("timescale", "1.0", CV_NETVAR|CV_CHEAT|CV_FLOAT, timescale_cons_t, NULL);
 
 static precise_t enterprecise, oldenterprecise;
 static fixed_t entertic, oldentertics;
