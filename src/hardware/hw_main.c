@@ -4911,7 +4911,7 @@ static void HWR_DrawSprites(void)
 	for (i = 0; i < gr_visspritecount; i++)
 	{
 		gr_vissprite_t *spr = gr_vsprorder[i];
-		GLPatch_t *gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
+		GLPatch_t *gpatch = W_CachePatchNum(spr->patchlumpnum, PU_PATCH);
 		HWR_GetPatch(gpatch);
 		if (spr->precip)
 			HWR_DrawPrecipitationSprite(spr);
