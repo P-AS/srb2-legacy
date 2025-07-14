@@ -38,7 +38,7 @@ static CV_PossibleValue_t fpscap_cons_t[] = {
 	{0, NULL}
 };
 
-consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate", NULL, CV_SAVE, fpscap_cons_t, NULL);
+consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate",  "Limit framerate to value specified", CV_SAVE, fpscap_cons_t, NULL);
 
 ps_metric_t ps_interp_frac = {0};
 ps_metric_t ps_interp_lag = {0};

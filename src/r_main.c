@@ -187,13 +187,13 @@ consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", NULL, CV_SAVE, 
 consvar_t cv_uncappedhud = CVAR_INIT ("uncappedhud", "Yes", NULL, CV_SAVE, CV_YesNo, NULL);
 
 consvar_t cv_translucency = CVAR_INIT ("translucency", "On", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_drawdist = CVAR_INIT ("drawdist", "Infinite", NULL, CV_SAVE, drawdist_cons_t, NULL);
-consvar_t cv_drawdist_nights = CVAR_INIT ("drawdist_nights", "2048", NULL, CV_SAVE, drawdist_cons_t, NULL);
-consvar_t cv_drawdist_precip = CVAR_INIT ("drawdist_precip", "1024", NULL, CV_SAVE, drawdist_cons_t, NULL);
-consvar_t cv_precipdensity = CVAR_INIT ("precipdensity", "Moderate", NULL, CV_SAVE, precipdensity_cons_t, NULL);
+consvar_t cv_drawdist = CVAR_INIT ("drawdist", "Infinite", "Draw distance for map objects", CV_SAVE, drawdist_cons_t, NULL);
+consvar_t cv_drawdist_nights = CVAR_INIT ("drawdist_nights", "2048", "Draw distance for NiGHTS hoops", CV_SAVE, drawdist_cons_t, NULL);
+consvar_t cv_drawdist_precip = CVAR_INIT ("drawdist_precip", "1024", "Draw distance for rain and snow", CV_SAVE, drawdist_cons_t, NULL);
+consvar_t cv_precipdensity = CVAR_INIT ("precipdensity", "Moderate", "Density of rain and snow, note that this can have a significant impact on performance", CV_SAVE, precipdensity_cons_t, NULL);
 
 // Okay, whoever said homremoval causes a performance hit should be shot.
-consvar_t cv_homremoval = CVAR_INIT ("homremoval", "No", NULL, CV_SAVE, homremoval_cons_t, NULL);
+consvar_t cv_homremoval = CVAR_INIT ("homremoval", "No", "Fixes the Hall of Mirrors bug in the Software renderer", CV_SAVE, homremoval_cons_t, NULL);
 
 consvar_t cv_fov = CVAR_INIT ("fov", "90", NULL, CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnChange);
 consvar_t cv_fovchange = CVAR_INIT ("fovchange", "Off", NULL, CV_SAVE, CV_OnOff, NULL);

@@ -102,7 +102,7 @@ boolean highcolor = false;
 static void Impl_SetVsync(void);
 
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "Off", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, Impl_SetVsync);
+consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "Off", "Synchronize framerate with refresh rate, eliminating screen tearing", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, Impl_SetVsync);
 static consvar_t cv_stretch = CVAR_INIT ("stretch", "Off", NULL, CV_SAVE|CV_NOSHOWHELP, CV_OnOff, NULL);
 static consvar_t cv_alwaysgrabmouse = CVAR_INIT ("alwaysgrabmouse", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 

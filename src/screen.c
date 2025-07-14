@@ -65,11 +65,11 @@ consvar_t cv_renderview = CVAR_INIT ("renderview", "On", NULL, 0, CV_OnOff, NULL
 
 static void SCR_ActuallyChangeRenderer(void);
 static CV_PossibleValue_t cv_renderer_t[] = {{1, "Software"}, {2, "OpenGL"}, {0, NULL}};
-consvar_t cv_renderer = CVAR_INIT ("renderer", "Software", NULL, CV_SAVE|CV_CALL, cv_renderer_t, SCR_ChangeRenderer);
+consvar_t cv_renderer = CVAR_INIT ("renderer", "Software", "The current renderer", CV_SAVE|CV_CALL, cv_renderer_t, SCR_ChangeRenderer);
 
 static void SCR_ChangeFullscreen(void);
 
-consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", NULL, CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen);
+consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", "If on, the game will take up the full screen rather than just a desktop window", CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen);
 
 // =========================================================================
 //                           SCREEN VARIABLES

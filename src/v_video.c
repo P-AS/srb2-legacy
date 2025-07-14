@@ -41,18 +41,18 @@ UINT8 *screens[5];
 
 static CV_PossibleValue_t ticrate_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
 static CV_PossibleValue_t tpscounter_cons_t[] = { {0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL} };
-consvar_t cv_ticrate = { "showfps", "No", NULL, CV_SAVE, ticrate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
-consvar_t cv_tpscounter = { "showtps", "No", NULL, CV_SAVE, tpscounter_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_ticrate = { "showfps", "No", "Displays the current framerate, in the style specified", CV_SAVE, ticrate_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_tpscounter = { "showtps", "No", "Displays the current ticrate, in the style specified", CV_SAVE, tpscounter_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 static CV_PossibleValue_t fpssize_cons_t[] = { {0, "Normal"}, {1, "Thin"}, {2, "Small"}, {0, NULL} };
-consvar_t cv_fpssize = { "fpssize", "Normal", NULL, CV_SAVE, fpssize_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_fpssize = { "fpssize", "Normal", "Size of the FPS and TPS counter", CV_SAVE, fpssize_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 
 static void CV_palette_OnChange(void);
 
 static CV_PossibleValue_t gamma_cons_t[] = {{-15, "MIN"}, {5, "MAX"}, {0, NULL}};
-consvar_t cv_globalgamma = CVAR_INIT ("gamma", "0", NULL, CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange);
+consvar_t cv_globalgamma = CVAR_INIT ("gamma", "0", "Sets the game brightness", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange);
 
 static CV_PossibleValue_t saturation_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
-consvar_t cv_globalsaturation = CVAR_INIT ("saturation", "10", NULL, CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
+consvar_t cv_globalsaturation = CVAR_INIT ("saturation", "10", "Sets the game saturation, or how bright the colors are", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
 
 #define huecoloursteps 4
 

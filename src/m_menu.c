@@ -1145,7 +1145,7 @@ enum
 
 static menuitem_t OP_VideoOptionsMenu[] =
 {
-	{IT_STRING | IT_CALL,  NULL,   "Video Modes...", NULL,      M_VideoModeMenu,          5},
+	{IT_STRING | IT_CALL,  NULL,   "Video Modes...", "Change game resolution",      M_VideoModeMenu,          5},
 
 #ifdef HWRENDER
 	{IT_STRING | IT_CVAR, NULL, "Renderer",         NULL,            &cv_renderer,        10},
@@ -1160,7 +1160,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", NULL,  &cv_globalgamma,       25},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,  &cv_globalsaturation,  30},
-	{IT_SUBMENU|IT_STRING, NULL, "Advanced Color Settings...", NULL,  &OP_ColorOptionsDef, 35},
+	{IT_SUBMENU|IT_STRING, NULL, "Advanced Color Settings...", "Adjust color mapping and per-color brightness",  &OP_ColorOptionsDef, 35},
 
 	{IT_STRING | IT_CVAR,  NULL, "Draw Distance",   NULL,       &cv_drawdist,             45},
 	{IT_STRING | IT_CVAR,  NULL, "NiGHTS Hoop Draw Dist", NULL,  &cv_drawdist_nights,      50},
@@ -1173,7 +1173,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",    NULL,      &cv_vidwait,              85},
 	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",         NULL,       &cv_fpscap,               90},
 #ifdef HWRENDER
-	{IT_CALL | IT_STRING, NULL, "OpenGL Options...",  NULL,        M_OpenGLOptionsMenu, 100},
+	{IT_CALL | IT_STRING, NULL, "OpenGL Options...",  "Change OpenGL-specific options",        M_OpenGLOptionsMenu, 100},
 #endif
 };
 
