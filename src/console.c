@@ -114,22 +114,22 @@ static void CONS_backcolor_Change(void);
 static char con_buffer[CON_BUFFERSIZE];
 
 // how many seconds the hud messages lasts on the screen
-static consvar_t cons_msgtimeout = CVAR_INIT ("con_hudtime", "5", CV_SAVE, CV_Unsigned, NULL);
+static consvar_t cons_msgtimeout = CVAR_INIT ("con_hudtime", "5", NULL,  CV_SAVE, CV_Unsigned, NULL);
 
 // number of lines displayed on the HUD
-static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", CV_CALL|CV_SAVE, CV_Unsigned, CONS_hudlines_Change);
+static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", NULL,  CV_CALL|CV_SAVE, CV_Unsigned, CONS_hudlines_Change);
 
 // number of lines console move per frame
 // (con_speed needs a limit, apparently)
 static CV_PossibleValue_t speed_cons_t[] = {{0, "MIN"}, {64, "MAX"}, {0, NULL}};
-static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", CV_SAVE, speed_cons_t, NULL);
+static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", NULL,  CV_SAVE, speed_cons_t, NULL);
 
 // percentage of screen height to use for console
-static consvar_t cons_height = CVAR_INIT ("con_height", "50", CV_SAVE, CV_Unsigned, NULL);
+static consvar_t cons_height = CVAR_INIT ("con_height", "50", NULL,  CV_SAVE, CV_Unsigned, NULL);
 
 static CV_PossibleValue_t backpic_cons_t[] = {{0, "translucent"}, {1, "picture"}, {0, NULL}};
 // whether to use console background picture, or translucent mode
-static consvar_t cons_backpic = CVAR_INIT ("con_backpic", "translucent", CV_SAVE, backpic_cons_t, NULL);
+static consvar_t cons_backpic = CVAR_INIT ("con_backpic", "translucent", NULL,  CV_SAVE, backpic_cons_t, NULL);
 
 static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{2, "Sepia"},
 												{3, "Brown"},		{4, "Pink"},		{5, "Raspberry"},
@@ -140,7 +140,7 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{18,"Lavender"}, {19,"Gray"},
 												{0, NULL}};
 
-consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Green", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change);
+consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Green", NULL,  CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change);
 
 static void CON_Print(char *msg);
 
@@ -411,8 +411,8 @@ void CON_Init(void)
 
 	// register our commands
 	//
-	COM_AddCommand("cls", CONS_Clear_f);
-	COM_AddCommand("english", CONS_English_f);
+	COM_AddCommand("cls", NULL,  CONS_Clear_f);
+	COM_AddCommand("english", NULL,  CONS_English_f);
 	// set console full screen for game startup MAKE SURE VID_Init() done !!!
 	con_destlines = vid.height;
 	con_curlines = vid.height;
@@ -429,7 +429,7 @@ void CON_Init(void)
 		CV_RegisterVar(&cons_height);
 		CV_RegisterVar(&cons_backpic);
 		CV_RegisterVar(&cons_backcolor);
-		COM_AddCommand("bind", CONS_Bind_f);
+		COM_AddCommand("bind", NULL,  CONS_Bind_f);
 	}
 	else
 	{

@@ -58,24 +58,18 @@ UINT8 setrenderneeded = 0;
 static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
 
 //added : 03-02-98: default screen mode, as loaded/saved in config
-#ifdef WII
-consvar_t cv_scr_width = CVAR_INIT ("scr_width", "640", CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_scr_height = CVAR_INIT ("scr_height", "480", CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
-#else
-consvar_t cv_scr_width = CVAR_INIT ("scr_width", "1280", CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_scr_height = CVAR_INIT ("scr_height", "800", CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
-#endif
-consvar_t cv_renderview = CVAR_INIT ("renderview", "On", 0, CV_OnOff, NULL);
+consvar_t cv_scr_width = CVAR_INIT ("scr_width", "1280", NULL, CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_height = CVAR_INIT ("scr_height", "800", NULL,  CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", NULL, CV_SAVE, scr_depth_cons_t, NULL);
+consvar_t cv_renderview = CVAR_INIT ("renderview", "On", NULL, 0, CV_OnOff, NULL);
 
 static void SCR_ActuallyChangeRenderer(void);
 static CV_PossibleValue_t cv_renderer_t[] = {{1, "Software"}, {2, "OpenGL"}, {0, NULL}};
-consvar_t cv_renderer = CVAR_INIT ("renderer", "Software", CV_SAVE|CV_CALL, cv_renderer_t, SCR_ChangeRenderer);
+consvar_t cv_renderer = CVAR_INIT ("renderer", "Software", NULL, CV_SAVE|CV_CALL, cv_renderer_t, SCR_ChangeRenderer);
 
 static void SCR_ChangeFullscreen(void);
 
-consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen);
+consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", NULL, CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen);
 
 // =========================================================================
 //                           SCREEN VARIABLES

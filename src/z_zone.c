@@ -114,10 +114,10 @@ void Z_Init(void)
 	CONS_Printf("System memory: %sMB - Free: %sMB\n", sizeu1(total>>20), sizeu2(memfree));
 
 	// Note: This allocates memory. Watch out.
-	COM_AddCommand("memfree", Command_Memfree_f);
+	COM_AddCommand("memfree", NULL, Command_Memfree_f);
 
 #ifdef ZDEBUG
-	COM_AddCommand("memdump", Command_Memdump_f);
+	COM_AddCommand("memdump", NULL, Command_Memdump_f);
 #endif
 }
 
