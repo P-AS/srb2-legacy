@@ -40,16 +40,6 @@
 #include "hardware/hw_main.h"
 #endif
 
-//profile stuff ---------------------------------------------------------
-//#define TIMING
-#ifdef TIMING
-#include "p5prof.h"
-INT64 mycount;
-INT64 mytotal = 0;
-//unsigned long  nombre = 100000;
-#endif
-//profile stuff ---------------------------------------------------------
-
 // Fineangles in the SCREENWIDTH wide window.
 #define FIELDOFVIEW 2048
 
@@ -1690,30 +1680,14 @@ void R_RenderPlayerView(player_t *player)
 	NetUpdate();
 
 	// The head node is the last node output.
-
-//profile stuff ---------------------------------------------------------
-#ifdef TIMING
-	mytotal = 0;
-	ProfZeroTimer();
-#endif
 	ps_numbspcalls.value.i = ps_numpolyobjects.value.i = ps_numdrawnodes.value.i = 0;
 	PS_START_TIMING(ps_bsptime);
 	R_RenderBSPNode((INT32)numnodes - 1);
 	PS_STOP_TIMING(ps_bsptime);
-	ps_numsprites.value.i = visspritecount;
 	PS_START_TIMING(ps_sw_spritecliptime);
 	R_ClipSprites();
 	PS_STOP_TIMING(ps_sw_spritecliptime);
-#ifdef TIMING
-	RDMSR(0x10, &mycount);
-	mytotal += mycount; // 64bit add
-
-	CONS_Debug(DBG_RENDER, "RenderBSPNode: 0x%d %d\n", *((INT32 *)&mytotal + 1), (INT32)mytotal);
-#endif
-//profile stuff ---------------------------------------------------------
-
-
-
+	ps_numsprites.value.i = numvisiblesprites;
 
 	// PORTAL RENDERING
 	PS_START_TIMING(ps_sw_portaltime);
@@ -1823,6 +1797,7 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_skydome);
 	CV_RegisterVar(&cv_skybox);
 	CV_RegisterVar(&cv_ffloorclip);
+	CV_RegisterVar(&cv_spriteclip);
 
 	CV_RegisterVar(&cv_cam_dist);
 	CV_RegisterVar(&cv_cam_still);

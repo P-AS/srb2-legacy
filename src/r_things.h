@@ -127,7 +127,11 @@ typedef enum
 {
 	SC_NONE = 0,
 	SC_TOP = 1,
-	SC_BOTTOM = 2
+	SC_BOTTOM = 2,
+	SC_VFLIP = 3,
+	SC_NOTVISIBLE = 4,
+	SC_CUTMASK    = SC_TOP|SC_BOTTOM|SC_NOTVISIBLE,
+	SC_FLAGMASK   = ~SC_CUTMASK
 } spritecut_e;
 
 // A vissprite_t is a thing that will be drawn during a refresh,
@@ -184,7 +188,7 @@ typedef struct vissprite_s
 	fixed_t thingscale;
 } vissprite_t;
 
-extern UINT32 visspritecount;
+extern UINT32 visspritecount, numvisiblesprites;
 
 // A drawnode is something that points to a 3D floor, 3D side, or masked
 // middle texture. This is used for sorting with sprites.
