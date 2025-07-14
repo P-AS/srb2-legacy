@@ -559,7 +559,7 @@ static pslope_t *P_NewVertexSlope(INT16 tag1, INT16 tag2, INT16 tag3, UINT8 flag
 		if (mt->extrainfo)
 			mt->z = mt->options;
 		else
-			mt->z = (R_OldPointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector->floorheight >> FRACBITS) + (mt->options >> ZSHIFT);
+			mt->z = (R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector->floorheight >> FRACBITS) + (mt->options >> ZSHIFT);
 	}
 
 	P_ReconfigureVertexSlope(ret);

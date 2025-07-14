@@ -1027,7 +1027,7 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 	{
 		fixed_t x, y, yl, yh, xl, xh, newdist;
 
-		if (R_PointInSubsector(listensource.x, listensource.y)->sector->ceilingpic == skyflatnum)
+		if (R_PointInSubsectorFast(listensource.x, listensource.y)->sector->ceilingpic == skyflatnum)
 			approx_dist = 0;
 		else
 		{
@@ -1040,7 +1040,7 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 			for (y = yl; y <= yh; y += FRACUNIT*64)
 				for (x = xl; x <= xh; x += FRACUNIT*64)
 				{
-					if (R_PointInSubsector(x, y)->sector->ceilingpic == skyflatnum)
+					if (R_PointInSubsectorFast(x, y)->sector->ceilingpic == skyflatnum)
 					{
 						// Found the outdoors!
 						newdist = S_CalculateSoundDistance(listensource.x, listensource.y, 0, x, y, 0);
@@ -1775,7 +1775,7 @@ static void Command_RestartAudio_f(void)
 
 void GameSounds_OnChange(void)
 {
-	if (M_CheckParm("-nosound"))
+	if (M_CheckParm("-nosound") || M_CheckParm("-noaudio"))
 		return;
 
 	if (sound_disabled)
@@ -1793,7 +1793,7 @@ void GameSounds_OnChange(void)
 
 void GameDigiMusic_OnChange(void)
 {
-	if (M_CheckParm("-nomusic"))
+	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio"))
 		return;
 	else if (M_CheckParm("-nodigmusic"))
 		return;
@@ -1827,7 +1827,7 @@ void GameDigiMusic_OnChange(void)
 
 void GameMIDIMusic_OnChange(void)
 {
-	if (M_CheckParm("-nomusic"))
+	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio"))
 		return;
 	else if (M_CheckParm("-nomidimusic"))
 		return;

@@ -2900,7 +2900,7 @@ static void P_DoTeeter(player_t *player)
 #undef xsign
 #undef ysign
 
-			sec = R_OldPointInSubsector(checkx, checky)->sector;
+			sec = R_PointInSubsector(checkx, checky)->sector;
 
 			ceilingheight = sec->ceilingheight;
 			floorheight = sec->floorheight;
@@ -3410,7 +3410,7 @@ static void P_DoSuperStuff(player_t *player)
 			player->health--;
 			player->mo->health--;
 		}
-		
+
 		// This is where super colors is handled.
 		player->mo->color = (UINT8)skins[player->skin].supercolor + (abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4) % numskincolors);
 
@@ -7777,7 +7777,7 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	}
 	thiscam->relativex = 0;
 
-	thiscam->subsector = R_OldPointInSubsector(thiscam->x,thiscam->y);
+	thiscam->subsector = R_PointInSubsectorFast(thiscam->x,thiscam->y);
 
 	thiscam->radius = 20*FRACUNIT;
 	thiscam->height = 16*FRACUNIT;
@@ -8854,7 +8854,7 @@ void P_PlayerThink(player_t *player)
 			player->lives = 0;
 
 			if (player->playerstate == PST_DEAD)
-			{	
+			{
 				LUAh_PlayerThink(player);
 				return;
 			}
@@ -9076,7 +9076,7 @@ void P_PlayerThink(player_t *player)
 		P_MovePlayer(player);
 
 	if (!player->mo)
-	{	
+	{
 		LUAh_PlayerThink(player);
 		return; // P_MovePlayer removed player->mo.
 	}
@@ -9254,7 +9254,7 @@ void P_PlayerThink(player_t *player)
 	player->pflags &= ~PF_SLIDING;
 
 	LUAh_PlayerThink(player);
-	
+
 /*
 //	Colormap verification
 	{

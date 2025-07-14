@@ -847,7 +847,7 @@ void P_ReloadRings(void)
 			mt->mobj = NULL;
 
 			// Z for objects Tails 05-26-2002
-			mt->z = (INT16)(R_OldPointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)
+			mt->z = (INT16)(R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)
 				->sector->floorheight>>FRACBITS);
 
 			P_SpawnHoopsAndRings (mt);
@@ -979,7 +979,7 @@ static void P_LoadThings(void)
 	numhuntemeralds = 0;
 	for (i = 0; i < nummapthings; i++, mt++)
 	{
-		sector_t *mtsector = R_OldPointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector;
+		sector_t *mtsector = R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)->sector;
 
 		// Z for objects
 		mt->z = (INT16)(
@@ -1053,7 +1053,7 @@ static void P_LoadThings(void)
 			mt->mobj = NULL;
 
 			// Z for objects Tails 05-26-2002
-			mt->z = (INT16)(R_OldPointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)
+			mt->z = (INT16)(R_PointInSubsector(mt->x << FRACBITS, mt->y << FRACBITS)
 				->sector->floorheight>>FRACBITS);
 
 			P_SpawnHoopsAndRings (mt);
@@ -2583,7 +2583,6 @@ static void P_SetupCamera(void)
 		camera.y = players[displayplayer].mo->y;
 		camera.z = players[displayplayer].mo->z;
 		camera.angle = players[displayplayer].mo->angle;
-		camera.subsector = R_OldPointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 	}
 	else
 	{
@@ -2607,9 +2606,9 @@ static void P_SetupCamera(void)
 			camera.y = thing->y;
 			camera.z = thing->z;
 			camera.angle = FixedAngle((fixed_t)thing->angle << FRACBITS);
-			camera.subsector = R_OldPointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 		}
 	}
+	camera.subsector = R_PointInSubsectorFast(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 }
 
 static boolean P_CanSave(void)

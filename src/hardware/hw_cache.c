@@ -141,7 +141,7 @@ static void HWR_DrawPatchInCache(GLMipmap_t *mipmap,
 					texel = HWR_CHROMAKEY_EQUIVALENTCOLORINDEX;
 				//Hurdler: 25/04/2000: now support colormap in hardware mode
 				else if (mipmap->colormap)
-					texel = mipmap->colormap[texel];
+					texel = mipmap->colormap->data[texel];
 
 				// hope compiler will get this switch out of the loops (dreams...)
 				// gcc do it ! but vcc not ! (why don't use cygwin gcc for win32 ?)
@@ -399,7 +399,10 @@ static void FreeMipmapColormap(INT32 patchnum, void *patch)
 		// Free image data from memory.
 		if (next->grInfo.data)
 			Z_Free(next->grInfo.data);
+		if (next->colormap)
+			Z_Free(next->colormap);
 		next->grInfo.data = NULL;
+		next->colormap = NULL;
 
 		// Free the old colormap mipmap from memory.
 		free(next);
@@ -577,6 +580,33 @@ static void HWR_LoadMappedPatch(GLMipmap_t *grmip, GLPatch_t *gpatch)
 	Z_ChangeTag(grmip->grInfo.data, PU_HWRCACHE_UNLOCKED);
 }
 
+
+// ----------------------+
+// HWR_UpdatePatchMipmap : Updates a mipmap.
+// ----------------------+
+static void HWR_UpdateMappedPatch(GLPatch_t *gpatch, GLMipmap_t *grmip)
+{
+	if (!grmip->downloaded && !grmip->grInfo.data)
+	{
+		patch_t *patch = W_CacheLumpNumPwad(gpatch->wadnum, gpatch->lumpnum, PU_STATIC);
+		HWR_MakePatch(patch, gpatch, grmip, true);
+
+		Z_Free(patch);
+	}
+
+	// If hardware does not have the texture, then call pfnSetTexture to upload it
+	// If it does have the texture, then call pfnUpdateTexture to update it
+	if (!grmip->downloaded)
+		HWD.pfnSetTexture(grmip);
+	else
+		HWD.pfnUpdateTexture(grmip);
+
+	HWR_SetCurrentTexture(grmip);
+
+	// The system-memory data can be purged now.
+	Z_ChangeTag(grmip->grInfo.data, PU_HWRCACHE_UNLOCKED);
+}
+
 // -----------------+
 // HWR_GetPatch     : Download a patch to the hardware cache and make it ready for use
 // -----------------+
@@ -628,9 +658,15 @@ void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap)
 	for (grmip = gpatch->mipmap; grmip->nextcolormap; )
 	{
 		grmip = grmip->nextcolormap;
-		if (grmip->colormap == colormap)
+		if (grmip->colormap && grmip->colormap->source == colormap)
 		{
-			HWR_LoadMappedPatch(grmip, gpatch);
+			if (memcmp(grmip->colormap->data, colormap, 256 * sizeof(UINT8)))
+			{
+				M_Memcpy(grmip->colormap->data, colormap, 256 * sizeof(UINT8));
+				HWR_UpdateMappedPatch(gpatch, grmip);
+			}
+			else
+				HWR_LoadMappedPatch(grmip, gpatch);
 			return;
 		}
 	}
@@ -646,7 +682,9 @@ void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap)
 		I_Error("%s: Out of memory", "HWR_GetMappedPatch");
 	grmip->nextcolormap = newmip;
 
-	newmip->colormap = colormap;
+	newmip->colormap = Z_Calloc(sizeof(*newmip->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
+	newmip->colormap->source = colormap;
+	M_Memcpy(newmip->colormap->data, colormap, 256 * sizeof(UINT8));
 	HWR_LoadMappedPatch(newmip, gpatch);
 }
 

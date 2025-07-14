@@ -172,7 +172,7 @@ static void CV_grmodellighting_OnChange(void)
 	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_grmodellighting.value);
 	// if shaders have been compiled, then they now need to be recompiled.
   if (gr_shadersavailable)
-  { 
+  {
 	HWR_CompileShaders();
   }
 }
@@ -188,7 +188,7 @@ static void CV_grpaletterendering_OnChange(void)
 }
 
 static void CV_grpalettedepth_OnChange(void)
-{	
+{
 	ONLY_IF_GL_LOADED
 	// refresh the screen palette
 	if (HWR_ShouldUsePaletteRendering())
@@ -1043,7 +1043,7 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 	pegt = wallVerts[3].t;
 	pegb = wallVerts[0].t;
-	
+
 	// Lactozilla: If both heights of a side lay on the same position, then this wall is a triangle.
 	// To avoid division by zero, which would result in a NaN, we check if the vertical difference
 	// between the two vertices is not zero.
@@ -1059,7 +1059,7 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 	endpegt = wallVerts[2].t;
 	endpegb = wallVerts[1].t;
-	
+
 	if (fpclassify(diff) == FP_ZERO)
 		endpegmul = 0.0;
 	else
@@ -1378,7 +1378,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 	lightnum = colormap ? lightnum : HWR_CalcWallLight(lightnum, vs.x, vs.y, ve.x, ve.y);
 
 	Surf.PolyColor.s.alpha = 255;
-	
+
 	INT32 gr_midtexture = R_GetTextureNum(gr_sidedef->midtexture);
 	GLTexture_t *grTex = NULL;
 
@@ -1534,7 +1534,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			else
 				HWR_ProjectWall(wallVerts, &Surf, PF_Masked, lightnum, colormap);
 		}
-		
+
 		// Render midtexture if there's one. Determine if it's visible first, though
 		if (gr_midtexture && HWR_BlendMidtextureSurface(&Surf))
 		{
@@ -3242,8 +3242,8 @@ static void HWR_Subsector(size_t num)
 	{
 		cullCeilingHeight = P_GetZAt(gr_frontsector->c_slope, viewx, viewy);
 		locCeilingHeight = P_GetZAt(gr_frontsector->c_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
-	}	
-	
+	}
+
 	if (gr_frontsector->ffloors)
 	{
 		boolean anyMoved = gr_frontsector->moved;
@@ -3558,7 +3558,7 @@ static void HWR_RenderBSPNode(INT32 bspnum)
 		bsp = &nodes[bspnum];
 
 		// Decide which side the view point is on.
-		side = R_PointOnSide(viewx, viewy, bsp);
+		side = R_PointOnSideFast(viewx, viewy, bsp);
 		// Recursively divide front space.
 		HWR_RenderBSPNode(bsp->children[side]);
 
@@ -3571,9 +3571,6 @@ static void HWR_RenderBSPNode(INT32 bspnum)
 
 	HWR_Subsector(bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR);
 }
-
-
-
 
 /*
 //
@@ -3715,7 +3712,7 @@ static gr_vissprite_t *HWR_NewVisSprite(void)
 // Finds a floor through which light does not pass.
 static fixed_t HWR_OpaqueFloorAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 {
-	const sector_t *sec = R_OldPointInSubsector(x, y)->sector;
+	const sector_t *sec = R_PointInSubsectorFast(x, y)->sector;
 	fixed_t floorz = sec->floorheight;
 
 	if (sec->ffloors)
@@ -3794,7 +3791,7 @@ static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch)
 	fixed_t slopez;
 	FBITFIELD blendmode = 0;
 	INT32 shader = SHADER_NONE;
-	
+
 	R_GetShadowZ(spr->mobj, &floorslope);
 
     interpmobjstate_t interp = {0};
@@ -4914,7 +4911,7 @@ static void HWR_DrawSprites(void)
 	for (i = 0; i < gr_visspritecount; i++)
 	{
 		gr_vissprite_t *spr = gr_vsprorder[i];
-		GLPatch_t *gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
+		GLPatch_t *gpatch = W_CachePatchNum(spr->patchlumpnum, PU_PATCH);
 		HWR_GetPatch(gpatch);
 		if (spr->precip)
 			HWR_DrawPrecipitationSprite(spr);
@@ -5241,7 +5238,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			vis->colormap = R_GetTranslationColormap(TC_DEFAULT, vis->mobj->color ? vis->mobj->color : SKINCOLOR_CYAN, GTC_CACHE);
 	}
 	else
-		vis->colormap = colormaps;
+		vis->colormap = NULL;
 
 	// set top/bottom coords
 	vis->ty = gzt;
@@ -5370,7 +5367,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->flip = flip;
 	vis->mobj = (mobj_t *)thing;
 
-	vis->colormap = colormaps;
+	vis->colormap = NULL;
 
 	// set top/bottom coords
 	vis->ty = FIXED_TO_FLOAT(thing->z + spritecachedinfo[lumpoff].topoffset);
@@ -6201,7 +6198,7 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_granisotropicmode);
 	CV_RegisterVar(&cv_grcorrecttricks);
 	CV_RegisterVar(&cv_grsolvetjoin);
-	CV_RegisterVar(&cv_grbatching);	
+	CV_RegisterVar(&cv_grbatching);
 	CV_RegisterVar(&cv_grwireframe);
 	CV_RegisterVar(&cv_grpaletterendering);
 	CV_RegisterVar(&cv_grpalettedepth);
@@ -6264,7 +6261,7 @@ void HWR_Startup(void)
 	HWR_LoadAllCustomShaders();
 	HWR_TogglePaletteRendering();
 	}
-	
+
 	startupdone = true;
 }
 
