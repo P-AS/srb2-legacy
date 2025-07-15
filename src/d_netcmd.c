@@ -429,7 +429,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"SETMOTD",
 	"SUICIDE",
 	"LUACMD",
-	"LUAVAR"
+	"LUAVAR",
+	"LUAFILE"
 };
 
 // =========================================================================
@@ -466,6 +467,7 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_SUICIDE, Got_Suicide);
 	RegisterNetXCmd(XD_RUNSOC, Got_RunSOCcmd);
 	RegisterNetXCmd(XD_LUACMD, Got_Luacmd);
+	RegisterNetXCmd(XD_LUAFILE, Got_LuaFile);
 
 	// Remote Administration
 	COM_AddCommand("password", Command_Changepassword_f);
