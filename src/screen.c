@@ -60,7 +60,7 @@ static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, 
 //added : 03-02-98: default screen mode, as loaded/saved in config
 consvar_t cv_scr_width = CVAR_INIT ("scr_width", "1280", NULL, CV_SAVE, CV_Unsigned, NULL);
 consvar_t cv_scr_height = CVAR_INIT ("scr_height", "800", NULL,  CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", NULL, CV_SAVE, scr_depth_cons_t, NULL);
+consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", "Bit depth of textures", CV_SAVE, scr_depth_cons_t, NULL);
 consvar_t cv_renderview = CVAR_INIT ("renderview", "On", NULL, 0, CV_OnOff, NULL);
 
 static void SCR_ActuallyChangeRenderer(void);

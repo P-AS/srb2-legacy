@@ -195,7 +195,7 @@ consvar_t cv_precipdensity = CVAR_INIT ("precipdensity", "Moderate", "Density of
 // Okay, whoever said homremoval causes a performance hit should be shot.
 consvar_t cv_homremoval = CVAR_INIT ("homremoval", "No", "Fixes the Hall of Mirrors bug in the Software renderer", CV_SAVE, homremoval_cons_t, NULL);
 
-consvar_t cv_fov = CVAR_INIT ("fov", "90", NULL, CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnChange);
+consvar_t cv_fov = CVAR_INIT ("fov", "90", "Change the camera's field of view, giving yourself a wider lens", CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnChange);
 consvar_t cv_fovchange = CVAR_INIT ("fovchange", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_maxportals = CVAR_INIT ("maxportals", "2",  NULL, CV_SAVE, maxportals_cons_t, NULL);
