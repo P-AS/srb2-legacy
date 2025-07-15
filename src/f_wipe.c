@@ -28,6 +28,7 @@
 #include "d_main.h"
 #include "m_misc.h" // movie mode
 #include "d_netcmd.h"
+#include "d_clisrv.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -375,9 +376,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 			M_Drawer(); // menu is drawn even on top of wipes
 
 		I_FinishUpdate(); // page flip or blit buffer
-
-		if (moviemode)
-			M_SaveFrame();
+		NetKeepAlive(); // Update the network so we don't cause timeouts
 	}
 	WipeInAction = false;
 #endif

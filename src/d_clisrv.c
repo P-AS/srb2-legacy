@@ -1810,6 +1810,8 @@ static void CL_ConnectToServer(void)
 	}
 	while (!(cl_mode == CL_CONNECTED && (client || (server && nodewaited <= pnumnodes))));
 
+	if (netgame)
+		F_StartWaitingPlayers();
 	DEBFILE(va("Synchronisation Finished\n"));
 
 	displayplayer = consoleplayer;
@@ -3570,7 +3572,6 @@ FILESTAMP
 			if (netconsole == -1)
 				break;
 
-
 			// As long as clients send valid ticcmds, the server can keep running, so reset the timeout
 			/// \todo Use a separate cvar for that kind of timeout?
 			freezetimeout[node] = I_GetTime() + connectiontimeout;
@@ -3641,6 +3642,22 @@ FILESTAMP
 					break;
 				}
 			}
+			break;
+		
+		case PT_BASICKEEPALIVE:
+			if (client)
+				break;
+
+			// This should probably still timeout though, as the node should always have a player 1 number
+			if (netconsole == -1)
+				break;
+
+			// If a client sends this it should mean they are done receiving the savegame
+			sendingsavegame[node] = false;
+
+			// As long as clients send keep alives, the server can keep running, so reset the timeout
+			/// \todo Use a separate cvar for that kind of timeout?
+			freezetimeout[node] = I_GetTime() + connectiontimeout;
 			break;
 		case PT_TEXTCMD2: // splitscreen special
 			netconsole = nodetoplayer2[node];
@@ -4059,39 +4076,66 @@ static INT16 Consistancy(void)
 	return (INT16)(ret & 0xFFFF);
 }
 
+
+// confusing, but this DOESN'T send PT_NODEKEEPALIVE, it sends PT_BASICKEEPALIVE
+// used during wipes to tell the server that a node is still connected
+static void CL_SendClientKeepAlive(void)
+{
+	netbuffer->packettype = PT_BASICKEEPALIVE;
+
+	HSendPacket(servernode, false, 0, 0);
+}
+
+static void SV_SendServerKeepAlive(void)
+{
+	INT32 n;
+
+	for (n = 1; n < MAXNETNODES; n++)
+	{
+		if (nodeingame[n])
+		{
+			netbuffer->packettype = PT_BASICKEEPALIVE;
+			HSendPacket(n, false, 0, 0);
+		}
+	}
+}
+
 // send the client packet to the server
 static void CL_SendClientCmd(void)
 {
 	size_t packetsize = 0;
+	boolean mis = false;
 
 	netbuffer->packettype = PT_CLIENTCMD;
 
 	if (cl_packetmissed)
-		netbuffer->packettype++;
+	{
+		netbuffer->packettype = PT_CLIENTMIS;
+		mis = true;
+	}
 	netbuffer->u.clientpak.resendfrom = (UINT8)(neededtic & UINT8_MAX);
 	netbuffer->u.clientpak.client_tic = (UINT8)(gametic & UINT8_MAX);
 
 	if (gamestate == GS_WAITINGPLAYERS)
 	{
 		// Send PT_NODEKEEPALIVE packet
-		netbuffer->packettype += 4;
+		netbuffer->packettype = (mis ? PT_NODEKEEPALIVEMIS : PT_NODEKEEPALIVE);
 		packetsize = sizeof (clientcmd_pak) - sizeof (ticcmd_t) - sizeof (INT16);
 		HSendPacket(servernode, false, 0, packetsize);
 	}
 	else if (gamestate != GS_NULL)
 	{
+		packetsize = sizeof (clientcmd_pak);
 		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds, 1);
 		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic%BACKUPTICS]);
 
 		// Send a special packet with 2 cmd for splitscreen
 		if (splitscreen || botingame)
 		{
-			netbuffer->packettype += 2;
-			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds2, 1);
+			netbuffer->packettype = (mis ? PT_CLIENT2MIS : PT_CLIENT2CMD);
 			packetsize = sizeof (client2cmd_pak);
+			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds2, 1);
 		}
-		else
-			packetsize = sizeof (clientcmd_pak);
 
 		HSendPacket(servernode, false, 0, packetsize);
 	}
@@ -4530,6 +4574,66 @@ static void UpdatePingTable(void)
 	}
 }
 
+// Handle timeouts to prevent definitive freezes from happenning
+static void HandleNodeTimeouts(void)
+{
+	INT32 i;
+
+	if (server)
+	{
+		for (i = 1; i < MAXNETNODES; i++)
+			if (nodeingame[i] && freezetimeout[i] < I_GetTime())
+				Net_ConnectionTimeout(i);
+
+		// In case the cvar value was lowered
+		/*if (joindelay)
+			joindelay = min(joindelay - 1, 3 * (tic_t)cv_joindelay.value * TICRATE);*/
+	}
+}
+
+
+
+// Keep the network alive while not advancing tics!
+void NetKeepAlive(void)
+{
+	tic_t nowtime;
+	INT32 realtics;
+
+	nowtime = I_GetTime();
+	realtics = nowtime - gametime;
+
+	// return if there's no time passed since the last call
+	if (realtics <= 0) // nothing new to update
+		return;
+
+	UpdatePingTable();
+
+	GetPackets();
+
+#ifdef MASTERSERVER
+	MasterClient_Ticker();
+#endif
+
+	if (client)
+	{
+		// send keep alive
+		CL_SendClientKeepAlive();
+		// No need to check for resynch because we aren't running any tics
+	}
+	else
+	{
+		SV_SendServerKeepAlive();
+	}
+
+	// No else because no tics are being run and we can't resynch during this
+
+	Net_AckTicker();
+	HandleNodeTimeouts();
+	//FileSendTicker();
+}
+
+
+
 void NetUpdate(void)
 {
 
@@ -4651,15 +4755,20 @@ FILESTAMP
 
 			hu_redownloadinggamestate = false;
 
-			firstticstosend = gametic;
-			for (i = 0; i < MAXNETNODES; i++)
-				if (nodeingame[i] && nettics[i] < firstticstosend)
-					firstticstosend = nettics[i];
-
 			// Don't erase tics not acknowledged
 			counts = realtics;
 
-			// See also PingUpdate
+			firstticstosend = gametic;
+			for (i = 0; i < MAXNETNODES; i++)
+			{
+				if (!nodeingame[i])
+					continue;
+				if (nettics[i] < firstticstosend)
+					firstticstosend = nettics[i];
+				if (maketic + counts >= nettics[i] + (BACKUPTICS - TICRATE))
+					Net_ConnectionTimeout(i);
+			}
+
 			if (maketic + counts >= firstticstosend + BACKUPTICS)
 				counts = firstticstosend+BACKUPTICS-maketic-1;
 
@@ -4675,11 +4784,7 @@ FILESTAMP
 		}
 	}
 	Net_AckTicker();
-	// Handle timeouts to prevent definitive freezes from happenning
-	if (server)
-		for (i = 1; i < MAXNETNODES; i++)
-			if (nodeingame[i] && freezetimeout[i] < I_GetTime())
-				Net_ConnectionTimeout(i);
+	HandleNodeTimeouts();
 	nowtime /= NEWTICRATERATIO;
 	if (nowtime > resptime)
 	{

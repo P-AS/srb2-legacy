@@ -2071,8 +2071,13 @@ void G_Ticker(boolean run)
 			break;
 
 		case GS_TITLESCREEN:
-		case GS_WAITINGPLAYERS:
 			F_TitleScreenTicker(run);
+			break;
+			
+		case GS_WAITINGPLAYERS:
+			if (netgame)
+				F_WaitingPlayersTicker();
+			HU_Ticker();
 			break;
 
 		case GS_DEDICATEDSERVER:

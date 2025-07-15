@@ -3195,7 +3195,10 @@ static void P_NetArchiveMisc(boolean resending)
 	if (resending)
 		WRITEUINT32(save_p, gametic);
 	WRITEINT16(save_p, gamemap);
-	WRITEINT16(save_p, gamestate);
+	if (gamestate != GS_LEVEL)
+		WRITEINT16(save_p, GS_WAITINGPLAYERS); // nice hack to put people back into waitingplayers
+	else
+		WRITEINT16(save_p, gamestate);
 	WRITEINT16(save_p, gametype);
 
 	for (i = 0; i < MAXPLAYERS; i++)

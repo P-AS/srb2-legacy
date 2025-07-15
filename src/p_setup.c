@@ -2775,6 +2775,7 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 			lastwipetic = nowtime;
 			if (moviemode) // make sure we save frames for the white hold too
 				M_SaveFrame();
+			NetKeepAlive(); // Prevent timeout
 		}
 
 		ranspecialwipe = 1;
