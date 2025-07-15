@@ -597,33 +597,6 @@ static void HWR_UpdateMappedPatch(GLPatch_t *gpatch, GLMipmap_t *grmip)
 	Z_ChangeTag(grmip->data, PU_HWRCACHE_UNLOCKED);
 }
 
-
-// ----------------------+
-// HWR_UpdatePatchMipmap : Updates a mipmap.
-// ----------------------+
-static void HWR_UpdateMappedPatch(GLPatch_t *gpatch, GLMipmap_t *grmip)
-{
-	if (!grmip->downloaded && !grmip->data)
-	{
-		patch_t *patch = W_CacheLumpNumPwad(gpatch->wadnum, gpatch->lumpnum, PU_STATIC);
-		HWR_MakePatch(patch, gpatch, grmip, true);
-
-		Z_Free(patch);
-	}
-
-	// If hardware does not have the texture, then call pfnSetTexture to upload it
-	// If it does have the texture, then call pfnUpdateTexture to update it
-	if (!grmip->downloaded)
-		HWD.pfnSetTexture(grmip);
-	else
-		HWD.pfnUpdateTexture(grmip);
-
-	HWR_SetCurrentTexture(grmip);
-
-	// The system-memory data can be purged now.
-	Z_ChangeTag(grmip->grInfo.data, PU_HWRCACHE_UNLOCKED);
-}
-
 // -----------------+
 // HWR_GetPatch     : Download a patch to the hardware cache and make it ready for use
 // -----------------+

@@ -121,35 +121,35 @@ static consvar_t cv_glbeta = CVAR_INIT ("gr_beta", "0", 0, CV_Unsigned, NULL);
 static float HWRWipeCounter = 1.0f;
 
 // Unfortunately, this can no longer be saved..
-consvar_t cv_grfiltermode = {"gr_filtermode", "Nearest", CV_CALL|CV_SAVE, grfiltermode_cons_t,
+consvar_t cv_glfiltermode = {"gr_filtermode", "Nearest", CV_CALL|CV_SAVE, grfiltermode_cons_t,
                              CV_filtermode_ONChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_granisotropicmode = {"gr_anisotropicmode", "1", CV_CALL|CV_SAVE, granisotropicmode_cons_t,
+consvar_t cv_glanisotropicmode = {"gr_anisotropicmode", "1", CV_CALL|CV_SAVE, glanisotropicmode_cons_t,
                              CV_anisotropic_ONChange, 0, NULL, NULL, 0, 0, NULL};
-//static consvar_t cv_grzbuffer = {"gr_zbuffer", "On", 0, CV_OnOff};
-consvar_t cv_grcorrecttricks = {"gr_correcttricks", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+//static consvar_t cv_glzbuffer = {"gr_zbuffer", "On", 0, CV_OnOff};
+consvar_t cv_glcorrecttricks = {"gr_correcttricks", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glsolvetjoin = {"gr_solvetjoin", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_grbatching = {"gr_batching", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glbatching = {"gr_batching", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_grwireframe = {"gr_wireframe", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glwireframe = {"gr_wireframe", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_grmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, cv_glmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_grshearing = {"gr_shearing", "Off", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glshearing = {"gr_shearing", "Off", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_glloadingscreen = CVAR_INIT ("glloadingscreen", "Off", CV_SAVE, glloadingscreen_cons_t, NULL);
 
-consvar_t cv_grmd2 = {"gr_md2", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grmodelinterpolation = {"gr_modelinterpolation", "Sometimes", CV_SAVE, grmodelinterpolation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glmd2 = {"gr_md2", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glmodelinterpolation = {"gr_modelinterpolation", "Sometimes", CV_SAVE, grmodelinterpolation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
-consvar_t cv_grpaletterendering = {"gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, CV_grpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_grpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glpaletterendering = {"gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, cv_glpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, cv_glpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_grcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_grlightdither = {"gr_lightdithering", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_grshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, cv_glshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_gllightdither = {"gr_lightdithering", "Off", CV_SAVE|CV_CALL, CV_OnOff, cv_glshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 #define ONLY_IF_GL_LOADED if (vid.glstate != VID_GL_LIBRARY_LOADED) return;
 
@@ -170,7 +170,7 @@ static void cv_glmodellighting_OnChange(void)
 	ONLY_IF_GL_LOADED
 	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_glmodellighting.value);
 	// if shaders have been compiled, then they now need to be recompiled.
-  if (gr_shadersavailable)
+  if (gl_shadersavailable)
   { 
 	HWR_CompileShaders();
   }
@@ -186,7 +186,7 @@ static void cv_glpaletterendering_OnChange(void)
 	}
 }
 
-static void CV_grpalettedepth_OnChange(void)
+static void cv_glpalettedepth_OnChange(void)
 {	
 	ONLY_IF_GL_LOADED
 	// refresh the screen palette
@@ -1378,8 +1378,8 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 	Surf.PolyColor.s.alpha = 255;
 	
-	INT32 gr_midtexture = R_GetTextureNum(gr_sidedef->midtexture);
-	GLTexture_t *grTex = NULL;
+	INT32 gl_midtexture = R_GetTextureNum(gl_sidedef->midtexture);
+	GLMapTexture_t *grTex = NULL;
 
 	// two sided line
 	if (gl_backsector)
@@ -3239,11 +3239,11 @@ static void HWR_Subsector(size_t num)
 
 	if (gl_frontsector->c_slope)
 	{
-		cullCeilingHeight = P_GetZAt(gr_frontsector->c_slope, viewx, viewy);
-		locCeilingHeight = P_GetZAt(gr_frontsector->c_slope, gr_frontsector->soundorg.x, gr_frontsector->soundorg.y);
+		cullCeilingHeight = P_GetZAt(gl_frontsector->c_slope, viewx, viewy);
+		locCeilingHeight = P_GetZAt(gl_frontsector->c_slope, gl_frontsector->soundorg.x, gl_frontsector->soundorg.y);
 	}	
 	
-	if (gr_frontsector->ffloors)
+	if (gl_frontsector->ffloors)
 	{
 		boolean anyMoved = gl_frontsector->moved;
 
@@ -4909,7 +4909,7 @@ static void HWR_DrawSprites(void)
 	UINT32 i;
 	for (i = 0; i < gl_visspritecount; i++)
 	{
-		gr_vissprite_t *spr = gr_vsprorder[i];
+		gl_vissprite_t *spr = gl_vsprorder[i];
 		GLPatch_t *gpatch = W_CachePatchNum(spr->patchlumpnum, PU_CACHE);
 		HWR_GetPatch(gpatch);
 		if (spr->precip)
@@ -6192,16 +6192,15 @@ static void Command_GrStats_f(void)
 //added by Hurdler: console varibale that are saved
 void HWR_AddCommands(void)
 {
-	CV_RegisterVar(&cv_grrounddown);
-	CV_RegisterVar(&cv_grfiltermode);
-	CV_RegisterVar(&cv_granisotropicmode);
-	CV_RegisterVar(&cv_grcorrecttricks);
-	CV_RegisterVar(&cv_grsolvetjoin);
-	CV_RegisterVar(&cv_grbatching);	
-	CV_RegisterVar(&cv_grwireframe);
-	CV_RegisterVar(&cv_grpaletterendering);
-	CV_RegisterVar(&cv_grpalettedepth);
-	CV_RegisterVar(&cv_grmodellighting);
+	CV_RegisterVar(&cv_glfiltermode);
+	CV_RegisterVar(&cv_glanisotropicmode);
+	CV_RegisterVar(&cv_glcorrecttricks);
+	CV_RegisterVar(&cv_glsolvetjoin);
+	CV_RegisterVar(&cv_glbatching);	
+	CV_RegisterVar(&cv_glwireframe);
+	CV_RegisterVar(&cv_glpaletterendering);
+	CV_RegisterVar(&cv_glpalettedepth);
+	CV_RegisterVar(&cv_glmodellighting);
 	CV_RegisterVar(&cv_glloadingscreen);
 	CV_RegisterVar(&cv_glshearing);
 	CV_RegisterVar(&cv_glshaders);
