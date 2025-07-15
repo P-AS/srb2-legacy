@@ -1765,10 +1765,9 @@ static void ST_drawCTFHUD(void)
 	if (stplyr->gotflag)
 	{
 		patch_t *p = (stplyr->gotflag & GF_REDFLAG) ? gotrflag : gotbflag;
-		INT32 snapflags = (splitscreen && stplyr == &players[displayplayer]) ? V_SNAPTOTOP : 0;
 
 		if (splitscreen)
-			V_DrawSmallScaledPatch(312, STRINGY(24) + 42, V_SNAPTORIGHT|snapflags|V_HUDTRANS, p);
+			V_DrawSmallScaledPatch(312, STRINGY(24) + 42, V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_HUDTRANS, p);
 		else
 			V_DrawScaledPatch(304, 24 + 84, V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, p);
 	}

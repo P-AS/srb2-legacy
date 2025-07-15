@@ -49,6 +49,7 @@ static void COM_Exec_f(void);
 static void COM_Wait_f(void);
 static void COM_Help_f(void);
 static void COM_Toggle_f(void);
+static void COM_Add_f(void);
 
 static void CV_EnforceExecVersion(void);
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
@@ -69,7 +70,7 @@ CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 // First implementation is 26 (2.1.21), so earlier configs default at 25 (2.1.20)
 // Also set CV_HIDEN during runtime, after config is loaded
 static boolean execversion_enabled = false;
-consvar_t cv_execversion = {"execversion","25",CV_CALL,CV_Unsigned, CV_EnforceExecVersion, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_execversion = CVAR_INIT ("execversion","25",CV_CALL,CV_Unsigned, CV_EnforceExecVersion);
 
 // for default joyaxis detection
 static boolean joyaxis_default = false;
@@ -291,6 +292,7 @@ void COM_Init(void)
 	COM_AddCommand("wait", COM_Wait_f);
 	COM_AddCommand("help", COM_Help_f);
 	COM_AddCommand("toggle", COM_Toggle_f);
+	COM_AddCommand("add", COM_Add_f);
 	RegisterNetXCmd(XD_NETVAR, Got_NetVar);
 }
 
@@ -868,6 +870,27 @@ static void COM_Toggle_f(void)
 	// netcvar don't change imediately
 	cvar->flags |= CV_SHOWMODIFONETIME;
 	CV_AddValue(cvar, +1);
+}
+
+/** Command variant of CV_AddValue
+  */
+static void COM_Add_f(void)
+{
+	consvar_t *cvar;
+
+	if (COM_Argc() != 3)
+	{
+		CONS_Printf(M_GetText("Add <cvar_name> <value>: Add to the value of a cvar. Negative values work too!\n"));
+		return;
+	}
+	cvar = CV_FindVar(COM_Argv(1));
+	if (!cvar)
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("%s is not a cvar\n"), COM_Argv(1));
+		return;
+	}
+
+	CV_AddValue(cvar, atoi(COM_Argv(2)));
 }
 
 // =========================================================================

@@ -35,6 +35,7 @@
 #include "p_local.h"
 
 #include "m_cond.h" // condition sets
+#include "lua_hook.h" // IntermissionThinker hook
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -656,6 +657,9 @@ void Y_Ticker(void)
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())
 		return;
+
+
+	LUAh_IntermissionThinker();
 
 	intertic++;
 

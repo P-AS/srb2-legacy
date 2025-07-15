@@ -38,7 +38,7 @@ static CV_PossibleValue_t fpscap_cons_t[] = {
 	{0, NULL}
 };
 
-consvar_t cv_fpscap = {"fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL);
 
 ps_metric_t ps_interp_frac = {0};
 ps_metric_t ps_interp_lag = {0};
@@ -211,7 +211,7 @@ void R_InterpolateView(fixed_t frac)
 	// this is gonna create some interesting visual errors for long distance teleports...
 	// might want to recalculate the view sector every frame instead...
 	viewplayer = newview->player;
-	viewsector = R_PointInSubsector(viewx, viewy)->sector;
+	viewsector = R_PointInSubsectorFast(viewx, viewy)->sector;
 	viewsky = newview->sky;
 
 	// well, this ain't pretty
@@ -307,7 +307,7 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
 	(void)frac;
-	
+
 	out->x =  mobj->x;
 	out->y =  mobj->y;
 	out->z =  mobj->z;
@@ -329,12 +329,11 @@ void R_AddMobjInterpolator(mobj_t *mobj)
 			interpolated_mobjs_capacity *= 2;
 		}
 
-		interpolated_mobjs = Z_ReallocAlign(
+		interpolated_mobjs = Z_Realloc(
 			interpolated_mobjs,
 			sizeof(mobj_t *) * interpolated_mobjs_capacity,
 			PU_LEVEL,
-			NULL,
-			64
+			NULL
 		);
 	}
 
@@ -431,12 +430,11 @@ static void AddInterpolator(levelinterpolator_t* interpolator)
 			levelinterpolators_size *= 2;
 		}
 
-		levelinterpolators = Z_ReallocAlign(
+		levelinterpolators = Z_Realloc(
 			(void*) levelinterpolators,
 			sizeof(levelinterpolator_t*) * levelinterpolators_size,
 			PU_LEVEL,
-			NULL,
-			sizeof(levelinterpolator_t*) * 8
+			NULL
 		);
 	}
 	levelinterpolators[levelinterpolators_len] = interpolator;
@@ -445,12 +443,8 @@ static void AddInterpolator(levelinterpolator_t* interpolator)
 
 static levelinterpolator_t *CreateInterpolator(levelinterpolator_type_e type, thinker_t *thinker)
 {
-	levelinterpolator_t *ret = (levelinterpolator_t*) Z_CallocAlign(
-		sizeof(levelinterpolator_t),
-		PU_LEVEL,
-		NULL,
-		sizeof(levelinterpolator_t) * 8
-	);
+	levelinterpolator_t *ret = (levelinterpolator_t*) Z_Calloc(
+		sizeof(levelinterpolator_t), PU_LEVEL, NULL);
 	ret->type = type;
 	ret->thinker = thinker;
 	AddInterpolator(ret);

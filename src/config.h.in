@@ -23,6 +23,7 @@
 
 #define SRB2_COMP_REVISION    "${SRB2_COMP_REVISION}"
 #define SRB2_COMP_BRANCH      "${SRB2_COMP_BRANCH}"
+#define SRB2_COMP_NOTE        "${SRB2_COMP_NOTE}"
 
 #define CMAKE_ASSETS_DIR      "${CMAKE_SOURCE_DIR}/assets"
 

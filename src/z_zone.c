@@ -436,7 +436,7 @@ void Z_FreeTags(INT32 lowtag, INT32 hightag)
   * \param iterfunc The iterator function.
   */
 void Z_IterateTags(INT32 lowtag, INT32 hightag, boolean (*iterfunc)(void *))
-{ 
+{
 	memblock_t *block, *next;
 
 	if (!iterfunc)
