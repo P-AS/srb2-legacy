@@ -611,7 +611,7 @@ void R_InitSprites(void)
 	R_InitSkins();
 	for (i = 0; i < numwadfiles; i++)
 		R_AddSkins((UINT16)i);
-	
+
 	// Hardcode Tails and Knuckles supercolors because why not
 	if (skins[1].supercolor == SKINCOLOR_SUPER1)
 		skins[1].supercolor = SKINCOLOR_TSUPER1;
@@ -1261,7 +1261,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t ang_scale = FRACUNIT;
 
 	interpmobjstate_t interp = {0};
-	
+
 
 	// do interpolation
 	if (R_UsingFrameInterpolation())
@@ -1648,7 +1648,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	fixed_t iscale;
 
 	//SoM: 3/17/2000
-	fixed_t gz ,gzt; 
+	fixed_t gz ,gzt;
 
 	// uncapped/interpolation
     interpmobjstate_t interp = {0};
@@ -1773,11 +1773,11 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->pz = interp.z;
 	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = vis->gzt - viewz;
-	vis->scalestep = 0; 
+	vis->scalestep = 0;
 
 
 	vis->x1 = x1 < portalclipstart ? portalclipstart : x1;
-	vis->x2 = x2 >= portalclipend ? portalclipend-1 : x2; 
+	vis->x2 = x2 >= portalclipend ? portalclipend-1 : x2;
 
 
 	vis->xscale = xscale; //SoM: 4/17/2000
@@ -2308,8 +2308,8 @@ static boolean R_CheckSpriteVisible(vissprite_t *spr, INT32 x1, INT32 x2)
 	INT16 sz = spr->sz;
 	INT16 szt = spr->szt;
 
-	fixed_t texturemid, yscale, scalestep = spr->scalestep;
-	INT32 height;
+	fixed_t texturemid = 0, yscale = 0, scalestep = spr->scalestep; // "= 0" pleases the compiler
+	INT32 height = 0;
 	patch_t *patch = W_CacheLumpNum(spr->patch, PU_CACHE);
 
 	if (scalestep)
