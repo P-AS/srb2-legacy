@@ -7730,10 +7730,10 @@ consvar_t cv_cam2_rotspeed = CVAR_INIT ("cam2_rotspeed", "10", NULL, CV_SAVE, ro
 consvar_t cv_cam2_orbit = CVAR_INIT ("cam2_orbit", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_cam2_adjust = CVAR_INIT ("cam2_adjust", "On", NULL, CV_SAVE|CV_SHOWMODIF, CV_OnOff, NULL);
 
-consvar_t cv_viewroll = CVAR_INIT ("viewroll", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_quakeiiiarena = CVAR_INIT ("earthquake", "On", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_quakeiv = CVAR_INIT ("quakeroll", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_quakelive = CVAR_INIT ("windowquake", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_viewroll = CVAR_INIT ("viewroll", "Off", "Tilt camera on slopes, in the direction of the slope", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_quakeiiiarena = CVAR_INIT ("earthquake", "On", "Roll camera up and down during earthquake", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_quakeiv = CVAR_INIT ("quakeroll", "Off", "Tilt camera when moving side to side, resembling Quake", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_quakelive = CVAR_INIT ("windowquake", "Off", "Shake the game window during earthquakes", CV_SAVE, CV_OnOff, NULL);
 
 fixed_t t_cam_dist = -42;
 fixed_t t_cam_height = -42;

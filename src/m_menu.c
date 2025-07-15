@@ -1531,6 +1531,18 @@ static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resoluti
 	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  152}, // Netgame testing and feature ideas
 };
 
+static void M_LegacyCreditsToolTips(void)
+{
+	if (currentMenu == &OP_LegacyCreditsDef)
+	{
+		INT32 i;
+		for (i = 0; i < currentMenu->numitems; i++)
+		{
+			OP_LegacyCreditsMenu[i].desc = "Thanks! :D";
+		}
+	}
+}
+
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
 // ==========================================================================
@@ -3553,6 +3565,7 @@ static void M_DrawGenericMenu(void)
 		V_DrawString(currentMenu->x, cursory, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
 	}
 	M_DoToolTips(currentMenu);
+	M_LegacyCreditsToolTips();
 }
 
 static void M_DrawPauseMenu(void)
