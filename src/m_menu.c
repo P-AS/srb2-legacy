@@ -1250,17 +1250,17 @@ static menuitem_t OP_VideoModeMenu[] =
 #ifdef HWRENDER
 static menuitem_t OP_OpenGLOptionsMenu[] =
 {
-	{IT_STRING|IT_CVAR,         NULL, "3D Models", NULL,     &cv_grmd2,      10},
-	{IT_STRING|IT_CVAR,         NULL, "Model Interpolation",  NULL,    &cv_grmodelinterpolation,      20},
-	{IT_STRING|IT_CVAR,         NULL, "Ambient lighting", NULL,     &cv_grmodellighting,      30},
+	{IT_STRING|IT_CVAR,         NULL, "3D Models", NULL,     &cv_glmd2,      10},
+	{IT_STRING|IT_CVAR,         NULL, "Model Interpolation",  NULL,    &cv_glmodelinterpolation,      20},
+	{IT_STRING|IT_CVAR,         NULL, "Ambient lighting", NULL,     &cv_glmodellighting,      30},
 
-	{IT_STRING|IT_CVAR,         NULL, "Shaders", NULL, 	     &cv_grshaders,        50},
-	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective", NULL,  &cv_grshearing,   60},
-	{IT_STRING|IT_CVAR,         NULL, "Palette Rendering", NULL,  &cv_grpaletterendering,   70},
+	{IT_STRING|IT_CVAR,         NULL, "Shaders", NULL, 	     &cv_glshaders,        50},
+	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective", NULL,  &cv_glshearing,   60},
+	{IT_STRING|IT_CVAR,         NULL, "Palette Rendering", NULL,  &cv_glpaletterendering,   70},
 	{IT_STRING|IT_CVAR|IT_CV_SLIDER,  NULL, "Field of view", NULL,   &cv_fov,            90},
 	{IT_STRING|IT_CVAR,         NULL, "Quality",     NULL,     &cv_scr_depth,        100},
-	{IT_STRING|IT_CVAR,         NULL, "Texture Filter", NULL,   &cv_grfiltermode,     110},
-	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",  NULL,    &cv_granisotropicmode,120},
+	{IT_STRING|IT_CVAR,         NULL, "Texture Filter", NULL,   &cv_glfiltermode,     110},
+	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",  NULL,    &cv_glanisotropicmode,120},
 	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", NULL,  &cv_glloadingscreen, 130},
 };
 
