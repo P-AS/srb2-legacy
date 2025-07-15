@@ -227,7 +227,7 @@ consvar_t cv_competitionboxes = CVAR_INIT ("competitionboxes", "Random", NULL, C
 
 #ifdef SEENAMES
 static CV_PossibleValue_t seenames_cons_t[] = {{0, "Off"}, {1, "Colorless"}, {2, "Team"}, {3, "Ally/Foe"}, {0, NULL}};
-consvar_t cv_seenames = CVAR_INIT ("seenames", "Ally/Foe", NULL, CV_SAVE, seenames_cons_t, 0);
+consvar_t cv_seenames = CVAR_INIT ("seenames", "Ally/Foe", "If and how to show other players name when close to them", CV_SAVE, seenames_cons_t, 0);
 consvar_t cv_allowseenames = CVAR_INIT ("allowseenames", "Yes", NULL, CV_NETVAR, CV_YesNo, NULL);
 #endif
 
@@ -330,10 +330,10 @@ consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", NULL, CV_CALL, CV_OnOf
 consvar_t cv_match_scoring = CVAR_INIT ("matchscoring", "Normal", NULL, CV_NETVAR|CV_CHEAT, match_scoring_cons_t, NULL);
 consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", NULL, CV_NETVAR, CV_YesNo, NULL);
 
-consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", "Show demos on the title screen when inactive for some time", CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_timetic = CVAR_INIT ("timerres", "Normal", NULL, CV_SAVE, timetic_cons_t, NULL); // use tics in display
-consvar_t cv_scorepos = CVAR_INIT ("scorepos", "Normal", NULL, CV_SAVE, scorepos_cons_t, NULL); // for score position
+consvar_t cv_timetic = CVAR_INIT ("timerres", "Normal", "Style of HUD time display", CV_SAVE, timetic_cons_t, NULL); // use tics in display
+consvar_t cv_scorepos = CVAR_INIT ("scorepos", "Normal", "Style of HUD score display", CV_SAVE, scorepos_cons_t, NULL); // for score position
 static CV_PossibleValue_t pointlimit_cons_t[] = {{0, "MIN"}, {999999990, "MAX"}, {0, NULL}};
 consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "0", NULL, CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t,
 	PointLimit_OnChange);
@@ -346,7 +346,7 @@ consvar_t cv_numlaps = CVAR_INIT ("numlaps", "4", NULL, CV_NETVAR|CV_CALL|CV_NOI
 consvar_t cv_usemapnumlaps = CVAR_INIT ("usemaplaps", "Yes", NULL, CV_NETVAR, CV_YesNo, NULL);
 
 // log elemental hazards -- not a netvar, is local to current player
-consvar_t cv_hazardlog = CVAR_INIT ("hazardlog", "Yes", NULL, 0, CV_YesNo, NULL);
+consvar_t cv_hazardlog = CVAR_INIT ("hazardlog", "Yes", "Whether or not to log when a player gets hurt in certain gamemodes", 0, CV_YesNo, NULL);
 
 consvar_t cv_forceskin = CVAR_INIT ("forceskin", "-1", NULL, CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
 consvar_t cv_downloading = CVAR_INIT ("downloading", "On", NULL, 0, CV_OnOff, NULL);
@@ -366,7 +366,7 @@ consvar_t cv_pingtimeout = CVAR_INIT ("pingtimeout", "10", NULL, CV_SAVE, pingti
 
 // show your ping on the HUD next to framerate. Defaults to warning only (shows up if your ping is > maxping)
 static CV_PossibleValue_t showping_cons_t[] = {{0, "Off"}, {1, "Always"}, {2, "Warning"}, {0, NULL}};
-consvar_t cv_showping = CVAR_INIT ("showping", "Warning", NULL, CV_SAVE, showping_cons_t, NULL);
+consvar_t cv_showping = CVAR_INIT ("showping", "Warning", "Show your ping in the corner of the screen", CV_SAVE, showping_cons_t, NULL);
 static CV_PossibleValue_t pingmeasurement_cons_t[] = {{0, "Frames"}, {1, "Milliseconds"}, {0, NULL}};
 consvar_t cv_pingmeasurement = CVAR_INIT ("pingmeasurement", "Milliseconds", NULL, CV_SAVE, pingmeasurement_cons_t, NULL);
 

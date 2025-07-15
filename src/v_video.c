@@ -79,13 +79,13 @@ consvar_t cv_bsaturation = CVAR_INIT ("bsaturation", "10", NULL, CV_SAVE|CV_CALL
 consvar_t cv_msaturation = CVAR_INIT ("msaturation", "10", NULL, CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
 
 
-consvar_t cv_allcaps = CVAR_INIT ("allcaps", "Off", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_allcaps = CVAR_INIT ("allcaps", "Off", "Whether or not to show text in the console buffer in all-capital letters", 0, CV_OnOff, NULL);
 
 static CV_PossibleValue_t constextsize_cons_t[] = {
 	{V_NOSCALEPATCH, "Small"}, {V_SMALLSCALEPATCH, "Medium"}, {V_MEDSCALEPATCH, "Large"}, {0, "Huge"},
 	{0, NULL}};
 static void CV_constextsize_OnChange(void);
-consvar_t cv_constextsize = CVAR_INIT ("con_textsize", "Medium", NULL, CV_SAVE|CV_CALL, constextsize_cons_t, CV_constextsize_OnChange);
+consvar_t cv_constextsize = CVAR_INIT ("con_textsize", "Medium", "Size of text in the console", CV_SAVE|CV_CALL, constextsize_cons_t, CV_constextsize_OnChange);
 
 // local copy of the palette for V_GetColor()
 RGBA_t *pLocalPalette = NULL;

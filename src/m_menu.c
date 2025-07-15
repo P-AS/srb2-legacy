@@ -347,7 +347,7 @@ static boolean M_CheckIfValidIPv4(const char *str);
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
 // ==========================================================================
 
-consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", NULL, CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", "Whether or not to show a \"FOCUS LOST\" when the game window is unfocused", CV_SAVE, CV_YesNo, NULL);
 
 static CV_PossibleValue_t map_cons_t[] = {
 	{1,"MIN"},
@@ -1380,7 +1380,7 @@ static menuitem_t OP_GameOptionsMenu[] =
 #ifndef NONET
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
 	                      NULL, "Master server",     NULL,       &cv_masterserver,       5},
-	{IT_STRING | IT_SUBMENU, NULL, "Chat Options...", NULL,      &OP_ChatOptionsDef,     20},
+	{IT_STRING | IT_SUBMENU, NULL, "Chat Options...", "Change how the chat display looks",      &OP_ChatOptionsDef,     20},
 #endif
 	{IT_STRING | IT_CVAR, NULL, "Show HUD",       NULL,          &cv_showhud,            25},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,

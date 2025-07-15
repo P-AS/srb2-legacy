@@ -210,7 +210,7 @@ static void MasterServer_OnChange(void);
 static void ServerName_OnChange(void);
 
 #define DEF_PORT "28900"
-consvar_t cv_masterserver = CVAR_INIT ("masterserver", "ms.srb2classic.net:"DEF_PORT, NULL, CV_SAVE, NULL, MasterServer_OnChange);
+consvar_t cv_masterserver = CVAR_INIT ("masterserver", "ms.srb2classic.net:"DEF_PORT, "The URL for the Master Server", CV_SAVE, NULL, MasterServer_OnChange);
 consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", NULL, CV_SAVE|CV_CALL|CV_NOINIT, NULL, ServerName_OnChange);
 
 INT16 ms_RoomId = -1;

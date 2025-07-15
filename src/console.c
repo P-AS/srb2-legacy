@@ -140,7 +140,7 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{18,"Lavender"}, {19,"Gray"},
 												{0, NULL}};
 
-consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Green", NULL,  CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change);
+consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Green", "Color of the console background",  CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change);
 
 static void CON_Print(char *msg);
 

@@ -358,7 +358,7 @@ static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 
 // it automatically becomes compact with 20+ players, but if you like it, I guess you can turn that on!
-consvar_t cv_compactscoreboard= CVAR_INIT ("compactscoreboard", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_compactscoreboard= CVAR_INIT ("compactscoreboard", "Off", "Always use the compact scoreboard, regardless of the number of players in the game", CV_SAVE, CV_OnOff, NULL);
 
 // chat timer thingy
 static CV_PossibleValue_t chattime_cons_t[] = {{5, "MIN"}, {999, "MAX"}, {0, NULL}};
