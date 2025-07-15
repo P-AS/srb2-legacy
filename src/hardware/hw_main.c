@@ -70,13 +70,13 @@ void HWR_AddTransparentFloor(lumpnum_t lumpnum, extrasubsector_t *xsub, boolean 
 void HWR_AddTransparentPolyobjectFloor(lumpnum_t lumpnum, polyobj_t *polysector, boolean isceiling, fixed_t fixedheight,
                              INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, extracolormap_t *planecolormap);
 
-static void cv_glmodellighting_OnChange(void);
+static void CV_glmodellighting_OnChange(void);
 static void CV_filtermode_ONChange(void);
 static void CV_anisotropic_ONChange(void);
-static void cv_glpaletterendering_OnChange(void);
-static void cv_glpalettedepth_OnChange(void);
-static void cv_glshaders_OnChange(void);
-static void cv_glshaderoption_OnChange(void);
+static void CV_glpaletterendering_OnChange(void);
+static void CV_glpalettedepth_OnChange(void);
+static void CV_glshaders_OnChange(void);
+static void CV_glshaderoption_OnChange(void);
 
 static void HWR_SetShaderState(void);
 static void HWR_TogglePaletteRendering(void);
@@ -99,7 +99,7 @@ static CV_PossibleValue_t grfakecontrast_cons_t[] = {{0, "Off"}, {1, "On"}, {2, 
 static CV_PossibleValue_t grshearing_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Third-person"}, {0, NULL}};
 
 static CV_PossibleValue_t grshaders_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Ignore custom shaders"}, {0, NULL}};
-consvar_t cv_glshaders = CVAR_INIT ("gr_shaders", "On", CV_SAVE|CV_CALL, grshaders_cons_t, cv_glshaders_OnChange);
+consvar_t cv_glshaders = CVAR_INIT ("gr_shaders", "On", CV_SAVE|CV_CALL, grshaders_cons_t, CV_glshaders_OnChange);
 consvar_t cv_glallowshaders = CVAR_INIT ("gr_allowshaders", "On", CV_NETVAR, CV_OnOff, NULL);
 
 consvar_t cv_glfakecontrast = CVAR_INIT ("gr_fakecontrast", "Smooth", CV_SAVE, grfakecontrast_cons_t, NULL);
@@ -133,7 +133,7 @@ consvar_t cv_glbatching = {"gr_batching", "On", 0, CV_OnOff, NULL, 0, NULL, NULL
 
 consvar_t cv_glwireframe = {"gr_wireframe", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_glmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, cv_glmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glmodellighting = {"gr_modellighting", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_glmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_glshearing = {"gr_shearing", "Off", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 
@@ -145,11 +145,11 @@ consvar_t cv_glspritebillboarding = {"gr_spritebillboarding", "Off", CV_SAVE, CV
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
-consvar_t cv_glpaletterendering = {"gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, cv_glpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_glpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, cv_glpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glpaletterendering = {"gr_paletterendering", "On", CV_CALL|CV_SAVE, CV_OnOff, CV_glpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glpalettedepth = {"gr_palettedepth", "16 bits", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_glpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_glcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, cv_glshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_gllightdither = {"gr_lightdithering", "Off", CV_SAVE|CV_CALL, CV_OnOff, cv_glshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glcurveshader = {"gr_curveshader", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_gllightdither = {"gr_lightdithering", "Off", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 #define ONLY_IF_GL_LOADED if (vid.glstate != VID_GL_LIBRARY_LOADED) return;
 
@@ -165,7 +165,7 @@ static void CV_anisotropic_ONChange(void)
 	HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_glanisotropicmode.value);
 }
 
-static void cv_glmodellighting_OnChange(void)
+static void CV_glmodellighting_OnChange(void)
 {
 	ONLY_IF_GL_LOADED
 	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_glmodellighting.value);
@@ -176,7 +176,7 @@ static void cv_glmodellighting_OnChange(void)
   }
 }
 
-static void cv_glpaletterendering_OnChange(void)
+static void CV_glpaletterendering_OnChange(void)
 {
 	ONLY_IF_GL_LOADED
 	if (gl_shadersavailable)
@@ -186,7 +186,7 @@ static void cv_glpaletterendering_OnChange(void)
 	}
 }
 
-static void cv_glpalettedepth_OnChange(void)
+static void CV_glpalettedepth_OnChange(void)
 {	
 	ONLY_IF_GL_LOADED
 	// refresh the screen palette
@@ -194,7 +194,7 @@ static void cv_glpalettedepth_OnChange(void)
 		HWR_SetPalette(pLocalPalette);
 }
 
-static void cv_glshaders_OnChange(void)
+static void CV_glshaders_OnChange(void)
 {
 	ONLY_IF_GL_LOADED
 	HWR_SetShaderState();
@@ -205,7 +205,7 @@ static void cv_glshaders_OnChange(void)
 	}
 }
 
-static void cv_glshaderoption_OnChange(void)
+static void CV_glshaderoption_OnChange(void)
 {
 	ONLY_IF_GL_LOADED
 	if (gl_shadersavailable)
