@@ -1392,13 +1392,12 @@ static menuitem_t OP_GameOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "HUD Player Names",        &cv_seenames,           55},
 #endif
 	{IT_STRING | IT_CVAR, NULL, "Log Hazard Damage",       &cv_hazardlog,          60},
-
 	{IT_STRING | IT_CVAR, NULL, "Console Back Color",      &cons_backcolor,        65},
 	{IT_STRING | IT_CVAR, NULL, "Console Text Size",       &cv_constextsize,       70},
 	{IT_STRING | IT_CVAR, NULL, "Uppercase Console",       &cv_allcaps,            75},
 	{IT_STRING | IT_CVAR, NULL, "Show \"FOCUS LOST\"",     &cv_showfocuslost,      80},
-
-	{IT_STRING | IT_CVAR, NULL, "Title Screen Demos",      &cv_rollingdemos,       85},
+	{IT_STRING | IT_CVAR, NULL, "Modern Pause Screen",     &cv_modernpause,        85},
+	{IT_STRING | IT_CVAR, NULL, "Title Screen Demos",      &cv_rollingdemos,       90},
 };
 
 static menuitem_t OP_ChatOptionsMenu[] =

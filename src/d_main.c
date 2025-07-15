@@ -76,7 +76,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
 #include "keys.h"
-#include "filesrch.h" // refreshdirmenu, mainwadstally 
+#include "filesrch.h" // refreshdirmenu, mainwadstally
 #include "r_fps.h"
 #include "m_perfstats.h"
 
@@ -483,20 +483,23 @@ static void D_Display(void)
 	// draw pause pic
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-#if 0 
-		INT32 py;
-		patch_t *patch;
-		if (automapactive)
-			py = 4;
+		if (cv_modernpause.value)
+		{
+			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
+			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
+			V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_YELLOWMAP, "Game Paused");
+		}
 		else
-			py = viewwindowy + 4;
-		patch = W_CachePatchName("M_PAUSE", PU_PATCH);
-		V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - SHORT(patch->width))/2, py, 0, patch);
-#else
-		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
-		M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
-		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_YELLOWMAP, "Game Paused");
-#endif
+		{
+			INT32 py;
+			patch_t *patch;
+			if (automapactive)
+				py = 4;
+			else
+				py = viewwindowy + 4;
+			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
+			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - SHORT(patch->width))/2, py, 0, patch);
+		}
 	}
 
 	// vid size change is now finished if it was on...
@@ -1056,7 +1059,7 @@ static void IdentifyVersion(void)
 	}
 #endif
 }
- 
+
 
 //
 // D_SRB2Main
