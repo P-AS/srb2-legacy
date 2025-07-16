@@ -590,6 +590,7 @@ void I_GetConsoleEvents(void)
 			return;
 
 		ev.type = ev_console;
+		ev.data1 = 0;
 		if (read(STDIN_FILENO, &key, 1) == -1 || !key)
 			return;
 
@@ -616,7 +617,7 @@ void I_GetConsoleEvents(void)
 			}
 			else continue;
 		}
-		else
+		else if (tty_con.cursor < sizeof (tty_con.buffer))
 		{
 			// push regular character
 			ev.data1 = tty_con.buffer[tty_con.cursor] = key;
