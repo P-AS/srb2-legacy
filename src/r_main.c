@@ -1088,44 +1088,12 @@ boolean R_IsPointInSector(sector_t *sector, fixed_t x, fixed_t y)
 void R_SetupFrame(player_t *player, boolean skybox)
 {
 	camera_t *thiscam;
-	boolean chasecam = false;
-
-	if (splitscreen && player == &players[secondarydisplayplayer]
-		&& player != &players[consoleplayer])
-	{
-		R_SetViewContext(VIEWCONTEXT_PLAYER2);
+	boolean chasecam = R_ViewpointHasChasecam(player);
+	
+	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])
 		thiscam = &camera2;
-		chasecam = (cv_chasecam2.value != 0);
-		if (thiscam->reset)
-		{
-			R_ResetViewInterpolation(2);
-			thiscam->reset = false;
-		}
-	}
 	else
-	{
-		R_SetViewContext(VIEWCONTEXT_PLAYER1);
 		thiscam = &camera;
-		chasecam = (cv_chasecam.value != 0);
-		if (thiscam->reset)
-		{
-			R_ResetViewInterpolation(1);
-			thiscam->reset = false;
-		}
-	}
-
-	if (player->climbing || (player->pflags & PF_NIGHTSMODE) || player->playerstate == PST_DEAD)
-		chasecam = true; // force chasecam on
-	else if (player->spectator) // no spectator chasecam
-		chasecam = false; // force chasecam off
-
-	if (chasecam && !thiscam->chase)
-	{
-		P_ResetCamera(player, thiscam);
-		thiscam->chase = true;
-	}
-	else if (!chasecam)
-		thiscam->chase = false;
 
 	newview->sky = !skybox;
 	if (player->awayviewtics)
@@ -1448,19 +1416,66 @@ void R_SkyboxFrame(player_t *player)
 
 }
 
-
-boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox)
+boolean R_ViewpointHasChasecam(player_t *player)
 {
+	camera_t *thiscam;
 	boolean chasecam = false;
-	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])
-		chasecam = (cv_chasecam2.value != 0);
-	else
-		chasecam = (cv_chasecam.value != 0);
+	boolean isplayer2 = (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer]);
 
-	if (player->climbing || (player->pflags & PF_NIGHTSMODE)  || player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN)
+	if (isplayer2)
+	{
+		thiscam = &camera2;
+		chasecam = (cv_chasecam2.value != 0);
+	}
+	else
+	{
+		thiscam = &camera;
+		chasecam = (cv_chasecam.value != 0);
+	}
+
+	if (player->climbing || (player->pflags & PF_NIGHTSMODE) || player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN)
 		chasecam = true; // force chasecam on
 	else if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off
+		
+	if (chasecam && !thiscam->chase)
+	{
+		P_ResetCamera(player, thiscam);
+		thiscam->chase = true;
+	}
+	else if (!chasecam && thiscam->chase)
+	{
+		P_ResetCamera(player, thiscam);
+		thiscam->chase = false;
+	}
+	
+	if (isplayer2)
+	{
+		R_SetViewContext(VIEWCONTEXT_PLAYER2);
+		if (thiscam->reset)
+		{
+			R_ResetViewInterpolation(2);
+			thiscam->reset = false;
+		}
+	}
+	else
+	{
+		R_SetViewContext(VIEWCONTEXT_PLAYER1);
+		if (thiscam->reset)
+		{
+			R_ResetViewInterpolation(1);
+			thiscam->reset = false;
+		}
+	}
+
+	return chasecam;
+}
+
+
+
+boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox)
+{
+	boolean chasecam = R_ViewpointHasChasecam(player);
 
 	// cut-away view stuff
 	if (player->awayviewtics || skybox)
