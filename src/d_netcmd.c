@@ -1056,7 +1056,7 @@ static void CleanupPlayerName(INT32 playernum, const char *newname)
 	{
 		CV_StealthSet(&cv_playername2, tmpname);
 	}
-	else I_Assert(((void)"CleanupPlayerName used on non-local player", NULL, 0));
+	else I_Assert(((void)"CleanupPlayerName used on non-local player", 0));
 
 	Z_Free(buf);
 }
