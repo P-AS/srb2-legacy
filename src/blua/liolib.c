@@ -239,10 +239,10 @@ static int io_openlocal (lua_State *L) {
 
 	realfilename = va("%s" PATHSEP "%s", luafiledir, filename);
 
-	if (client && strnicmp(filename, "client/", strlen("client/")))
+	/*(if (client && strnicmp(filename, "client/", strlen("client/")))
 		I_Error("Access denied to %s\n"
 		        "Clients can only access files stored in luafiles/client/\n",
-		        filename);
+		        filename);*/
 
 	// Prevent access if the file is being downloaded
 	for (filetransfer = luafiletransfers; filetransfer; filetransfer = filetransfer->next)
