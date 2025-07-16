@@ -168,38 +168,38 @@ static void FlipCam2_OnChange(void);
 void SendWeaponPref(void);
 void SendWeaponPref2(void);
 
-consvar_t cv_tailspickup = CVAR_INIT ("tailspickup", "On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_chasecam = CVAR_INIT ("chasecam", "On", CV_CALL, CV_OnOff, ChaseCam_OnChange);
-consvar_t cv_chasecam2 = CVAR_INIT ("chasecam2", "On", CV_CALL, CV_OnOff, ChaseCam2_OnChange);
-consvar_t cv_flipcam = CVAR_INIT ("flipcam", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam_OnChange);
-consvar_t cv_flipcam2 = CVAR_INIT ("flipcam2", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam2_OnChange);
+consvar_t cv_tailspickup = CVAR_INIT ("tailspickup", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_chasecam = CVAR_INIT ("chasecam", "On",  NULL,CV_CALL, CV_OnOff, ChaseCam_OnChange);
+consvar_t cv_chasecam2 = CVAR_INIT ("chasecam2", "On", NULL, CV_CALL, CV_OnOff, ChaseCam2_OnChange);
+consvar_t cv_flipcam = CVAR_INIT ("flipcam", "No", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam_OnChange);
+consvar_t cv_flipcam2 = CVAR_INIT ("flipcam2", "No", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam2_OnChange);
 
-consvar_t cv_shadow = CVAR_INIT ("shadow", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_shadowoffs = CVAR_INIT ("offsetshadows", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_skybox = CVAR_INIT ("skybox", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_skydome = CVAR_INIT ("skydome", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_ffloorclip =  CVAR_INIT("r_ffloorclip", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_spriteclip = CVAR_INIT ("r_spriteclip", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_allowmlook = CVAR_INIT ("allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL);
-consvar_t cv_showhud = CVAR_INIT ("showhud", "Yes", CV_CALL,  CV_YesNo, R_SetViewSize);
-consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", CV_SAVE, translucenthud_cons_t, NULL);
-consvar_t cv_uncappedhud = CVAR_INIT ("uncappedhud", "Yes", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_shadow = CVAR_INIT ("shadow", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_shadowoffs = CVAR_INIT ("offsetshadows", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_skybox = CVAR_INIT ("skybox", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_skydome = CVAR_INIT ("skydome", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_ffloorclip =  CVAR_INIT("r_ffloorclip", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_spriteclip = CVAR_INIT ("r_spriteclip", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", NULL, CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_allowmlook = CVAR_INIT ("allowmlook", "Yes", NULL, CV_NETVAR, CV_YesNo, NULL);
+consvar_t cv_showhud = CVAR_INIT ("showhud", "Yes", "Whether or not to show the Heads-Up Display", CV_CALL,  CV_YesNo, R_SetViewSize);
+consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", "How opaque the HUD is, lower values make the HUD more transparent", CV_SAVE, translucenthud_cons_t, NULL);
+consvar_t cv_uncappedhud = CVAR_INIT ("uncappedhud", "Yes", NULL, CV_SAVE, CV_YesNo, NULL);
 consvar_t cv_modernpause = CVAR_INIT ("modernpause", "On", CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_translucency = CVAR_INIT ("translucency", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_drawdist = CVAR_INIT ("drawdist", "Infinite", CV_SAVE, drawdist_cons_t, NULL);
-consvar_t cv_drawdist_nights = CVAR_INIT ("drawdist_nights", "2048", CV_SAVE, drawdist_cons_t, NULL);
-consvar_t cv_drawdist_precip = CVAR_INIT ("drawdist_precip", "1024", CV_SAVE, drawdist_cons_t, NULL);
-consvar_t cv_precipdensity = CVAR_INIT ("precipdensity", "Moderate", CV_SAVE, precipdensity_cons_t, NULL);
+consvar_t cv_translucency = CVAR_INIT ("translucency", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_drawdist = CVAR_INIT ("drawdist", "Infinite", "Draw distance for map objects", CV_SAVE, drawdist_cons_t, NULL);
+consvar_t cv_drawdist_nights = CVAR_INIT ("drawdist_nights", "2048", "Draw distance for NiGHTS hoops", CV_SAVE, drawdist_cons_t, NULL);
+consvar_t cv_drawdist_precip = CVAR_INIT ("drawdist_precip", "1024", "Draw distance for rain and snow", CV_SAVE, drawdist_cons_t, NULL);
+consvar_t cv_precipdensity = CVAR_INIT ("precipdensity", "Moderate", "Density of rain and snow, note that this can have a significant impact on performance", CV_SAVE, precipdensity_cons_t, NULL);
 
 // Okay, whoever said homremoval causes a performance hit should be shot.
-consvar_t cv_homremoval = CVAR_INIT ("homremoval", "No", CV_SAVE, homremoval_cons_t, NULL);
+consvar_t cv_homremoval = CVAR_INIT ("homremoval", "No", "Fixes the Hall of Mirrors bug in the Software renderer", CV_SAVE, homremoval_cons_t, NULL);
 
-consvar_t cv_fov = CVAR_INIT ("fov", "90", CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnChange);
-consvar_t cv_fovchange = CVAR_INIT ("fovchange", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_fov = CVAR_INIT ("fov", "90", "Change the camera's field of view, giving yourself a wider lens", CV_FLOAT|CV_CALL|CV_SAVE, fov_cons_t, Fov_OnChange);
+consvar_t cv_fovchange = CVAR_INIT ("fovchange", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_maxportals = CVAR_INIT ("maxportals", "2", CV_SAVE, maxportals_cons_t, NULL);
+consvar_t cv_maxportals = CVAR_INIT ("maxportals", "2",  NULL, CV_SAVE, maxportals_cons_t, NULL);
 
 
 void SplitScreen_OnChange(void)

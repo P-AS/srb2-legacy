@@ -66,12 +66,12 @@ static void ModFilter_OnChange(void);
 
 // commands for music and sound servers
 #ifdef MUSSERV
-consvar_t musserver_cmd = CVAR_INIT ("musserver_cmd", "musserver", CV_SAVE, NULL, NULL);
-consvar_t musserver_arg = CVAR_INIT ("musserver_arg", "-t 20 -f -u 0 -i music.dta", CV_SAVE, NULL, NULL);
+consvar_t musserver_cmd = CVAR_INIT ("musserver_cmd", "musserver", NULL, CV_SAVE, NULL, NULL);
+consvar_t musserver_arg = CVAR_INIT ("musserver_arg", "-t 20 -f -u 0 -i music.dta", NULL, CV_SAVE, NULL, NULL);
 #endif
 #ifdef SNDSERV
-consvar_t sndserver_cmd = CVAR_INIT ("sndserver_cmd", "llsndserv", CV_SAVE, NULL);
-consvar_t sndserver_arg = CVAR_INIT ("sndserver_arg", "-quiet", CV_SAVE, NULL);
+consvar_t sndserver_cmd = CVAR_INIT ("sndserver_cmd", "llsndserv", NULL, CV_SAVE, NULL);
+consvar_t sndserver_arg = CVAR_INIT ("sndserver_arg", "-quiet", NULL, CV_SAVE, NULL);
 #endif
 
 #if defined (_WINDOWS) && !defined (SURROUND) //&& defined (_X86_)
@@ -79,35 +79,35 @@ consvar_t sndserver_arg = CVAR_INIT ("sndserver_arg", "-quiet", CV_SAVE, NULL);
 #endif
 
 #ifdef _WINDOWS
-consvar_t cv_samplerate = CVAR_INIT ("samplerate", "44100", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
+consvar_t cv_samplerate = CVAR_INIT ("samplerate", "44100", NULL, 0, CV_Unsigned, NULL); //Alam: For easy hacking?
 #else
-consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
+consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", NULL, 0, CV_Unsigned, NULL); //Alam: For easy hacking?
 #endif
 
 // stereo reverse
-consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // if true, all sounds are loaded at game startup
-static consvar_t precachesound = CVAR_INIT ("precachesound", "Off", CV_SAVE, CV_OnOff, NULL);
+static consvar_t precachesound = CVAR_INIT ("precachesound", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // actual general (maximum) sound & music volume, saved into the config
-consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "18", CV_SAVE, soundvolume_cons_t, NULL);
-consvar_t cv_digmusicvolume = CVAR_INIT ("digmusicvolume", "18", CV_SAVE, soundvolume_cons_t, NULL);
-consvar_t cv_midimusicvolume = CVAR_INIT ("midimusicvolume", "18", CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "18", NULL, CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_digmusicvolume = CVAR_INIT ("digmusicvolume", "18", NULL, CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_midimusicvolume = CVAR_INIT ("midimusicvolume", "18", NULL, CV_SAVE, soundvolume_cons_t, NULL);
 // number of channels available
 #if defined (_WIN32_WCE) || defined (DC) || defined (PSP) || defined(GP2X)
-consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "8", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
+consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "8", NULL, CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
 #else
-consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "32", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
+consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "32", NULL, CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
 #endif
 
-static consvar_t surround = CVAR_INIT ("surround", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_resetmusic = CVAR_INIT ("resetmusic", "No", CV_SAVE, CV_YesNo, NULL);
+static consvar_t surround = CVAR_INIT ("surround", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_resetmusic = CVAR_INIT ("resetmusic", "No", NULL, CV_SAVE, CV_YesNo, NULL);
 
 // Sound system toggles, saved into the config
-consvar_t cv_gamedigimusic = CVAR_INIT ("digimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange);
-consvar_t cv_gamemidimusic = CVAR_INIT ("midimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameMIDIMusic_OnChange);
-consvar_t cv_gamesounds = CVAR_INIT ("sounds", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange);
+consvar_t cv_gamedigimusic = CVAR_INIT ("digimusic", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange);
+consvar_t cv_gamemidimusic = CVAR_INIT ("midimusic", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameMIDIMusic_OnChange);
+consvar_t cv_gamesounds = CVAR_INIT ("sounds", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange);
 
 // Music preference
 static CV_PossibleValue_t cons_musicpref_t[] = {
@@ -115,16 +115,16 @@ static CV_PossibleValue_t cons_musicpref_t[] = {
 	{1, "MIDI"},
 	{0, NULL}
 };
-consvar_t cv_musicpref = CVAR_INIT ("musicpref", "Digital", CV_SAVE|CV_CALL|CV_NOINIT, cons_musicpref_t, MusicPref_OnChange);
+consvar_t cv_musicpref = CVAR_INIT ("musicpref", "Digital", NULL, CV_SAVE|CV_CALL|CV_NOINIT, cons_musicpref_t, MusicPref_OnChange);
 
 // Window focus sound sytem toggles
-consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused", "No", CV_SAVE, CV_YesNo, NULL);
-consvar_t cv_playsoundsifunfocused = CVAR_INIT ("playsoundsifunfocused", "No", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused", "No", NULL, CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_playsoundsifunfocused = CVAR_INIT ("playsoundsifunfocused", "No", NULL, CV_SAVE, CV_YesNo, NULL);
 
 #ifdef HAVE_OPENMPT
 openmpt_module *openmpt_mhandle = NULL;
 static CV_PossibleValue_t interpolationfilter_cons_t[] = {{0, "Default"}, {1, "None"}, {2, "Linear"}, {4, "Cubic"}, {8, "Windowed sinc"}, {0, NULL}};
-consvar_t cv_modfilter = CVAR_INIT ("modfilter", "0", CV_SAVE|CV_CALL, interpolationfilter_cons_t, ModFilter_OnChange);
+consvar_t cv_modfilter = CVAR_INIT ("modfilter", "0", NULL, CV_SAVE|CV_CALL, interpolationfilter_cons_t, ModFilter_OnChange);
 #endif
 
 #define S_MAX_VOLUME 127
@@ -291,8 +291,8 @@ void S_RegisterSoundStuff(void)
 	CV_RegisterVar(&cv_modfilter);
 #endif
 
-	COM_AddCommand("tunes", Command_Tunes_f);
-	COM_AddCommand("restartaudio", Command_RestartAudio_f);
+	COM_AddCommand("tunes", NULL, Command_Tunes_f);
+	COM_AddCommand("restartaudio", NULL, Command_RestartAudio_f);
 
 #if defined (macintosh) && !defined (HAVE_SDL) // mp3 playlist stuff
 	{

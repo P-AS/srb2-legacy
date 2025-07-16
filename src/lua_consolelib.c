@@ -169,18 +169,26 @@ void COM_Lua_f(void)
 static int lib_comAddCommand(lua_State *L)
 {
 	int com_return = -1;
+	int argoff = 2;
 	const char *luaname = luaL_checkstring(L, 1);
 
 	// must store in all lowercase
+	const char *desc = NULL;
 	char *name = Z_StrDup(luaname);
 	strlwr(name);
 
-	luaL_checktype(L, 2, LUA_TFUNCTION);
+	if (lua_isstring(L, 2))
+	{
+		desc = Z_StrDup(luaL_checkstring(L, 2));
+		argoff = 3;
+	}
+
+	luaL_checktype(L, argoff, LUA_TFUNCTION);
 	NOHUD
-	if (lua_gettop(L) >= 3)
+	if (lua_gettop(L) >= argoff + 1)
 	{ // For the third argument, only take a boolean or a number.
-		lua_settop(L, 3);
-		if (lua_type(L, 3) == LUA_TBOOLEAN) 
+		lua_settop(L, argoff + 1);
+		if (lua_type(L, argoff + 1) == LUA_TBOOLEAN)
 		{
 			CONS_Alert(CONS_WARNING,
 					"Using a boolean for admin commands is " 
@@ -189,11 +197,11 @@ static int lib_comAddCommand(lua_State *L)
 			);
 		}
 		else
-			luaL_checktype(L, 3, LUA_TNUMBER);
+			luaL_checktype(L, argoff + 1, LUA_TNUMBER);
 	}
 	else
 	{ // No third argument? Default to 0.
-		lua_settop(L, 2);
+		lua_settop(L, argoff);
 		lua_pushinteger(L, 0);
 	}
 
@@ -201,15 +209,15 @@ static int lib_comAddCommand(lua_State *L)
 	I_Assert(lua_istable(L, -1));
 
 	lua_createtable(L, 2, 0);
-		lua_pushvalue(L, 2);
+		lua_pushvalue(L, argoff);
 		lua_rawseti(L, -2, 1);
 
-		lua_pushvalue(L, 3);
+		lua_pushvalue(L, argoff+1);
 		lua_rawseti(L, -2, 2);
 	lua_setfield(L, -2, name);
 
 	// Try to add the Lua command
-	com_return = COM_AddLuaCommand(name);
+	com_return = COM_AddLuaCommand(name, desc);
 
 	if (com_return < 0)
 	{ // failed to add -- free the lowercased name and return error
@@ -321,6 +329,14 @@ static int lib_cvRegisterVar(lua_State *L)
 			if (!lua_isstring(L, 4))
 				TYPEERROR("name", LUA_TSTRING)
 			cvar->name = Z_StrDup(lua_tostring(L, 4));
+		}
+		else if ((k && fasticmp(k, "desc")))
+		{
+			if (!lua_isstring(L, 4))
+			{
+				TYPEERROR("desc", LUA_TSTRING)
+			}
+			cvar->desc = Z_StrDup(lua_tostring(L, 4));
 		} else if (i == 2 || (k && fasticmp(k, "defaultvalue"))) {
 			if (!lua_isstring(L, 4))
 				TYPEERROR("defaultvalue", LUA_TSTRING)

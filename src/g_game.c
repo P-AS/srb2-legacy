@@ -358,52 +358,52 @@ static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 
 // it automatically becomes compact with 20+ players, but if you like it, I guess you can turn that on!
-consvar_t cv_compactscoreboard= CVAR_INIT ("compactscoreboard", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_compactscoreboard= CVAR_INIT ("compactscoreboard", "Off", "Always use the compact scoreboard, regardless of the number of players in the game", CV_SAVE, CV_OnOff, NULL);
 
 // chat timer thingy
 static CV_PossibleValue_t chattime_cons_t[] = {{5, "MIN"}, {999, "MAX"}, {0, NULL}};
-consvar_t cv_chattime = CVAR_INIT ("chattime", "8", CV_SAVE, chattime_cons_t, NULL);
+consvar_t cv_chattime = CVAR_INIT ("chattime", "8", NULL, CV_SAVE, chattime_cons_t, NULL);
 
 // chatwidth
 static CV_PossibleValue_t chatwidth_cons_t[] = {{64, "MIN"}, {150, "MAX"}, {0, NULL}};
-consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "128", CV_SAVE, chatwidth_cons_t, NULL);
+consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "128", NULL, CV_SAVE, chatwidth_cons_t, NULL);
 
 // chatheight
 static CV_PossibleValue_t chatheight_cons_t[] = {{6, "MIN"}, {22, "MAX"}, {0, NULL}};
-consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", CV_SAVE, chatheight_cons_t, NULL);
+consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", NULL, CV_SAVE, chatheight_cons_t, NULL);
 
 // chat notifications (do you want to hear beeps? I'd understand if you didn't.)
-consvar_t cv_chatnotifications= CVAR_INIT ("chatnotifications", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chatnotifications= CVAR_INIT ("chatnotifications", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // chat spam protection (why would you want to disable that???)
-consvar_t cv_chatspamprotection= CVAR_INIT ("chatspamprotection", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chatspamprotection= CVAR_INIT ("chatspamprotection", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // minichat text background
-consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
-consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL);
+consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", NULL, CV_SAVE, consolechat_cons_t, NULL);
 
 
-consvar_t cv_crosshair = CVAR_INIT ("crosshair", "Cross", CV_SAVE, crosshair_cons_t, NULL);
-consvar_t cv_crosshair2 = CVAR_INIT ("crosshair2", "Cross", CV_SAVE, crosshair_cons_t, NULL);
-consvar_t cv_invertmouse = CVAR_INIT ("invertmouse", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_invertmouse2 = CVAR_INIT ("invertmouse2", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_alwaysfreelook = CVAR_INIT ("alwaysmlook", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_alwaysfreelook2 = CVAR_INIT ("alwaysmlook2", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_chasefreelook = CVAR_INIT ("chasemlook", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_chasefreelook2 = CVAR_INIT ("chasemlook2", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_mousemove = CVAR_INIT ("mousemove", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_mousemove2 = CVAR_INIT ("mousemove2", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_analog = CVAR_INIT ("analog", "Off", CV_CALL, CV_OnOff, Analog_OnChange);
-consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", CV_CALL, CV_OnOff, Analog2_OnChange);
+consvar_t cv_crosshair = CVAR_INIT ("crosshair", "Cross", NULL, CV_SAVE, crosshair_cons_t, NULL);
+consvar_t cv_crosshair2 = CVAR_INIT ("crosshair2", "Cross", NULL, CV_SAVE, crosshair_cons_t, NULL);
+consvar_t cv_invertmouse = CVAR_INIT ("invertmouse", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_invertmouse2 = CVAR_INIT ("invertmouse2", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_alwaysfreelook = CVAR_INIT ("alwaysmlook", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_alwaysfreelook2 = CVAR_INIT ("alwaysmlook2", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chasefreelook = CVAR_INIT ("chasemlook", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chasefreelook2 = CVAR_INIT ("chasemlook2", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_mousemove = CVAR_INIT ("mousemove", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_mousemove2 = CVAR_INIT ("mousemove2", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_analog = CVAR_INIT ("analog", "Off", NULL, CV_CALL, CV_OnOff, Analog_OnChange);
+consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", NULL, CV_CALL, CV_OnOff, Analog2_OnChange);
 #ifdef DC
-consvar_t cv_useranalog = CVAR_INIT ("useranalog", "On", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
-consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "On", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
+consvar_t cv_useranalog = CVAR_INIT ("useranalog", "On", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
+consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "On", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
 #else
-consvar_t cv_useranalog = CVAR_INIT ("useranalog", "Off", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
-consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "Off", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
+consvar_t cv_useranalog = CVAR_INIT ("useranalog", "Off", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
+consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "Off", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
 #endif
 
 typedef enum
@@ -420,75 +420,25 @@ typedef enum
 	AXISFIRENORMAL,
 } axis_input_e;
 
-#if defined (_WII) || defined  (WMINPUT)
-consvar_t cv_turnaxis = CVAR_INIT ("joyaxis_turn", "LStick.X", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_moveaxis = CVAR_INIT ("joyaxis_move", "LStick.Y", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "RStick.X", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_lookaxis = CVAR_INIT ("joyaxis_look", "RStick.Y", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_jumpaxis = CVAR_INIT ("joyaxis_jump", "None", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_spinaxis = CVAR_INIT ("joyaxis_spin", "None", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_fireaxis = CVAR_INIT ("joyaxis_fire", "LAnalog", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_firenaxis = CVAR_INIT ("joyaxis_firenormal", "RAnalog", CV_SAVE, joyaxis_cons_t, NULL);
-#else
-consvar_t cv_turnaxis = CVAR_INIT ("joyaxis_turn", "X-Rudder", CV_SAVE, joyaxis_cons_t, NULL);
-#ifdef PSP
-consvar_t cv_moveaxis = CVAR_INIT ("joyaxis_move", "None", CV_SAVE, joyaxis_cons_t, NULL);
-#else
-consvar_t cv_moveaxis = CVAR_INIT ("joyaxis_move", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-#endif
-#ifdef _arch_dreamcast
-consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "Triggers", CV_SAVE, joyaxis_cons_t, NULL);
-#elif defined (_XBOX)
-consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "Alt X-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_lookaxis = CVAR_INIT ("joyaxis_look", "Alt Y-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-#elif defined (PSP)
-consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "None", CV_SAVE, joyaxis_cons_t, NULL);
-#else
-consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-#endif
-#ifndef _XBOX
-#ifdef PSP
-consvar_t cv_lookaxis = CVAR_INIT ("joyaxis_look", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-#else
-consvar_t cv_lookaxis = CVAR_INIT ("joyaxis_look", "Y-Rudder-", CV_SAVE, joyaxis_cons_t, NULL);
-#endif
-#endif
-consvar_t cv_jumpaxis = CVAR_INIT ("joyaxis_jump", "None", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_spinaxis = CVAR_INIT ("joyaxis_spin", "None", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_fireaxis = CVAR_INIT ("joyaxis_fire", "Z-Axis-", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_firenaxis = CVAR_INIT ("joyaxis_firenormal", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-#endif
 
-#if defined (_WII) || defined  (WMINPUT)
-consvar_t cv_turnaxis2 = CVAR_INIT ("joyaxis2_turn", "LStick.X", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_moveaxis2 = CVAR_INIT ("joyaxis2_move", "LStick.Y", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "RStick.X", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_lookaxis2 = CVAR_INIT ("joyaxis2_look", "RStick.Y", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_jumpaxis2 = CVAR_INIT ("joyaxis2_jump", "None", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_spinaxis2 = CVAR_INIT ("joyaxis2_spin", "None", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_fireaxis2 = CVAR_INIT ("joyaxis2_fire", "LAnalog", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_firenaxis2 = CVAR_INIT ("joyaxis2_firenormal", "RAnalog", CV_SAVE, joyaxis_cons_t, NULL);
-#else
-consvar_t cv_turnaxis2 = CVAR_INIT ("joyaxis2_turn", "X-Rudder", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_moveaxis2 = CVAR_INIT ("joyaxis2_move", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-#ifdef _arch_dreamcast
-consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "Triggers", CV_SAVE, joyaxis_cons_t, NULL);
-#elif defined (_XBOX)
-consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "Alt X-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_lookaxis2 = CVAR_INIT ("joyaxis2_look", "Alt Y-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-#elif defined (_PSP)
-consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "None", CV_SAVE, joyaxis_cons_t, NULL);
-#else
-consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-#endif
-#ifndef _XBOX
-consvar_t cv_lookaxis2 = CVAR_INIT ("joyaxis2_look", "Y-Rudder-", CV_SAVE, joyaxis_cons_t, NULL);
-#endif
-consvar_t cv_jumpaxis2 = CVAR_INIT ("joyaxis2_jump", "None", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_spinaxis2 = CVAR_INIT ("joyaxis2_spin", "None", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_fireaxis2 = CVAR_INIT ("joyaxis2_fire", "Z-Axis-", CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_firenaxis2 = CVAR_INIT ("joyaxis2_firenormal", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL);
-#endif
+consvar_t cv_turnaxis = CVAR_INIT ("joyaxis_turn", "X-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_moveaxis = CVAR_INIT ("joyaxis_move", "Y-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "X-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_lookaxis = CVAR_INIT ("joyaxis_look", "Y-Rudder-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_jumpaxis = CVAR_INIT ("joyaxis_jump", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_spinaxis = CVAR_INIT ("joyaxis_spin", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_fireaxis = CVAR_INIT ("joyaxis_fire", "Z-Axis-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_firenaxis = CVAR_INIT ("joyaxis_firenormal", "Z-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+
+
+consvar_t cv_turnaxis2 = CVAR_INIT ("joyaxis2_turn", "X-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_moveaxis2 = CVAR_INIT ("joyaxis2_move", "Y-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "X-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_lookaxis2 = CVAR_INIT ("joyaxis2_look", "Y-Rudder-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_jumpaxis2 = CVAR_INIT ("joyaxis2_jump", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_spinaxis2 = CVAR_INIT ("joyaxis2_spin", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_fireaxis2 = CVAR_INIT ("joyaxis2_fire", "Z-Axis-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_firenaxis2 = CVAR_INIT ("joyaxis2_firenormal", "Z-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 
 
 #if MAXPLAYERS > 32

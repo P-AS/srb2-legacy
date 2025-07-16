@@ -124,6 +124,7 @@ static fixed_t char_scroll = 0;
 boolean menuactive = false;
 boolean fromlevelselect = false;
 
+static INT32 coolalphatimer = 9;
 typedef enum
 {
 	LLM_CREATESERVER,
@@ -346,23 +347,23 @@ static boolean M_CheckIfValidIPv4(const char *str);
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
 // ==========================================================================
 
-consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", "Whether or not to show a \"FOCUS LOST\" when the game window is unfocused", CV_SAVE, CV_YesNo, NULL);
 
 static CV_PossibleValue_t map_cons_t[] = {
 	{1,"MIN"},
 	{NUMMAPS, "MAX"},
 	{0,NULL}
 };
-consvar_t cv_nextmap = CVAR_INIT ("nextmap", "1", CV_HIDEN|CV_CALL, map_cons_t, Nextmap_OnChange);
+consvar_t cv_nextmap = CVAR_INIT ("nextmap", "1", NULL, CV_HIDEN|CV_CALL, map_cons_t, Nextmap_OnChange);
 
 static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
-consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, CV_HIDEN|CV_CALL, skins_cons_t, Nextmap_OnChange);
+consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, NULL, CV_HIDEN|CV_CALL, skins_cons_t, Nextmap_OnChange);
 
 // This gametype list is integral for many different reasons.
 // When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
 CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
 
-consvar_t cv_newgametype = CVAR_INIT ("newgametype", "Co-op", CV_HIDEN|CV_CALL, gametype_cons_t, Newgametype_OnChange);
+consvar_t cv_newgametype = CVAR_INIT ("newgametype", "Co-op", NULL, CV_HIDEN|CV_CALL, gametype_cons_t, Newgametype_OnChange);
 
 
 
@@ -375,19 +376,19 @@ static CV_PossibleValue_t serversort_cons_t[] = {
 	{5,"Gametype"},
 	{0,NULL}
 };
-consvar_t cv_serversort = CVAR_INIT ("serversort", "Ping", CV_HIDEN | CV_CALL, serversort_cons_t, M_SortServerList);
+consvar_t cv_serversort = CVAR_INIT ("serversort", "Ping", NULL, CV_HIDEN | CV_CALL, serversort_cons_t, M_SortServerList);
 
 // autorecord demos for time attack
-static consvar_t cv_autorecord = CVAR_INIT ("autorecord", "Yes", 0, CV_YesNo, NULL);
+static consvar_t cv_autorecord = CVAR_INIT ("autorecord", "Yes", NULL, 0, CV_YesNo, NULL);
 
 CV_PossibleValue_t ghost_cons_t[] = {{0, "Hide"}, {1, "Show"}, {2, "Show All"}, {0, NULL}};
 CV_PossibleValue_t ghost2_cons_t[] = {{0, "Hide"}, {1, "Show"}, {0, NULL}};
 
-consvar_t cv_ghost_bestscore = CVAR_INIT ("ghost_bestscore", "Show", CV_SAVE, ghost_cons_t, NULL);
-consvar_t cv_ghost_besttime  = CVAR_INIT ("ghost_besttime",  "Show", CV_SAVE, ghost_cons_t, NULL);
-consvar_t cv_ghost_bestrings = CVAR_INIT ("ghost_bestrings", "Show", CV_SAVE, ghost_cons_t, NULL);
-consvar_t cv_ghost_last      = CVAR_INIT ("ghost_last",      "Show", CV_SAVE, ghost_cons_t, NULL);
-consvar_t cv_ghost_guest     = CVAR_INIT ("ghost_guest",     "Show", CV_SAVE, ghost2_cons_t, NULL);
+consvar_t cv_ghost_bestscore = CVAR_INIT ("ghost_bestscore", "Show", NULL, CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_besttime  = CVAR_INIT ("ghost_besttime",  "Show", NULL, CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_bestrings = CVAR_INIT ("ghost_bestrings", "Show", NULL, CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_last      = CVAR_INIT ("ghost_last",      "Show", NULL, CV_SAVE, ghost_cons_t, NULL);
+consvar_t cv_ghost_guest     = CVAR_INIT ("ghost_guest",     "Show", NULL, CV_SAVE, ghost2_cons_t, NULL);
 
 //Console variables used solely in the menu system.
 //todo: add a way to use non-console variables in the menu
@@ -400,12 +401,12 @@ static CV_PossibleValue_t dummymares_cons_t[] = {
 	{-1, "END"}, {0,"Overall"}, {1,"Mare 1"}, {2,"Mare 2"}, {3,"Mare 3"}, {4,"Mare 4"}, {5,"Mare 5"}, {6,"Mare 6"}, {7,"Mare 7"}, {8,"Mare 8"}, {0,NULL}
 };
 
-static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDEN, dummyteam_cons_t, NULL);
-static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", CV_HIDEN, dummyscramble_cons_t, NULL);
-static consvar_t cv_dummyrings = CVAR_INIT ("dummyrings", "0", CV_HIDEN, ringlimit_cons_t,	NULL);
-static consvar_t cv_dummylives = CVAR_INIT ("dummylives", "0", CV_HIDEN, liveslimit_cons_t, NULL);
-static consvar_t cv_dummycontinues = CVAR_INIT ("dummycontinues", "0", CV_HIDEN, liveslimit_cons_t, NULL);
-static consvar_t cv_dummymares = CVAR_INIT ("dummymares", "Overall", CV_HIDEN|CV_CALL, dummymares_cons_t, Dummymares_OnChange);
+static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", NULL, CV_HIDEN, dummyteam_cons_t, NULL);
+static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", NULL, CV_HIDEN, dummyscramble_cons_t, NULL);
+static consvar_t cv_dummyrings = CVAR_INIT ("dummyrings", "0", NULL, CV_HIDEN, ringlimit_cons_t,	NULL);
+static consvar_t cv_dummylives = CVAR_INIT ("dummylives", "0", NULL, CV_HIDEN, liveslimit_cons_t, NULL);
+static consvar_t cv_dummycontinues = CVAR_INIT ("dummycontinues", "0", NULL, CV_HIDEN, liveslimit_cons_t, NULL);
+static consvar_t cv_dummymares = CVAR_INIT ("dummymares", "Overall", NULL, CV_HIDEN|CV_CALL, dummymares_cons_t, Dummymares_OnChange);
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -421,12 +422,12 @@ static consvar_t cv_dummymares = CVAR_INIT ("dummymares", "Overall", CV_HIDEN|CV
 // ---------
 static menuitem_t MainMenu[] =
 {
-	{IT_CALL   |IT_STRING, NULL, "1  player",   M_SinglePlayerMenu, 76},
-	{IT_SUBMENU|IT_STRING, NULL, "multiplayer", &MP_MainDef,        84},
-	{IT_STRING|IT_CALL,    NULL, "Secrets",     M_SecretsMenu,    	92},
-	{IT_CALL   |IT_STRING, NULL, "options",     M_Options,         100},
-	{IT_CALL   |IT_STRING, NULL, "Addons",      M_Addons,          108},
-	{IT_CALL   |IT_STRING, NULL, "quit  game",  M_QuitSRB2,        116},
+	{IT_CALL   |IT_STRING, NULL, "1  player", NULL,   M_SinglePlayerMenu, 76},
+	{IT_SUBMENU|IT_STRING, NULL, "multiplayer", NULL,  &MP_MainDef,        84},
+	{IT_STRING|IT_CALL,    NULL, "Secrets", NULL,      M_SecretsMenu,    	92},
+	{IT_CALL   |IT_STRING, NULL, "options", NULL,      M_Options,         100},
+	{IT_CALL   |IT_STRING, NULL, "Addons",  NULL,      M_Addons,          108},
+	{IT_CALL   |IT_STRING, NULL, "quit  game", NULL,   M_QuitSRB2,        116},
 };
 
 typedef enum
@@ -441,7 +442,7 @@ typedef enum
 
 static menuitem_t MISC_AddonsMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleAddons, 0},     // dummy menuitem for the control func
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "", NULL,  M_HandleAddons, 0},     // dummy menuitem for the control func
 };
 
 // ---------------------------------
@@ -449,9 +450,9 @@ static menuitem_t MISC_AddonsMenu[] =
 // ---------------------------------
 static menuitem_t MAPauseMenu[] =
 {
-	{IT_CALL | IT_STRING,    NULL, "Continue",             M_SelectableClearMenus,48},
-	{IT_CALL | IT_STRING,    NULL, "Retry",                M_ModeAttackRetry,     56},
-	{IT_CALL | IT_STRING,    NULL, "Abort",                M_ModeAttackEndGame,   64},
+	{IT_CALL | IT_STRING,    NULL, "Continue", NULL,             M_SelectableClearMenus,48},
+	{IT_CALL | IT_STRING,    NULL, "Retry",    NULL,             M_ModeAttackRetry,     56},
+	{IT_CALL | IT_STRING,    NULL, "Abort",    NULL,             M_ModeAttackEndGame,   64},
 };
 
 typedef enum
@@ -466,22 +467,22 @@ typedef enum
 // ---------------------
 static menuitem_t MPauseMenu[] =
 {
-	{IT_STRING | IT_CALL,     NULL, "Add-ons...",        M_Addons,               8},
-	{IT_STRING  | IT_SUBMENU, NULL, "Scramble Teams...", &MISC_ScrambleTeamDef, 16},
-	{IT_STRING  | IT_CALL,    NULL, "Switch Map..."    , M_MapChange,           24},
+	{IT_STRING | IT_CALL,     NULL, "Add-ons...", NULL,         M_Addons,               8},
+	{IT_STRING  | IT_SUBMENU, NULL, "Scramble Teams...", NULL,  &MISC_ScrambleTeamDef, 16},
+	{IT_STRING  | IT_CALL,    NULL, "Switch Map..."    , NULL,  M_MapChange,           24},
 
-	{IT_CALL | IT_STRING,    NULL, "Continue",             M_SelectableClearMenus,40},
-	{IT_CALL | IT_STRING,    NULL, "Player 1 Setup",       M_SetupMultiPlayer,    48}, // splitscreen
-	{IT_CALL | IT_STRING,    NULL, "Player 2 Setup",       M_SetupMultiPlayer2,   56}, // splitscreen
+	{IT_CALL | IT_STRING,    NULL, "Continue",     NULL,         M_SelectableClearMenus,40},
+	{IT_CALL | IT_STRING,    NULL, "Player 1 Setup",  NULL,       M_SetupMultiPlayer,    48}, // splitscreen
+	{IT_CALL | IT_STRING,    NULL, "Player 2 Setup",  NULL,       M_SetupMultiPlayer2,   56}, // splitscreen
 
-	{IT_STRING | IT_CALL,    NULL, "Spectate",             M_ConfirmSpectate,     48},
-	{IT_STRING | IT_CALL,    NULL, "Enter Game",           M_ConfirmEnterGame,    48},
-	{IT_STRING | IT_SUBMENU, NULL, "Switch Team...",       &MISC_ChangeTeamDef,   48},
-	{IT_CALL | IT_STRING,    NULL, "Player Setup",         M_SetupMultiPlayer,    56}, // alone
-	{IT_CALL | IT_STRING,    NULL, "Options",              M_Options,             64},
+	{IT_STRING | IT_CALL,    NULL, "Spectate",     NULL,         M_ConfirmSpectate,     48},
+	{IT_STRING | IT_CALL,    NULL, "Enter Game",     NULL,       M_ConfirmEnterGame,    48},
+	{IT_STRING | IT_SUBMENU, NULL, "Switch Team...",  NULL,      &MISC_ChangeTeamDef,   48},
+	{IT_CALL | IT_STRING,    NULL, "Player Setup",  NULL,        M_SetupMultiPlayer,    56}, // alone
+	{IT_CALL | IT_STRING,    NULL, "Options",       NULL,        M_Options,             64},
 
-	{IT_CALL | IT_STRING,    NULL, "Return to Title",      M_EndGame,            80},
-	{IT_CALL | IT_STRING,    NULL, "Quit Game",            M_QuitSRB2,           88},
+	{IT_CALL | IT_STRING,    NULL, "Return to Title",   NULL,    M_EndGame,            80},
+	{IT_CALL | IT_STRING,    NULL, "Quit Game",   NULL,          M_QuitSRB2,           88},
 };
 
 typedef enum
@@ -509,16 +510,16 @@ typedef enum
 static menuitem_t SPauseMenu[] =
 {
 	// Pandora's Box will be shifted up if both options are available
-	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",     M_PandorasBox,         16},
-	{IT_CALL | IT_STRING,    NULL, "Emblem Hints...",      M_EmblemHints,         24},
-	{IT_CALL | IT_STRING,    NULL, "Level Select...",      M_LoadGameLevelSelect, 32},
+	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",  NULL,    M_PandorasBox,         16},
+	{IT_CALL | IT_STRING,    NULL, "Emblem Hints...",   NULL,    M_EmblemHints,         24},
+	{IT_CALL | IT_STRING,    NULL, "Level Select...",  NULL,     M_LoadGameLevelSelect, 32},
 
-	{IT_CALL | IT_STRING,    NULL, "Continue",             M_SelectableClearMenus,48},
-	{IT_CALL | IT_STRING,    NULL, "Retry",                M_Retry,               56},
-	{IT_CALL | IT_STRING,    NULL, "Options",              M_Options,             64},
+	{IT_CALL | IT_STRING,    NULL, "Continue",        NULL,      M_SelectableClearMenus,48},
+	{IT_CALL | IT_STRING,    NULL, "Retry",           NULL,      M_Retry,               56},
+	{IT_CALL | IT_STRING,    NULL, "Options",         NULL,      M_Options,             64},
 
-	{IT_CALL | IT_STRING,    NULL, "Return to Title",      M_EndGame,             80},
-	{IT_CALL | IT_STRING,    NULL, "Quit Game",            M_QuitSRB2,            88},
+	{IT_CALL | IT_STRING,    NULL, "Return to Title",   NULL,    M_EndGame,             80},
+	{IT_CALL | IT_STRING,    NULL, "Quit Game",        NULL,     M_QuitSRB2,            88},
 };
 
 typedef enum
@@ -540,30 +541,30 @@ typedef enum
 // Prefix: MISC_
 static menuitem_t MISC_ScrambleTeamMenu[] =
 {
-	{IT_STRING|IT_CVAR,      NULL, "Scramble Method", &cv_dummyscramble,     30},
-	{IT_WHITESTRING|IT_CALL, NULL, "Confirm",         M_ConfirmTeamScramble, 90},
+	{IT_STRING|IT_CVAR,      NULL, "Scramble Method", NULL,  &cv_dummyscramble,     30},
+	{IT_WHITESTRING|IT_CALL, NULL, "Confirm",     NULL,     M_ConfirmTeamScramble, 90},
 };
 
 static menuitem_t MISC_ChangeTeamMenu[] =
 {
-	{IT_STRING|IT_CVAR,              NULL, "Select Team",             &cv_dummyteam,    30},
-	{IT_WHITESTRING|IT_CALL,         NULL, "Confirm",           M_ConfirmTeamChange,    90},
+	{IT_STRING|IT_CVAR,              NULL, "Select Team",   NULL,           &cv_dummyteam,    30},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Confirm",      NULL,      M_ConfirmTeamChange,    90},
 };
 
 static menuitem_t MISC_ChangeLevelMenu[] =
 {
-	{IT_STRING|IT_CVAR,              NULL, "Game Type",             &cv_newgametype,    30},
-	{IT_STRING|IT_CVAR,              NULL, "Level",                 &cv_nextmap,        60},
-	{IT_WHITESTRING|IT_CALL,         NULL, "Change Level",          M_ChangeLevel,     120},
+	{IT_STRING|IT_CVAR,              NULL, "Game Type",     NULL,         &cv_newgametype,    30},
+	{IT_STRING|IT_CVAR,              NULL, "Level",          NULL,        &cv_nextmap,        60},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Change Level",     NULL,      M_ChangeLevel,     120},
 };
 
 static menuitem_t MISC_HelpMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPN01", M_HandleImageDef, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPN02", M_HandleImageDef, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPN03", M_HandleImageDef, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPM01", M_HandleImageDef, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPM02", M_HandleImageDef, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPN01", NULL,  M_HandleImageDef, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPN02", NULL,  M_HandleImageDef, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPN03", NULL,  M_HandleImageDef, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPM01", NULL,  M_HandleImageDef, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "HELPM02", NULL,  M_HandleImageDef, 0},
 };
 
 // --------------------------------
@@ -574,74 +575,74 @@ static menuitem_t MISC_HelpMenu[] =
 // Pause Menu Pandora's Box Options
 static menuitem_t SR_PandorasBox[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Rings",              &cv_dummyrings,      20},
-	{IT_STRING | IT_CVAR, NULL, "Lives",              &cv_dummylives,      30},
-	{IT_STRING | IT_CVAR, NULL, "Continues",          &cv_dummycontinues,  40},
+	{IT_STRING | IT_CVAR, NULL, "Rings",        NULL,       &cv_dummyrings,      20},
+	{IT_STRING | IT_CVAR, NULL, "Lives",        NULL,       &cv_dummylives,      30},
+	{IT_STRING | IT_CVAR, NULL, "Continues",     NULL,      &cv_dummycontinues,  40},
 
-	{IT_STRING | IT_CVAR, NULL, "Gravity",            &cv_gravity,         60},
-	{IT_STRING | IT_CVAR, NULL, "Throw Rings",        &cv_ringslinger,     70},
+	{IT_STRING | IT_CVAR, NULL, "Gravity",      NULL,       &cv_gravity,         60},
+	{IT_STRING | IT_CVAR, NULL, "Throw Rings",    NULL,     &cv_ringslinger,     70},
 
-	{IT_STRING | IT_CALL, NULL, "Get All Emeralds",   M_GetAllEmeralds,    90},
-	{IT_STRING | IT_CALL, NULL, "Destroy All Robots", M_DestroyRobots,    100},
+	{IT_STRING | IT_CALL, NULL, "Get All Emeralds", NULL,   M_GetAllEmeralds,    90},
+	{IT_STRING | IT_CALL, NULL, "Destroy All Robots", NULL,  M_DestroyRobots,    100},
 
-	{IT_STRING | IT_CALL, NULL, "Ultimate Cheat",     M_UltimateCheat,    130},
+	{IT_STRING | IT_CALL, NULL, "Ultimate Cheat",  NULL,    M_UltimateCheat,    130},
 };
 
 // Sky Room Custom Unlocks
 static menuitem_t SR_MainMenu[] =
 {
-	{IT_STRING|IT_SUBMENU,NULL, "Secrets Checklist", &SR_UnlockChecklistDef, 0},
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom1
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom2
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom3
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom4
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom5
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom6
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom7
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom8
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom9
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom10
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom11
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom12
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom13
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom14
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom15
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom16
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom17
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom18
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom19
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom20
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom21
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom22
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom23
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom24
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom25
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom26
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom27
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom28
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom29
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom30
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom31
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom32
+	{IT_STRING|IT_SUBMENU,NULL, "Secrets Checklist", NULL,  &SR_UnlockChecklistDef, 0},
+	{IT_DISABLED,         NULL, "", NULL,    NULL,                 0}, // Custom1
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom2
+	{IT_DISABLED,         NULL, "",  NULL,  NULL,                 0}, // Custom3
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom4
+	{IT_DISABLED,         NULL, "",  NULL,  NULL,                 0}, // Custom5
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom6
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom7
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom8
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom9
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom10
+	{IT_DISABLED,         NULL, "",  NULL,  NULL,                 0}, // Custom11
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom12
+	{IT_DISABLED,         NULL, "",  NULL,  NULL,                 0}, // Custom13
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom14
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom15
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom16
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom17
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom18
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom19
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom20
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom21
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom22
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom23
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom24
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom25
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom26
+	{IT_DISABLED,         NULL, "",  NULL,  NULL,                 0}, // Custom27
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom28
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom29
+	{IT_DISABLED,         NULL, "",  NULL,  NULL,                 0}, // Custom30
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom31
+	{IT_DISABLED,         NULL, "", NULL,   NULL,                 0}, // Custom32
 
 };
 
 static menuitem_t SR_LevelSelectMenu[] =
 {
-	{IT_STRING|IT_CVAR,              NULL, "Level",                 &cv_nextmap,        60},
+	{IT_STRING|IT_CVAR,              NULL, "Level",      NULL,            &cv_nextmap,        60},
 
-	{IT_WHITESTRING|IT_CALL,         NULL, "Start",                 M_LevelSelectWarp,     120},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Start",     NULL,             M_LevelSelectWarp,     120},
 };
 
 static menuitem_t SR_UnlockChecklistMenu[] =
 {
-	{IT_SUBMENU | IT_STRING,         NULL, "NEXT", &SR_MainDef, 192},
+	{IT_SUBMENU | IT_STRING,         NULL, "NEXT", NULL,  &SR_MainDef, 192},
 };
 
 static menuitem_t SR_EmblemHintMenu[] =
 {
-	{IT_STRING|IT_CVAR,         NULL, "Emblem Radar", &cv_itemfinder, 10},
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",         &SPauseDef,     20}
+	{IT_STRING|IT_CVAR,         NULL, "Emblem Radar", NULL,  &cv_itemfinder, 10},
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",   NULL,       &SPauseDef,     20}
 };
 
 // --------------------------------
@@ -652,10 +653,10 @@ static menuitem_t SR_EmblemHintMenu[] =
 // Single Player Main
 static menuitem_t SP_MainMenu[] =
 {
-	{IT_CALL | IT_STRING,                       NULL, "Start Game",    M_LoadGame,        92},
-	{IT_SECRET,                                 NULL, "Record Attack", M_TimeAttack,     100},
-	{IT_SECRET,                                 NULL, "NiGHTS Mode",   M_NightsAttack,   108},
-	{IT_CALL | IT_STRING | IT_CALL_NOTMODIFIED, NULL, "Statistics",    M_Statistics,     116},
+	{IT_CALL | IT_STRING,                       NULL, "Start Game", NULL,    M_LoadGame,        92},
+	{IT_SECRET,                                 NULL, "Record Attack", NULL,  M_TimeAttack,     100},
+	{IT_SECRET,                                 NULL, "NiGHTS Mode", NULL,    M_NightsAttack,   108},
+	{IT_CALL | IT_STRING | IT_CALL_NOTMODIFIED, NULL, "Statistics",   NULL,   M_Statistics,     116},
 };
 
 enum
@@ -669,27 +670,27 @@ enum
 // Single Player Load Game
 static menuitem_t SP_LoadGameMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleLoadSave, '\0'},     // dummy menuitem for the control func
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "", NULL,  M_HandleLoadSave, '\0'},     // dummy menuitem for the control func
 };
 
 // Single Player Level Select
 static menuitem_t SP_LevelSelectMenu[] =
 {
-	{IT_STRING|IT_CVAR,              NULL, "Level",                 &cv_nextmap,        60},
+	{IT_STRING|IT_CVAR,              NULL, "Level", NULL,                 &cv_nextmap,        60},
 
-	{IT_WHITESTRING|IT_CALL,         NULL, "Start",                 M_LevelSelectWarp,     120},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Start",    NULL,              M_LevelSelectWarp,     120},
 };
 
 // Single Player Time Attack
 static menuitem_t SP_TimeAttackMenu[] =
 {
-	{IT_STRING|IT_CVAR,        NULL, "Level",      &cv_nextmap,          52},
-	{IT_STRING|IT_CVAR,        NULL, "Player",     &cv_chooseskin,       62},
+	{IT_STRING|IT_CVAR,        NULL, "Level", NULL,       &cv_nextmap,          52},
+	{IT_STRING|IT_CVAR,        NULL, "Player", NULL,    &cv_chooseskin,       62},
 
-	{IT_DISABLED,              NULL, "Guest Option...", &SP_GuestReplayDef, 100},
-	{IT_DISABLED,              NULL, "Replay...",     &SP_ReplayDef,        110},
-	{IT_DISABLED,              NULL, "Ghosts...",     &SP_GhostDef,         120},
-	{IT_WHITESTRING|IT_CALL|IT_CALL_NOTMODIFIED,   NULL, "Start",         M_ChooseTimeAttack,   130},
+	{IT_DISABLED,              NULL, "Guest Option...", NULL,  &SP_GuestReplayDef, 100},
+	{IT_DISABLED,              NULL, "Replay...", NULL,     &SP_ReplayDef,        110},
+	{IT_DISABLED,              NULL, "Ghosts...",  NULL,    &SP_GhostDef,         120},
+	{IT_WHITESTRING|IT_CALL|IT_CALL_NOTMODIFIED,   NULL, "Start", NULL,          M_ChooseTimeAttack,   130},
 };
 
 enum
@@ -705,83 +706,83 @@ enum
 
 static menuitem_t SP_ReplayMenu[] =
 {
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Score", M_ReplayTimeAttack, 0},
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Time",  M_ReplayTimeAttack, 8},
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Rings", M_ReplayTimeAttack,16},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Score", NULL,  M_ReplayTimeAttack, 0},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Time",  NULL,  M_ReplayTimeAttack, 8},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Rings", NULL,  M_ReplayTimeAttack,16},
 
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Last",       M_ReplayTimeAttack,29},
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Guest",      M_ReplayTimeAttack,37},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Last",    NULL,    M_ReplayTimeAttack,29},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Guest",  NULL,     M_ReplayTimeAttack,37},
 
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",           &SP_TimeAttackDef, 50}
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",     NULL,       &SP_TimeAttackDef, 50}
 };
 
 static menuitem_t SP_NightsReplayMenu[] =
 {
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Score", M_ReplayTimeAttack, 8},
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Time",  M_ReplayTimeAttack,16},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Score", NULL,  M_ReplayTimeAttack, 8},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Time", NULL,   M_ReplayTimeAttack,16},
 
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Last",       M_ReplayTimeAttack,29},
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Guest",      M_ReplayTimeAttack,37},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Last",   NULL,     M_ReplayTimeAttack,29},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Guest",  NULL,     M_ReplayTimeAttack,37},
 
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",           &SP_NightsAttackDef, 50}
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",     NULL,       &SP_NightsAttackDef, 50}
 };
 
 static menuitem_t SP_GuestReplayMenu[] =
 {
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Score as Guest", M_SetGuestReplay, 0},
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Time as Guest",  M_SetGuestReplay, 8},
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Rings as Guest", M_SetGuestReplay,16},
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Last as Guest",       M_SetGuestReplay,24},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Score as Guest", NULL,  M_SetGuestReplay, 0},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Time as Guest", NULL,   M_SetGuestReplay, 8},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Rings as Guest", NULL,  M_SetGuestReplay,16},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Last as Guest",   NULL,     M_SetGuestReplay,24},
 
-	{IT_WHITESTRING|IT_CALL, NULL, "Delete Guest Replay",      M_SetGuestReplay,37},
+	{IT_WHITESTRING|IT_CALL, NULL, "Delete Guest Replay", NULL,      M_SetGuestReplay,37},
 
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",                &SP_TimeAttackDef, 50}
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",       NULL,          &SP_TimeAttackDef, 50}
 };
 
 static menuitem_t SP_NightsGuestReplayMenu[] =
 {
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Score as Guest", M_SetGuestReplay, 8},
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Time as Guest",  M_SetGuestReplay,16},
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Last as Guest",       M_SetGuestReplay,24},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Score as Guest", NULL,  M_SetGuestReplay, 8},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Time as Guest",  NULL,  M_SetGuestReplay,16},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Last as Guest",    NULL,    M_SetGuestReplay,24},
 
-	{IT_WHITESTRING|IT_CALL, NULL, "Delete Guest Replay",      M_SetGuestReplay,37},
+	{IT_WHITESTRING|IT_CALL, NULL, "Delete Guest Replay",  NULL,     M_SetGuestReplay,37},
 
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",                &SP_NightsAttackDef, 50}
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",    NULL,             &SP_NightsAttackDef, 50}
 };
 
 static menuitem_t SP_GhostMenu[] =
 {
-	{IT_STRING|IT_CVAR,         NULL, "Best Score", &cv_ghost_bestscore, 0},
-	{IT_STRING|IT_CVAR,         NULL, "Best Time",  &cv_ghost_besttime,  8},
-	{IT_STRING|IT_CVAR,         NULL, "Best Rings", &cv_ghost_bestrings,16},
-	{IT_STRING|IT_CVAR,         NULL, "Last",       &cv_ghost_last,     24},
+	{IT_STRING|IT_CVAR,         NULL, "Best Score", NULL,  &cv_ghost_bestscore, 0},
+	{IT_STRING|IT_CVAR,         NULL, "Best Time", NULL,  &cv_ghost_besttime,  8},
+	{IT_STRING|IT_CVAR,         NULL, "Best Rings", NULL,  &cv_ghost_bestrings,16},
+	{IT_STRING|IT_CVAR,         NULL, "Last",   NULL,     &cv_ghost_last,     24},
 
-	{IT_STRING|IT_CVAR,         NULL, "Guest",      &cv_ghost_guest,    37},
+	{IT_STRING|IT_CVAR,         NULL, "Guest", NULL,      &cv_ghost_guest,    37},
 
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",       &SP_TimeAttackDef,  50}
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",  NULL,     &SP_TimeAttackDef,  50}
 };
 
 static menuitem_t SP_NightsGhostMenu[] =
 {
-	{IT_STRING|IT_CVAR,         NULL, "Best Score", &cv_ghost_bestscore, 8},
-	{IT_STRING|IT_CVAR,         NULL, "Best Time",  &cv_ghost_besttime, 16},
-	{IT_STRING|IT_CVAR,         NULL, "Last",       &cv_ghost_last,     24},
+	{IT_STRING|IT_CVAR,         NULL, "Best Score", NULL,  &cv_ghost_bestscore, 8},
+	{IT_STRING|IT_CVAR,         NULL, "Best Time", NULL,   &cv_ghost_besttime, 16},
+	{IT_STRING|IT_CVAR,         NULL, "Last",   NULL,     &cv_ghost_last,     24},
 
-	{IT_STRING|IT_CVAR,         NULL, "Guest",      &cv_ghost_guest,    37},
+	{IT_STRING|IT_CVAR,         NULL, "Guest",  NULL,     &cv_ghost_guest,    37},
 
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",       &SP_NightsAttackDef,  50}
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",  NULL,      &SP_NightsAttackDef,  50}
 };
 
 // Single Player Nights Attack
 static menuitem_t SP_NightsAttackMenu[] =
 {
-	{IT_STRING|IT_CVAR,        NULL, "Level",            &cv_nextmap,          44},
-	{IT_STRING|IT_CVAR,        NULL, "Show Records For", &cv_dummymares,       54},
+	{IT_STRING|IT_CVAR,        NULL, "Level",      NULL,       &cv_nextmap,          44},
+	{IT_STRING|IT_CVAR,        NULL, "Show Records For",  NULL, &cv_dummymares,       54},
 
-	{IT_DISABLED,              NULL, "Guest Option...",  &SP_NightsGuestReplayDef,   108},
-	{IT_DISABLED,              NULL, "Replay...",        &SP_NightsReplayDef,        118},
-	{IT_DISABLED,              NULL, "Ghosts...",        &SP_NightsGhostDef,         128},
-	{IT_WHITESTRING|IT_CALL|IT_CALL_NOTMODIFIED,   NULL, "Start",            M_ChooseNightsAttack, 138},
+	{IT_DISABLED,              NULL, "Guest Option...", NULL,   &SP_NightsGuestReplayDef,   108},
+	{IT_DISABLED,              NULL, "Replay...",   NULL,      &SP_NightsReplayDef,        118},
+	{IT_DISABLED,              NULL, "Ghosts...",    NULL,     &SP_NightsGhostDef,         128},
+	{IT_WHITESTRING|IT_CALL|IT_CALL_NOTMODIFIED,   NULL, "Start", NULL,            M_ChooseNightsAttack, 138},
 };
 
 enum
@@ -798,7 +799,7 @@ enum
 // Statistics
 static menuitem_t SP_LevelStatsMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleLevelStats, '\0'},     // dummy menuitem for the control func
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "", NULL,  M_HandleLevelStats, '\0'},     // dummy menuitem for the control func
 };
 
 // A rare case.
@@ -813,28 +814,28 @@ menuitem_t PlayerMenu[MAXSKINS];
 static menuitem_t MP_MainMenu[] =
 {
 #ifndef NONET
-	{IT_CALL | IT_STRING, NULL, "HOST GAME",              M_StartServerMenu,      10},
-	{IT_CALL | IT_STRING, NULL, "JOIN GAME (Search)",	  M_ConnectMenu,		  30},
-	{IT_KEYHANDLER | IT_STRING, NULL, "JOIN GAME (Specify IP)", M_HandleConnectIP,        40},
-	{IT_STRING|IT_CALL, NULL, "JOIN LAST SERVER",     M_ConnectLastServer,        65},
+	{IT_CALL | IT_STRING, NULL, "HOST GAME",      NULL,         M_StartServerMenu,      10},
+	{IT_CALL | IT_STRING, NULL, "JOIN GAME (Search)", NULL, 	  M_ConnectMenu,		  30},
+	{IT_KEYHANDLER | IT_STRING, NULL, "JOIN GAME (Specify IP)", NULL,  M_HandleConnectIP,        40},
+	{IT_STRING|IT_CALL, NULL, "JOIN LAST SERVER", NULL,     M_ConnectLastServer,        65},
 #endif
-	{IT_CALL | IT_STRING, NULL, "TWO PLAYER GAME",        M_StartSplitServerMenu, 95},
+	{IT_CALL | IT_STRING, NULL, "TWO PLAYER GAME",  NULL,       M_StartSplitServerMenu, 95},
 
-	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 1",         M_SetupMultiPlayer,     115},
-	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 2",         M_SetupMultiPlayer2,    125},
+	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 1",   NULL,       M_SetupMultiPlayer,     115},
+	{IT_CALL | IT_STRING, NULL, "SETUP PLAYER 2",  NULL,        M_SetupMultiPlayer2,    125},
 };
 
 static menuitem_t MP_ServerMenu[] =
 {
-	{IT_STRING|IT_CVAR,              NULL, "Game Type",             &cv_newgametype,    10},
+	{IT_STRING|IT_CVAR,              NULL, "Game Type",  NULL,            &cv_newgametype,    10},
 #ifndef NONET
-	{IT_STRING|IT_CALL,              NULL, "Room...",               M_RoomMenu,         20},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Server Name",           &cv_servername,     30},
+	{IT_STRING|IT_CALL,              NULL, "Room...",     NULL,           M_RoomMenu,         20},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Server Name",    NULL,        &cv_servername,     30},
 #endif
 
-	{IT_STRING|IT_CVAR,              NULL, "Level",                 &cv_nextmap,        80},
+	{IT_STRING|IT_CVAR,              NULL, "Level",   NULL,               &cv_nextmap,        80},
 
-	{IT_WHITESTRING|IT_CALL,         NULL, "Start",                 M_StartServer,     130},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Start",    NULL,              M_StartServer,     130},
 };
 
 enum
@@ -851,22 +852,22 @@ enum
 #ifndef NONET
 static menuitem_t MP_ConnectMenu[] =
 {
-	{IT_STRING | IT_CALL,       NULL, "Room...",  M_RoomMenu,         4},
-	{IT_STRING | IT_CVAR,       NULL, "Sort By",  &cv_serversort,     12},
-	{IT_STRING | IT_KEYHANDLER, NULL, "Page",     M_HandleServerPage, 20},
-	{IT_STRING | IT_CALL,       NULL, "Refresh",  M_Refresh,          28},
+	{IT_STRING | IT_CALL,       NULL, "Room...", NULL,   M_RoomMenu,         4},
+	{IT_STRING | IT_CVAR,       NULL, "Sort By", NULL,   &cv_serversort,     12},
+	{IT_STRING | IT_KEYHANDLER, NULL, "Page",  NULL,     M_HandleServerPage, 20},
+	{IT_STRING | IT_CALL,       NULL, "Refresh", NULL,   M_Refresh,          28},
 
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          48-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          60-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          72-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          84-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          96-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         108-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         120-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         132-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         144-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         156-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         168-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,           M_Connect,          48-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,          M_Connect,          60-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,          M_Connect,          72-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,         M_Connect,          84-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,          M_Connect,          96-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,          M_Connect,         108-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,           M_Connect,         120-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,            M_Connect,         132-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,            M_Connect,         144-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,           M_Connect,         156-4},
+	{IT_STRING | IT_SPACE, NULL, "",   NULL,            M_Connect,         168-4},
 };
 
 enum
@@ -880,41 +881,41 @@ enum
 
 static menuitem_t MP_RoomMenu[] =
 {
-	{IT_STRING | IT_CALL, NULL, "<Offline Mode>", M_ChooseRoom,   9},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  18},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  27},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  36},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  45},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  54},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  63},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  72},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  81},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  90},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom,  99},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 108},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 117},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 126},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 135},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 144},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 153},
-	{IT_DISABLED,         NULL, "",               M_ChooseRoom, 162},
+	{IT_STRING | IT_CALL, NULL, "<Offline Mode>", NULL,  M_ChooseRoom,   9},
+	{IT_DISABLED,         NULL, "",      NULL,          M_ChooseRoom,  18},
+	{IT_DISABLED,         NULL, "",      NULL,          M_ChooseRoom,  27},
+	{IT_DISABLED,         NULL, "",       NULL,         M_ChooseRoom,  36},
+	{IT_DISABLED,         NULL, "",       NULL,         M_ChooseRoom,  45},
+	{IT_DISABLED,         NULL, "",       NULL,         M_ChooseRoom,  54},
+	{IT_DISABLED,         NULL, "",       NULL,         M_ChooseRoom,  63},
+	{IT_DISABLED,         NULL, "",       NULL,         M_ChooseRoom,  72},
+	{IT_DISABLED,         NULL, "",        NULL,        M_ChooseRoom,  81},
+	{IT_DISABLED,         NULL, "",        NULL,        M_ChooseRoom,  90},
+	{IT_DISABLED,         NULL, "",        NULL,        M_ChooseRoom,  99},
+	{IT_DISABLED,         NULL, "",        NULL,        M_ChooseRoom, 108},
+	{IT_DISABLED,         NULL, "",        NULL,        M_ChooseRoom, 117},
+	{IT_DISABLED,         NULL, "",        NULL,        M_ChooseRoom, 126},
+	{IT_DISABLED,         NULL, "",       NULL,         M_ChooseRoom, 135},
+	{IT_DISABLED,         NULL, "",        NULL,        M_ChooseRoom, 144},
+	{IT_DISABLED,         NULL, "",       NULL,         M_ChooseRoom, 153},
+	{IT_DISABLED,         NULL, "",       NULL,         M_ChooseRoom, 162},
 };
 #endif
 
 // Separated splitscreen and normal servers.
 static menuitem_t MP_SplitServerMenu[] =
 {
-	{IT_STRING|IT_CVAR,              NULL, "Game Type",             &cv_newgametype,    10},
-	{IT_STRING|IT_CVAR,              NULL, "Level",                 &cv_nextmap,        80},
-	{IT_WHITESTRING|IT_CALL,         NULL, "Start",                 M_StartServer,     130},
+	{IT_STRING|IT_CVAR,              NULL, "Game Type",     NULL,         &cv_newgametype,    10},
+	{IT_STRING|IT_CVAR,              NULL, "Level",        NULL,          &cv_nextmap,        80},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Start",       NULL,           M_StartServer,     130},
 };
 
 static menuitem_t MP_PlayerSetupMenu[] =
 {
-	{IT_KEYHANDLER | IT_STRING, NULL, "Name", M_HandleSetupMultiPlayer, 0}, // name
-	{IT_KEYHANDLER | IT_STRING, NULL, "Character", M_HandleSetupMultiPlayer, 16}, // skin
-	{IT_KEYHANDLER, NULL, "Color", M_HandleSetupMultiPlayer, 96}, // colour
-	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // default
+	{IT_KEYHANDLER | IT_STRING, NULL, "Name", NULL,  M_HandleSetupMultiPlayer, 0}, // name
+	{IT_KEYHANDLER | IT_STRING, NULL, "Character", NULL,  M_HandleSetupMultiPlayer, 16}, // skin
+	{IT_KEYHANDLER, NULL, "Color", NULL,  M_HandleSetupMultiPlayer, 96}, // colour
+	{IT_KEYHANDLER, NULL, "", NULL,  M_HandleSetupMultiPlayer, 0}, // default
 };
 
 // ------------------------------------
@@ -923,217 +924,217 @@ static menuitem_t MP_PlayerSetupMenu[] =
 // Prefix: OP_
 static menuitem_t OP_MainMenu[] =
 {
-	{IT_SUBMENU | IT_STRING, NULL, "Setup Controls...",     &OP_ControlsDef,      10},
+	{IT_SUBMENU | IT_STRING, NULL, "Setup Controls...", NULL,      &OP_ControlsDef,      10},
 
-	{IT_CALL | IT_STRING, NULL, "Video Options...",      M_VideoOptions,  30},
-	{IT_SUBMENU | IT_STRING, NULL, "Sound Options...",      &OP_SoundOptionsDef,  40},
-	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",       &OP_DataOptionsDef,   50},
+	{IT_CALL | IT_STRING, NULL, "Video Options...", NULL,      M_VideoOptions,  30},
+	{IT_SUBMENU | IT_STRING, NULL, "Sound Options...", NULL,      &OP_SoundOptionsDef,  40},
+	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",  NULL,      &OP_DataOptionsDef,   50},
 
-	{IT_SUBMENU | IT_STRING, NULL, "Legacy Options...",     &OP_LegacyOptionsDef,  70},
+	{IT_SUBMENU | IT_STRING, NULL, "Legacy Options...", NULL,     &OP_LegacyOptionsDef,  70},
 
-	{IT_SUBMENU | IT_STRING, NULL, "Game Options...",       &OP_GameOptionsDef,   90},
-	{IT_SUBMENU | IT_STRING, NULL, "Server Options...",     &OP_ServerOptionsDef, 100},
-	{IT_STRING  | IT_CALL,   NULL, "Add-on Options...",     M_AddonsOptions,      110},
+	{IT_SUBMENU | IT_STRING, NULL, "Game Options...",  NULL,      &OP_GameOptionsDef,   90},
+	{IT_SUBMENU | IT_STRING, NULL, "Server Options...", NULL,     &OP_ServerOptionsDef, 100},
+	{IT_STRING  | IT_CALL,   NULL, "Add-on Options...", NULL,     M_AddonsOptions,      110},
 };
 
 static menuitem_t OP_ControlsMenu[] =
 {
-	{IT_SUBMENU | IT_STRING, NULL, "Player 1 Controls...", &OP_P1ControlsDef,  10},
-	{IT_SUBMENU | IT_STRING, NULL, "Player 2 Controls...", &OP_P2ControlsDef,  20},
+	{IT_SUBMENU | IT_STRING, NULL, "Player 1 Controls...", NULL,  &OP_P1ControlsDef,  10},
+	{IT_SUBMENU | IT_STRING, NULL, "Player 2 Controls...", NULL,  &OP_P2ControlsDef,  20},
 
-	{IT_STRING  | IT_CVAR, NULL, "Controls per key", &cv_controlperkey, 40},
+	{IT_STRING  | IT_CVAR, NULL, "Controls per key", NULL,  &cv_controlperkey, 40},
 };
 
 static menuitem_t OP_P1ControlsMenu[] =
 {
-	{IT_CALL    | IT_STRING, NULL, "Control Configuration...", M_Setup1PControlsMenu,   10},
-	{IT_SUBMENU | IT_STRING, NULL, "Mouse Options...", &OP_MouseOptionsDef, 20},
-	{IT_SUBMENU | IT_STRING, NULL, "Joystick Options...", &OP_Joystick1Def  ,  30},
+	{IT_CALL    | IT_STRING, NULL, "Control Configuration...", NULL,  M_Setup1PControlsMenu,   10},
+	{IT_SUBMENU | IT_STRING, NULL, "Mouse Options...", NULL,  &OP_MouseOptionsDef, 20},
+	{IT_SUBMENU | IT_STRING, NULL, "Joystick Options...", NULL,  &OP_Joystick1Def  ,  30},
 
-	{IT_STRING  | IT_CVAR, NULL, "Camera"  , &cv_chasecam  ,  50},
-	{IT_STRING  | IT_CVAR, NULL, "Crosshair", &cv_crosshair , 60},
+	{IT_STRING  | IT_CVAR, NULL, "Camera"  , NULL,  &cv_chasecam  ,  50},
+	{IT_STRING  | IT_CVAR, NULL, "Crosshair", NULL,  &cv_crosshair , 60},
 
-	{IT_STRING  | IT_CVAR, NULL, "Analog Control", &cv_useranalog,  80},
+	{IT_STRING  | IT_CVAR, NULL, "Analog Control", NULL,  &cv_useranalog,  80},
 };
 
 static menuitem_t OP_P2ControlsMenu[] =
 {
-	{IT_CALL    | IT_STRING, NULL, "Control Configuration...", M_Setup2PControlsMenu,   10},
-	{IT_SUBMENU | IT_STRING, NULL, "Second Mouse Options...", &OP_Mouse2OptionsDef, 20},
-	{IT_SUBMENU | IT_STRING, NULL, "Second Joystick Options...", &OP_Joystick2Def  ,  30},
+	{IT_CALL    | IT_STRING, NULL, "Control Configuration...", NULL,  M_Setup2PControlsMenu,   10},
+	{IT_SUBMENU | IT_STRING, NULL, "Second Mouse Options...", NULL,  &OP_Mouse2OptionsDef, 20},
+	{IT_SUBMENU | IT_STRING, NULL, "Second Joystick Options...", NULL,  &OP_Joystick2Def  ,  30},
 
-	{IT_STRING  | IT_CVAR, NULL, "Camera"  , &cv_chasecam2 , 50},
-	{IT_STRING  | IT_CVAR, NULL, "Crosshair", &cv_crosshair2, 60},
+	{IT_CVAR | IT_STRING, NULL, "Camera", NULL, &cv_chasecam2,	50},
+	{IT_STRING  | IT_CVAR, NULL, "Crosshair", NULL, &cv_crosshair2, 60},
 
-	{IT_STRING  | IT_CVAR, NULL, "Analog Control", &cv_useranalog2,  80},
+	{IT_STRING  | IT_CVAR, NULL, "Analog Control", NULL,  &cv_useranalog2,  80},
 };
 
 static menuitem_t OP_AllControlsMenu[] =
 {
-	{IT_HEADER, NULL, "  Movement", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Move Forward",     M_ChangeControl, gc_forward     },
-	{IT_CALL | IT_STRING2, NULL, "Move Backward",    M_ChangeControl, gc_backward    },
-	{IT_CALL | IT_STRING2, NULL, "Move Left",        M_ChangeControl, gc_strafeleft  },
-	{IT_CALL | IT_STRING2, NULL, "Move Right",       M_ChangeControl, gc_straferight },
-	{IT_CALL | IT_STRING2, NULL, "Jump",             M_ChangeControl, gc_jump      },
-	{IT_CALL | IT_STRING2, NULL, "Spin",             M_ChangeControl, gc_use     },
-	{IT_HEADER, NULL, "  Camera", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Look Up",        M_ChangeControl, gc_lookup      },
-	{IT_CALL | IT_STRING2, NULL, "Look Down",      M_ChangeControl, gc_lookdown    },
-	{IT_CALL | IT_STRING2, NULL, "Turn Left",      M_ChangeControl, gc_turnleft    },
-	{IT_CALL | IT_STRING2, NULL, "Turn Right",     M_ChangeControl, gc_turnright   },
-	{IT_CALL | IT_STRING2, NULL, "Center View",      M_ChangeControl, gc_centerview  },
-	{IT_CALL | IT_STRING2, NULL, "Toggle Mouselook", M_ChangeControl, gc_mouseaiming },
-	{IT_CALL | IT_STRING2, NULL, "Toggle Third-Person", M_ChangeControl, gc_camtoggle},
-	{IT_CALL | IT_STRING2, NULL, "Reset Camera",     M_ChangeControl, gc_camreset    },
+	{IT_HEADER, NULL, "  Movement", NULL,  NULL, 0},
+	{IT_CALL | IT_STRING2, NULL, "Move Forward",  NULL,     M_ChangeControl, gc_forward     },
+	{IT_CALL | IT_STRING2, NULL, "Move Backward",  NULL,   M_ChangeControl, gc_backward    },
+	{IT_CALL | IT_STRING2, NULL, "Move Left",  NULL,       M_ChangeControl, gc_strafeleft  },
+	{IT_CALL | IT_STRING2, NULL, "Move Right",  NULL,      M_ChangeControl, gc_straferight },
+	{IT_CALL | IT_STRING2, NULL, "Jump",        NULL,      M_ChangeControl, gc_jump      },
+	{IT_CALL | IT_STRING2, NULL, "Spin",      NULL,        M_ChangeControl, gc_use     },
+	{IT_HEADER, NULL, "  Camera", NULL,  NULL, 0},
+	{IT_CALL | IT_STRING2, NULL, "Look Up",  NULL,       M_ChangeControl, gc_lookup      },
+	{IT_CALL | IT_STRING2, NULL, "Look Down",  NULL,     M_ChangeControl, gc_lookdown    },
+	{IT_CALL | IT_STRING2, NULL, "Turn Left",  NULL,     M_ChangeControl, gc_turnleft    },
+	{IT_CALL | IT_STRING2, NULL, "Turn Right",  NULL,    M_ChangeControl, gc_turnright   },
+	{IT_CALL | IT_STRING2, NULL, "Center View", NULL,      M_ChangeControl, gc_centerview  },
+	{IT_CALL | IT_STRING2, NULL, "Toggle Mouselook", NULL,  M_ChangeControl, gc_mouseaiming },
+	{IT_CALL | IT_STRING2, NULL, "Toggle Third-Person", NULL,  M_ChangeControl, gc_camtoggle},
+	{IT_CALL | IT_STRING2, NULL, "Reset Camera", NULL,    M_ChangeControl, gc_camreset    },
 	{IT_HEADER, NULL, "  Advanced", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Rotate Camera L",  M_ChangeControl, gc_camleft      },
-	{IT_CALL | IT_STRING2, NULL, "Rotate Camera R",  M_ChangeControl, gc_camright     },
-	{IT_HEADER, NULL, "  Multiplayer", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Talk key",         M_ChangeControl, gc_talkkey      },
-	{IT_CALL | IT_STRING2, NULL, "Team-Talk key",    M_ChangeControl, gc_teamkey      },
-	{IT_CALL | IT_STRING2, NULL, "Rankings/Scores",  M_ChangeControl, gc_scores       },
-	{IT_CALL | IT_STRING2, NULL, "Toss Flag",        M_ChangeControl, gc_tossflag     },
-	{IT_CALL | IT_STRING2, NULL, "Next Weapon",      M_ChangeControl, gc_weaponnext   },
-	{IT_CALL | IT_STRING2, NULL, "Prev Weapon",      M_ChangeControl, gc_weaponprev   },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 1",    M_ChangeControl, gc_wepslot1     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 2",    M_ChangeControl, gc_wepslot2     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 3",    M_ChangeControl, gc_wepslot3     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 4",    M_ChangeControl, gc_wepslot4     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 5",    M_ChangeControl, gc_wepslot5     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 6",    M_ChangeControl, gc_wepslot6     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 7",    M_ChangeControl, gc_wepslot7     },
-	{IT_CALL | IT_STRING2, NULL, "Ring Toss",        M_ChangeControl, gc_fire         },
-	{IT_CALL | IT_STRING2, NULL, "Ring Toss Normal", M_ChangeControl, gc_firenormal   },
+	{IT_CALL | IT_STRING2, NULL, "Rotate Camera L", NULL,   M_ChangeControl, gc_camleft      },
+	{IT_CALL | IT_STRING2, NULL, "Rotate Camera R", NULL,   M_ChangeControl, gc_camright     },
+	{IT_HEADER, NULL, "  Multiplayer", NULL,  NULL, 0},
+	{IT_CALL | IT_STRING2, NULL, "Talk key",  NULL,        M_ChangeControl, gc_talkkey      },
+	{IT_CALL | IT_STRING2, NULL, "Team-Talk key", NULL,    M_ChangeControl, gc_teamkey      },
+	{IT_CALL | IT_STRING2, NULL, "Rankings/Scores", NULL,  M_ChangeControl, gc_scores       },
+	{IT_CALL | IT_STRING2, NULL, "Toss Flag",    NULL,     M_ChangeControl, gc_tossflag     },
+	{IT_CALL | IT_STRING2, NULL, "Next Weapon", NULL,      M_ChangeControl, gc_weaponnext   },
+	{IT_CALL | IT_STRING2, NULL, "Prev Weapon",  NULL,     M_ChangeControl, gc_weaponprev   },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 1", NULL,    M_ChangeControl, gc_wepslot1     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 2", NULL,    M_ChangeControl, gc_wepslot2     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 3",  NULL,   M_ChangeControl, gc_wepslot3     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 4",  NULL,   M_ChangeControl, gc_wepslot4     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 5",  NULL,   M_ChangeControl, gc_wepslot5     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 6",  NULL,   M_ChangeControl, gc_wepslot6     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 7", NULL,    M_ChangeControl, gc_wepslot7     },
+	{IT_CALL | IT_STRING2, NULL, "Ring Toss",     NULL,    M_ChangeControl, gc_fire         },
+	{IT_CALL | IT_STRING2, NULL, "Ring Toss Normal", NULL,  M_ChangeControl, gc_firenormal   },
 	{IT_HEADER, NULL, "  Miscellaneous", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Custom Action 1",  M_ChangeControl, gc_custom1      },
-	{IT_CALL | IT_STRING2, NULL, "Custom Action 2",  M_ChangeControl, gc_custom2      },
-	{IT_CALL | IT_STRING2, NULL, "Custom Action 3",  M_ChangeControl, gc_custom3      },
+	{IT_CALL | IT_STRING2, NULL, "Custom Action 1", NULL,   M_ChangeControl, gc_custom1      },
+	{IT_CALL | IT_STRING2, NULL, "Custom Action 2", NULL,  M_ChangeControl, gc_custom2      },
+	{IT_CALL | IT_STRING2, NULL, "Custom Action 3",NULL,   M_ChangeControl, gc_custom3      },
 
-	{IT_CALL | IT_STRING2, NULL, "Pause",            M_ChangeControl, gc_pause        },
-	{IT_CALL | IT_STRING2, NULL, "Screenshot",            M_ChangeControl, gc_screenshot },
-	{IT_CALL | IT_STRING2, NULL, "Toggle GIF Recording",  M_ChangeControl, gc_recordgif  },
-	{IT_CALL | IT_STRING2, NULL, "Open/Close Menu (ESC)", M_ChangeControl, gc_systemmenu },
-	{IT_CALL | IT_STRING2, NULL, "Change Viewpoint",      M_ChangeControl, gc_viewpoint  },
-	{IT_CALL | IT_STRING2, NULL, "Console",          M_ChangeControl, gc_console      },
+	{IT_CALL | IT_STRING2, NULL, "Pause",       NULL,      M_ChangeControl, gc_pause        },
+	{IT_CALL | IT_STRING2, NULL, "Screenshot",   NULL,          M_ChangeControl, gc_screenshot },
+	{IT_CALL | IT_STRING2, NULL, "Toggle GIF Recording", NULL,  M_ChangeControl, gc_recordgif  },
+	{IT_CALL | IT_STRING2, NULL, "Open/Close Menu (ESC)", NULL,  M_ChangeControl, gc_systemmenu },
+	{IT_CALL | IT_STRING2, NULL, "Change Viewpoint", NULL,      M_ChangeControl, gc_viewpoint  },
+	{IT_CALL | IT_STRING2, NULL, "Console",  NULL,         M_ChangeControl, gc_console      },
 };
 
 static menuitem_t OP_AllControls2Menu[] =
 {
-	{IT_HEADER, NULL, "  Movement", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Move Forward",     M_ChangeControl, gc_forward     },
-	{IT_CALL | IT_STRING2, NULL, "Move Backward",    M_ChangeControl, gc_backward    },
-	{IT_CALL | IT_STRING2, NULL, "Move Left",        M_ChangeControl, gc_strafeleft  },
-	{IT_CALL | IT_STRING2, NULL, "Move Right",       M_ChangeControl, gc_straferight },
-	{IT_CALL | IT_STRING2, NULL, "Jump",             M_ChangeControl, gc_jump      },
-	{IT_CALL | IT_STRING2, NULL, "Spin",             M_ChangeControl, gc_use     },
-	{IT_HEADER, NULL, "  Camera", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Look Up",        M_ChangeControl, gc_lookup      },
-	{IT_CALL | IT_STRING2, NULL, "Look Down",      M_ChangeControl, gc_lookdown    },
-	{IT_CALL | IT_STRING2, NULL, "Turn Left",      M_ChangeControl, gc_turnleft    },
-	{IT_CALL | IT_STRING2, NULL, "Turn Right",     M_ChangeControl, gc_turnright   },
-	{IT_CALL | IT_STRING2, NULL, "Center View",      M_ChangeControl, gc_centerview  },
-	{IT_CALL | IT_STRING2, NULL, "Toggle Mouselook", M_ChangeControl, gc_mouseaiming },
-	{IT_CALL | IT_STRING2, NULL, "Toggle Third-Person", M_ChangeControl, gc_camtoggle},
-	{IT_CALL | IT_STRING2, NULL, "Reset Camera",     M_ChangeControl, gc_camreset    },
-	{IT_HEADER, NULL, "  Advanced", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Rotate Camera L",  M_ChangeControl, gc_camleft      },
-	{IT_CALL | IT_STRING2, NULL, "Rotate Camera R",  M_ChangeControl, gc_camright     },
-	{IT_HEADER, NULL, "  Multiplayer", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Toss Flag",        M_ChangeControl, gc_tossflag     },
-	{IT_CALL | IT_STRING2, NULL, "Next Weapon",      M_ChangeControl, gc_weaponnext   },
-	{IT_CALL | IT_STRING2, NULL, "Prev Weapon",      M_ChangeControl, gc_weaponprev   },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 1",    M_ChangeControl, gc_wepslot1     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 2",    M_ChangeControl, gc_wepslot2     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 3",    M_ChangeControl, gc_wepslot3     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 4",    M_ChangeControl, gc_wepslot4     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 5",    M_ChangeControl, gc_wepslot5     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 6",    M_ChangeControl, gc_wepslot6     },
-	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 7",    M_ChangeControl, gc_wepslot7     },
-	{IT_CALL | IT_STRING2, NULL, "Ring Toss",        M_ChangeControl, gc_fire         },
-	{IT_CALL | IT_STRING2, NULL, "Ring Toss Normal", M_ChangeControl, gc_firenormal   },
-	{IT_HEADER, NULL, "  Miscellaneous", NULL, 0},
-	{IT_CALL | IT_STRING2, NULL, "Custom Action 1",  M_ChangeControl, gc_custom1      },
-	{IT_CALL | IT_STRING2, NULL, "Custom Action 2",  M_ChangeControl, gc_custom2      },
-	{IT_CALL | IT_STRING2, NULL, "Custom Action 3",  M_ChangeControl, gc_custom3      },
+	{IT_HEADER, NULL, "  Movement", NULL,  NULL, 0},
+	{IT_CALL | IT_STRING2, NULL, "Move Forward", NULL,     M_ChangeControl, gc_forward     },
+	{IT_CALL | IT_STRING2, NULL, "Move Backward",  NULL,   M_ChangeControl, gc_backward    },
+	{IT_CALL | IT_STRING2, NULL, "Move Left",    NULL,     M_ChangeControl, gc_strafeleft  },
+	{IT_CALL | IT_STRING2, NULL, "Move Right",   NULL,     M_ChangeControl, gc_straferight },
+	{IT_CALL | IT_STRING2, NULL, "Jump",       NULL,       M_ChangeControl, gc_jump      },
+	{IT_CALL | IT_STRING2, NULL, "Spin",     NULL,         M_ChangeControl, gc_use     },
+	{IT_HEADER, NULL, "  Camera", NULL,  NULL, 0},
+	{IT_CALL | IT_STRING2, NULL, "Look Up",  NULL,       M_ChangeControl, gc_lookup      },
+	{IT_CALL | IT_STRING2, NULL, "Look Down", NULL,      M_ChangeControl, gc_lookdown    },
+	{IT_CALL | IT_STRING2, NULL, "Turn Left",  NULL,     M_ChangeControl, gc_turnleft    },
+	{IT_CALL | IT_STRING2, NULL, "Turn Right",  NULL,    M_ChangeControl, gc_turnright   },
+	{IT_CALL | IT_STRING2, NULL, "Center View", NULL,      M_ChangeControl, gc_centerview  },
+	{IT_CALL | IT_STRING2, NULL, "Toggle Mouselook", NULL,  M_ChangeControl, gc_mouseaiming },
+	{IT_CALL | IT_STRING2, NULL, "Toggle Third-Person", NULL,  M_ChangeControl, gc_camtoggle},
+	{IT_CALL | IT_STRING2, NULL, "Reset Camera",  NULL,    M_ChangeControl, gc_camreset    },
+	{IT_HEADER, NULL, "  Advanced", NULL,  NULL, 0},
+	{IT_CALL | IT_STRING2, NULL, "Rotate Camera L", NULL,   M_ChangeControl, gc_camleft      },
+	{IT_CALL | IT_STRING2, NULL, "Rotate Camera R", NULL,   M_ChangeControl, gc_camright     },
+	{IT_HEADER, NULL, "  Multiplayer", NULL,  NULL, 0},
+	{IT_CALL | IT_STRING2, NULL, "Toss Flag",   NULL,      M_ChangeControl, gc_tossflag     },
+	{IT_CALL | IT_STRING2, NULL, "Next Weapon",  NULL,     M_ChangeControl, gc_weaponnext   },
+	{IT_CALL | IT_STRING2, NULL, "Prev Weapon",  NULL,     M_ChangeControl, gc_weaponprev   },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 1", NULL,    M_ChangeControl, gc_wepslot1     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 2", NULL,    M_ChangeControl, gc_wepslot2     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 3", NULL,    M_ChangeControl, gc_wepslot3     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 4", NULL,    M_ChangeControl, gc_wepslot4     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 5", NULL,     M_ChangeControl, gc_wepslot5     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 6",  NULL,   M_ChangeControl, gc_wepslot6     },
+	{IT_CALL | IT_STRING2, NULL, "Weapon Slot 7", NULL,    M_ChangeControl, gc_wepslot7     },
+	{IT_CALL | IT_STRING2, NULL, "Ring Toss",     NULL,    M_ChangeControl, gc_fire         },
+	{IT_CALL | IT_STRING2, NULL, "Ring Toss Normal", NULL,  M_ChangeControl, gc_firenormal   },
+	{IT_HEADER, NULL, "  Miscellaneous", NULL,  NULL, 0},
+	{IT_CALL | IT_STRING2, NULL, "Custom Action 1", NULL,   M_ChangeControl, gc_custom1      },
+	{IT_CALL | IT_STRING2, NULL, "Custom Action 2", NULL,  M_ChangeControl, gc_custom2      },
+	{IT_CALL | IT_STRING2, NULL, "Custom Action 3", NULL,  M_ChangeControl, gc_custom3      },
 
-	{IT_CALL | IT_STRING2, NULL, "Screenshot",            M_ChangeControl, gc_screenshot },
-	{IT_CALL | IT_STRING2, NULL, "Toggle GIF Recording",  M_ChangeControl, gc_recordgif  },
-	{IT_CALL | IT_STRING2, NULL, "Open/Close Menu (ESC)", M_ChangeControl, gc_systemmenu },
-	{IT_CALL | IT_STRING2, NULL, "Change Viewpoint",      M_ChangeControl, gc_viewpoint  },
+	{IT_CALL | IT_STRING2, NULL, "Screenshot",  NULL,           M_ChangeControl, gc_screenshot },
+	{IT_CALL | IT_STRING2, NULL, "Toggle GIF Recording", NULL,   M_ChangeControl, gc_recordgif  },
+	{IT_CALL | IT_STRING2, NULL, "Open/Close Menu (ESC)", NULL,  M_ChangeControl, gc_systemmenu },
+	{IT_CALL | IT_STRING2, NULL, "Change Viewpoint", NULL,       M_ChangeControl, gc_viewpoint  },
 };
 
 static menuitem_t OP_Joystick1Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Joystick...", M_Setup1PJoystickMenu,  10},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Turning"  , &cv_turnaxis         ,  30},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Moving"   , &cv_moveaxis         ,  40},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Strafe"   , &cv_sideaxis         ,  50},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Looking"  , &cv_lookaxis         ,  60},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Jumping"  , &cv_jumpaxis         ,  70},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Spinning" , &cv_spinaxis         ,  80},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Firing"   , &cv_fireaxis         ,  90},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For NFiring"  , &cv_firenaxis        , 100},
+	{IT_STRING | IT_CALL,  NULL, "Select Joystick...", NULL,  M_Setup1PJoystickMenu,  10},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Turning"  , NULL,  &cv_turnaxis         ,  30},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Moving"   , NULL,  &cv_moveaxis         ,  40},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Strafe"   , NULL,  &cv_sideaxis         ,  50},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Looking"  , NULL,  &cv_lookaxis         ,  60},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Jumping"  , NULL,  &cv_jumpaxis         ,  70},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Spinning" , NULL,  &cv_spinaxis         ,  80},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Firing"   , NULL,  &cv_fireaxis         ,  90},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For NFiring"  , NULL,  &cv_firenaxis        , 100},
 
-	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", &cv_alwaysfreelook, 120},
-	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", &cv_chasefreelook,  130},
+	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL,  &cv_alwaysfreelook, 120},
+	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL,  &cv_chasefreelook,  130},
 };
 
 static menuitem_t OP_Joystick2Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Joystick...", M_Setup2PJoystickMenu,  10},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Turning"  , &cv_turnaxis2        ,  30},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Moving"   , &cv_moveaxis2        ,  40},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Strafe"   , &cv_sideaxis2        ,  50},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Looking"  , &cv_lookaxis2        ,  60},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Jumping"  , &cv_jumpaxis2        ,  70},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Spinning" , &cv_spinaxis2        ,  80},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Firing"   , &cv_fireaxis2        ,  90},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For NFiring"  , &cv_firenaxis2       , 100},
+	{IT_STRING | IT_CALL,  NULL, "Select Joystick...", NULL,  M_Setup2PJoystickMenu,  10},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Turning"  , NULL,  &cv_turnaxis2        ,  30},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Moving"   , NULL,  &cv_moveaxis2        ,  40},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Strafe"   , NULL,  &cv_sideaxis2        ,  50},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Looking"  , NULL,  &cv_lookaxis2        ,  60},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Jumping"  , NULL,  &cv_jumpaxis2        ,  70},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Spinning" , NULL,  &cv_spinaxis2        ,  80},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For Firing"   , NULL,  &cv_fireaxis2        ,  90},
+	{IT_STRING | IT_CVAR,  NULL, "Axis For NFiring"  , NULL,  &cv_firenaxis2       , 100},
 
-	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", &cv_alwaysfreelook2,120},
-	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", &cv_chasefreelook2, 130},
+	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL, &cv_alwaysfreelook2,120},
+	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL, &cv_chasefreelook2, 130},
 };
 
 static menuitem_t OP_JoystickSetMenu[] =
 {
-	{IT_CALL | IT_NOTHING, "None", NULL, M_AssignJoystick, '0'},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, '1'},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, '2'},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, '3'},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, '4'},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, '5'},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, '6'},
+	{IT_CALL | IT_NOTHING, "None", NULL,  NULL, M_AssignJoystick, '0'},
+	{IT_CALL | IT_NOTHING, "", NULL,  NULL, M_AssignJoystick, '1'},
+	{IT_CALL | IT_NOTHING, "", NULL,  NULL, M_AssignJoystick, '2'},
+	{IT_CALL | IT_NOTHING, "",  NULL, NULL, M_AssignJoystick, '3'},
+	{IT_CALL | IT_NOTHING, "", NULL,  NULL, M_AssignJoystick, '4'},
+	{IT_CALL | IT_NOTHING, "", NULL,  NULL, M_AssignJoystick, '5'},
+	{IT_CALL | IT_NOTHING, "", NULL,  NULL, M_AssignJoystick, '6'},
 };
 
 static menuitem_t OP_MouseOptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Use Mouse",        &cv_usemouse,         10},
+	{IT_STRING | IT_CVAR, NULL, "Use Mouse",  NULL,        &cv_usemouse,         10},
 
 
-	{IT_STRING | IT_CVAR, NULL, "First-Person MouseLook", &cv_alwaysfreelook,   30},
-	{IT_STRING | IT_CVAR, NULL, "Third-Person MouseLook", &cv_chasefreelook,   40},
-	{IT_STRING | IT_CVAR, NULL, "Mouse Move",       &cv_mousemove,        50},
-	{IT_STRING | IT_CVAR, NULL, "Invert Mouse",     &cv_invertmouse,      60},
+	{IT_STRING | IT_CVAR, NULL, "First-Person MouseLook", NULL,  &cv_alwaysfreelook,   30},
+	{IT_STRING | IT_CVAR, NULL, "Third-Person MouseLook", NULL,  &cv_chasefreelook,   40},
+	{IT_STRING | IT_CVAR, NULL, "Mouse Move", NULL,       &cv_mousemove,        50},
+	{IT_STRING | IT_CVAR, NULL, "Invert Mouse", NULL,      &cv_invertmouse,      60},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse X Speed",    &cv_mousesens,        70},
+	                      NULL, "Mouse X Speed", NULL,    &cv_mousesens,        70},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse Y Speed",    &cv_mouseysens,        80},
+	                      NULL, "Mouse Y Speed",  NULL,   &cv_mouseysens,        80},
 };
 
 static menuitem_t OP_Mouse2OptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Use Mouse 2",      &cv_usemouse2,        10},
-	{IT_STRING | IT_CVAR, NULL, "Second Mouse Serial Port",
+	{IT_STRING | IT_CVAR, NULL, "Use Mouse 2", NULL,       &cv_usemouse2,        10},
+	{IT_STRING | IT_CVAR, NULL, "Second Mouse Serial Port", NULL, 
 	                                                &cv_mouse2port,       20},
-	{IT_STRING | IT_CVAR, NULL, "First-Person MouseLook", &cv_alwaysfreelook2,  30},
-	{IT_STRING | IT_CVAR, NULL, "Third-Person MouseLook", &cv_chasefreelook2,  40},
-	{IT_STRING | IT_CVAR, NULL, "Mouse Move",       &cv_mousemove2,       50},
-	{IT_STRING | IT_CVAR, NULL, "Invert Mouse",     &cv_invertmouse2,     60},
+	{IT_STRING | IT_CVAR, NULL, "First-Person MouseLook", NULL,  &cv_alwaysfreelook2,  30},
+	{IT_STRING | IT_CVAR, NULL, "Third-Person MouseLook", NULL,  &cv_chasefreelook2,  40},
+	{IT_STRING | IT_CVAR, NULL, "Mouse Move",   NULL,     &cv_mousemove2,       50},
+	{IT_STRING | IT_CVAR, NULL, "Invert Mouse", NULL,      &cv_invertmouse2,     60},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse X Speed",    &cv_mousesens2,       70},
+	                      NULL, "Mouse X Speed", NULL,    &cv_mousesens2,       70},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse Y Speed",    &cv_mouseysens2,      80},
+	                      NULL, "Mouse Y Speed", NULL,    &cv_mouseysens2,      80},
 };
 
 enum
@@ -1144,80 +1145,80 @@ enum
 
 static menuitem_t OP_VideoOptionsMenu[] =
 {
-	{IT_STRING | IT_CALL,  NULL,   "Video Modes...",      M_VideoModeMenu,          5},
+	{IT_STRING | IT_CALL,  NULL,   "Video Modes...", "Change game resolution",      M_VideoModeMenu,          5},
 
 #ifdef HWRENDER
-	{IT_STRING | IT_CVAR, NULL, "Renderer",                     &cv_renderer,        10},
+	{IT_STRING | IT_CVAR, NULL, "Renderer",         NULL,            &cv_renderer,        10},
 #else
-	{IT_TRANSTEXT | IT_PAIR, "Renderer", "Software",            &cv_renderer,           10},
+	{IT_TRANSTEXT | IT_PAIR, "Renderer", "Software",   NULL,         &cv_renderer,           10},
 #endif
 
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
-	{IT_STRING|IT_CVAR,    NULL,   "Fullscreen",          &cv_fullscreen,           15},
+	{IT_STRING|IT_CVAR,    NULL,   "Fullscreen",  NULL,         &cv_fullscreen,           15},
 #endif
 
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", &cv_globalgamma,       25},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", &cv_globalsaturation,  30},
-	{IT_SUBMENU|IT_STRING, NULL, "Advanced Color Settings...", &OP_ColorOptionsDef, 35},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", NULL,  &cv_globalgamma,       25},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,  &cv_globalsaturation,  30},
+	{IT_SUBMENU|IT_STRING, NULL, "Advanced Color Settings...", "Adjust color mapping and per-color brightness",  &OP_ColorOptionsDef, 35},
 
-	{IT_STRING | IT_CVAR,  NULL, "Draw Distance",         &cv_drawdist,             45},
-	{IT_STRING | IT_CVAR,  NULL, "NiGHTS Hoop Draw Dist", &cv_drawdist_nights,      50},
-	{IT_STRING | IT_CVAR,  NULL, "Precip Draw Dist",      &cv_drawdist_precip,      55},
-	{IT_STRING | IT_CVAR,  NULL, "Precip Density",        &cv_precipdensity,        60},
-	{IT_STRING | IT_CVAR,  NULL, "Show FPS",              &cv_ticrate,              65},
-	{IT_STRING | IT_CVAR,  NULL, "Show TPS",              &cv_tpscounter,           70},
-	{IT_STRING | IT_CVAR,  NULL, "FPS/TPS Counter Size",  &cv_fpssize,              75},
-	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",   &cv_homremoval,           80},
-	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",         &cv_vidwait,              85},
-	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",               &cv_fpscap,               90},
+	{IT_STRING | IT_CVAR,  NULL, "Draw Distance",   NULL,       &cv_drawdist,             45},
+	{IT_STRING | IT_CVAR,  NULL, "NiGHTS Hoop Draw Dist", NULL,  &cv_drawdist_nights,      50},
+	{IT_STRING | IT_CVAR,  NULL, "Precip Draw Dist",   NULL,    &cv_drawdist_precip,      55},
+	{IT_STRING | IT_CVAR,  NULL, "Precip Density",    NULL,     &cv_precipdensity,        60},
+	{IT_STRING | IT_CVAR,  NULL, "Show FPS",       NULL,        &cv_ticrate,              65},
+	{IT_STRING | IT_CVAR,  NULL, "Show TPS",        NULL,       &cv_tpscounter,           70},
+	{IT_STRING | IT_CVAR,  NULL, "FPS/TPS Counter Size", NULL,   &cv_fpssize,              75},
+	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",  NULL,  &cv_homremoval,           80},
+	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",    NULL,      &cv_vidwait,              85},
+	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",         NULL,       &cv_fpscap,               90},
 #ifdef HWRENDER
-	{IT_CALL | IT_STRING, NULL, "OpenGL Options...",         M_OpenGLOptionsMenu, 100},
+	{IT_CALL | IT_STRING, NULL, "OpenGL Options...",  "Change OpenGL-specific options",        M_OpenGLOptionsMenu, 100},
 #endif
 };
 
 static menuitem_t OP_ColorOptionsMenu[] =
 {
-	{IT_STRING | IT_CALL, NULL, "Reset all", M_ResetCvars, 0},
+	{IT_STRING | IT_CALL, NULL, "Reset all", NULL,  M_ResetCvars, 0},
 
-	{IT_HEADER, NULL, "Red", NULL, 9},
-	{IT_DISABLED, NULL, NULL, NULL, 35},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",          &cv_rhue,         15},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation",   &cv_rsaturation,  20},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness",   &cv_rgamma,       25},
+	{IT_HEADER, NULL, "Red", NULL,  NULL, 9},
+	{IT_DISABLED, NULL, NULL, NULL,  NULL, 35},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue", NULL,          &cv_rhue,         15},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation",  NULL,  &cv_rsaturation,  20},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness",NULL,    &cv_rgamma,       25},
 
-	{IT_HEADER, NULL, "Yellow", NULL, 34},
-	{IT_DISABLED, NULL, NULL, NULL, 73},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",          &cv_yhue,         40},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation",   &cv_ysaturation,  45},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness",   &cv_ygamma,       50},
+	{IT_HEADER, NULL, "Yellow", NULL,  NULL, 34},
+	{IT_DISABLED, NULL, NULL, NULL,  NULL, 73},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",  NULL,         &cv_yhue,         40},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,   &cv_ysaturation,  45},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", NULL,  &cv_ygamma,       50},
 
-	{IT_HEADER, NULL, "Green", NULL, 59},
-	{IT_DISABLED, NULL, NULL, NULL, 112},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",          &cv_ghue,         65},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation",   &cv_gsaturation,  70},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness",   &cv_ggamma,       75},
+	{IT_HEADER, NULL, "Green", NULL,  NULL, 59},
+	{IT_DISABLED, NULL, NULL, NULL,  NULL, 112},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",  NULL,         &cv_ghue,         65},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,   &cv_gsaturation,  70},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", NULL,   &cv_ggamma,       75},
 
-	{IT_HEADER, NULL, "Cyan", NULL, 84},
-	{IT_DISABLED, NULL, NULL, NULL, 255},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",          &cv_chue,         90},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation",   &cv_csaturation,  95},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness",   &cv_cgamma,      100},
+	{IT_HEADER, NULL, "Cyan", NULL, NULL,  84},
+	{IT_DISABLED, NULL, NULL, NULL, NULL, 255},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",    NULL,       &cv_chue,         90},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,   &cv_csaturation,  95},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", NULL,   &cv_cgamma,      100},
 
-	{IT_HEADER, NULL, "Blue", NULL, 109},
-	{IT_DISABLED, NULL, NULL, NULL, 152},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",          &cv_bhue,        115},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation",   &cv_bsaturation, 120},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness",   &cv_bgamma,      125},
+	{IT_HEADER, NULL, "Blue", NULL, NULL,  109},
+	{IT_DISABLED, NULL, NULL, NULL, NULL, 152},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",   NULL,        &cv_bhue,        115},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,   &cv_bsaturation, 120},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", NULL,   &cv_bgamma,      125},
 
-	{IT_HEADER, NULL, "Magenta", NULL, 134},
-	{IT_DISABLED, NULL, NULL, NULL, 181},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",          &cv_mhue,        140},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation",   &cv_msaturation, 145},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness",   &cv_mgamma,      150},
+	{IT_HEADER, NULL, "Magenta", NULL,  NULL, 134},
+	{IT_DISABLED, NULL, NULL, NULL, NULL,  181},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",    NULL,       &cv_mhue,        140},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,   &cv_msaturation, 145},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", NULL,   &cv_mgamma,      150},
 
 #ifdef HWRENDER
-	{IT_STRING | IT_CALL, NULL,   "OpenGL Options...",   M_OpenGLOptionsMenu,    160},
+	{IT_STRING | IT_CALL, NULL,   "OpenGL Options...", NULL,    M_OpenGLOptionsMenu,    160},
 #endif
 };
 
@@ -1243,24 +1244,24 @@ static void M_VideoOptions(INT32 choice)
 
 static menuitem_t OP_VideoModeMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleVideoMode, '\0'},     // dummy menuitem for the control func
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "", NULL,  M_HandleVideoMode, '\0'},     // dummy menuitem for the control func
 };
 
 #ifdef HWRENDER
 static menuitem_t OP_OpenGLOptionsMenu[] =
 {
-	{IT_STRING|IT_CVAR,         NULL, "3D Models",    &cv_glmd2,      10},
-	{IT_STRING|IT_CVAR,         NULL, "Model Interpolation",    &cv_glmodelinterpolation,      20},
-	{IT_STRING|IT_CVAR,         NULL, "Ambient lighting",    &cv_glmodellighting,      30},
+	{IT_STRING|IT_CVAR,         NULL, "3D Models", NULL,     &cv_glmd2,      10},
+	{IT_STRING|IT_CVAR,         NULL, "Model Interpolation",  NULL,    &cv_glmodelinterpolation,      20},
+	{IT_STRING|IT_CVAR,         NULL, "Ambient lighting", NULL,     &cv_glmodellighting,      30},
 
-	{IT_STRING|IT_CVAR,         NULL, "Shaders",	     &cv_glshaders,        50},
-	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective", &cv_glshearing,   60},
-	{IT_STRING|IT_CVAR,         NULL, "Palette Rendering", &cv_glpaletterendering,   70},
-	{IT_STRING|IT_CVAR|IT_CV_SLIDER,  NULL, "Field of view",   &cv_fov,            90},
-	{IT_STRING|IT_CVAR,         NULL, "Quality",         &cv_scr_depth,        100},
-	{IT_STRING|IT_CVAR,         NULL, "Texture Filter",  &cv_glfiltermode,     110},
-	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",     &cv_glanisotropicmode,120},
-	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", &cv_glloadingscreen, 130},
+	{IT_STRING|IT_CVAR,         NULL, "Shaders", NULL, 	     &cv_glshaders,        50},
+	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective", NULL,  &cv_glshearing,   60},
+	{IT_STRING|IT_CVAR,         NULL, "Palette Rendering", NULL,  &cv_glpaletterendering,   70},
+	{IT_STRING|IT_CVAR|IT_CV_SLIDER,  NULL, "Field of view", NULL,   &cv_fov,            90},
+	{IT_STRING|IT_CVAR,         NULL, "Quality",     NULL,     &cv_scr_depth,        100},
+	{IT_STRING|IT_CVAR,         NULL, "Texture Filter", NULL,   &cv_glfiltermode,     110},
+	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",  NULL,    &cv_glanisotropicmode,120},
+	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", NULL,  &cv_glloadingscreen, 130},
 };
 
 #endif
@@ -1268,23 +1269,23 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 static menuitem_t OP_SoundOptionsMenu[] =
 {
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-                              NULL, "Sound Volume" , &cv_soundvolume,     10},
+                              NULL, "Sound Volume" , NULL,  &cv_soundvolume,     10},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-                              NULL, "Music Volume" , &cv_digmusicvolume,  20},
+                              NULL, "Music Volume" , NULL,  &cv_digmusicvolume,  20},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-                              NULL, "MIDI Volume"  , &cv_midimusicvolume, 30},
+                              NULL, "MIDI Volume"  , NULL,  &cv_midimusicvolume, 30},
 #ifdef PC_DOS
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-                              NULL, "CD Volume"    , &cd_volume,          40},
+                              NULL, "CD Volume"    , NULL,  &cd_volume,          40},
 #endif
 
-	{IT_STRING | IT_CVAR,  NULL,  "SFX"   , &cv_gamesounds,        50},
-	{IT_STRING | IT_CVAR,  NULL,  "Digital Music", &cv_gamedigimusic,     60},
-	{IT_STRING | IT_CVAR,  NULL,  "MIDI Music", &cv_gamemidimusic,        70},
+	{IT_STRING | IT_CVAR,  NULL,  "SFX"   , NULL,  &cv_gamesounds,        50},
+	{IT_STRING | IT_CVAR,  NULL,  "Digital Music", NULL,  &cv_gamedigimusic,     60},
+	{IT_STRING | IT_CVAR,  NULL,  "MIDI Music", NULL,  &cv_gamemidimusic,        70},
 
-	{IT_STRING | IT_CVAR,  NULL,  "Music Preference", &cv_musicpref,      90},
+	{IT_STRING | IT_CVAR,  NULL,  "Music Preference", NULL,  &cv_musicpref,      90},
 
-	{IT_STRING 	  | IT_SUBMENU, NULL, "Advanced Settings...", &OP_SoundAdvancedDef, 110},
+	{IT_STRING 	  | IT_SUBMENU, NULL, "Advanced Settings...", NULL,  &OP_SoundAdvancedDef, 110},
 };
 
 #ifdef HAVE_OPENMPT
@@ -1296,45 +1297,45 @@ static menuitem_t OP_SoundOptionsMenu[] =
 static menuitem_t OP_SoundAdvancedMenu[] =
 {
 #ifdef HAVE_OPENMPT
-	{IT_HEADER, NULL, "OpenMPT Settings", NULL, 10},
-	{IT_STRING | IT_CVAR, NULL, "Instrument Filter", &cv_modfilter, 20},
+	{IT_HEADER, NULL, "OpenMPT Settings", NULL, NULL,  10},
+	{IT_STRING | IT_CVAR, NULL, "Instrument Filter", NULL,  &cv_modfilter, 20},
 #endif
 
-	{IT_HEADER, NULL, "Miscellaneous", NULL, OPENMPT_MENUOFFSET},
-	{IT_STRING | IT_CVAR,  NULL,  "Play SFX if Unfocused", &cv_playsoundsifunfocused,  OPENMPT_MENUOFFSET+10},
-	{IT_STRING | IT_CVAR,  NULL,  "Play Music if Unfocused", &cv_playmusicifunfocused, OPENMPT_MENUOFFSET+20},
+	{IT_HEADER, NULL, "Miscellaneous", NULL,  NULL, OPENMPT_MENUOFFSET},
+	{IT_STRING | IT_CVAR,  NULL,  "Play SFX if Unfocused", NULL,  &cv_playsoundsifunfocused,  OPENMPT_MENUOFFSET+10},
+	{IT_STRING | IT_CVAR,  NULL,  "Play Music if Unfocused", NULL,  &cv_playmusicifunfocused, OPENMPT_MENUOFFSET+20},
 };
 
 #undef OPENMPT_MENUOFFSET
 
 static menuitem_t OP_DataOptionsMenu[] =
 {
-	{IT_STRING | IT_CALL, NULL, "Screenshot Options...", M_ScreenshotOptions, 10},
+	{IT_STRING | IT_CALL, NULL, "Screenshot Options...", NULL,  M_ScreenshotOptions, 10},
 
-	{IT_STRING | IT_SUBMENU, NULL, "Erase Data...", &OP_EraseDataDef, 30},
+	{IT_STRING | IT_SUBMENU, NULL, "Erase Data...", NULL,  &OP_EraseDataDef, 30},
 };
 
 static menuitem_t OP_ScreenshotOptionsMenu[] =
 {
-	{IT_HEADER, NULL, "Screenshots (F8)", NULL, 0},
-	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_screenshot_option,          5},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_screenshot_folder, 10},
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memory,                25},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_level,                 30},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategy,              35},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bits,           40},
-	{IT_HEADER, NULL, "Movie Mode (F9)", NULL, 50},
-	{IT_STRING|IT_CVAR, NULL, "Storage Location",  &cv_movie_option,              55},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_movie_folder,     60},
-	{IT_STRING|IT_CVAR, NULL, "Capture Mode",      &cv_moviemode,                 75},
+	{IT_HEADER, NULL, "Screenshots (F8)", NULL,  NULL, 0},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location", NULL,   &cv_screenshot_option,          5},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", NULL,  &cv_screenshot_folder, 10},
+	{IT_STRING|IT_CVAR, NULL, "Memory Level", NULL,       &cv_zlib_memory,                25},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", NULL,  &cv_zlib_level,                 30},
+	{IT_STRING|IT_CVAR, NULL, "Strategy", NULL,          &cv_zlib_strategy,              35},
+	{IT_STRING|IT_CVAR, NULL, "Window Size", NULL,       &cv_zlib_window_bits,           40},
+	{IT_HEADER, NULL, "Movie Mode (F9)", NULL,  NULL, 50},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location", NULL,   &cv_movie_option,              55},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", NULL,  &cv_movie_folder,     60},
+	{IT_STRING|IT_CVAR, NULL, "Capture Mode", NULL,       &cv_moviemode,                 75},
 	// Shows when GIF is selected
-	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", &cv_gif_optimize,              80},
-	{IT_STRING|IT_CVAR, NULL, "Downscaling",       &cv_gif_downscale,             85},
+	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", NULL,  &cv_gif_optimize,              80},
+	{IT_STRING|IT_CVAR, NULL, "Downscaling", NULL,       &cv_gif_downscale,             85},
 	// Shows when APNG is selected
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memorya,              80},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_levela,               85},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategya,            90},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bitsa,         95},
+	{IT_STRING|IT_CVAR, NULL, "Memory Level", NULL,       &cv_zlib_memorya,              80},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", NULL,  &cv_zlib_levela,               85},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",   NULL,        &cv_zlib_strategya,            90},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",  NULL,      &cv_zlib_window_bitsa,         95},
 };
 
 enum
@@ -1350,23 +1351,23 @@ enum
 
 static menuitem_t OP_EraseDataMenu[] =
 {
-	{IT_STRING | IT_CALL, NULL, "Erase Record Data", M_EraseData, 10},
-	{IT_STRING | IT_CALL, NULL, "Erase Secrets Data", M_EraseData, 20},
+	{IT_STRING | IT_CALL, NULL, "Erase Record Data", NULL,  M_EraseData, 10},
+	{IT_STRING | IT_CALL, NULL, "Erase Secrets Data", NULL,  M_EraseData, 20},
 
-	{IT_STRING | IT_CALL, NULL, "\x85" "Erase ALL Data", M_EraseData, 40},
+	{IT_STRING | IT_CALL, NULL, "\x85" "Erase ALL Data", NULL,  M_EraseData, 40},
 };
 
 static menuitem_t OP_AddonsOptionsMenu[] =
 {
-	{IT_HEADER,                      NULL, "Menu",                        NULL,                    0},
-	{IT_STRING|IT_CVAR,              NULL, "Location",                    &cv_addons_option,      10},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder",               &cv_addons_folder,      20},
-	{IT_STRING|IT_CVAR,              NULL, "Identify add-ons via",        &cv_addons_md5,         48},
-	{IT_STRING|IT_CVAR,              NULL, "Show unsupported file types", &cv_addons_showall,     58},
+	{IT_HEADER,                      NULL, "Menu",       NULL,                  NULL,                    0},
+	{IT_STRING|IT_CVAR,              NULL, "Location",   NULL,                  &cv_addons_option,      10},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder",   NULL,             &cv_addons_folder,      20},
+	{IT_STRING|IT_CVAR,              NULL, "Identify add-ons via", NULL,        &cv_addons_md5,         48},
+	{IT_STRING|IT_CVAR,              NULL, "Show unsupported file types", NULL,  &cv_addons_showall,     58},
 
-	{IT_HEADER,                      NULL, "Search",                      NULL,                   76},
-	{IT_STRING|IT_CVAR,              NULL, "Matching",                    &cv_addons_search_type, 86},
-	{IT_STRING|IT_CVAR,              NULL, "Case-sensitive",              &cv_addons_search_case, 96},
+	{IT_HEADER,                      NULL, "Search",    NULL,                   NULL,                   76},
+	{IT_STRING|IT_CVAR,              NULL, "Matching",   NULL,                  &cv_addons_search_type, 86},
+	{IT_STRING|IT_CVAR,              NULL, "Case-sensitive",   NULL,            &cv_addons_search_case, 96},
 };
 
 enum
@@ -1378,156 +1379,168 @@ static menuitem_t OP_GameOptionsMenu[] =
 {
 #ifndef NONET
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
-	                      NULL, "Master server",           &cv_masterserver,       5},
-	{IT_STRING | IT_SUBMENU, NULL, "Chat Options...",      &OP_ChatOptionsDef,     20},
+	                      NULL, "Master server",     NULL,       &cv_masterserver,       5},
+	{IT_STRING | IT_SUBMENU, NULL, "Chat Options...", "Change how the chat display looks",      &OP_ChatOptionsDef,     20},
 #endif
-	{IT_STRING | IT_CVAR, NULL, "Show HUD",                &cv_showhud,            25},
+	{IT_STRING | IT_CVAR, NULL, "Show HUD",       NULL,          &cv_showhud,            25},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "HUD Visibility",          &cv_translucenthud,     30},
-	{IT_STRING | IT_CVAR, NULL, "Timer/Rings Display",     &cv_timetic,            35},
-	{IT_STRING | IT_CVAR, NULL, "Score Display",           &cv_scorepos,           40},
-	{IT_STRING | IT_CVAR, NULL, "Always Compact Rankings", &cv_compactscoreboard,  45},
-	{IT_STRING | IT_CVAR, NULL, "Local ping display",      &cv_showping,           50}, // shows ping next to framerate if we want to.
+	                      NULL, "HUD Visibility",    NULL,       &cv_translucenthud,     30},
+	{IT_STRING | IT_CVAR, NULL, "Timer/Rings Display", NULL,     &cv_timetic,            35},
+	{IT_STRING | IT_CVAR, NULL, "Score Display",     NULL,       &cv_scorepos,           40},
+	{IT_STRING | IT_CVAR, NULL, "Always Compact Rankings", NULL,  &cv_compactscoreboard,  45},
+	{IT_STRING | IT_CVAR, NULL, "Local ping display", NULL,      &cv_showping,           50}, // shows ping next to framerate if we want to.
 #ifdef SEENAMES
-	{IT_STRING | IT_CVAR, NULL, "HUD Player Names",        &cv_seenames,           55},
+	{IT_STRING | IT_CVAR, NULL, "HUD Player Names",   NULL,      &cv_seenames,           55},
 #endif
-	{IT_STRING | IT_CVAR, NULL, "Log Hazard Damage",       &cv_hazardlog,          60},
-	{IT_STRING | IT_CVAR, NULL, "Console Back Color",      &cons_backcolor,        65},
-	{IT_STRING | IT_CVAR, NULL, "Console Text Size",       &cv_constextsize,       70},
-	{IT_STRING | IT_CVAR, NULL, "Uppercase Console",       &cv_allcaps,            75},
-	{IT_STRING | IT_CVAR, NULL, "Show \"FOCUS LOST\"",     &cv_showfocuslost,      80},
+	{IT_STRING | IT_CVAR, NULL, "Log Hazard Damage",  NULL,      &cv_hazardlog,          60},
+	{IT_STRING | IT_CVAR, NULL, "Console Back Color", NULL,      &cons_backcolor,        65},
+	{IT_STRING | IT_CVAR, NULL, "Console Text Size", NULL,       &cv_constextsize,       70},
+	{IT_STRING | IT_CVAR, NULL, "Uppercase Console",  NULL,      &cv_allcaps,            75},
+	{IT_STRING | IT_CVAR, NULL, "Show \"FOCUS LOST\"", NULL,     &cv_showfocuslost,      80},
 	{IT_STRING | IT_CVAR, NULL, "Modern Pause Screen",     &cv_modernpause,        85},
-	{IT_STRING | IT_CVAR, NULL, "Title Screen Demos",      &cv_rollingdemos,       90},
+	{IT_STRING | IT_CVAR, NULL, "Title Screen Demos",  NULL,     &cv_rollingdemos,       90},
 };
 
 static menuitem_t OP_ChatOptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Chat Mode",            		 	 &cv_consolechat,  10},
+	{IT_STRING | IT_CVAR, NULL, "Chat Mode",       NULL,      		 	 &cv_consolechat,  10},
 
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Chat Box Width",    &cv_chatwidth,     30},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Chat Box Height",   &cv_chatheight,    40},
-	{IT_STRING | IT_CVAR, NULL, "Message Fadeout Time",              &cv_chattime,    50},
-	{IT_STRING | IT_CVAR, NULL, "Chat Notifications",           	 &cv_chatnotifications,  60},
-	{IT_STRING | IT_CVAR, NULL, "Spam Protection",           		 &cv_chatspamprotection,  70},
-	{IT_STRING | IT_CVAR, NULL, "Chat background tint",           	 &cv_chatbacktint,  80},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Chat Box Width", NULL,    &cv_chatwidth,     30},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Chat Box Height", NULL,   &cv_chatheight,    40},
+	{IT_STRING | IT_CVAR, NULL, "Message Fadeout Time",   NULL,            &cv_chattime,    50},
+	{IT_STRING | IT_CVAR, NULL, "Chat Notifications",     NULL,       	 &cv_chatnotifications,  60},
+	{IT_STRING | IT_CVAR, NULL, "Spam Protection",        NULL,    		 &cv_chatspamprotection,  70},
+	{IT_STRING | IT_CVAR, NULL, "Chat background tint",   NULL,         	 &cv_chatbacktint,  80},
 };
 
 static menuitem_t OP_ServerOptionsMenu[] =
 {
-	{IT_STRING | IT_SUBMENU, NULL, "General netgame options...",  &OP_NetgameOptionsDef,  10},
-	{IT_STRING | IT_SUBMENU, NULL, "Gametype options...",         &OP_GametypeOptionsDef, 20},
-	{IT_STRING | IT_SUBMENU, NULL, "Random Monitor Toggles...",   &OP_MonitorToggleDef,   30},
+	{IT_STRING | IT_SUBMENU, NULL, "General netgame options...", NULL,   &OP_NetgameOptionsDef,  10},
+	{IT_STRING | IT_SUBMENU, NULL, "Gametype options...",      NULL,    &OP_GametypeOptionsDef, 20},
+	{IT_STRING | IT_SUBMENU, NULL, "Random Monitor Toggles...", NULL,   &OP_MonitorToggleDef,   30},
 
 #ifndef NONET
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
-	                         NULL, "Server name",                 &cv_servername,         50},
+	                         NULL, "Server name",       NULL,           &cv_servername,         50},
 #endif
 
-	{IT_STRING | IT_CVAR,    NULL, "Intermission Timer",          &cv_inttime,            80},
-	{IT_STRING | IT_CVAR,    NULL, "Advance to next map",         &cv_advancemap,         90},
+	{IT_STRING | IT_CVAR,    NULL, "Intermission Timer",   NULL,        &cv_inttime,            80},
+	{IT_STRING | IT_CVAR,    NULL, "Advance to next map",  NULL,       &cv_advancemap,         90},
 
 #ifndef NONET
-	{IT_STRING | IT_CVAR,    NULL, "Max Players",                 &cv_maxplayers,        110},
-	{IT_STRING | IT_CVAR,    NULL, "Allow players to join",       &cv_allownewplayer,    120},
-	{IT_STRING | IT_CVAR,    NULL, "Allow WAD Downloading",       &cv_downloading,       130},
-	{IT_STRING | IT_CVAR,    NULL, "Attempt to Resynch",         &cv_allowgamestateresend,   140},
+	{IT_STRING | IT_CVAR,    NULL, "Max Players",         NULL,         &cv_maxplayers,        110},
+	{IT_STRING | IT_CVAR,    NULL, "Allow players to join",  NULL,      &cv_allownewplayer,    120},
+	{IT_STRING | IT_CVAR,    NULL, "Allow WAD Downloading",  NULL,      &cv_downloading,       130},
+	{IT_STRING | IT_CVAR,    NULL, "Attempt to Resynch",   NULL,      &cv_allowgamestateresend,   140},
 #endif
 };
 
 static menuitem_t OP_NetgameOptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Time Limit",            &cv_timelimit,        10},
-	{IT_STRING | IT_CVAR, NULL, "Point Limit",           &cv_pointlimit,       18},
-	{IT_STRING | IT_CVAR, NULL, "Overtime Tie-Breaker",  &cv_overtime,         26},
+	{IT_STRING | IT_CVAR, NULL, "Time Limit",  NULL,           &cv_timelimit,        10},
+	{IT_STRING | IT_CVAR, NULL, "Point Limit", NULL,           &cv_pointlimit,       18},
+	{IT_STRING | IT_CVAR, NULL, "Overtime Tie-Breaker", NULL,   &cv_overtime,         26},
 
-	{IT_STRING | IT_CVAR, NULL, "Special Ring Weapons",  &cv_specialrings,     42},
-	{IT_STRING | IT_CVAR, NULL, "Emeralds",              &cv_powerstones,      50},
-	{IT_STRING | IT_CVAR, NULL, "Item Boxes",            &cv_matchboxes,       58},
-	{IT_STRING | IT_CVAR, NULL, "Item Respawn",          &cv_itemrespawn,      66},
-	{IT_STRING | IT_CVAR, NULL, "Item Respawn time",     &cv_itemrespawntime,  74},
+	{IT_STRING | IT_CVAR, NULL, "Special Ring Weapons", NULL,   &cv_specialrings,     42},
+	{IT_STRING | IT_CVAR, NULL, "Emeralds",  NULL,             &cv_powerstones,      50},
+	{IT_STRING | IT_CVAR, NULL, "Item Boxes",  NULL,           &cv_matchboxes,       58},
+	{IT_STRING | IT_CVAR, NULL, "Item Respawn", NULL,          &cv_itemrespawn,      66},
+	{IT_STRING | IT_CVAR, NULL, "Item Respawn time", NULL,     &cv_itemrespawntime,  74},
 
-	{IT_STRING | IT_CVAR, NULL, "Sudden Death",          &cv_suddendeath,      90},
-	{IT_STRING | IT_CVAR, NULL, "Player respawn delay",  &cv_respawntime,      98},
+	{IT_STRING | IT_CVAR, NULL, "Sudden Death",  NULL,         &cv_suddendeath,      90},
+	{IT_STRING | IT_CVAR, NULL, "Player respawn delay", NULL,   &cv_respawntime,      98},
 
-	{IT_STRING | IT_CVAR, NULL, "Force Skin #",          &cv_forceskin,          114},
-	{IT_STRING | IT_CVAR, NULL, "Restrict skin changes", &cv_restrictskinchange, 122},
+	{IT_STRING | IT_CVAR, NULL, "Force Skin #",  NULL,         &cv_forceskin,          114},
+	{IT_STRING | IT_CVAR, NULL, "Restrict skin changes", NULL,  &cv_restrictskinchange, 122},
 
-	{IT_STRING | IT_CVAR, NULL, "Autobalance Teams",            &cv_autobalance,      138},
-	{IT_STRING | IT_CVAR, NULL, "Scramble Teams on Map Change", &cv_scrambleonchange, 146},
+	{IT_STRING | IT_CVAR, NULL, "Autobalance Teams",  NULL,           &cv_autobalance,      138},
+	{IT_STRING | IT_CVAR, NULL, "Scramble Teams on Map Change", NULL,  &cv_scrambleonchange, 146},
 };
 
 static menuitem_t OP_GametypeOptionsMenu[] =
 {
-	{IT_HEADER,           NULL, "CO-OP",                 NULL,                  2},
-	{IT_STRING | IT_CVAR, NULL, "Players for exit",      &cv_playersforexit,   10},
-	{IT_STRING | IT_CVAR, NULL, "Starting Lives",        &cv_startinglives,    18},
+	{IT_HEADER,           NULL, "CO-OP",      NULL,            NULL,                  2},
+	{IT_STRING | IT_CVAR, NULL, "Players for exit",  NULL,     &cv_playersforexit,   10},
+	{IT_STRING | IT_CVAR, NULL, "Starting Lives",  NULL,       &cv_startinglives,    18},
 
-	{IT_HEADER,           NULL, "COMPETITION",           NULL,                 34},
-	{IT_STRING | IT_CVAR, NULL, "Item Boxes",            &cv_competitionboxes, 42},
-	{IT_STRING | IT_CVAR, NULL, "Countdown Time",        &cv_countdowntime,    50},
+	{IT_HEADER,           NULL, "COMPETITION",   NULL,         NULL,                 34},
+	{IT_STRING | IT_CVAR, NULL, "Item Boxes",     NULL,        &cv_competitionboxes, 42},
+	{IT_STRING | IT_CVAR, NULL, "Countdown Time", NULL,        &cv_countdowntime,    50},
 
-	{IT_HEADER,           NULL, "RACE",                  NULL,                 66},
-	{IT_STRING | IT_CVAR, NULL, "Number of Laps",        &cv_numlaps,          74},
-	{IT_STRING | IT_CVAR, NULL, "Use Map Lap Counts",    &cv_usemapnumlaps,    82},
+	{IT_HEADER,           NULL, "RACE",   NULL,                NULL,                 66},
+	{IT_STRING | IT_CVAR, NULL, "Number of Laps", NULL,        &cv_numlaps,          74},
+	{IT_STRING | IT_CVAR, NULL, "Use Map Lap Counts",   NULL,  &cv_usemapnumlaps,    82},
 
-	{IT_HEADER,           NULL, "MATCH",                 NULL,                 98},
-	{IT_STRING | IT_CVAR, NULL, "Scoring Type",          &cv_match_scoring,   106},
+	{IT_HEADER,           NULL, "MATCH", NULL,                 NULL,                 98},
+	{IT_STRING | IT_CVAR, NULL, "Scoring Type", NULL,          &cv_match_scoring,   106},
 
-	{IT_HEADER,           NULL, "TAG",                   NULL,                122},
-	{IT_STRING | IT_CVAR, NULL, "Hide Time",             &cv_hidetime,        130},
+	{IT_HEADER,           NULL, "TAG",       NULL,             NULL,                122},
+	{IT_STRING | IT_CVAR, NULL, "Hide Time",  NULL,            &cv_hidetime,        130},
 
-	{IT_HEADER,           NULL, "CTF",                   NULL,                146},
-	{IT_STRING | IT_CVAR, NULL, "Flag Respawn Time",     &cv_flagtime,        154},
+	{IT_HEADER,           NULL, "CTF",        NULL,            NULL,                146},
+	{IT_STRING | IT_CVAR, NULL, "Flag Respawn Time", NULL,     &cv_flagtime,        154},
 };
 
 static menuitem_t OP_MonitorToggleMenu[] =
 {
 	// Printing handled by drawing function
-	{IT_STRING|IT_CALL, NULL, "Reset all", M_ResetCvars, 15},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Recycler",          &cv_recycler,      30},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Teleporters",       &cv_teleporters,   40},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Super Ring",        &cv_superring,     50},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Super Sneakers",    &cv_supersneakers, 60},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Invincibility",     &cv_invincibility, 70},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Whirlwind Shield",  &cv_jumpshield,    80},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Elemental Shield",  &cv_watershield,   90},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Attraction Shield", &cv_ringshield,   100},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Force Shield",      &cv_forceshield,  110},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Armageddon Shield", &cv_bombshield,   120},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "1 Up",              &cv_1up,          130},
-	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Eggman Box",        &cv_eggmanbox,    140},
+	{IT_STRING|IT_CALL, NULL, "Reset all", NULL,  M_ResetCvars, 15},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Recycler", NULL,           &cv_recycler,      30},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Teleporters", NULL,       &cv_teleporters,   40},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Super Ring",  NULL,       &cv_superring,     50},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Super Sneakers", NULL,     &cv_supersneakers, 60},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Invincibility",  NULL,     &cv_invincibility, 70},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Whirlwind Shield", NULL,   &cv_jumpshield,    80},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Elemental Shield", NULL,   &cv_watershield,   90},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Attraction Shield", NULL,  &cv_ringshield,   100},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Force Shield", NULL,      &cv_forceshield,  110},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Armageddon Shield", NULL,  &cv_bombshield,   120},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "1 Up",  NULL,             &cv_1up,          130},
+	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Eggman Box", NULL,         &cv_eggmanbox,    140},
 };
 
 static menuitem_t OP_LegacyOptionsMenu[] =
 {
-	{IT_HEADER|IT_STRING, NULL, "Screen Tilting", NULL, 15},
-	{IT_CVAR|IT_STRING, NULL, "Screen Tilting", &cv_viewroll, 	  20},
-	{IT_CVAR|IT_STRING, NULL, "Earthquake Screen Shaking", &cv_quakeiiiarena,  25},
-	{IT_CVAR|IT_STRING, NULL, "Quake Viewroll",    &cv_quakeiv, 30},
-	{IT_HEADER|IT_STRING, NULL, "System", NULL, 35},
-	{IT_CVAR|IT_STRING, NULL, "Window Shaking",    &cv_quakelive, 40},
+	{IT_HEADER|IT_STRING, NULL, "Screen Tilting", NULL,  NULL, 15},
+	{IT_CVAR|IT_STRING, NULL, "Screen Tilting", NULL,  &cv_viewroll, 	  20},
+	{IT_CVAR|IT_STRING, NULL, "Earthquake Screen Shaking", NULL,  &cv_quakeiiiarena,  25},
+	{IT_CVAR|IT_STRING, NULL, "Quake Viewroll", NULL,    &cv_quakeiv, 30},
+	{IT_HEADER|IT_STRING, NULL, "System", NULL,  NULL, 35},
+	{IT_CVAR|IT_STRING, NULL, "Window Shaking", NULL,    &cv_quakelive, 40},
 
-	{IT_SUBMENU|IT_STRING, NULL, 	"Credits",  		&OP_LegacyCreditsDef, 50},
+	{IT_SUBMENU|IT_STRING, NULL, 	"Credits",  NULL, 		&OP_LegacyCreditsDef, 50},
 };
 
 static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resolution
 {
-	{IT_HEADER|IT_STRING, NULL, "Contributors:", NULL, 7},
-	{IT_STRING, NULL, "PAS", NULL, 22},
-	{IT_STRING, NULL, "chromaticpipe", NULL, 32},
-	{IT_STRING, NULL, "Hanicef", NULL, 42},
-	{IT_STRING, NULL, "Lugent", NULL, 52},
-	{IT_STRING, NULL, "tempowad", NULL, 62},
-	{IT_STRING, NULL, "tatokis", NULL, 72},
-	{IT_STRING, NULL, "luigi budd", NULL, 82}, // Enhanced server info screen
-	{IT_STRING, NULL, "Lamibe", NULL, 92},
-	{IT_STRING, NULL, "Clusterguy!!", NULL, 102}, // Software sky barreling
-	{IT_STRING, NULL, "Bewer", NULL, 112}, // SRB2Kart text colormaps
-	{IT_STRING, NULL, "alufolie91", NULL, 122},
-	{IT_HEADER|IT_STRING, NULL, "Special Thanks:", NULL, 132},
-	{IT_STRING, NULL, "The Gaming Den", NULL, 142}, // srb2-legacy Co-op server
-	{IT_STRING, NULL, "SRB2EventZ", NULL, 152}, // Netgame testing and feature ideas
+	{IT_HEADER|IT_STRING, NULL, "Contributors:", NULL,  NULL, 7},
+	{IT_STRING, NULL, "PAS", NULL,  NULL, 22},
+	{IT_STRING, NULL, "chromaticpipe", NULL,  NULL, 32},
+	{IT_STRING, NULL, "Hanicef", NULL,  NULL, 42},
+	{IT_STRING, NULL, "Lugent",  NULL, NULL, 52},
+	{IT_STRING, NULL, "tempowad", NULL,  NULL, 62},
+	{IT_STRING, NULL, "tatokis", NULL,  NULL, 72},
+	{IT_STRING, NULL, "luigi budd", NULL,  NULL, 82}, // Enhanced server info screen
+	{IT_STRING, NULL, "Lamibe", NULL,  NULL, 92},
+	{IT_STRING, NULL, "Clusterguy!!", NULL,  NULL, 102}, // Software sky barreling
+	{IT_STRING, NULL, "Bewer", NULL,  NULL, 112}, // SRB2Kart text colormaps
+	{IT_STRING, NULL, "alufolie91", NULL,  NULL, 122},
+	{IT_HEADER|IT_STRING, NULL, "Special Thanks:", NULL,  NULL, 132},
+	{IT_STRING, NULL, "The Gaming Den", NULL, NULL, 142},  // srb2-legacy Co-op server
+	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  152}, // Netgame testing and feature ideas
 };
+
+static void M_LegacyCreditsToolTips(void)
+{
+	if (currentMenu == &OP_LegacyCreditsDef)
+	{
+		INT32 i;
+		for (i = 0; i < currentMenu->numitems; i++)
+		{
+			OP_LegacyCreditsMenu[i].desc = "Thanks! :D";
+		}
+	}
+}
 
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
@@ -2548,6 +2561,7 @@ boolean M_Responder(event_t *ev)
 				Z_Free(char_notes);
 				char_notes = NULL;
 			}
+			coolalphatimer = 9;
 			return true;
 
 		case KEY_UPARROW:
@@ -2558,6 +2572,7 @@ boolean M_Responder(event_t *ev)
 				Z_Free(char_notes);
 				char_notes = NULL;
 			}
+			coolalphatimer = 9;
 			return true;
 
 		case KEY_LEFTARROW:
@@ -3327,6 +3342,81 @@ static void M_DrawMenuTitle(void)
 	}
 }
 
+static void M_DrawSplitText(INT32 x, INT32 y, INT32 option, const char* str, INT32 alpha)
+{
+	char* icopy = strdup(str);
+	char** clines = NULL;
+	INT16 num_lines = 0;
+
+	if (icopy == NULL) return;
+
+	char* tok = strtok(icopy, "\n");
+
+	while (tok != NULL)
+	{
+		char* line = strdup(tok);
+
+		if (line == NULL) return;
+
+		clines = realloc(clines, (num_lines + 1) * sizeof(char*));
+		clines[num_lines] = line;
+		num_lines++;
+
+		tok = strtok(NULL, "\n");
+	}
+
+	free(icopy);
+
+	INT16 yoffset;
+	yoffset = (((5*10 - num_lines*10)));
+
+	// Draw BG first,,,
+	for (int i = 0; i < num_lines; i++)
+	{
+		V_DrawFill(0, (y + yoffset - 6)+5, vid.width, 11, 239|V_SNAPTOBOTTOM|V_SNAPTOLEFT);
+		yoffset += 11;
+	}
+
+	yoffset = (((5*10 - num_lines*10)));
+
+	// THEN the text
+	for (int i = 0; i < num_lines; i++)
+	{
+        V_DrawCenteredThinString(x, y + yoffset, option, clines[i]);
+		V_DrawCenteredThinString(x, y + yoffset, option|V_YELLOWMAP|((9 - alpha) << V_ALPHASHIFT), clines[i]);
+		yoffset += 10;
+        // Remember to free the memory for each line when you're done with it.
+        free(clines[i]);
+    }
+
+	free(clines);
+}
+
+static void M_DoToolTips(menu_t *menu)
+{
+	char *desc = NULL;
+	if (menu->menuitems[itemOn].desc != NULL)
+	{
+		desc = V_WordWrap(0, BASEVIDWIDTH, V_ALLOWLOWERCASE, menu->menuitems[itemOn].desc);
+	}
+	else if (menu->menuitems[itemOn].status & IT_CVAR)
+	{
+		consvar_t *cvar = menu->menuitems[itemOn].itemaction;
+		if (cvar != NULL && cvar->desc != NULL)
+		{
+			desc = V_WordWrap(0, BASEVIDWIDTH, V_ALLOWLOWERCASE, cvar->desc);
+		}
+	}
+
+	if (desc != NULL)
+	{
+		M_DrawSplitText(BASEVIDWIDTH / 2, BASEVIDHEIGHT-50, V_ALLOWLOWERCASE|V_SNAPTOBOTTOM, desc, coolalphatimer);
+		Z_Free(desc);
+		if (coolalphatimer > 0)
+			coolalphatimer--;
+	}
+}
+
 static void M_DrawGenericMenu(void)
 {
 	INT32 x, y, i, cursory = 0;
@@ -3473,6 +3563,8 @@ static void M_DrawGenericMenu(void)
 			W_CachePatchName("M_CURSOR", PU_PATCH));
 		V_DrawString(currentMenu->x, cursory, V_YELLOWMAP, currentMenu->menuitems[itemOn].text);
 	}
+	M_DoToolTips(currentMenu);
+	M_LegacyCreditsToolTips();
 }
 
 static void M_DrawPauseMenu(void)
@@ -3933,7 +4025,7 @@ static void M_DrawMessageMenu(void);
 static menuitem_t MessageMenu[] =
 {
 	// TO HACK
-	{0,NULL, NULL, NULL,0}
+	{0,NULL, NULL, NULL, NULL, 0}
 };
 
 menu_t MessageDef =
@@ -8309,6 +8401,7 @@ static void M_DrawGenericScrollMenu(void)
 	// DRAW THE SKULL CURSOR
 	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
 		W_CachePatchName("M_CURSOR", PU_PATCH));
+	M_DoToolTips(currentMenu);
 }
 
 static INT32 controltochange;
