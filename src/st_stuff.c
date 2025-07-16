@@ -40,6 +40,7 @@
 #endif
 
 #include "lua_hud.h"
+#include "lua_hudlib_drawlist.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -166,6 +167,8 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	{ 136,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORENUMMODERN
 	{ 16, 152, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_INPUT
 };
+
+static huddrawlist_h luahuddrawlist_game;
 
 //
 // STATUS BAR CODE
@@ -415,6 +418,7 @@ void ST_Init(void)
 		return;
 
 	ST_LoadGraphics();
+	luahuddrawlist_game = LUA_HUD_CreateDrawList();
 }
 
 // change the status bar too, when pressing F12 while viewing a demo.
@@ -2053,7 +2057,14 @@ static void ST_overlayDrawer(void)
 	}
 
 	if (!(netgame || multiplayer) || !hu_showscores)
-		LUAh_GameHUD(stplyr);
+	{
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_game);
+			LUAh_GameHUD(stplyr, luahuddrawlist_game);
+		}
+		LUA_HUD_DrawList(luahuddrawlist_game);
+	}
 
 	// draw level title Tails
 	if (*mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer)) && LUA_HudEnabled(hud_stagetitle))

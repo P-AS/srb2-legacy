@@ -36,6 +36,7 @@
 
 #include "m_cond.h" // condition sets
 #include "lua_hook.h" // IntermissionThinker hook
+#include "lua_hudlib_drawlist.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -146,6 +147,8 @@ static INT32 intertic;
 static INT32 endtic = -1;
 
 intertype_t intertype = int_none;
+
+static huddrawlist_h luahuddrawlist_intermission;
 
 static void Y_AwardCoopBonuses(void);
 static void Y_AwardSpecialStageBonus(void);
@@ -659,7 +662,12 @@ void Y_Ticker(void)
 		return;
 
 
-	LUAh_IntermissionThinker();
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
+		LUAh_IntermissionThinker();
+	}
+	LUA_HUD_DrawList(luahuddrawlist_intermission);
 
 	intertic++;
 
@@ -1365,7 +1373,9 @@ void Y_StartIntermission(void)
 		case int_none:
 		default:
 			break;
-	}
+	}	
+	LUA_HUD_DestroyDrawList(luahuddrawlist_intermission);
+	luahuddrawlist_intermission = LUA_HUD_CreateDrawList();
 }
 
 //
