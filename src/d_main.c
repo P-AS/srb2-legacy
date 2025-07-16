@@ -904,12 +904,13 @@ void D_StartTitle(void)
 	maptol = 0;
 
 	// reset to default player stuff
-	COM_BufAddText (va("%s \"%s\"\n",cv_playername.name,cv_defaultplayername.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_skin.name,cv_defaultskin.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_playercolor.name,cv_defaultplayercolor.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_playername2.name,cv_defaultplayername2.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_skin2.name,cv_defaultskin2.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_playercolor2.name,cv_defaultplayercolor2.string));
+	if (!dedicated)
+	{
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin.name,cv_defaultskin.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor.name,cv_defaultplayercolor.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin2.name,cv_defaultskin2.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor2.name,cv_defaultplayercolor2.string));
+	}
 
 	gameaction = ga_nothing;
 	displayplayer = consoleplayer = 0;

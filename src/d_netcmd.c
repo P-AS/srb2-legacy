@@ -242,8 +242,6 @@ consvar_t cv_skin = CVAR_INIT ("skin", DEFAULTSKIN, NULL, CV_CALL|CV_NOINIT, NUL
 consvar_t cv_skin2 = CVAR_INIT ("skin2", DEFAULTSKIN2, NULL, CV_CALL|CV_NOINIT, NULL, Skin2_OnChange);
 
 // saved versions of the above six
-consvar_t cv_defaultplayername = CVAR_INIT ("defaultname", "Sonic", NULL, CV_SAVE, NULL, NULL);
-consvar_t cv_defaultplayername2 = CVAR_INIT ("defaultname2", "Tails", NULL, CV_SAVE, NULL, NULL);
 consvar_t cv_defaultplayercolor = CVAR_INIT ("defaultcolor", "Blue", NULL, CV_SAVE, Color_cons_t, NULL);
 consvar_t cv_defaultplayercolor2 = CVAR_INIT ("defaultcolor2", "Orange", NULL, CV_SAVE, Color_cons_t, NULL);
 consvar_t cv_defaultskin = CVAR_INIT ("defaultskin", DEFAULTSKIN, NULL, CV_SAVE, NULL, NULL);
@@ -691,10 +689,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_playercolor2);
 	CV_RegisterVar(&cv_skin2);
 	// saved versions of the above six
-	CV_RegisterVar(&cv_defaultplayername);
 	CV_RegisterVar(&cv_defaultplayercolor);
 	CV_RegisterVar(&cv_defaultskin);
-	CV_RegisterVar(&cv_defaultplayername2);
 	CV_RegisterVar(&cv_defaultplayercolor2);
 	CV_RegisterVar(&cv_defaultskin2);
 
