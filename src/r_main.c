@@ -185,7 +185,7 @@ consvar_t cv_allowmlook = CVAR_INIT ("allowmlook", "Yes", NULL, CV_NETVAR, CV_Ye
 consvar_t cv_showhud = CVAR_INIT ("showhud", "Yes", "Whether or not to show the Heads-Up Display", CV_CALL,  CV_YesNo, R_SetViewSize);
 consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", "How opaque the HUD is, lower values make the HUD more transparent", CV_SAVE, translucenthud_cons_t, NULL);
 consvar_t cv_uncappedhud = CVAR_INIT ("uncappedhud", "Yes", NULL, CV_SAVE, CV_YesNo, NULL);
-consvar_t cv_modernpause = CVAR_INIT ("modernpause", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_modernpause = CVAR_INIT ("modernpause", "On", "Use a blue textbox or a graphic when the game is paused", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_translucency = CVAR_INIT ("translucency", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_drawdist = CVAR_INIT ("drawdist", "Infinite", "Draw distance for map objects", CV_SAVE, drawdist_cons_t, NULL);

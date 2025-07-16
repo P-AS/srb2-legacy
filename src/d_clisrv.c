@@ -2820,6 +2820,8 @@ void D_QuitNetGame(void)
 
 	// abort send/receive of files
 	CloseNetFile();
+	RemoveAllLuaFileTransfers();
+	waitingforluafiletransfer = false;
 
 	if (server)
 	{
@@ -3172,6 +3174,8 @@ static void HandleConnect(SINT8 node)
 		SV_SendRefuse(node, M_GetText("Too many players from\nthis node."));
 	else if (netgame && !netbuffer->u.clientcfg.localplayers) // Stealth join?
 		SV_SendRefuse(node, M_GetText("No players from\nthis node."));
+	else if (luafiletransfers)
+		SV_SendRefuse(node, M_GetText("The server is broadcasting a file\nrequested by a Lua script.\nPlease wait a bit and then\ntry rejoining."));
 	else
 	{
 #ifndef NONET
@@ -3778,6 +3782,18 @@ FILESTAMP
 			}
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
+			break;	
+		case PT_ASKLUAFILE:
+			if (server && luafiletransfers && luafiletransfers->nodestatus[node] == LFTNS_ASKED)
+			{
+				char *name = va("%s" PATHSEP "%s", luafiledir, luafiletransfers->filename);
+				boolean textmode = !strchr(luafiletransfers->mode, 'b');
+				SV_SendLuaFile(node, name, textmode);
+			}
+			break;
+		case PT_HASLUAFILE:
+			if (server && luafiletransfers && luafiletransfers->nodestatus[node] == LFTNS_SENDING)
+				SV_HandleLuaFileSent(node);
 			break;
 
 		case PT_CANRECEIVEGAMESTATE:
@@ -3898,6 +3914,10 @@ FILESTAMP
 
 		case PT_WILLRESENDGAMESTATE:
 			PT_WillResendGamestate();
+			break;
+		case PT_SENDINGLUAFILE:
+			if (client)
+				CL_PrepareDownloadLuaFile();
 			break;
 		default:
 			DEBFILE(va("UNKNOWN PACKET TYPE RECEIVED %d from host %d\n",

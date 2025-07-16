@@ -129,13 +129,13 @@ consvar_t cv_glanisotropicmode = CVAR_INIT ("gr_anisotropicmode", "1", "The inte
 consvar_t cv_glcorrecttricks = CVAR_INIT ("gr_correcttricks", "Off", NULL, 0, CV_OnOff, NULL);
 consvar_t cv_glsolvetjoin = CVAR_INIT ("gr_solvetjoin", "On", NULL, 0, CV_OnOff, NULL);
 
-consvar_t cv_glbatching = {"gr_batching", "On", NULL, 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glbatching = CVAR_INIT ("gr_batching", "On", NULL, 0, CV_OnOff, NULL);
 
-consvar_t cv_glwireframe = {"gr_wireframe", "Off", NULL, 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glwireframe = CVAR_INIT ("gr_wireframe", "Off", NULL, 0, CV_OnOff, NULL);
 
-consvar_t cv_glmodellighting = {"gr_modellighting", "Off", "Enable ambient lighting on models, if enabled", CV_SAVE|CV_CALL, CV_OnOff, CV_glmodellighting_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glmodellighting = CVAR_INIT ("gr_modellighting", "Off", "Enable ambient lighting on models, if enabled", CV_SAVE|CV_CALL, CV_OnOff, CV_glmodellighting_OnChange);
 
-consvar_t cv_glshearing = {"gr_shearing", "Off", "Emulates Software's vertical camera view", CV_SAVE, grshearing_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glshearing =  CVAR_INIT ("gr_shearing", "Off", "Emulates Software's vertical camera view", CV_SAVE, grshearing_cons_t, NULL);
 
 consvar_t cv_glloadingscreen = CVAR_INIT ("gr_loadingscreen", "Off", "Enable the OpenGL loading screen from old versions of SRB2", CV_SAVE, glloadingscreen_cons_t, NULL);
 
@@ -145,11 +145,11 @@ consvar_t cv_glspritebillboarding = CVAR_INIT ("gr_spritebillboarding", "Off", N
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
-consvar_t cv_glpaletterendering = {"gr_paletterendering", "On", "Emulate software's limited palette (requires shaders)", CV_CALL|CV_SAVE, CV_OnOff, CV_glpaletterendering_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_glpalettedepth = {"gr_palettedepth", "16 bits", NULL, CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_glpalettedepth_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glpaletterendering = CVAR_INIT ("gr_paletterendering", "On", "Emulate software's limited palette (requires shaders)", CV_CALL|CV_SAVE, CV_OnOff, CV_glpaletterendering_OnChange);
+consvar_t cv_glpalettedepth = CVAR_INIT ("gr_palettedepth", "16 bits", NULL, CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_glpalettedepth_OnChange);
 
-consvar_t cv_glcurveshader = {"gr_curveshader", "Off", "wheeeeeee", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_gllightdither = {"gr_lightdithering", "Off", "Adds a dither effect to lighting (requires shaders)", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_glcurveshader = CVAR_INIT ("gr_curveshader", "Off", "wheeeeeee", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange);
+consvar_t cv_gllightdither = CVAR_INIT ("gr_lightdithering", "Off", "Adds a dither effect to lighting (requires shaders)", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange);
 
 #define ONLY_IF_GL_LOADED if (vid.glstate != VID_GL_LIBRARY_LOADED) return;
 

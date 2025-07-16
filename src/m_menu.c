@@ -1397,7 +1397,7 @@ static menuitem_t OP_GameOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Console Text Size", NULL,       &cv_constextsize,       70},
 	{IT_STRING | IT_CVAR, NULL, "Uppercase Console",  NULL,      &cv_allcaps,            75},
 	{IT_STRING | IT_CVAR, NULL, "Show \"FOCUS LOST\"", NULL,     &cv_showfocuslost,      80},
-	{IT_STRING | IT_CVAR, NULL, "Modern Pause Screen",     &cv_modernpause,        85},
+	{IT_STRING | IT_CVAR, NULL, "Modern Pause Screen", NULL,    &cv_modernpause,        85},
 	{IT_STRING | IT_CVAR, NULL, "Title Screen Demos",  NULL,     &cv_rollingdemos,       90},
 };
 
