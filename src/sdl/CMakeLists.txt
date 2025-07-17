@@ -70,6 +70,10 @@ if(${SDL2_FOUND})
 		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacy)
 	endif()
 
+	if(${CMAKE_SYSTEM} MATCHES Emscripten)
+		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME "SRB2SDL2" SUFFIX ".html")
+	endif()
+
 	if(${CMAKE_SYSTEM} MATCHES Darwin)
 		find_library(CORE_FOUNDATION_LIBRARY "CoreFoundation")
 		target_link_libraries(SRB2SDL2 PRIVATE
