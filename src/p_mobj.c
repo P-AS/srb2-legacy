@@ -7938,6 +7938,11 @@ void P_RemoveMobj(mobj_t *mobj)
 	//
 	// Remove any references to other mobjs.
 	P_SetTarget(&mobj->target, P_SetTarget(&mobj->tracer, NULL));
+
+	// clear the reference from the mapthing
+	if (mobj->spawnpoint)
+		mobj->spawnpoint->mobj = NULL;
+
     R_RemoveMobjInterpolator(mobj);
 
 	// free block
