@@ -6890,7 +6890,10 @@ static void P_MovePlayer(player_t *player)
 			player->mo->height = P_GetPlayerHeight(player);
 
 		if (player->mo->eflags & MFE_VERTICALFLIP && player->mo->height != oldheight) // adjust z height for reverse gravity, similar to how it's done for scaling
-			player->mo->z -= player->mo->height - oldheight;
+		{
+			player->mo->z     -= player->mo->height - oldheight;
+			player->mo->old_z -= player->mo->height - oldheight; // Snap the Z adjustment, while keeping the Z interpolation
+		}
 	}
 
 	// Crush test...

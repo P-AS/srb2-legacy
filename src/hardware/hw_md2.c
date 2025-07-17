@@ -1157,7 +1157,12 @@ void HWR_DrawMD2(gl_vissprite_t *spr)
 
 
 		if (spr->mobj->eflags & MFE_VERTICALFLIP)
-			p.z = FIXED_TO_FLOAT(interp.z + spr->mobj->height);
+		{
+			if (spr->mobj->scale != spr->mobj->old_scale) // Interpolate heights in reverse gravity when scaling mobjs
+				p.z = FIXED_TO_FLOAT(interp.z + FixedMul(spr->mobj->height, FixedDiv(interp.scale, spr->mobj->scale)));
+			else
+				p.z = FIXED_TO_FLOAT(interp.z + spr->mobj->height);
+		}
 		else
 			p.z = FIXED_TO_FLOAT(interp.z);
 

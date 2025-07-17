@@ -595,7 +595,7 @@ static int cvar_get(lua_State *L)
 		break;
 	default:
 		if (devparm)
-			return luaL_error(L, LUA_QL("consvar_t") " has no field named " LUA_QS, field);
+			return luaL_error(L, LUA_QL("consvar_t") " has no field named " LUA_QS ".", lua_tostring(L, 2));
 		return 0;
 	}
 	return 1;
