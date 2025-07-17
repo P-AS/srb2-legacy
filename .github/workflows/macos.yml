@@ -24,16 +24,10 @@ jobs:
     - name: Build SRB2 Legacy
       run: ninja -C build
 
-    - name: Package SRB2 Legacy
-      run: |
-        VERSION=$(awk '/#define SRB2VERSION/ { gsub(/["\/\*]/, "", $3); print $3 }' src/version.h)
-        ninja -C build package
-        codesign --deep --force --sign - build/_CPack_Packages/Darwin/TGZ/SRB2-$VERSION-Darwin/Sonic\ Robo\ Blast\ 2\ Legacy.app
-
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
         name: srb2legacy-macOS-aarch64-${{ github.sha }}
         path: |
-          build/_CPack_Packages/Darwin/TGZ/SRB2-*-Darwin*/
+          build/bin
           src/comptime.h
