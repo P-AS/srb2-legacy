@@ -91,8 +91,10 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #ifdef FREEBSD
 #include <kvm.h>
 #endif
+#ifndef EMSCRIPTEN
 #include <nlist.h>
 #include <sys/sysctl.h>
+#endif
 #endif
 #endif
 
@@ -2689,7 +2691,7 @@ void I_ShutdownSystem(void)
 void I_GetDiskFreeSpace(INT64 *freespace)
 {
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#if defined (SOLARIS) || defined (__HAIKU__)
+#if defined (SOLARIS) || defined (__HAIKU__) || defined (__EMSCRIPTEN__)
 	*freespace = INT32_MAX;
 	return;
 #else // Both Linux and BSD have this, apparently.
