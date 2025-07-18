@@ -1285,7 +1285,7 @@ static menuitem_t OP_SoundOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR,  NULL,  "Music Preference", NULL,  &cv_musicpref,      90},
 
-	{IT_STRING 	  | IT_SUBMENU, NULL, "Advanced Settings...", NULL,  &OP_SoundAdvancedDef, 110},
+	{IT_STRING 	  | IT_SUBMENU, NULL, "Advanced Settings...", "Extra game sound settings",  &OP_SoundAdvancedDef, 110},
 };
 
 #ifdef HAVE_OPENMPT
