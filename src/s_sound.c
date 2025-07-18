@@ -91,9 +91,9 @@ consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", NULL, CV_SAVE, CV_O
 static consvar_t precachesound = CVAR_INIT ("precachesound", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // actual general (maximum) sound & music volume, saved into the config
-consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "18", NULL, CV_SAVE, soundvolume_cons_t, NULL);
-consvar_t cv_digmusicvolume = CVAR_INIT ("digmusicvolume", "18", NULL, CV_SAVE, soundvolume_cons_t, NULL);
-consvar_t cv_midimusicvolume = CVAR_INIT ("midimusicvolume", "18", NULL, CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "18", "Volume of sound effects", CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_digmusicvolume = CVAR_INIT ("digmusicvolume", "18", "Volume of digital music", CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_midimusicvolume = CVAR_INIT ("midimusicvolume", "18", "Volume of MIDI music", CV_SAVE, soundvolume_cons_t, NULL);
 // number of channels available
 #if defined (_WIN32_WCE) || defined (DC) || defined (PSP) || defined(GP2X)
 consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "8", NULL, CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
@@ -105,9 +105,9 @@ static consvar_t surround = CVAR_INIT ("surround", "Off", NULL, CV_SAVE, CV_OnOf
 consvar_t cv_resetmusic = CVAR_INIT ("resetmusic", "No", NULL, CV_SAVE, CV_YesNo, NULL);
 
 // Sound system toggles, saved into the config
-consvar_t cv_gamedigimusic = CVAR_INIT ("digimusic", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange);
-consvar_t cv_gamemidimusic = CVAR_INIT ("midimusic", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameMIDIMusic_OnChange);
-consvar_t cv_gamesounds = CVAR_INIT ("sounds", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange);
+consvar_t cv_gamedigimusic = CVAR_INIT ("digimusic", "On", "Enable or disable digital music", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange);
+consvar_t cv_gamemidimusic = CVAR_INIT ("midimusic", "On", "Enable or disable MIDI music", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameMIDIMusic_OnChange);
+consvar_t cv_gamesounds = CVAR_INIT ("sounds", "On", "Enable or disable sound effects", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange);
 
 // Music preference
 static CV_PossibleValue_t cons_musicpref_t[] = {
@@ -115,16 +115,16 @@ static CV_PossibleValue_t cons_musicpref_t[] = {
 	{1, "MIDI"},
 	{0, NULL}
 };
-consvar_t cv_musicpref = CVAR_INIT ("musicpref", "Digital", NULL, CV_SAVE|CV_CALL|CV_NOINIT, cons_musicpref_t, MusicPref_OnChange);
+consvar_t cv_musicpref = CVAR_INIT ("musicpref", "Digital", "Preferred type of music to use, if available", CV_SAVE|CV_CALL|CV_NOINIT, cons_musicpref_t, MusicPref_OnChange);
 
 // Window focus sound sytem toggles
-consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused", "No", NULL, CV_SAVE, CV_YesNo, NULL);
-consvar_t cv_playsoundsifunfocused = CVAR_INIT ("playsoundsifunfocused", "No", NULL, CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused", "No", "Play music if game window is not focused", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_playsoundsifunfocused = CVAR_INIT ("playsoundsifunfocused", "No", "Play sound effects if game window is not focused", CV_SAVE, CV_YesNo, NULL);
 
 #ifdef HAVE_OPENMPT
 openmpt_module *openmpt_mhandle = NULL;
 static CV_PossibleValue_t interpolationfilter_cons_t[] = {{0, "Default"}, {1, "None"}, {2, "Linear"}, {4, "Cubic"}, {8, "Windowed sinc"}, {0, NULL}};
-consvar_t cv_modfilter = CVAR_INIT ("modfilter", "0", NULL, CV_SAVE|CV_CALL, interpolationfilter_cons_t, ModFilter_OnChange);
+consvar_t cv_modfilter = CVAR_INIT ("modfilter", "0", "Filter to use for module music", CV_SAVE|CV_CALL, interpolationfilter_cons_t, ModFilter_OnChange);
 #endif
 
 #define S_MAX_VOLUME 127
