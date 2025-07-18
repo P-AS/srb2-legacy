@@ -1609,7 +1609,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 	tmbbox[BOXRIGHT] = x + thiscam->radius;
 	tmbbox[BOXLEFT] = x - thiscam->radius;
 
-	newsubsec = R_PointInSubsector(x, y);
+	newsubsec = R_PointInSubsectorFast(x, y);
 	ceilingline = blockingline = NULL;
 
 	mapcampointer = thiscam;
@@ -1779,7 +1779,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 //
 boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 {
-	subsector_t *s = R_PointInSubsector(x, y);
+	subsector_t *s = R_PointInSubsectorFast(x, y);
 	boolean retval = true;
 	boolean itsatwodlevel = false;
 

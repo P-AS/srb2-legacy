@@ -49,6 +49,7 @@ static void COM_Exec_f(void);
 static void COM_Wait_f(void);
 static void COM_Help_f(void);
 static void COM_Toggle_f(void);
+static void COM_Add_f(void);
 
 static void CV_EnforceExecVersion(void);
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
@@ -69,7 +70,7 @@ CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 // First implementation is 26 (2.1.21), so earlier configs default at 25 (2.1.20)
 // Also set CV_HIDEN during runtime, after config is loaded
 static boolean execversion_enabled = false;
-consvar_t cv_execversion = {"execversion","25",CV_CALL,CV_Unsigned, CV_EnforceExecVersion, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_execversion = CVAR_INIT ("execversion","25", NULL, CV_CALL,CV_Unsigned, CV_EnforceExecVersion);
 
 // for default joyaxis detection
 static boolean joyaxis_default = false;
@@ -260,6 +261,7 @@ void COM_ImmedExecute(const char *ptext)
 typedef struct xcommand_s
 {
 	const char *name;
+	const char *desc;
 	struct xcommand_s *next;
 	com_func_t function;
 } xcommand_t;
@@ -282,15 +284,16 @@ void COM_Init(void)
 	VS_Alloc(&com_text, COM_BUF_SIZE);
 
 	// add standard commands
-	COM_AddCommand("alias", COM_Alias_f);
-	COM_AddCommand("echo", COM_Echo_f);
-	COM_AddCommand("cecho", COM_CEcho_f);
-	COM_AddCommand("cechoflags", COM_CEchoFlags_f);
-	COM_AddCommand("cechoduration", COM_CEchoDuration_f);
-	COM_AddCommand("exec", COM_Exec_f);
-	COM_AddCommand("wait", COM_Wait_f);
-	COM_AddCommand("help", COM_Help_f);
-	COM_AddCommand("toggle", COM_Toggle_f);
+	COM_AddCommand("alias", NULL, COM_Alias_f);
+	COM_AddCommand("echo", NULL, COM_Echo_f);
+	COM_AddCommand("cecho", NULL, COM_CEcho_f);
+	COM_AddCommand("cechoflags", NULL, COM_CEchoFlags_f);
+	COM_AddCommand("cechoduration", NULL, COM_CEchoDuration_f);
+	COM_AddCommand("exec", NULL, COM_Exec_f);
+	COM_AddCommand("wait", NULL, COM_Wait_f);
+	COM_AddCommand("help", NULL,  COM_Help_f);
+	COM_AddCommand("toggle", NULL, COM_Toggle_f);
+	COM_AddCommand("add", NULL, COM_Add_f);
 	RegisterNetXCmd(XD_NETVAR, Got_NetVar);
 }
 
@@ -387,7 +390,7 @@ static void COM_TokenizeString(char *ptext)
   * \param name Name of the command.
   * \param func Function called when the command is run.
   */
-void COM_AddCommand(const char *name, com_func_t func)
+void COM_AddCommand(const char *name, const char *desc, com_func_t func)
 {
 	xcommand_t *cmd;
 
@@ -416,6 +419,7 @@ void COM_AddCommand(const char *name, com_func_t func)
 
 	cmd = ZZ_Alloc(sizeof *cmd);
 	cmd->name = name;
+	cmd->desc = desc;
 	cmd->function = func;
 	cmd->next = com_commands;
 	com_commands = cmd;
@@ -426,7 +430,7 @@ void COM_AddCommand(const char *name, com_func_t func)
   *
   * \param name Name of the command.
   */
-int COM_AddLuaCommand(const char *name)
+int COM_AddLuaCommand(const char *name, const char *desc)
 {
 	xcommand_t *cmd;
 
@@ -448,6 +452,7 @@ int COM_AddLuaCommand(const char *name)
 	// Add a new command.
 	cmd = ZZ_Alloc(sizeof *cmd);
 	cmd->name = name;
+	cmd->desc = desc;
 	cmd->function = COM_Lua_f;
 	cmd->next = com_commands;
 	com_commands = cmd;
@@ -542,7 +547,7 @@ static void COM_ExecuteString(char *ptext)
 
 	// check cvars
 	// Hurdler: added at Ebola's request ;)
-	// (don't flood the console in software mode with bad gr_xxx command)
+	// (don't flood the console in software mode with bad gl_xxx command)
 	if (!CV_Command() && (con_destlines || dedicated))
 		CONS_Printf(M_GetText("Unknown command '%s'\n"), COM_Argv(0));
 }
@@ -711,7 +716,11 @@ static void COM_Help_f(void)
 		{
 			boolean floatmode = false;
 			const char *cvalue = NULL;
-			CONS_Printf("\x82""Variable %s:\n", cvar->name);
+			CONS_Printf("\x82""Variable %s: \x80", cvar->name);
+			if (cvar->desc != NULL)
+				CONS_Printf("%s\n", cvar->desc);
+			else
+				CONS_Printf("No description provided\n");
 			CONS_Printf(M_GetText("  flags :"));
 			if (cvar->flags & CV_SAVE)
 				CONS_Printf("AUTOSAVE ");
@@ -777,9 +786,11 @@ static void COM_Help_f(void)
 				if (strcmp(cmd->name, help))
 					continue;
 
-				CONS_Printf("\x82""Command %s:\n", cmd->name);
-				CONS_Printf("  help is not available for commands");
-				CONS_Printf("\x82""\nCheck wiki.srb2.org for more or try typing <name> without arguments\n");
+				CONS_Printf("\x82""Command %s: \x80", cmd->name);
+				if (cmd->desc != NULL)
+					CONS_Printf("%s\n", cmd->desc);
+				else
+					CONS_Printf("No description provided\n");
 				return;
 			}
 
@@ -831,7 +842,7 @@ static void COM_Help_f(void)
 			i++;
 		}
 
-		CONS_Printf("\x82""\nCheck wiki.srb2.org for more or type help <command or variable>\n");
+		CONS_Printf("\n");
 
 		CONS_Debug(DBG_GAMELOGIC, "\x82Total : %d\n", i);
 	}
@@ -868,6 +879,27 @@ static void COM_Toggle_f(void)
 	// netcvar don't change imediately
 	cvar->flags |= CV_SHOWMODIFONETIME;
 	CV_AddValue(cvar, +1);
+}
+
+/** Command variant of CV_AddValue
+  */
+static void COM_Add_f(void)
+{
+	consvar_t *cvar;
+
+	if (COM_Argc() != 3)
+	{
+		CONS_Printf(M_GetText("Add <cvar_name> <value>: Add to the value of a cvar. Negative values work too!\n"));
+		return;
+	}
+	cvar = CV_FindVar(COM_Argv(1));
+	if (!cvar)
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("%s is not a cvar\n"), COM_Argv(1));
+		return;
+	}
+
+	CV_AddValue(cvar, atoi(COM_Argv(2)));
 }
 
 // =========================================================================

@@ -2583,7 +2583,6 @@ static void P_SetupCamera(void)
 		camera.y = players[displayplayer].mo->y;
 		camera.z = players[displayplayer].mo->z;
 		camera.angle = players[displayplayer].mo->angle;
-		camera.subsector = R_PointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 	}
 	else
 	{
@@ -2607,9 +2606,9 @@ static void P_SetupCamera(void)
 			camera.y = thing->y;
 			camera.z = thing->z;
 			camera.angle = FixedAngle((fixed_t)thing->angle << FRACBITS);
-			camera.subsector = R_PointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 		}
 	}
+	camera.subsector = R_PointInSubsectorFast(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 }
 
 static boolean P_CanSave(void)
@@ -2776,6 +2775,7 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 			lastwipetic = nowtime;
 			if (moviemode) // make sure we save frames for the white hold too
 				M_SaveFrame();
+			NetKeepAlive(); // Prevent timeout
 		}
 
 		ranspecialwipe = 1;

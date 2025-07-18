@@ -44,6 +44,7 @@ enum hook {
 	hook_HurtMsg,
 	hook_PlayerSpawn,
 	hook_PlayerQuit,
+	hook_IntermissionThinker,
 	hook_PlayerThink,
 
 	hook_MAX // last hook
@@ -83,3 +84,4 @@ boolean LUAh_PlayerMsg(int source, int target, int flags, char *msg); // Hook fo
 boolean LUAh_HurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source); // Hook for hurt messages
 #define LUAh_PlayerSpawn(player) LUAh_PlayerHook(player, hook_PlayerSpawn) // Hook for G_SpawnPlayer
 void LUAh_PlayerQuit(player_t *plr, int reason); // Hook for player quitting
+void LUAh_IntermissionThinker(void); // Hook for Y_Ticker

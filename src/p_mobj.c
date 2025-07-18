@@ -35,9 +35,9 @@
 
 // protos.
 static CV_PossibleValue_t viewheight_cons_t[] = {{16, "MIN"}, {56, "MAX"}, {0, NULL}};
-consvar_t cv_viewheight = {"viewheight", VIEWHEIGHTS, 0, viewheight_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_viewheight = CVAR_INIT ("viewheight", VIEWHEIGHTS, NULL, 0, viewheight_cons_t, NULL);
 #ifdef WALLSPLATS
-consvar_t cv_splats = {"splats", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_splats = CVAR_INIT ("splats", "On", CV_SAVE, CV_OnOff, NULL);
 #endif
 
 actioncache_t actioncachehead;
@@ -1038,7 +1038,7 @@ fixed_t P_CameraFloorZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, fix
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_OldPointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_PointInSubsectorFast(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -1114,7 +1114,7 @@ fixed_t P_CameraCeilingZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, f
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_OldPointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_PointInSubsectorFast(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -3497,7 +3497,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 	if (!itsatwodlevel)
 		P_CheckCameraPosition(thiscam->x, thiscam->y, thiscam);
 
-	thiscam->subsector = R_OldPointInSubsector(thiscam->x, thiscam->y);
+	thiscam->subsector = R_PointInSubsectorFast(thiscam->x, thiscam->y);
 	thiscam->floorz = tmfloorz;
 	thiscam->ceilingz = tmceilingz;
 
@@ -7180,7 +7180,7 @@ void P_MobjThinker(mobj_t *mobj)
 						{
 							x = mobj->spawnpoint->x << FRACBITS;
 							y = mobj->spawnpoint->y << FRACBITS;
-							ss = R_OldPointInSubsector(x, y);
+							ss = R_PointInSubsector(x, y);
 							if (mobj->spawnpoint->options & MTF_OBJECTFLIP)
 							{
 								z = ss->sector->ceilingheight - mobjinfo[mobj->type].height;
@@ -7482,7 +7482,7 @@ void P_PushableThinker(mobj_t *mobj)
 				x = mobj->spawnpoint->x << FRACBITS;
 				y = mobj->spawnpoint->y << FRACBITS;
 
-				ss = R_OldPointInSubsector(x, y);
+				ss = R_PointInSubsector(x, y);
 
 				if (mobj->spawnpoint->z != 0)
 					z = mobj->spawnpoint->z << FRACBITS;
@@ -7938,6 +7938,11 @@ void P_RemoveMobj(mobj_t *mobj)
 	//
 	// Remove any references to other mobjs.
 	P_SetTarget(&mobj->target, P_SetTarget(&mobj->tracer, NULL));
+
+	// clear the reference from the mapthing
+	if (mobj->spawnpoint)
+		mobj->spawnpoint->mobj = NULL;
+
     R_RemoveMobjInterpolator(mobj);
 
 	// free block
@@ -8012,11 +8017,11 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 }
 
 static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_itemrespawntime = {"respawnitemtime", "30", CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_itemrespawn = {"respawnitem", "On", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_itemrespawntime = CVAR_INIT ("respawnitemtime", "30", NULL, CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL);
+consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
 static CV_PossibleValue_t flagtime_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_flagtime = {"flagtime", "30", CV_NETVAR|CV_CHEAT, flagtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_suddendeath = {"suddendeath", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_flagtime = CVAR_INIT ("flagtime", "30", NULL, CV_NETVAR|CV_CHEAT, flagtime_cons_t, NULL);
+consvar_t cv_suddendeath = CVAR_INIT ("suddendeath", "Off", NULL, CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 
 void P_SpawnPrecipitation(void)
 {
@@ -8177,7 +8182,7 @@ void P_PrecipitationEffects(void)
 		for (y = yl; y <= yh; y += FRACUNIT*64)
 			for (x = xl; x <= xh; x += FRACUNIT*64)
 			{
-				if (R_OldPointInSubsector(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
+				if (R_PointInSubsectorFast(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
 				{
 					newdist = S_CalculateSoundDistance(players[displayplayer].mo->x, players[displayplayer].mo->y, 0, x, y, 0);
 					if (newdist < closedist)
@@ -8255,7 +8260,7 @@ void P_RespawnSpecials(void)
 		mobjtype_t i;
 		x = mthing->x << FRACBITS;
 		y = mthing->y << FRACBITS;
-		ss = R_OldPointInSubsector(x, y);
+		ss = R_PointInSubsector(x, y);
 
 		// find which type to spawn
 		for (i = 0; i < NUMMOBJTYPES; i++)
@@ -8478,7 +8483,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	//spawn at the origin as a desperation move if there is no mapthing
 
 	// set Z height
-	sector = R_OldPointInSubsector(x, y)->sector;
+	sector = R_PointInSubsector(x, y)->sector;
 
 	floor =
 	sector->f_slope ? P_GetZAt(sector->f_slope, x, y) :
@@ -8547,7 +8552,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	mobj->x = p->starpostx << FRACBITS;
 	mobj->y = p->starposty << FRACBITS;
 	P_SetThingPosition(mobj);
-	sector = R_OldPointInSubsector(mobj->x, mobj->y)->sector;
+	sector = R_PointInSubsector(mobj->x, mobj->y)->sector;
 
 	floor =
 	sector->f_slope ? P_GetZAt(sector->f_slope, mobj->x, mobj->y) : sector->floorheight;
@@ -8714,7 +8719,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 		if (gametype != GT_COOP)
 			return;
 
-		ss = R_OldPointInSubsector(mthing->x << FRACBITS, mthing->y << FRACBITS);
+		ss = R_PointInSubsector(mthing->x << FRACBITS, mthing->y << FRACBITS);
 		mthing->z = (INT16)(((
 							ss->sector->f_slope ? P_GetZAt(ss->sector->f_slope, mthing->x << FRACBITS, mthing->y << FRACBITS) :
 							ss->sector->floorheight)>>FRACBITS) + (mthing->options >> ZSHIFT));
@@ -8832,7 +8837,7 @@ void P_SpawnMapThing(mapthing_t *mthing)
 	// spawn it
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
-	ss = R_OldPointInSubsector(x, y);
+	ss = R_PointInSubsector(x, y);
 
 	if (i == MT_NIGHTSBUMPER)
 		z = (
@@ -9381,7 +9386,7 @@ void P_SpawnHoopsAndRings(mapthing_t *mthing)
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
 
-	sec = R_OldPointInSubsector(x, y)->sector;
+	sec = R_PointInSubsector(x, y)->sector;
 
 	// NiGHTS hoop!
 	if (mthing->type == 1705)

@@ -58,11 +58,11 @@ typedef struct
 
 // needed for sprite rendering
 // equivalent of the software renderer's vissprites
-typedef struct gr_vissprite_s
+typedef struct gl_vissprite_s
 {
 	// Doubly linked list
-	struct gr_vissprite_s *prev;
-	struct gr_vissprite_s *next;
+	struct gl_vissprite_s *prev;
+	struct gl_vissprite_s *next;
 	float x1, x2;
 	float tz, ty;
 	lumpnum_t patchlumpnum;
@@ -76,7 +76,7 @@ typedef struct gr_vissprite_s
 	UINT8 *colormap;
 	INT32 dispoffset; // copy of info->dispoffset, affects ordering but not drawing
 	float z1, z2;
-} gr_vissprite_t;
+} gl_vissprite_t;
 
 // --------
 // hw_bsp.c
@@ -99,7 +99,7 @@ void HWR_FreeColormaps(void);
 void HWR_FreeExtraSubsectors(void);
 
 void HWR_GetFlat(lumpnum_t flatlumpnum);
-GLTexture_t *HWR_GetTexture(INT32 tex);
+GLMapTexture_t *HWR_GetTexture(INT32 tex);
 void HWR_GetPatch(GLPatch_t *gpatch);
 void HWR_GetMappedPatch(GLPatch_t *gpatch, const UINT8 *colormap);
 void HWR_MakePatch(patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap);
@@ -118,8 +118,6 @@ void HWR_GetFadeMask(lumpnum_t fademasklumpnum);
 // --------
 // hw_draw.c
 // --------
-extern consvar_t cv_grrounddown; // on/off
-
 extern INT32 patchformat;
 extern INT32 textureformat;
 

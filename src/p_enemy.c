@@ -1004,6 +1004,10 @@ void A_PointyThink(void *thing)
 	if (!actor->tracer) // For some reason we do not have spike balls...
 		return;
 
+	// Catch case where actor lastlook is -1 (which segfaults the following blocks)
+	if (actor->lastlook < 0)
+		return;
+
 	// Position spike balls relative to the value of 'lastlook'.
 	ball = actor->tracer;
 
