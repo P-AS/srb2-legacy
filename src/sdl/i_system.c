@@ -114,7 +114,9 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <errno.h>
 #include <sys/wait.h>
 #ifndef __HAIKU__ // haiku's crash dialog is just objectively better
+#ifndef __EMSCRIPTEN__ // WASM does not support fork()
 #define NEWSIGNALHANDLER
+#endif
 #endif
 #endif
 
