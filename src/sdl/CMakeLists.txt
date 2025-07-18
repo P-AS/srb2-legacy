@@ -12,6 +12,8 @@ if(${SRB2_CONFIG_SDL2_USEMIXER})
 			set(SDL2_MIXER_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/i686-w64-mingw32/include/SDL2)
 			set(SDL2_MIXER_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/i686-w64-mingw32/lib -lSDL2_mixer")
 		endif()
+	elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
+		set(SDL2_MIXER_FOUND  ON)
 	else()
 		find_package(SDL2_mixer)
 	endif()
@@ -40,6 +42,8 @@ if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 		set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/include/SDL2)
 		set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib -lSDL2")
 	endif()
+elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
+	set(SDL2_FOUND ON)
 else()
 	find_package(SDL2 CONFIG REQUIRED)
 	find_package(SDL2 REQUIRED)
@@ -260,3 +264,42 @@ else()
 	message(WARNING "SDL2 was not found, so the SDL2 target will not be available.")
 	set(SRB2_SDL2_AVAILABLE NO PARENT_SCOPE)
 endif()
+
+add_link_options("SHELL: -lidbfs.js")
+add_link_options("SHELL: -s EXPORTED_RUNTIME_METHODS=ccall,cwrap")
+add_link_options(
+  "SHELL: -s EXPORTED_FUNCTIONS=_main,_Command_ListWADS_f,_COM_ExecuteString,_P_AddWadFile"
+)
+add_link_options("SHELL: -s ASYNCIFY")
+add_link_options("SHELL: -sUSE_SDL=2")
+add_link_options("SHELL: -sUSE_ZLIB=1")
+add_link_options("SHELL: -sUSE_SDL_MIXER=2")
+add_link_options("SHELL: -s ALLOW_MEMORY_GROWTH=1")
+add_link_options("SHELL: -s INITIAL_MEMORY=655360000")
+add_link_options("SHELL: -s STACK_SIZE=65536000")
+add_link_options("--preload-file=${PROJECT_SOURCE_DIR}/assets/installer@/")
+add_link_options("SHELL: --use-preload-plugins")
+
+target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MIXER -DSOUND=SOUND_MIXER)
+target_compile_definitions(
+  SRB2SDL2 PRIVATE -DDIRECTFULLSCREEN -DHAVE_SDL -DHAVE_PNG)
+target_link_options(
+  SRB2SDL2
+  PRIVATE
+  -sUSE_SDL=2
+  -sUSE_SDL_MIXER=2
+  -sUSE_ZLIB
+  -sUSE_LIBPNG
+  -lidbfs.js
+  -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
+  -sEXPORTED_FUNCTIONS=_main,_P_AddWadFile
+  -sASYNCIFY 
+  -sALLOW_MEMORY_GROWTH=1
+  -sINITIAL_MEMORY=983040000
+  -sSTACK_SIZE=655360000
+  --preload-file=${PROJECT_SOURCE_DIR}/assets/installer@/
+  --use-preload-plugins 
+  --use-preload-cache
+  )
+target_compile_options(SRB2SDL2 PRIVATE -sUSE_SDL=2 -sUSE_SDL_MIXER=2
+                                        -sUSE_ZLIB -sUSE_LIBPNG)

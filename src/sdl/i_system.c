@@ -54,6 +54,9 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #elif defined (_MSC_VER)
 #include <direct.h>
 #endif
+#ifdef __EMSCRIPTEN__
+#undef HAVE_TERMIOS // do not read on /dev/tty, JavaScript alert() are blocking
+#endif
 #if defined (__unix__) || defined (UNIXCOMMON)
 #include <poll.h>
 #include <fcntl.h>
@@ -85,7 +88,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 #if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
 #include <time.h>
-#if defined (__linux__)
+#if defined (__linux__) || defined(__EMSCRIPTEN__) 
 #include <sys/vfs.h>
 #else
 #include <sys/param.h>
@@ -946,8 +949,13 @@ void I_OutputMsg(const char *fmt, ...)
 	}
 #endif
 
+
+#ifdef __EMSCRIPTEN__
+	fprintf(stdout, "%s", txt);
+#else
 	if (!framebuffer)
 		fprintf(stderr, "%s", txt);
+#endif
 #ifdef HAVE_TERMIOS
 	if (consolevent)
 	{
@@ -2279,11 +2287,13 @@ void I_StartupTimer(void)
 
 void I_Sleep(UINT32 ms)
 {
-#if defined (__EMSCRIPTEN__) && 0
-	emscripten_sleep(ms);
-#else
-	SDL_Delay(ms);
+#if defined (__EMSCRIPTEN__)
+	if (emscripten_has_asyncify())
+	{
+		return emscripten_sleep(ms);
+	}
 #endif
+	SDL_Delay(ms);
 }
 
 
@@ -2496,11 +2506,10 @@ void I_Quit(void)
 death:
 	W_Shutdown();
 #ifdef __EMSCRIPTEN__
-    emscripten_cancel_main_loop();
-    emscripten_force_exit(0);
-#else
-	exit(0);
+	emscripten_cancel_main_loop();
+	emscripten_force_exit(0);
 #endif
+	exit(0);
 }
 
 void I_WaitVBL(INT32 count)

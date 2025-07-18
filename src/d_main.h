@@ -28,7 +28,11 @@ extern const char *pandf; //Alam: how to path?
 extern char srb2path[256]; //Alam: SRB2's Home
 
 // the infinite loop of D_SRB2Loop() called from win_main for windows version
-void D_SRB2Loop(void) FUNCNORETURN;
+void D_SRB2Loop(void)
+#ifndef __EMSCRIPTEN__ 
+FUNCNORETURN
+#endif
+;
 
 //
 // D_SRB2Main()
