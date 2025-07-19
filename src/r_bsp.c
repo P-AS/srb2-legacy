@@ -37,6 +37,10 @@ drawseg_t *ds_p = NULL;
 // indicates doors closed wrt automap bugfix:
 INT32 doorclosed;
 
+// A wall was drawn covering the whole screen, which means we
+// can block off the BSP across that seg.
+boolean g_walloffscreen;
+
 //
 // R_ClearDrawSegs
 //
@@ -56,7 +60,7 @@ UINT8 solidcol[MAXVIDWIDTH];
 //
 // Replaces the old R_Clip*WallSegment functions. It draws bits of walls in those
 // columns which aren't solid, and updates the solidcol[] array appropriately
-static void R_ClipWallSegment(INT32 first, INT32 last, boolean solid)
+static void R_ClipWallSegment(INT32 first, INT32 last, boolean solid, boolean soliddontrender)
 {
 	while (first < last)
 	{
@@ -80,7 +84,8 @@ static void R_ClipWallSegment(INT32 first, INT32 last, boolean solid)
 			else
 				to = p - solidcol;
 
-			R_StoreWallRange(first, to-1);
+			if (!soliddontrender)
+				R_StoreWallRange(first, last);
 
 			if (solid)
 				memset(solidcol+first, 1, to-first);
@@ -461,11 +466,15 @@ static void R_AddLine(seg_t *line)
 		return;
 
 clippass:
-	R_ClipWallSegment(x1, x2, false);
+	g_walloffscreen = false;
+	R_ClipWallSegment(x1, x2, false, false);
+	if (g_walloffscreen)
+		R_ClipWallSegment(x1, x2 - 1, false, true);
 	return;
 
 clipsolid:
-	R_ClipWallSegment(x1, x2, true);
+	g_walloffscreen = false;
+		R_ClipWallSegment(x1, x2, true, false);
 }
 
 //
