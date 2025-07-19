@@ -845,40 +845,6 @@ UINT16 W_InitFile(const char *filename)
 	return wadfile->numlumps;
 }
 
-#ifdef DELFILE
-void W_UnloadWadFile(UINT16 num)
-{
-	INT32 i;
-	wadfile_t *delwad = wadfiles[num];
-	lumpcache_t *lumpcache;
-	if (num == 0)
-		return;
-	CONS_Printf(M_GetText("Removing WAD %s...\n"), wadfiles[num]->filename);
-
-	DEH_UnloadDehackedWad(num);
-	wadfiles[num] = NULL;
-	lumpcache = delwad->lumpcache;
-	numwadfiles--;
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		HWR_FreeTextureCache();
-	}
-	M_AATreeFree(delwad->hwrcache);
-#endif
-	if (*lumpcache)
-	{
-		for (i = 0;i < delwad->numlumps;i++)
-			Z_ChangeTag(lumpcache[i], PU_PURGELEVEL);
-	}
-	Z_Free(lumpcache);
-	fclose(delwad->handle);
-	Z_Free(delwad->filename);
-	Z_Free(delwad);
-	CONS_Printf(M_GetText("Done unloading WAD.\n"));
-}
-#endif
-
 /** Tries to load a series of files.
   * All files are wads unless they have an extension of ".soc" or ".lua".
   *
@@ -2104,7 +2070,7 @@ int W_VerifyNMUSlumps(const char *filename)
 
 		{"SHADERS", 7}, // Shader definitions
 		{"SH_", 3}, // GLSL shader
-	
+
 
 		{NULL, 0},
 	};
