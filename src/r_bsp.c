@@ -85,7 +85,7 @@ static void R_ClipWallSegment(INT32 first, INT32 last, boolean solid, boolean so
 				to = p - solidcol;
 
 			if (!soliddontrender)
-				R_StoreWallRange(first, last);
+				R_StoreWallRange(first, to-1);
 
 			if (solid)
 				memset(solidcol+first, 1, to-first);
@@ -464,17 +464,17 @@ static void R_AddLine(seg_t *line)
 
 	if (R_IsEmptyLine(line, frontsector, backsector))
 		return;
-
 clippass:
 	g_walloffscreen = false;
 	R_ClipWallSegment(x1, x2, false, false);
+
 	if (g_walloffscreen)
-		R_ClipWallSegment(x1, x2 - 1, false, true);
+		R_ClipWallSegment(x1, x2, false, true);
 	return;
 
 clipsolid:
 	g_walloffscreen = false;
-		R_ClipWallSegment(x1, x2, true, false);
+	R_ClipWallSegment(x1, x2, true, false);
 }
 
 //
