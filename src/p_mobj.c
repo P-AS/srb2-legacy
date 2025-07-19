@@ -9337,7 +9337,7 @@ ML_NOCLIMB : Direction not controllable
 				mthing->type != mobjinfo[MT_AXISTRANSFERLINE].doomednum &&
 				mthing->type != mobjinfo[MT_NIGHTSBUMPER].doomednum &&
 				mthing->type != mobjinfo[MT_STARPOST].doomednum)
-				mobj->flags2 |= MF_AMBUSH;
+				mobj->flags |= MF_AMBUSH;
 		}
 
 		if (mthing->options & MTF_OBJECTSPECIAL)
