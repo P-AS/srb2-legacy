@@ -24,6 +24,7 @@
 #include "console.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "m_menu.h" // M_CheckColor, M_GetColorNext, M_GetColorPrev
+#include "r_draw.h"
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -1805,6 +1806,36 @@ static int lib_rTextureNumForName(lua_State *L)
 	return 1;
 }
 
+// R_DRAW
+////////////
+static int lib_rGetColorByName(lua_State *L)
+{
+	const char* colorname = luaL_checkstring(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, R_GetColorByName(colorname));
+	return 1;
+}
+
+static int lib_rGetSuperColorByName(lua_State *L)
+{
+	const char* colorname = luaL_checkstring(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, R_GetSuperColorByName(colorname));
+	return 1;
+}
+
+// Lua exclusive function, returns the name of a color from the SKINCOLOR_ constant.
+// SKINCOLOR_GREEN > "Green" for example
+static int lib_rGetNameByColor(lua_State *L)
+{
+	UINT16 colornum = (UINT16)luaL_checkinteger(L, 1);
+	if (!colornum || colornum >= numskincolors)
+		return luaL_error(L, "skincolor %d out of range (1 - %d).", colornum, numskincolors-1);
+	lua_pushstring(L, skincolors[colornum].name);
+	return 1;
+}
+
+
 // S_SOUND
 ////////////
 
@@ -2427,6 +2458,11 @@ static luaL_Reg lib[] = {
 	// r_data
 	{"R_CheckTextureNumForName",lib_rCheckTextureNumForName},
 	{"R_TextureNumForName",lib_rTextureNumForName},
+
+	// r_draw
+	{"R_GetColorByName", lib_rGetColorByName},
+	{"R_GetSuperColorByName", lib_rGetSuperColorByName},
+	{"R_GetNameByColor", lib_rGetNameByColor},
 
 	// s_sound
 	{"S_StartSound",lib_sStartSound},

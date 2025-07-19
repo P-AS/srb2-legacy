@@ -2900,7 +2900,7 @@ static void P_DoTeeter(player_t *player)
 #undef xsign
 #undef ysign
 
-			sec = R_OldPointInSubsector(checkx, checky)->sector;
+			sec = R_PointInSubsector(checkx, checky)->sector;
 
 			ceilingheight = sec->ceilingheight;
 			floorheight = sec->floorheight;
@@ -3410,7 +3410,7 @@ static void P_DoSuperStuff(player_t *player)
 			player->health--;
 			player->mo->health--;
 		}
-		
+
 		// This is where super colors is handled.
 		player->mo->color = (UINT8)skins[player->skin].supercolor + (abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4) % numskincolors);
 
@@ -6890,7 +6890,10 @@ static void P_MovePlayer(player_t *player)
 			player->mo->height = P_GetPlayerHeight(player);
 
 		if (player->mo->eflags & MFE_VERTICALFLIP && player->mo->height != oldheight) // adjust z height for reverse gravity, similar to how it's done for scaling
-			player->mo->z -= player->mo->height - oldheight;
+		{
+			player->mo->z     -= player->mo->height - oldheight;
+			player->mo->old_z -= player->mo->height - oldheight; // Snap the Z adjustment, while keeping the Z interpolation
+		}
 	}
 
 	// Crush test...
@@ -7713,27 +7716,27 @@ static CV_PossibleValue_t CV_CamSpeed[] = {{0, "MIN"}, {1*FRACUNIT, "MAX"}, {0, 
 static CV_PossibleValue_t rotation_cons_t[] = {{1, "MIN"}, {45, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t CV_CamRotate[] = {{-720, "MIN"}, {720, "MAX"}, {0, NULL}};
 
-consvar_t cv_cam_dist = {"cam_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam_height = {"cam_height", "25", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam_still = {"cam_still", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam_speed = {"cam_speed", "0.3", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam_rotate = {"cam_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam_rotspeed = {"cam_rotspeed", "10", CV_SAVE, rotation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam_orbit = {"cam_orbit", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam_adjust = {"cam_adjust", "On", CV_SAVE|CV_SHOWMODIF, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam2_dist = {"cam2_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam2_height = {"cam2_height", "25", CV_FLOAT|CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam2_still = {"cam2_still", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam2_speed = {"cam2_speed", "0.3", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam2_rotate = {"cam2_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate2_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam2_rotspeed = {"cam2_rotspeed", "10", CV_SAVE, rotation_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam2_orbit = {"cam2_orbit", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_cam2_adjust = {"cam2_adjust", "On", CV_SAVE|CV_SHOWMODIF, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_cam_dist = CVAR_INIT ("cam_dist", "160", NULL, CV_FLOAT|CV_SAVE, NULL, NULL);
+consvar_t cv_cam_height = CVAR_INIT ("cam_height", "25", NULL, CV_FLOAT|CV_SAVE, NULL, NULL);
+consvar_t cv_cam_still = CVAR_INIT ("cam_still", "Off", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_cam_speed = CVAR_INIT ("cam_speed", "0.3", NULL, CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL);
+consvar_t cv_cam_rotate = CVAR_INIT ("cam_rotate", "0", NULL, CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange);
+consvar_t cv_cam_rotspeed = CVAR_INIT ("cam_rotspeed", "10", NULL, CV_SAVE, rotation_cons_t, NULL);
+consvar_t cv_cam_orbit = CVAR_INIT ("cam_orbit", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_cam_adjust = CVAR_INIT ("cam_adjust", "On", NULL, CV_SAVE|CV_SHOWMODIF, CV_OnOff, NULL);
+consvar_t cv_cam2_dist = CVAR_INIT ("cam2_dist", "160", NULL, CV_FLOAT|CV_SAVE, NULL, NULL);
+consvar_t cv_cam2_height = CVAR_INIT ("cam2_height", "25", NULL, CV_FLOAT|CV_SAVE, NULL, NULL);
+consvar_t cv_cam2_still = CVAR_INIT ("cam2_still", "Off", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_cam2_speed = CVAR_INIT ("cam2_speed", "0.3", NULL, CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL);
+consvar_t cv_cam2_rotate = CVAR_INIT ("cam2_rotate", "0", NULL, CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate2_OnChange);
+consvar_t cv_cam2_rotspeed = CVAR_INIT ("cam2_rotspeed", "10", NULL, CV_SAVE, rotation_cons_t, NULL);
+consvar_t cv_cam2_orbit = CVAR_INIT ("cam2_orbit", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_cam2_adjust = CVAR_INIT ("cam2_adjust", "On", NULL, CV_SAVE|CV_SHOWMODIF, CV_OnOff, NULL);
 
-consvar_t cv_viewroll = {"viewroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_quakeiiiarena = {"earthquake", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_quakeiv = {"quakeroll", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_quakelive = {"windowquake", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_viewroll = CVAR_INIT ("viewroll", "Off", "Tilt camera on slopes, in the direction of the slope", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_quakeiiiarena = CVAR_INIT ("earthquake", "On", "Roll camera up and down during earthquake", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_quakeiv = CVAR_INIT ("quakeroll", "Off", "Tilt camera when moving side to side, resembling Quake", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_quakelive = CVAR_INIT ("windowquake", "Off", "Shake the game window during earthquakes", CV_SAVE, CV_OnOff, NULL);
 
 fixed_t t_cam_dist = -42;
 fixed_t t_cam_height = -42;
@@ -7777,7 +7780,7 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 	}
 	thiscam->relativex = 0;
 
-	thiscam->subsector = R_OldPointInSubsector(thiscam->x,thiscam->y);
+	thiscam->subsector = R_PointInSubsectorFast(thiscam->x,thiscam->y);
 
 	thiscam->radius = 20*FRACUNIT;
 	thiscam->height = 16*FRACUNIT;
@@ -8032,7 +8035,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if ((camorbit) && player->playerstate != PST_DEAD && !(mo->flags2 & MF2_TWOD) &&  !twodlevel)
 	{
 #ifdef HWRENDER
-		if (rendermode == render_opengl && !cv_grshearing.value)
+		if (rendermode == render_opengl && !cv_glshearing.value)
 			distxy = FixedMul(dist, FINECOSINE((focusaiming>>ANGLETOFINESHIFT) & FINEMASK));
 		else
 #endif
@@ -8854,7 +8857,7 @@ void P_PlayerThink(player_t *player)
 			player->lives = 0;
 
 			if (player->playerstate == PST_DEAD)
-			{	
+			{
 				LUAh_PlayerThink(player);
 				return;
 			}
@@ -9076,7 +9079,7 @@ void P_PlayerThink(player_t *player)
 		P_MovePlayer(player);
 
 	if (!player->mo)
-	{	
+	{
 		LUAh_PlayerThink(player);
 		return; // P_MovePlayer removed player->mo.
 	}
@@ -9254,7 +9257,7 @@ void P_PlayerThink(player_t *player)
 	player->pflags &= ~PF_SLIDING;
 
 	LUAh_PlayerThink(player);
-	
+
 /*
 //	Colormap verification
 	{

@@ -54,6 +54,7 @@
 # NOOPENMPT=1 - Disable module (tracker) music support.
 # NOMIXER=1 - Disable SDL Mixer (audio playback).
 # NOTHREADS=1 - Disable multithreading.
+# NOEXECINFO=1 - Disable stack trace dump support
 #
 # Netplay incompatible
 # --------------------

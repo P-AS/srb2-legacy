@@ -27,6 +27,8 @@ set(SRB2_CONFIG_DEDICATED OFF CACHE BOOL
 	"Build a dedicated server.")
 set(SRB2_CONFIG_DEBUGMODE OFF CACHE BOOL
 	"Build a version with additional debug information.")
+set(SRB2_CONFIG_EXECINFO ON CACHE BOOL
+	"Enable stack trace dump support.")
 
 if(${SRB2_CONFIG_DEDICATED})
 	set(SRB2_CONFIG_HAVE_GME NO)
@@ -165,6 +167,12 @@ if(${SRB2_CONFIG_HWRENDER} AND ${SRB2_CONFIG_STATIC_OPENGL})
 	else()
 		message(WARNING "You have specified static opengl but opengl was not found. Not setting HWRENDER.")
 	endif()
+endif()
+
+if(${SRB2_CONFIG_EXECINFO})
+else()
+	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
+	message(STATUS "You have disabled stack trace dump support")
 endif()
 
 # Targets

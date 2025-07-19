@@ -721,6 +721,8 @@ void Net_CloseConnection(INT32 node)
 
 	InitNode(&nodes[node]);
 	SV_AbortSendFiles(node);
+	if (server)
+		SV_AbortLuaFileTransfer(node);
 	I_NetFreeNodenum(node);
 #endif
 }
@@ -806,6 +808,10 @@ static const char *packettypename[NUMPACKETTYPE] =
 	"CANRECEIVEGAMESTATE",
 	"RECEIVEDGAMESTATE",
 
+	"SENDINGLUAFILE",
+	"ASKLUAFILE",
+	"HASLUAFILE",
+
 	"FILEFRAGMENT",
 	"TEXTCMD",
 	"TEXTCMD2",
@@ -858,6 +864,10 @@ static void DebugPrintpacket(const char *header)
 			fprintf(debugfile, "    tic %4u resendfrom %u\n",
 				(UINT32)ExpandTics(netbuffer->u.clientpak.client_tic, doomcom->remotenode),
 				(UINT32)ExpandTics (netbuffer->u.clientpak.resendfrom, doomcom->remotenode));
+			break;
+		
+		case PT_BASICKEEPALIVE:
+			fprintf(debugfile, "    wipetime\n");
 			break;
 		case PT_TEXTCMD:
 		case PT_TEXTCMD2:

@@ -29,7 +29,7 @@ rendermode_t rendermode = render_none;
 boolean highcolor = false;
 
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = {"vid_wait", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", "Does nothing on this build",  CV_SAVE, CV_OnOff, NULL);
 
 UINT8 graphics_started = 0; // Is used in console.c and screen.c
 

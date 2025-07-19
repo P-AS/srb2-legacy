@@ -22,7 +22,7 @@
 #include "p_polyobj.h"
 #include "z_zone.h"
 #include "d_net.h" //MAXSPLITSCREENPLAYERS
-#include "hardware/hw_main.h" //cv_grshearing
+#include "hardware/hw_main.h" //cv_glshearing
 
 
 static CV_PossibleValue_t fpscap_cons_t[] = {
@@ -38,7 +38,7 @@ static CV_PossibleValue_t fpscap_cons_t[] = {
 	{0, NULL}
 };
 
-consvar_t cv_fpscap = {"fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate",  "Limit framerate to value specified", CV_SAVE, fpscap_cons_t, NULL);
 
 ps_metric_t ps_interp_frac = {0};
 ps_metric_t ps_interp_lag = {0};
@@ -151,8 +151,8 @@ static void R_SetupFreelook(player_t *player, boolean skybox)
 	if (rendermode == render_soft
 #ifdef HWRENDER
 		|| (rendermode == render_opengl
-			&& (cv_grshearing.value == 1
-			|| (cv_grshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
+			&& (cv_glshearing.value == 1
+			|| (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
 #endif
 		)
 	{
@@ -211,7 +211,7 @@ void R_InterpolateView(fixed_t frac)
 	// this is gonna create some interesting visual errors for long distance teleports...
 	// might want to recalculate the view sector every frame instead...
 	viewplayer = newview->player;
-	viewsector = R_PointInSubsector(viewx, viewy)->sector;
+	viewsector = R_PointInSubsectorFast(viewx, viewy)->sector;
 	viewsky = newview->sky;
 
 	// well, this ain't pretty
@@ -307,7 +307,7 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
 	(void)frac;
-	
+
 	out->x =  mobj->x;
 	out->y =  mobj->y;
 	out->z =  mobj->z;

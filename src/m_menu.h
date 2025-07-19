@@ -146,6 +146,7 @@ typedef struct menuitem_s
 
 	const char *patch;
 	const char *text; // used when FONTBxx lump is found
+	const char *desc;
 
 // FIXME: should be itemaction_t
 	void *itemaction;
