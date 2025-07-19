@@ -50,9 +50,6 @@ void R_ClearDrawSegs(void)
 // indicating whether it's blocked by a solid wall yet or not.
 UINT8 solidcol[MAXVIDWIDTH];
 
-// newend is one past the last valid seg
-static cliprange_t *newend;
-static cliprange_t solidsegs[MAXSEGS];
 
 // CPhipps -
 // R_ClipWallSegment

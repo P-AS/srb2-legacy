@@ -1183,6 +1183,18 @@ static boolean R_FFloorCanClip(visffloor_t *pfloor)
 	return (cv_ffloorclip.value && !R_IsFFloorTranslucent(pfloor) && !pfloor->polyobj);
 }
 
+// R_ExpandPlaneY
+//
+// A simple function to modify a vsplane's top and bottom for a particular column
+// Sort of like R_ExpandPlane in r_plane.c, except this is vertical expansion
+static inline void R_ExpandPlaneY(visplane_t *pl, INT32 x, INT16 top, INT16 bottom)
+{
+	// Expand the plane, don't shrink it!
+	// note: top and bottom default to 0xFFFF and 0x0000 respectively, which is totally compatible with this
+	if (pl->top[x] > top)       pl->top[x] = top;
+	if (pl->bottom[x] < bottom) pl->bottom[x] = bottom;
+}
+
 
 static boolean didsolidcol; // True if at least one column was marked solid
 
