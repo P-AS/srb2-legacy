@@ -1,4 +1,5 @@
 string.c
+qs22k.c
 d_main.c
 d_clisrv.c
 d_net.c

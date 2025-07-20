@@ -38,6 +38,7 @@
 #include "../d_main.h"
 #include "../p_slopes.h"
 #include "hw_md2.h"
+#include "../qs22k.h" // qsort
 
 #ifdef NEWCLIP
 #include "hw_clip.h"

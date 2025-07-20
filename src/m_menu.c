@@ -47,6 +47,7 @@
 #include "p_local.h"
 #include "p_setup.h"
 #include "f_finale.h"
+#include "qs22k.h" // qsort
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"

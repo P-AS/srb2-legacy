@@ -13,6 +13,7 @@
 #include "hw_glob.h"
 #include "hw_batching.h"
 #include "../i_system.h"
+#include "../qs22k.h" // qsort
 
 // The texture for the next polygon given to HWR_ProcessPolygon.
 // Set with HWR_SetCurrentTexture.
