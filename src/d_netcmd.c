@@ -92,6 +92,7 @@ static void JoinTimeout_OnChange(void);
 static void Ringslinger_OnChange(void);
 static void Gravity_OnChange(void);
 static void ForceSkin_OnChange(void);
+static void ExitMove_OnChange(void);
 
 static void Name_OnChange(void);
 static void Name2_OnChange(void);
@@ -374,8 +375,10 @@ consvar_t cv_inttime = CVAR_INIT ("inttime", "10", NULL, CV_NETVAR|CV_SAVE, intt
 
 static CV_PossibleValue_t advancemap_cons_t[] = {{0, "Off"}, {1, "Next"}, {2, "Random"}, {0, NULL}};
 consvar_t cv_advancemap = CVAR_INIT ("advancemap", "Next", NULL, CV_NETVAR, advancemap_cons_t, NULL);
-static CV_PossibleValue_t playersforexit_cons_t[] = {{0, "One"}, {1, "All"}, {0, NULL}};
-consvar_t cv_playersforexit = CVAR_INIT ("playersforexit", "One", NULL, CV_NETVAR, playersforexit_cons_t, NULL);
+static CV_PossibleValue_t playersforexit_cons_t[] = {{0, "One"}, {1, "1/4"}, {2, "Half"}, {3, "3/4"}, {4, "All"}, {0, NULL}};
+consvar_t cv_playersforexit = CVAR_INIT ("playersforexit", "All", NULL, CV_NETVAR, playersforexit_cons_t, NULL);
+
+consvar_t cv_exitmove = CVAR_INIT("exitmove", "On", "Allow players in a netgame to move after finishing a level",  CV_NETVAR|CV_CALL, CV_OnOff, ExitMove_OnChange);
 
 consvar_t cv_runscripts = CVAR_INIT ("runscripts", "Yes", NULL, 0, CV_YesNo, NULL);
 
@@ -547,6 +550,7 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_inttime);
 	CV_RegisterVar(&cv_advancemap);
 	CV_RegisterVar(&cv_playersforexit);
+	CV_RegisterVar(&cv_exitmove);
 	CV_RegisterVar(&cv_timelimit);
 	CV_RegisterVar(&cv_playbackspeed);
 	CV_RegisterVar(&cv_forceskin);
@@ -3484,6 +3488,17 @@ static void NetTimeout_OnChange(void)
 static void JoinTimeout_OnChange(void)
 {
 	jointimeout = (tic_t)cv_jointimeout.value;
+}
+
+static void ExitMove_OnChange(void)
+{
+	if (!(netgame || multiplayer) || gametype != GT_COOP)
+		return;
+
+	if (cv_exitmove.value)
+		CONS_Printf(M_GetText("Players can now move after completing the level.\n"));
+	else
+		CONS_Printf(M_GetText("Players can no longer move after completing the level.\n"));
 }
 
 UINT32 timelimitintics = 0;
