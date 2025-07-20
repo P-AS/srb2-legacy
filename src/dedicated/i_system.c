@@ -749,6 +749,31 @@ void I_CursedWindowMovement (int xd, int yd)
 	(void)yd;
 }
 
+const char *I_GetPlatform(void)
+{
+#if defined (_WIN32) || defined (_WIN64)
+	return "Windows";
+#elif defined(__linux__)
+	return "Linux";
+#elif defined(MACOSX)
+	return "macOS";
+#elif defined(__FreeBSD__)
+	return "FreeBSD";
+#elif defined(__OpenBSD__)
+	return "OpenBSD";
+#elif defined (__NetBSD__)
+	return "NetBSD";
+#elif defined (__HAIKU__)
+	return "Haiku";
+#elif defined (__ANDROID__)
+	return "Android";
+#elif defined(UNIXCOMMON)
+	return "Unix (Common)";
+#else
+	"Other OS";
+#endif
+}
+
 //
 // I_JoyScale
 //
@@ -1304,7 +1329,6 @@ void I_Quit(void)
 	D_QuitNetGame();
 	I_ShutdownMusic();
 	I_ShutdownSound();
-	I_ShutdownCD();
 	// use this for 1.28 19990220 by Kin
 	I_ShutdownGraphics();
 	I_ShutdownSystem();
@@ -1354,8 +1378,6 @@ void I_Error(const char *error, ...)
 			I_ShutdownMusic();
 		if (errorcount == 2)
 			I_ShutdownSound();
-		if (errorcount == 3)
-			I_ShutdownCD();
 		if (errorcount == 4)
 			I_ShutdownGraphics();
 		if (errorcount == 5)
@@ -1398,7 +1420,6 @@ void I_Error(const char *error, ...)
 	D_QuitNetGame();
 	I_ShutdownMusic();
 	I_ShutdownSound();
-	I_ShutdownCD();
 	// use this for 1.28 19990220 by Kin
 	I_ShutdownGraphics();
 	I_ShutdownSystem();

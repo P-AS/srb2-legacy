@@ -131,6 +131,11 @@ void I_StartupGraphics(void)
 {
 }
 
+void VID_CheckRenderer(void)
+{
+
+}
+
 void I_ShutdownGraphics(void)
 {
 }

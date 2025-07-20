@@ -22,6 +22,7 @@
 #include "../d_main.h"
 #include "../i_system.h"
 #include "../d_clisrv.h"
+#include "../m_misc.h"
 
 #if defined (__GNUC__) || defined (__unix__)
 #include <unistd.h>
