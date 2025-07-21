@@ -53,7 +53,7 @@ CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {31, "MAX"}, {0, NULL}};
 static void SetChannelsNum(void);
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
-//static void Command_Songinfo_f(void);
+static void Command_SongInfo_f(void);
 
 // Sound system toggles
 static void GameMIDIMusic_OnChange(void);
@@ -294,6 +294,7 @@ void S_RegisterSoundStuff(void)
 
 	COM_AddCommand("tunes", NULL, Command_Tunes_f);
 	COM_AddCommand("restartaudio", NULL, Command_RestartAudio_f);
+	COM_AddCommand("songinfo", NULL, Command_SongInfo_f);
 
 #if defined (macintosh) && !defined (HAVE_SDL) // mp3 playlist stuff
 	{
@@ -1434,7 +1435,7 @@ skip_lump:
 				STRBUFCPY(def->source, value);
 				for (value = def->source; *value; value++)
 					if (*value == '_') *value = ' '; // turn _ into spaces.
-				CONS_Printf("S_LoadMusicDefs: Set source to '%s'\n", def->source);
+				//CONS_Printf("S_LoadMusicDefs: Set source to '%s'\n", def->source);
 			} else if (!stricmp(stoken, "title")) {
 				STRBUFCPY(def->title, value);
 				for (value = def->title; *value; value++)
@@ -1956,6 +1957,34 @@ static void Command_RestartAudio_f(void)
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
+}
+
+static void Command_SongInfo_f(void)
+{
+	musicdef_t *def;
+	const char *name = music_name;
+
+	if(strcasecmp(COM_Argv(1), ""))
+		name = COM_Argv(1);
+
+	for (def = musicdefstart; def; def = def->next)
+	{
+		if (strcasecmp(def->name, name) == 0)
+		 	break;
+	}
+
+	if(!def)
+	{
+	  	CONS_Printf("No music definitions for track %s\n", name) ;
+	  		return;
+	}
+
+	if (def->title)
+		CONS_Printf("Title: %s\n", def->title);
+	if (def->authors)
+		CONS_Printf("Authors: %s\n", def->authors);
+	if (def->source)
+		CONS_Printf("Source: %s\n", def->source);
 }
 
 void GameSounds_OnChange(void)
