@@ -174,7 +174,9 @@ UINT32 S_GetMusicPosition(void);
 typedef struct musicdef_s
 {
 	char name[7];
+	char title[32];
 	//char usage[256];
+	char authors[256];
 	char source[256];
 	struct musicdef_s *next;
 } musicdef_t;

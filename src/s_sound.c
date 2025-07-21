@@ -53,6 +53,7 @@ CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {31, "MAX"}, {0, NULL}};
 static void SetChannelsNum(void);
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
+//static void Command_Songinfo_f(void);
 
 // Sound system toggles
 static void GameMIDIMusic_OnChange(void);
@@ -1433,8 +1434,19 @@ skip_lump:
 				STRBUFCPY(def->source, value);
 				for (value = def->source; *value; value++)
 					if (*value == '_') *value = ' '; // turn _ into spaces.
-				//CONS_Printf("S_LoadMusicDefs: Set source to '%s'\n", def->source);
-			} else {
+				CONS_Printf("S_LoadMusicDefs: Set source to '%s'\n", def->source);
+			} else if (!stricmp(stoken, "title")) {
+				STRBUFCPY(def->title, value);
+				for (value = def->title; *value; value++)
+					if (*value == '_') *value = ' '; // turn _ into spaces.
+				//CONS_Printf("S_LoadMusicDefs: Set title to '%s'\n", def->title);
+			} else if (!stricmp(stoken, "authors")) {
+				STRBUFCPY(def->authors, value);
+				for (value = def->authors; *value; value++)
+					if (*value == '_') *value = ' '; // turn _ into spaces.
+				//CONS_Printf("S_LoadMusicDefs: Set authors to '%s'\n", def->authors);
+			}
+			else {
 				CONS_Alert(CONS_WARNING, "MUSICDEF: Invalid field '%s'. (file %s, line %d)\n", stoken, wadfiles[wadnum]->filename, line);
 			}
 
