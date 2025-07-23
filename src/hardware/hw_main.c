@@ -401,7 +401,7 @@ UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap) // Let's see if 
 
 	realcolor.rgba = (colormap != NULL) ? colormap->rgba : GL_DEFAULTMIX;
 
-	if (cv_glshaders.value && gl_shadersavailable)
+	if (HWR_UseShader())
 	{
 		surfcolor.s.alpha = (255 - light);
 	}
@@ -410,10 +410,7 @@ UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap) // Let's see if 
 		light = light - (255 - light);
 
 		// Don't go out of bounds
-		if (light < 0)
-			light = 0;
-		else if (light > 255)
-			light = 255;
+		light = min(max(light, 0), 255);
 
 		alpha = (realcolor.s.alpha*255)/25;
 
@@ -4109,7 +4106,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 		if (h <= temp)
 		{
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = *list[i-1].lightlevel;
+				lightlevel = max(min(255, *list[i-1].lightlevel), 0);
 			colormap = list[i-1].extra_colormap;
 			break;
 		}
@@ -4125,7 +4122,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
 		{
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = *list[i].lightlevel;
+				lightlevel = max(min(255, *list[i].lightlevel), 0);
 			colormap = list[i].extra_colormap;
 		}
 
@@ -4349,7 +4346,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 		extracolormap_t *colormap = sector->extra_colormap;
 
 		if (!(spr->mobj->frame & FF_FULLBRIGHT))
-			lightlevel = sector->lightlevel;
+			lightlevel = max(min(255, sector->lightlevel), 0);
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
 
@@ -4451,7 +4448,7 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = *sector->lightlist[light].lightlevel;
+				lightlevel = max(min(255, *sector->lightlist[light].lightlevel), 0);
 
 			if (sector->lightlist[light].extra_colormap)
 				colormap = sector->lightlist[light].extra_colormap;
@@ -4459,7 +4456,7 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 		else
 		{
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
-				lightlevel = sector->lightlevel;
+				lightlevel = max(min(255, sector->lightlevel), 0);
 
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
