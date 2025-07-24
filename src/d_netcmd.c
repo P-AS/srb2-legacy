@@ -835,6 +835,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_depth);
 	CV_RegisterVar(&cv_scr_width);
 	CV_RegisterVar(&cv_scr_height);
+	CV_RegisterVar(&cv_scr_width_w);
+	CV_RegisterVar(&cv_scr_height_w);
 
 	CV_RegisterVar(&cv_soundtest);
 
@@ -1416,7 +1418,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	if (server && (p != &players[consoleplayer] && p != &players[secondarydisplayplayer]))
 	{
 		boolean kick = false;
-		
+
 		// don't allow inaccessible colors
 		if (skincolors[p->skincolor].accessible == false)
 			kick = true;
