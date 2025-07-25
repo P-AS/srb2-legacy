@@ -1528,8 +1528,11 @@ static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resoluti
 	{IT_STRING, NULL, "Bewer", NULL,  NULL, 112}, // SRB2Kart text colormaps
 	{IT_STRING, NULL, "alufolie91", NULL,  NULL, 122},
 	{IT_HEADER|IT_STRING, NULL, "Special Thanks:", NULL,  NULL, 132},
-	{IT_STRING, NULL, "The Gaming Den", NULL, NULL, 142},  // srb2-legacy Co-op server
-	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  152}, // Netgame testing and feature ideas
+	{IT_STRING, NULL, "Upstream SRB2 Contributors", NULL, NULL, 142},
+	{IT_STRING, NULL, "SRB2 Classic", NULL, NULL, 152},
+	{IT_STRING, NULL, "SRB2Kart: Saturn", NULL, NULL, 162},
+	{IT_STRING, NULL, "The Gaming Den", NULL, NULL, 172},  // srb2-legacy Co-op server
+	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  182}, // Netgame testing and feature ideas
 };
 
 static void M_LegacyCreditsToolTips(void)
