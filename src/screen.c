@@ -473,10 +473,13 @@ void SCR_DisplayTicRate(void)
 	UINT32 cap = R_GetFramerateCap();
 	double fps = round(averageFPS);
 	INT32 hstep = 0;
+	INT32 flags = V_NOSCALESTART|V_USERHUDTRANS;
 	tic_t i;
 	tic_t ontic = I_GetTime();
 	tic_t totaltics = 0;
-	INT32 width;
+	INT32 xadjust = (cv_fpssize.value == 2) ? 4 : 8;
+	void (*stringdrawfunc) (INT32 x, INT32 y, INT32 option, const char *string) = NULL;
+	INT32 (*stringwidthfunc)(const char *string, INT32 option) = NULL;
 
 	if (gamestate == GS_NULL)
 		return;
@@ -504,34 +507,28 @@ void SCR_DisplayTicRate(void)
 	if (totaltics <= TICRATE/2) ticcntcolor = V_REDMAP;
 	else if (totaltics == TICRATE) ticcntcolor = V_SKYMAP;
 
+	switch (cv_fpssize.value)
+	{
+		case 0: // Normal
+			stringdrawfunc = V_DrawString;
+			stringwidthfunc = V_StringWidth;
+		break;
+		
+		case 1: // Thin
+			stringdrawfunc = V_DrawThinString;
+			stringwidthfunc = V_ThinStringWidth;
+		break;
+
+		case 2: // Small
+			stringdrawfunc = V_DrawSmallString;
+			stringwidthfunc = V_SmallStringWidth;
+		break;
+	}
+
 	if (cv_ticrate.value == 2) // compact counter
 	{
-		switch (cv_fpssize.value)
-		{
-			case 0:
-			{
-				width = vid.dupx*V_StringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawString(vid.width-width, h,
-					fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
-				break;
-			}
-
-			case 1:
-			{
-				width = vid.dupx*V_ThinStringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawThinString(vid.width-width, h,
-					fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
-				break;
-			}
-
-			case 2:
-			{
-				width = vid.dupx*V_SmallStringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawSmallString(vid.width-width, h,
-					fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
-				break;
-			}
-		}
+		INT32 width = vid.dupx*stringwidthfunc(va("%04.2f", averageFPS), V_NOSCALESTART);
+		stringdrawfunc(vid.width-width, h, fpscntcolor|flags, va("%04.2f", averageFPS)); // use averageFPS directly
 
 		if (cv_fpssize.value == 2)
 			hstep = 4*vid.dupy;
@@ -541,6 +538,7 @@ void SCR_DisplayTicRate(void)
 	else if (cv_ticrate.value == 1) // full counter
 	{
 		const char *drawnstr;
+		INT32 width;
 
 		// The highest assignable cap is < 1000, so 3 characters is fine.
 		if (cap > 0)
@@ -548,38 +546,10 @@ void SCR_DisplayTicRate(void)
 		else
 			drawnstr = va("%4.2f", averageFPS);
 
-		switch (cv_fpssize.value)
-		{
-			case 0:
-			{
-				width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
-						V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
-				V_DrawString(vid.width - width, h,
-						fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
-				break;
-			}
+		width = vid.dupx * stringwidthfunc(drawnstr, flags);
 
-			case 1:
-			{
-				width = vid.dupx*V_ThinStringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawThinString((vid.width - 92 * vid.dupx + V_ThinStringWidth("FPS: ", V_NOSCALESTART)), h,
-						V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
-				V_DrawThinString(vid.width - width, h,
-						fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
-				break;
-			}
-
-			case 2:
-			{
-				width = vid.dupx*V_SmallStringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawSmallString((vid.width - 92 * vid.dupx + V_SmallStringWidth("FPS: ", V_NOSCALESTART)), h,
-						V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
-				V_DrawSmallString(vid.width - width, h,
-						fpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
-				break;
-			}
-		}
+		stringdrawfunc(vid.width - ((7 * xadjust * vid.dupx) + (vid.dupx*stringwidthfunc("FPS: ", flags))), h, V_YELLOWMAP|flags, "FPS:");
+		stringdrawfunc(vid.width - width, h, fpscntcolor|flags, drawnstr);
 
 		if (cv_fpssize.value == 2)
 			hstep = 4*vid.dupy;
@@ -589,71 +559,15 @@ void SCR_DisplayTicRate(void)
 
 	if (cv_tpscounter.value == 2) // compact counter
 	{
-		switch (cv_fpssize.value)
-		{
-			case 0:
-			{
-				width = vid.dupx*V_StringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
-				break;
-			}
-
-			case 1:
-			{
-				width = vid.dupx*V_ThinStringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawThinString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
-				break;
-			}
-
-			case 2:
-			{
-				width = vid.dupx*V_SmallStringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawSmallString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
-				break;
-			}
-		}
+		INT32 width = vid.dupx*stringwidthfunc(va("%d", totaltics), flags);
+		stringdrawfunc(vid.width-width, h-hstep, ticcntcolor|flags, va("%d", totaltics));
 	}
 	else if (cv_tpscounter.value == 1) // full counter
 	{
 		const char *drawnstr = va("%02d/%02d", totaltics, TICRATE);
-
-		// The highest assignable cap is < 1000, so 3 characters is fine.
-
-		switch (cv_fpssize.value)
-		{
-			case 0:
-			{
-				width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
-				V_DrawString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
-				break;
-			}
-
-			case 1:
-			{
-				width = vid.dupx*V_ThinStringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawThinString((vid.width - 92 * vid.dupx + V_ThinStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
-				V_DrawThinString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
-				break;
-			}
-
-			case 2:
-			{
-				width = vid.dupx*V_SmallStringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawSmallString((vid.width - 92 * vid.dupx + V_SmallStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
-				V_DrawSmallString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
-				break;
-			}
-		}
+		INT32 width = vid.dupx*stringwidthfunc(drawnstr, flags);
+		stringdrawfunc((vid.width - ((7 * xadjust * vid.dupx) + (vid.dupx*stringwidthfunc("TPS: ", flags)))), h-hstep, V_YELLOWMAP|flags, "TPS: ");
+		stringdrawfunc(vid.width - width, h-hstep, ticcntcolor|flags, drawnstr);
 	}
 	lasttic = ontic;
 }
