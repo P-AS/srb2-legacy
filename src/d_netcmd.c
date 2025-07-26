@@ -593,6 +593,8 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_maxsend);
 	CV_RegisterVar(&cv_noticedownload);
 	CV_RegisterVar(&cv_downloadspeed);
+	CV_RegisterVar(&cv_dedicatedidletime);
+	CV_RegisterVar(&cv_allowgamestateresend);
 
 	COM_AddCommand("ping", NULL, Command_Ping_f);
 	CV_RegisterVar(&cv_nettimeout);
@@ -761,6 +763,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_alwaysfreelook2);
 	CV_RegisterVar(&cv_chasefreelook);
 	CV_RegisterVar(&cv_chasefreelook2);
+	CV_RegisterVar(&cv_showfocuslost);
 
 	// g_input.c
 	CV_RegisterVar(&cv_sideaxis);

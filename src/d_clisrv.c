@@ -2707,9 +2707,7 @@ void D_ClientServerInit(void)
 	CV_RegisterVar(&cv_allownewplayer);
 	CV_RegisterVar(&cv_joinnextround);
 	CV_RegisterVar(&cv_showjoinaddress);
-	CV_RegisterVar(&cv_allowgamestateresend);
 	CV_RegisterVar(&cv_blamecfail);
-	CV_RegisterVar(&cv_dedicatedidletime);
 #ifdef DUMPCONSISTENCY
 	CV_RegisterVar(&cv_dumpconsistency);
 #endif

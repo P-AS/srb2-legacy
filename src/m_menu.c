@@ -2988,7 +2988,6 @@ void M_Ticker(void)
 //
 void M_Init(void)
 {
-	CV_RegisterVar(&cv_showfocuslost);
 	CV_RegisterVar(&cv_nextmap);
 	CV_RegisterVar(&cv_newgametype);
 	CV_RegisterVar(&cv_chooseskin);
