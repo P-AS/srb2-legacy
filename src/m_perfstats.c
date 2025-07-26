@@ -53,6 +53,7 @@ ps_metric_t ps_thinkertime = {0};
 //ps_metric_t ps_thlist_times[NUM_THINKERLISTS];
 
 static ps_metric_t ps_thinkercount = {0};
+static ps_metric_t ps_polythcount = {0};
 static ps_metric_t ps_mobjcount = {0};
 static ps_metric_t ps_regularcount = {0};
 static ps_metric_t ps_scenerycount = {0};
@@ -163,6 +164,7 @@ perfstatrow_t gamelogic_rows[] = {
 
 perfstatrow_t thinkercount_rows[] = {
 	{"thnkers", "Thinkers:       ", &ps_thinkercount, PS_LEVEL},
+	{" plyobjs", " Polyobjects:    ", &ps_polythcount, PS_LEVEL},
 	{" mobjs  ", " Mobjs:          ", &ps_mobjcount, PS_LEVEL},
 	{"  regular", "  Regular:        ", &ps_regularcount, PS_LEVEL},
 	{"  scenery", "  Scenery:        ", &ps_scenerycount, PS_LEVEL},
@@ -496,12 +498,15 @@ static void PS_UpdateFrameStats(void)
 	}
 }
 
+#define ISA(_THINKNAME_) thinker->function == (actionf_p1)_THINKNAME_
+
 // Update thinker counters by iterating the thinker lists.
 static void PS_CountThinkers(void)
 {
 	thinker_t *thinker;
 
 	ps_thinkercount.value.i = 0;
+	ps_polythcount.value.i = 0;
 	ps_mobjcount.value.i = 0;
 	ps_regularcount.value.i = 0;
 	ps_scenerycount.value.i = 0;
@@ -512,9 +517,18 @@ static void PS_CountThinkers(void)
 	for (thinker = thinkercap.next; thinker != &thinkercap; thinker = thinker->next)
 	{
 		ps_thinkercount.value.i++;
-		if (thinker->function == (actionf_p1)P_RemoveThinkerDelayed)
+		if (ISA(P_RemoveThinkerDelayed))
 			ps_removecount.value.i++;
-		else if (thinker->function == (actionf_p1)P_MobjThinker)
+		else if (ISA(T_PolyObjRotate) 
+				|| ISA(T_PolyObjMove)
+		 		|| ISA(T_PolyObjFlag) 
+				|| ISA(T_PolyObjWaypoint) 
+				|| ISA(T_PolyDoorSlide) 
+				|| ISA(T_PolyDoorSwing)
+				|| ISA(T_PolyObjDisplace)
+				|| ISA(T_PolyObjWaypoint))
+			ps_polythcount.value.i++;
+		else if (ISA(P_MobjThinker))
 		{
 			mobj_t *mobj = (mobj_t*)thinker;
 			ps_mobjcount.value.i++;
@@ -525,7 +539,7 @@ static void PS_CountThinkers(void)
 			else
 				ps_regularcount.value.i++;
 		}
-		else if (thinker->function == (actionf_p1)P_NullPrecipThinker)
+		else if (ISA(P_NullPrecipThinker))
 			ps_precipcount.value.i++;
 		else
 			ps_otherthcount.value.i++;
@@ -562,6 +576,8 @@ static void PS_CountThinkers(void)
 		}
 	}*/
 }
+
+#undef ISA
 
 // Update all metrics that are calculated on every tick.
 void PS_UpdateTickStats(void)
@@ -664,12 +680,12 @@ static void PS_DrawRenderStats(void)
 
 	y = PS_DrawPerfRows(20, 10, V_YELLOWMAP, rendertime_rows);
 
-	PS_DrawPerfRows(20, y + half_row, V_GRAYMAP, gamelogicbrief_row);
+	PS_DrawPerfRows(20, y + half_row, 0, gamelogicbrief_row);
 
 	if (PS_IsLevelActive())
 	{
 		x = hires ? 115 : 90;
-		cy = PS_DrawPerfRows(x, 10, V_BLUEMAP, commoncounter_rows);// + half_row;
+		cy = PS_DrawPerfRows(x, 10, V_SKYMAP, commoncounter_rows) + half_row;
 
 #ifdef HWRENDER
 		if (rendermode == render_opengl && cv_glbatching.value)
@@ -701,7 +717,7 @@ static void PS_DrawGameLogicStats(void)
 	PS_DrawPerfRows(20, 10, V_YELLOWMAP, gamelogic_rows);
 
 	x = hires ? 115 : 90;
-	PS_DrawPerfRows(x, 10, V_BLUEMAP, thinkercount_rows);
+	PS_DrawPerfRows(x, 10, V_SKYMAP, thinkercount_rows);
 
 	if (hires)
 		V_DrawSmallString(212, 10, V_MONOSPACE | V_ALLOWLOWERCASE | V_PURPLEMAP, "Calls:");
@@ -767,7 +783,7 @@ if (y > 192) \
 				if (len > 25)
 					tempstr += len - 25;
 				snprintf(s, sizeof s - 1, "%s", tempstr);
-				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
+				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE, s);
 				NEXT_ROW()
 			}
 			text_color = V_YELLOWMAP;
@@ -831,7 +847,7 @@ static void PS_ClearHistory(void)
 {
 	int i;
 
-	Z_FreeTags(PU_PERFSTATS, PU_PERFSTATS);
+	Z_FreeTag(PU_PERFSTATS);
 	// thinkframe hook metric history pointers need to be cleared manually
 	for (i = 0; i < thinkframe_hooks_length; i++)
 	{
