@@ -411,7 +411,16 @@ void R_LoadTextures(void)
 	// but the alternative is to spend a ton of time checking and re-checking all previous entries just to skip any potentially patched textures.
 	for (w = 0, numtextures = 0; w < numwadfiles; w++)
 	{
-		// Count the textures from TEXTURES lumps
+		if (W_FileHasFolders(wadfiles[w]))
+		{
+			texstart = W_CheckNumForFolderStartPK3("textures/", (UINT16)w, 0);
+			texend = W_CheckNumForFolderEndPK3("textures/", (UINT16)w, texstart);
+		}
+		else
+		{
+			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0) + 1;
+			texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
+		}
 
 		texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, 0);
 		while (texturesLumpPos != INT16_MAX)
@@ -420,34 +429,22 @@ void R_LoadTextures(void)
 			texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, texturesLumpPos + 1);
 		}
 
-		// Count single-patch textures
-
-		if (wadfiles[w]->type == RET_PK3)
-		{
-			texstart = W_CheckNumForFolderStartPK3("textures/", (UINT16)w, 0);
-			texend = W_CheckNumForFolderEndPK3("textures/", (UINT16)w, texstart);
-		}
-		else
-		{
-			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0);
-			texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
-		}
-
+		// Add all the textures between TX_START and TX_END
 		if (texstart == INT16_MAX || texend == INT16_MAX)
 			continue;
 
-		texstart++; // Do not count the first marker
-
 		// PK3s have subfolders, so we can't just make a simple sum
-		if (wadfiles[w]->type == RET_PK3)
+		if (W_FileHasFolders(wadfiles[w]))
 		{
 			for (j = texstart; j < texend; j++)
 			{
-				if (!W_IsLumpFolder((UINT16)w, j)) // Check if lump is a folder; if not, then count it
-					numtextures++;
+				if (W_IsLumpFolder((UINT16)w, j)) // Check if lump is a folder; if not, then count it
+					continue;
+
+				numtextures++;
 			}
 		}
-		else // Add all the textures between TX_START and TX_END
+		else
 		{
 			numtextures += (UINT32)(texend - texstart);
 		}
@@ -478,7 +475,7 @@ void R_LoadTextures(void)
 	for (i = 0, w = 0; w < numwadfiles; w++)
 	{
 		// Get the lump numbers for the markers in the WAD, if they exist.
-		if (wadfiles[w]->type == RET_PK3)
+		if (W_FileHasFolders(wadfiles[w]))
 		{
 			texstart = W_CheckNumForFolderStartPK3("textures/", (UINT16)w, 0);
 			texend = W_CheckNumForFolderEndPK3("textures/", (UINT16)w, texstart);
@@ -491,7 +488,7 @@ void R_LoadTextures(void)
 		}
 		else
 		{
-			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0);
+			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0) + 1;
 			texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
 			texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, 0);
 			if (texturesLumpPos != INT16_MAX)
@@ -501,19 +498,20 @@ void R_LoadTextures(void)
 		if (texstart == INT16_MAX || texend == INT16_MAX)
 			continue;
 
-		texstart++; // Do not count the first marker
-
 		// Work through each lump between the markers in the WAD.
 		for (j = 0; j < (texend - texstart); j++)
 		{
-			if (wadfiles[w]->type == RET_PK3)
+			UINT16 wadnum = (UINT16)w;
+			lumpnum_t lumpnum = texstart + j;
+
+			if (W_FileHasFolders(wadfiles[w]))
 			{
-				if (W_IsLumpFolder((UINT16)w, texstart + j)) // Check if lump is a folder
+				if (W_IsLumpFolder(wadnum, lumpnum)) // Check if lump is a folder
 					continue; // If it is then SKIP IT
 			}
 			patchlump = W_CacheLumpNumPwad((UINT16)w, texstart + j, PU_CACHE);
 
-			//CONS_Printf("\n\"%s\" is a single patch, dimensions %d x %d",W_CheckNameForNumPwad((UINT16)w,texstart+j),patchlump->width, patchlump->height);
+			//CONS_Printf("\n\"%s\" is a single patch, dimensions %d x %d",W_CheckNameForNumPwad(wadnum, lumpnum), patchlump->width, patchlump->height);
 			texture = textures[i] = Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);
 
 			// Set texture properties.
@@ -530,7 +528,7 @@ void R_LoadTextures(void)
 			patch->wad = (UINT16)w;
 			patch->lump = texstart + j;
 
-			Z_Unlock(patchlump);
+			Z_Free(patchlump);
 
 			k = 1;
 			while (k << 1 <= texture->width)
