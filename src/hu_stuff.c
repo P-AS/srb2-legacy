@@ -2233,8 +2233,8 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 ping, UINT32 pl, boolean notext, INT32
 		}	
 	}
 
-	if (pl < UINT32_MAX && (!notext || vid.width >= 640))
-		V_DrawSmallString(dx, y+8, V_ALLOWLOWERCASE|flags, va("%d%%", pl)); // TODO: this is for testing, make a proper indicator soon
+	//if (pl < UINT32_MAX && (!notext || vid.width >= 640))
+		//V_DrawSmallString(dx, y+8, V_ALLOWLOWERCASE|flags, va("%d%%", pl)); // TODO: this is for testing, make a proper indicator soon
 
 	for (i=0; (i<3); i++) // Draw the ping bar
 	{
