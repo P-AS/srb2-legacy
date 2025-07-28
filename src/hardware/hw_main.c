@@ -6370,6 +6370,8 @@ void HWR_DoPostProcessor(player_t *player)
 
 		Surf.PolyColor.s.alpha = 0xc0; // match software mode
 
+		V_CubeApply(&Surf.PolyColor.s.red, &Surf.PolyColor.s.green, &Surf.PolyColor.s.blue);
+
 		HWD.pfnDrawPolygon(&Surf, v, 4, PF_Modulated|PF_Additive|PF_NoTexture|PF_NoDepthTest);
 	}
 
