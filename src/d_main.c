@@ -1118,11 +1118,11 @@ void D_SRB2Main(void)
 	// identify the main IWAD file to use
 	IdentifyVersion();
 
-#if !defined (_WIN32_WCE) && !defined(NOTERMIOS)
+#if !defined(NOTERMIOS)
 	setbuf(stdout, NULL); // non-buffered output
 #endif
 
-#if defined (_WIN32_WCE) //|| defined (_DEBUG) || defined (GP2X)
+#if 0 //defined (_DEBUG)
 	devparm = M_CheckParm("-nodebug") == 0;
 #else
 	devparm = M_CheckParm("-debug") != 0;
@@ -1132,7 +1132,6 @@ void D_SRB2Main(void)
 #if !defined (_WINDOWS) && !defined(DEDICATED) //already check in win_main.c
 	dedicated = M_CheckParm("-dedicated") != 0;
 #endif
-
 
 	if (devparm)
 		CONS_Printf(M_GetText("Development mode ON.\n"));
@@ -1145,13 +1144,8 @@ void D_SRB2Main(void)
 
 		if (!userhome)
 		{
-#if ((defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)) && !defined (__CYGWIN__) && !defined (DC) && !defined (PSP) && !defined(GP2X)
+#if (defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)
 			I_Error("Please set $HOME to your home directory\n");
-#elif defined (_WIN32_WCE) && 0
-			if (dedicated)
-				snprintf(configfile, sizeof configfile, "/Storage Card/SRB2DEMO/d"CONFIGFILENAME);
-			else
-				snprintf(configfile, sizeof configfile, "/Storage Card/SRB2DEMO/"CONFIGFILENAME);
 #else
 			if (dedicated)
 				snprintf(configfile, sizeof configfile, "d"CONFIGFILENAME);
@@ -1162,8 +1156,14 @@ void D_SRB2Main(void)
 		else
 		{
 			// use user specific config file
+			if (M_CheckParm("-workdir") && M_IsNextParm())
+				snprintf(srb2home, sizeof srb2home, "%s", M_GetNextParm());
+			else
 #ifdef DEFAULTDIR
-			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
+				snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
+#else // DEFAULTDIR
+				snprintf(srb2home, sizeof srb2home, "%s", userhome);
+#endif // DEFAULTDIR
 			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
 			if (dedicated)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, srb2home);
@@ -1174,28 +1174,14 @@ void D_SRB2Main(void)
 			strcatbf(savegamename, srb2home, PATHSEP);
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
-#else
-			snprintf(srb2home, sizeof srb2home, "%s", userhome);
-			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
-			if (dedicated)
-				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, userhome);
-			else
-				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, userhome);
-
-			// can't use sprintf since there is %u in savegamename
-			strcatbf(savegamename, userhome, PATHSEP);
-
-			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
-#endif
 		}
 
 		configfile[sizeof configfile - 1] = '\0';
 
-#ifdef _arch_dreamcast
-	strcpy(downloaddir, "/ram"); // the dreamcast's TMP
-#endif
 	}
 
+	// make sure workdir exists
+	I_mkdir(srb2home, 0755);
 
 	// Create addons dir
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
@@ -1349,11 +1335,7 @@ void D_SRB2Main(void)
 
 	COM_Init();
 	// libogc has a CON_Init function, we must rename SRB2's CON_Init in WII/libogc
-#ifndef _WII
 	CON_Init();
-#else
-	CON_InitWii();
-#endif
 
 	D_RegisterServerCommands();
 	D_RegisterClientCommands(); // be sure that this is called before D_CheckNetGame
