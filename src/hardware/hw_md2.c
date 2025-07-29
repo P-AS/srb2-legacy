@@ -649,12 +649,13 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 	UINT16 w = gpatch->width, h = gpatch->height;
 	UINT32 size = w*h;
 	RGBA_t *image, *blendimage, *cur, blendcolor;
+	RGBA_t *palette = HWR_GetTexturePalette();
 	UINT8 translation[16]; // First the color index
 	UINT8 cutoff[16]; // Brightness cutoff before using the next color
 	UINT8 translen = 0;
 	UINT8 i;
 
-	blendcolor = V_GetColor(0); // initialize
+	blendcolor = palette[0]; // initialize
 	memset(translation, 0, sizeof(translation));
 	memset(cutoff, 0, sizeof(cutoff));
 
@@ -820,7 +821,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 
 						for (i = 0; i < translen; i++)
 						{
-							RGBA_t tempc = V_GetColor(translation[i]);
+							RGBA_t tempc = palette[translation[i]];
 							SETBRIGHTNESS(colorbrightnesses[i], tempc.s.red, tempc.s.green, tempc.s.blue); // store brightnesses for comparison
 						}
 
@@ -883,7 +884,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 						mul = cutoff[firsti] - brightness;
 					}
 
-					blendcolor = V_GetColor(translation[firsti]);
+					blendcolor = palette[translation[firsti]];
 
 					if (secondi >= translen)
 						mul = 0;
@@ -894,11 +895,11 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 						if (secondi >= translen)
 						{
 							// blend to black
-							nextcolor = V_GetColor(31);
+							nextcolor = palette[31];
 						}
 						else
 #endif
-							nextcolor = V_GetColor(translation[secondi]);
+							nextcolor = palette[translation[secondi]];
 
 						// Find difference between points
 						r = (INT32)(nextcolor.s.red - blendcolor.s.red);
