@@ -316,9 +316,9 @@ void gld_clipper_Clear(void)
 
 angle_t gld_FrustumAngle(angle_t tiltangle)
 {
+	angle_t a1;
 	double clipfov;
 	double floatangle;
-	angle_t a1;
 
 	float tilt = (float)fabs(((double)(int)tiltangle) / ANG1);
 
@@ -333,11 +333,12 @@ angle_t gld_FrustumAngle(angle_t tiltangle)
 
 	// ok, this is a gross hack that barely works...
 	// but at least it doesn't overestimate too much...
-	clipfov = FIXED_TO_FLOAT(cv_fov.value);
+	clipfov = atan(1 / projMatrix[0]) * 360 / M_PI; // use the actual view of the scene
 	floatangle = 2.0f + (45.0f + (tilt / 1.9f)) * clipfov / 90.0f;
 	if (floatangle >= 180.0)
 		return 0xffffffff;
 	a1 = (angle_t)(ANG1 * (int)floatangle);
+
 	return a1;
 }
 

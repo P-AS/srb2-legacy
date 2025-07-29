@@ -5812,15 +5812,11 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 
 	drawcount = 0;
 
-#ifdef NEWCLIP /// TODO: Remove pre-NEWCLIP code
-	HWR_ClearClipper();
-#else
-	HWR_ClearClipSegs();
-#endif
-
 	//04/01/2000: Hurdler: added for T&L
 	//                     Actually it only works on Walls and Planes
 	HWD.pfnSetTransform(&atransform);
+
+	HWR_ClearClipper();
 
 	if (HWR_IsWireframeMode())
 		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 1);
@@ -5994,15 +5990,12 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 
 
 	drawcount = 0;
-#ifdef NEWCLIP
-	HWR_ClearClipper();
-#else
-	HWR_ClearClipSegs();
-#endif
 
 	//04/01/2000: Hurdler: added for T&L
 	//                     Actually it only works on Walls and Planes
 	HWD.pfnSetTransform(&atransform);
+
+	HWR_ClearClipper();
 
 	if (HWR_IsWireframeMode())
 		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 1);
