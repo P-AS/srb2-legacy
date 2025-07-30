@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:versionCode="2128"
-    android:versionName="2.1.28"
+    android:versionCode="2129"
+    android:versionName="2.1.29"
     android:installLocation="auto">
 
     <!-- OpenGL ES 2.0 -->
