@@ -1154,7 +1154,7 @@ enum
 
 static menuitem_t OP_VideoOptionsMenu[] =
 {
-	{IT_STRING | IT_CALL,  NULL,   "Video Modes...", "Change game resolution",      M_VideoModeMenu,          5},
+	{IT_STRING | IT_CALL,  NULL,   "Video Modes...", "Change game resolution",      M_ResolutionMenu,          5},
 
 #ifdef HWRENDER
 	{IT_STRING | IT_CVAR, NULL, "Renderer (F10)",      NULL,         &cv_renderer,        10},
