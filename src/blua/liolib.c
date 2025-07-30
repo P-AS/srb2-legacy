@@ -193,7 +193,7 @@ static int CheckFileName(lua_State *L, const char *filename)
 			pass = true;
 			break;
 		}
-	if (luaL_strstr(filename, "./")
+	if (strstr(filename, "./")
 		|| strstr(filename, "..") || luaL_strchr(filename, ':')
 		|| filename[0] == '/'
 		|| !pass)

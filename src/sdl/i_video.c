@@ -1484,57 +1484,6 @@ static UINT32 VID_GetRefreshRate(void)
 
 static SDL_bool Impl_CreateContext(void)
 {
-<<<<<<< HEAD
-	SDLdoUngrabMouse();
-
-	vid.recalc = 1;
-	vid.bpp = 1;
-
-#ifdef NATIVESCREENRES
-	if (cv_nativeres.value)
-	{
-		int i;
-		SDL_DisplayMode resolution;
-
-		for (i = 0; i < SDL_GetNumVideoDisplays(); i++)
-		{
-			int nodisplay = SDL_GetCurrentDisplayMode(i, &resolution);
-			if (!nodisplay)
-			{
-				vid.width = (INT32)(resolution.w) / (cv_nativeresdiv.value);
-				vid.height = (INT32)(resolution.h) / (cv_nativeresdiv.value);
-
-				if (vid.width > MAXVIDWIDTH)
-					vid.width = MAXVIDWIDTH;
-				else if (vid.width < BASEVIDWIDTH)
-					vid.width = BASEVIDWIDTH;
-
-				if (vid.height > MAXVIDHEIGHT)
-					vid.height = MAXVIDHEIGHT;
-				else if (vid.height < BASEVIDHEIGHT)
-					vid.height = BASEVIDHEIGHT;
-
-				break;
-			}
-		}
-
-		vid.modenum = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value);
-	}
-	else
-#endif
-	{
-		if (modeNum < 0)
-			modeNum = 0;
-		if (modeNum >= MAXWINMODES)
-			modeNum = MAXWINMODES-1;
-
-		vid.width = windowedModes[modeNum][0];
-		vid.height = windowedModes[modeNum][1];
-		vid.modenum = modeNum;
-	}
-	
-	//Impl_SetWindowName("SRB2 "VERSIONSTRING);
-=======
 	// Renderer-specific stuff
 #ifdef HWRENDER
 	if ((rendermode == render_opengl)
@@ -1570,8 +1519,6 @@ static SDL_bool Impl_CreateContext(void)
 	}
 	return SDL_TRUE;
 }
->>>>>>> next
-
 
 void VID_CheckGLLoaded(rendermode_t oldrender)
 {
@@ -1691,14 +1638,48 @@ INT32 VID_SetMode(INT32 modeNum)
 	vid.recalc = 1;
 	vid.bpp = 1;
 
-	if (modeNum < 0)
-		modeNum = 0;
-	if (modeNum >= MAXWINMODES)
-		modeNum = MAXWINMODES-1;
+#ifdef NATIVESCREENRES
+	if (cv_nativeres.value)
+	{
+		int i;
+		SDL_DisplayMode resolution;
 
-	vid.width = windowedModes[modeNum][0];
-	vid.height = windowedModes[modeNum][1];
-	vid.modenum = modeNum;
+		for (i = 0; i < SDL_GetNumVideoDisplays(); i++)
+		{
+			int nodisplay = SDL_GetCurrentDisplayMode(i, &resolution);
+			if (!nodisplay)
+			{
+				vid.width = (INT32)(resolution.w) / (cv_nativeresdiv.value);
+				vid.height = (INT32)(resolution.h) / (cv_nativeresdiv.value);
+
+				if (vid.width > MAXVIDWIDTH)
+					vid.width = MAXVIDWIDTH;
+				else if (vid.width < BASEVIDWIDTH)
+					vid.width = BASEVIDWIDTH;
+
+				if (vid.height > MAXVIDHEIGHT)
+					vid.height = MAXVIDHEIGHT;
+				else if (vid.height < BASEVIDHEIGHT)
+					vid.height = BASEVIDHEIGHT;
+
+				break;
+			}
+		}
+
+		vid.modenum = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value);
+	}
+	else
+#endif
+	{
+		if (modeNum < 0)
+			modeNum = 0;
+		if (modeNum >= MAXWINMODES)
+			modeNum = MAXWINMODES-1;
+
+		vid.width = windowedModes[modeNum][0];
+		vid.height = windowedModes[modeNum][1];
+		vid.modenum = modeNum;
+	}
 
 	//Impl_SetWindowName("SRB2 "VERSIONSTRING);
 	src_rect.w = vid.width;

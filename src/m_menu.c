@@ -1234,13 +1234,13 @@ static menuitem_t OP_ColorOptionsMenu[] =
 #ifdef NATIVESCREENRES
 static menuitem_t OP_ResolutionMenu[] =
 {
-	{IT_STRING | IT_CALL,                 NULL, "Video Mode List...",         M_VideoModeMenu,       20},
-	{IT_WHITESTRING | IT_SPACE,          NULL, "Current Resolution",         NULL,                  10},
+	{IT_STRING | IT_CALL,                NULL, "Video Mode List...",    NULL,     M_VideoModeMenu,       20},
+	{IT_WHITESTRING | IT_SPACE,          NULL, "Current Resolution",    NULL,     NULL,                  10},
 
-	{IT_STRING | IT_CVAR,                NULL, "Use Native Resolution",      &cv_nativeres,         40},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Scale Divider",              &cv_nativeresdiv,      50},
-	{IT_STRING | IT_CVAR,                NULL, "Scale Comparison",           &cv_nativerescompare,  60},
-	{IT_STRING | IT_CVAR,                NULL, "Adjust Field Of View",       &cv_nativeresfov,      70},
+	{IT_STRING | IT_CVAR,                NULL, "Use Native Resolution", NULL,     &cv_nativeres,         40},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Scale Divider",         NULL,     &cv_nativeresdiv,      50},
+	{IT_STRING | IT_CVAR,                NULL, "Scale Comparison",      NULL,     &cv_nativerescompare,  60},
+	{IT_STRING | IT_CVAR,                NULL, "Adjust Field Of View",  NULL,     &cv_nativeresfov,      70},
 };
 #endif
 
