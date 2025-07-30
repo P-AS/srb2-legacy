@@ -35,6 +35,8 @@
 #include "p_local.h"
 
 #include "m_cond.h" // condition sets
+#include "lua_hook.h" // IntermissionThinker hook
+#include "lua_hudlib_drawlist.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -138,12 +140,15 @@ static patch_t *interpic = NULL;    // custom picture defined in map header
 static boolean usetile;
 boolean usebuffer = false;
 static boolean useinterpic;
+static boolean safetorender = true;
 static INT32 timer;
 
 static INT32 intertic;
 static INT32 endtic = -1;
 
 intertype_t intertype = int_none;
+
+static huddrawlist_h luahuddrawlist_intermission;
 
 static void Y_AwardCoopBonuses(void);
 static void Y_AwardSpecialStageBonus(void);
@@ -152,6 +157,7 @@ static void Y_CalculateTimeRaceWinners(void);
 static void Y_CalculateMatchWinners(void);
 static void Y_FollowIntermission(void);
 static void Y_UnloadData(void);
+static void Y_CleanupData(void);
 
 //
 // Y_IntermissionDrawer
@@ -167,31 +173,41 @@ void Y_IntermissionDrawer(void)
 	if (intertype == int_none || rendermode == render_none)
 		return;
 
-	if (!usebuffer)
+	// Jimita
+	if (needpatchrecache)
+	{
+		Y_CleanupData();
+		safetorender = false;
+	}
+
+	if (!usebuffer || !safetorender)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
-	if (useinterpic)
-		V_DrawScaledPatch(0, 0, 0, interpic);
-	else if (!usetile)
+	if (safetorender)
 	{
-		if (rendermode == render_soft && usebuffer)
-			VID_BlitLinearScreen(screens[1], screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
+		if (useinterpic)
+			V_DrawScaledPatch(0, 0, 0, interpic);
+		else if (!usetile)
+		{
+			if (rendermode == render_soft && usebuffer)
+				VID_BlitLinearScreen(screens[1], screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
 #ifdef HWRENDER
-		else if(rendermode != render_soft && usebuffer)
-		{
-			HWR_DrawIntermissionBG();
-		}
+			else if(rendermode != render_soft && usebuffer)
+			{
+				HWR_DrawIntermissionBG();
+			}
 #endif
-		else
-		{
-			if (widebgpatch && rendermode == render_soft && vid.width / vid.dupx == 400)
-				V_DrawScaledPatch(0, 0, V_SNAPTOLEFT, widebgpatch);
 			else
-				V_DrawScaledPatch(0, 0, 0, bgpatch);
+			{
+				if (widebgpatch && rendermode == render_soft && vid.width / vid.dupx == 400)
+					V_DrawScaledPatch(0, 0, V_SNAPTOLEFT, widebgpatch);
+				else
+					V_DrawScaledPatch(0, 0, 0, bgpatch);
+			}
 		}
+		else
+			V_DrawPatchFill(bgtile);
 	}
-	else
-		V_DrawPatchFill(bgtile);
 
 	if (intertype == int_coop)
 	{
@@ -232,19 +248,22 @@ void Y_IntermissionDrawer(void)
 		V_DrawLevelTitle(data.coop.passedx1, 49, 0, data.coop.passed1);
 		V_DrawLevelTitle(data.coop.passedx2, 49+V_LevelNameHeight(data.coop.passed2)+2, 0, data.coop.passed2);
 
-		if (mapheaderinfo[gamemap-1]->actnum)
+		if (mapheaderinfo[gamemap-1]->actnum && safetorender)
 			V_DrawScaledPatch(244, 57, 0, data.coop.ttlnum);
 
 		bonusy = 150;
 		// Total
-		V_DrawScaledPatch(152, bonusy, 0, data.coop.ptotal);
-		V_DrawTallNum(BASEVIDWIDTH - 68, bonusy + 1, 0, data.coop.total);
+		if (safetorender)
+		{
+			V_DrawScaledPatch(152, bonusy, 0, data.coop.ptotal);
+			V_DrawTallNum(BASEVIDWIDTH - 68, bonusy + 1, 0, data.coop.total);
+		}
 		bonusy -= (3*SHORT(tallnum[0]->height)/2) + 1;
 
 		// Draw bonuses
 		for (i = 3; i >= 0; --i)
 		{
-			if (data.coop.bonuses[i].display)
+			if (data.coop.bonuses[i].display && safetorender)
 			{
 				V_DrawScaledPatch(152, bonusy, 0, data.coop.bonuspatches[i]);
 				V_DrawTallNum(BASEVIDWIDTH - 68, bonusy + 1, 0, data.coop.bonuses[i].points);
@@ -323,13 +342,16 @@ void Y_IntermissionDrawer(void)
 			}
 		}
 
-		V_DrawScaledPatch(152, 108, 0, data.spec.bonuspatch);
-		V_DrawTallNum(BASEVIDWIDTH - 68, 109, 0, data.spec.bonus.points);
-		V_DrawScaledPatch(152, 124, 0, data.spec.pscore);
-		V_DrawTallNum(BASEVIDWIDTH - 68, 125, 0, data.spec.score);
+		if (safetorender)
+		{
+			V_DrawScaledPatch(152, 108, 0, data.spec.bonuspatch);
+			V_DrawTallNum(BASEVIDWIDTH - 68, 109, 0, data.spec.bonus.points);
+			V_DrawScaledPatch(152, 124, 0, data.spec.pscore);
+			V_DrawTallNum(BASEVIDWIDTH - 68, 125, 0, data.spec.score);
+		}
 
 		// Draw continues!
-		if (!multiplayer /* && (data.spec.continues & 0x80) */) // Always draw outside of netplay
+		if (!multiplayer && safetorender /* && (data.spec.continues & 0x80) */) // Always draw outside of netplay
 		{
 			UINT8 continues = data.spec.continues & 0x7F;
 
@@ -351,7 +373,8 @@ void Y_IntermissionDrawer(void)
 		char strtime[10];
 
 		// draw the header
-		V_DrawScaledPatch(112, 2, 0, data.match.result);
+		if (safetorender)
+			V_DrawScaledPatch(112, 2, 0, data.match.result);
 
 		// draw the level name
 		V_DrawCenteredString(BASEVIDWIDTH/2, 20, 0, data.match.levelstring);
@@ -637,6 +660,14 @@ void Y_Ticker(void)
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())
 		return;
+
+
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
+		LUAh_IntermissionThinker();
+	}
+	LUA_HUD_DrawList(luahuddrawlist_intermission);
 
 	intertic++;
 
@@ -942,6 +973,8 @@ void Y_StartIntermission(void)
 		I_Error("endtic is dirty");
 #endif
 
+	safetorender = true;
+
 	if (!multiplayer)
 	{
 		timer = 0;
@@ -1034,24 +1067,24 @@ void Y_StartIntermission(void)
 			}
 
 			for (i = 0; i < 4; ++i)
-				data.coop.bonuspatches[i] = W_CachePatchName(data.coop.bonuses[i].patch, PU_STATIC);
-			data.coop.ptotal = W_CachePatchName("YB_TOTAL", PU_STATIC);
+				data.coop.bonuspatches[i] = W_CachePatchName(data.coop.bonuses[i].patch, PU_PATCH);
+			data.coop.ptotal = W_CachePatchName("YB_TOTAL", PU_PATCH);
 
 			// get act number
 			if (mapheaderinfo[prevmap]->actnum)
 				data.coop.ttlnum = W_CachePatchName(va("TTL%.2d", mapheaderinfo[prevmap]->actnum),
-					PU_STATIC);
+					PU_PATCH);
 			else
-				data.coop.ttlnum = W_CachePatchName("TTL01", PU_STATIC);
+				data.coop.ttlnum = W_CachePatchName("TTL01", PU_PATCH);
 
 			// get background patches
-			widebgpatch = W_CachePatchName("INTERSCW", PU_STATIC);
-			bgpatch = W_CachePatchName("INTERSCR", PU_STATIC);
+			widebgpatch = W_CachePatchName("INTERSCW", PU_PATCH);
+			bgpatch = W_CachePatchName("INTERSCR", PU_PATCH);
 
 			// grab an interscreen if appropriate
 			if (mapheaderinfo[gamemap-1]->interscreen[0] != '#')
 			{
-				interpic = W_CachePatchName(mapheaderinfo[gamemap-1]->interscreen, PU_STATIC);
+				interpic = W_CachePatchName(mapheaderinfo[gamemap-1]->interscreen, PU_PATCH);
 				useinterpic = true;
 				usebuffer = false;
 			}
@@ -1136,17 +1169,17 @@ void Y_StartIntermission(void)
 			// give out ring bonuses
 			Y_AwardSpecialStageBonus();
 
-			data.spec.bonuspatch = W_CachePatchName(data.spec.bonus.patch, PU_STATIC);
-			data.spec.pscore = W_CachePatchName("YB_SCORE", PU_STATIC);
-			data.spec.pcontinues = W_CachePatchName("YB_CONTI", PU_STATIC);
+			data.spec.bonuspatch = W_CachePatchName(data.spec.bonus.patch, PU_PATCH);
+			data.spec.pscore = W_CachePatchName("YB_SCORE", PU_PATCH);
+			data.spec.pcontinues = W_CachePatchName("YB_CONTI", PU_PATCH);
 
 			// get background tile
-			bgtile = W_CachePatchName("SPECTILE", PU_STATIC);
+			bgtile = W_CachePatchName("SPECTILE", PU_PATCH);
 
 			// grab an interscreen if appropriate
 			if (mapheaderinfo[gamemap-1]->interscreen[0] != '#')
 			{
-				interpic = W_CachePatchName(mapheaderinfo[gamemap-1]->interscreen, PU_STATIC);
+				interpic = W_CachePatchName(mapheaderinfo[gamemap-1]->interscreen, PU_PATCH);
 				useinterpic = true;
 			}
 			else
@@ -1158,14 +1191,14 @@ void Y_StartIntermission(void)
 			// get special stage specific patches
 /*			if (!stagefailed && ALL7EMERALDS(emeralds))
 			{
-				data.spec.cemerald = W_CachePatchName("GOTEMALL", PU_STATIC);
+				data.spec.cemerald = W_CachePatchName("GOTEMALL", PU_PATCH);
 				data.spec.headx = 70;
 				data.spec.nowsuper = players[consoleplayer].skin
-					? NULL : W_CachePatchName("NOWSUPER", PU_STATIC);
+					? NULL : W_CachePatchName("NOWSUPER", PU_PATCH);
 			}
 			else
 			{
-				data.spec.cemerald = W_CachePatchName("CEMERALD", PU_STATIC);
+				data.spec.cemerald = W_CachePatchName("CEMERALD", PU_PATCH);
 				data.spec.headx = 48;
 				data.spec.nowsuper = NULL;
 			} */
@@ -1238,9 +1271,9 @@ void Y_StartIntermission(void)
 
 			// get RESULT header
 			data.match.result =
-				W_CachePatchName("RESULT", PU_STATIC);
+				W_CachePatchName("RESULT", PU_PATCH);
 
-			bgtile = W_CachePatchName("SRB2BACK", PU_STATIC);
+			bgtile = W_CachePatchName("SRB2BACK", PU_PATCH);
 			usetile = true;
 			useinterpic = false;
 			break;
@@ -1266,9 +1299,9 @@ void Y_StartIntermission(void)
 			data.match.levelstring[sizeof data.match.levelstring - 1] = '\0';
 
 			// get RESULT header
-			data.match.result = W_CachePatchName("RESULT", PU_STATIC);
+			data.match.result = W_CachePatchName("RESULT", PU_PATCH);
 
-			bgtile = W_CachePatchName("SRB2BACK", PU_STATIC);
+			bgtile = W_CachePatchName("SRB2BACK", PU_PATCH);
 			usetile = true;
 			useinterpic = false;
 			break;
@@ -1305,7 +1338,7 @@ void Y_StartIntermission(void)
 				data.match.blueflag = bmatcico;
 			}
 
-			bgtile = W_CachePatchName("SRB2BACK", PU_STATIC);
+			bgtile = W_CachePatchName("SRB2BACK", PU_PATCH);
 			usetile = true;
 			useinterpic = false;
 			break;
@@ -1331,7 +1364,7 @@ void Y_StartIntermission(void)
 			data.competition.levelstring[sizeof data.competition.levelstring - 1] = '\0';
 
 			// get background tile
-			bgtile = W_CachePatchName("SRB2BACK", PU_STATIC);
+			bgtile = W_CachePatchName("SRB2BACK", PU_PATCH);
 			usetile = true;
 			useinterpic = false;
 			break;
@@ -1340,7 +1373,9 @@ void Y_StartIntermission(void)
 		case int_none:
 		default:
 			break;
-	}
+	}	
+	LUA_HUD_DestroyDrawList(luahuddrawlist_intermission);
+	luahuddrawlist_intermission = LUA_HUD_CreateDrawList();
 }
 
 //
@@ -1818,7 +1853,8 @@ static void Y_FollowIntermission(void)
 	G_AfterIntermission();
 }
 
-#define UNLOAD(x) Z_ChangeTag(x, PU_CACHE); x = NULL
+#define UNLOAD(x) if (x) {Z_ChangeTag(x, PU_CACHE);} x = NULL;
+#define CLEANUP(x) x = NULL;
 
 //
 // Y_UnloadData
@@ -1869,5 +1905,47 @@ static void Y_UnloadData(void)
 			//are not handled
 			break;
 	}
+}
 
+static void Y_CleanupData(void)
+{
+	// unload the background patches
+	CLEANUP(bgpatch);
+	CLEANUP(widebgpatch);
+	CLEANUP(bgtile);
+	CLEANUP(interpic);
+
+	switch (intertype)
+	{
+		case int_coop:
+			// unload the coop and single player patches
+			CLEANUP(data.coop.ttlnum);
+			CLEANUP(data.coop.bonuspatches[3]);
+			CLEANUP(data.coop.bonuspatches[2]);
+			CLEANUP(data.coop.bonuspatches[1]);
+			CLEANUP(data.coop.bonuspatches[0]);
+			CLEANUP(data.coop.ptotal);
+			break;
+		case int_spec:
+			// unload the special stage patches
+			//CLEANUP(data.spec.cemerald);
+			//CLEANUP(data.spec.nowsuper);
+			CLEANUP(data.spec.bonuspatch);
+			CLEANUP(data.spec.pscore);
+			CLEANUP(data.spec.pcontinues);
+			break;
+		case int_match:
+		case int_race:
+			CLEANUP(data.match.result);
+			break;
+		case int_ctf:
+			CLEANUP(data.match.blueflag);
+			CLEANUP(data.match.redflag);
+			break;
+		default:
+			//without this default,
+			//int_none, int_tag, int_chaos, and int_classicrace
+			//are not handled
+			break;
+	}
 }

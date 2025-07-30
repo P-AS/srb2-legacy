@@ -13,6 +13,7 @@
 ///	        FS_FOUND
 
 #include <stdio.h>
+#include <errno.h>
 #ifdef __GNUC__
 #include <dirent.h>
 #endif
@@ -32,12 +33,12 @@
 
 #if (defined (_WIN32) && !defined (_WIN32_WCE)) && defined (_MSC_VER) && !defined (_XBOX)
 
-#include <errno.h>
 #include <io.h>
 #include <tchar.h>
 
 #define SUFFIX	"*"
 #define	SLASH	"\\"
+#define	S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
 #define	S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
 
 #ifndef INVALID_FILE_ATTRIBUTES
@@ -306,24 +307,57 @@ closedir (DIR * dirp)
 }
 #endif
 
+// fopen but it REALLY only works on regular files
+// Turns out, on linux, anyway, you can fopen directories
+// in read mode. (It's supposed to fail in write mode
+// though!!)
+FILE *fopenfile(const char *path, const char *mode)
+{
+	FILE *h = fopen(path, mode);
+
+	if (h != NULL)
+	{
+		struct stat st;
+		int eno;
+
+		if (fstat(fileno(h), &st) == -1)
+		{
+			eno = errno;
+		}
+		else if (!S_ISREG(st.st_mode))
+		{
+			eno = EACCES; // set some kinda error
+		}
+		else
+		{
+			return h; // ok
+		}
+
+		fclose(h);
+		errno = eno;
+	}
+
+	return NULL;
+}
+
 static CV_PossibleValue_t addons_cons_t[] = {{0, "Default"},
 #if 1
 												{1, "HOME"}, {2, "SRB2"},
 #endif
 													{3, "CUSTOM"}, {0, NULL}};
 
-consvar_t cv_addons_option = {"addons_option", "Default", CV_SAVE|CV_CALL, addons_cons_t, Addons_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_addons_folder = {"addons_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_addons_option = CVAR_INIT ("addons_option", "Default", NULL,  CV_SAVE|CV_CALL, addons_cons_t, Addons_option_Onchange);
+consvar_t cv_addons_folder = CVAR_INIT ("addons_folder", "", NULL,  CV_SAVE, NULL, NULL);
 
 static CV_PossibleValue_t addons_md5_cons_t[] = {{0, "Name"}, {1, "Contents"}, {0, NULL}};
-consvar_t cv_addons_md5 = {"addons_md5", "Name", CV_SAVE, addons_md5_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_addons_md5 = CVAR_INIT ("addons_md5", "Name", NULL, CV_SAVE, addons_md5_cons_t, NULL);
 
-consvar_t cv_addons_showall = {"addons_showall", "No", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_addons_showall = CVAR_INIT ("addons_showall", "No", NULL, CV_SAVE, CV_YesNo, NULL);
 
-consvar_t cv_addons_search_case = {"addons_search_case", "No", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_addons_search_case = CVAR_INIT ("addons_search_case", "No", NULL, CV_SAVE, CV_YesNo, NULL);
 
 static CV_PossibleValue_t addons_search_type_cons_t[] = {{0, "Start"}, {1, "Anywhere"}, {0, NULL}};
-consvar_t cv_addons_search_type = {"addons_search_type", "Anywhere", CV_SAVE, addons_search_type_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_addons_search_type = CVAR_INIT ("addons_search_type", "Anywhere", NULL, CV_SAVE, addons_search_type_cons_t, NULL);
 
 char menupath[1024];
 size_t menupathindex[menudepth];

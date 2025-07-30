@@ -13,6 +13,7 @@
 #include "hw_glob.h"
 #include "hw_batching.h"
 #include "../i_system.h"
+#include "../qs22k.h" // qsort
 
 // The texture for the next polygon given to HWR_ProcessPolygon.
 // Set with HWR_SetCurrentTexture.
@@ -76,7 +77,7 @@ void HWR_SetCurrentTexture(GLMipmap_t *texture)
 // If batching is enabled, this function collects the polygon data and the chosen texture
 // for later use in HWR_RenderBatches. Otherwise the rendering backend is used to
 // render the polygon immediately.
-void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader, boolean horizonSpecial)
+void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader_target, boolean horizonSpecial)
 {
     if (currently_batching)
 	{
@@ -114,7 +115,7 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 		polygonArray[polygonArraySize].numVerts = iNumPts;
 		polygonArray[polygonArraySize].polyFlags = PolyFlags;
 		polygonArray[polygonArraySize].texture = current_texture;
-		polygonArray[polygonArraySize].shader = shader;
+		polygonArray[polygonArraySize].shader = (shader_target != SHADER_NONE) ? HWR_GetShaderFromTarget(shader_target) : shader_target;
 		polygonArray[polygonArraySize].horizonSpecial = horizonSpecial;
 		// default to maximum value so skybox ánd horizon lines come first
 		polygonArray[polygonArraySize].hash = INT32_MIN+polygonArraySize;
@@ -131,9 +132,9 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 			}
 			DIGEST(hash, PolyFlags);
 			DIGEST(hash, pSurf->PolyColor.rgba);
-			if (cv_grshaders.value && gr_shadersavailable)
+			if (HWR_UseShader())
 			{
-				DIGEST(hash, shader);
+				DIGEST(hash, shader_target);
 				DIGEST(hash, pSurf->TintColor.rgba);
 				DIGEST(hash, pSurf->FadeColor.rgba);
 				DIGEST(hash, pSurf->LightInfo.light_level);
@@ -150,8 +151,8 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 	}
 	else
 	{
-        if (shader)
-            HWD.pfnSetShader(shader);
+        if (shader_target != -1)
+            HWD.pfnSetShader(HWR_GetShaderFromTarget(shader_target));
         HWD.pfnDrawPolygon(pSurf, pOutVerts, iNumPts, PolyFlags);
     }
 }
@@ -237,7 +238,7 @@ void HWR_RenderBatches(void)
 
 	// set state for first batch
 
-	if (cv_grshaders.value && gr_shadersavailable)
+	if (cv_glshaders.value && gl_shadersavailable)
 	{
 		HWD.pfnSetShader(currentShader);
 	}
@@ -321,7 +322,7 @@ void HWR_RenderBatches(void)
 				nextSurfaceInfo = polygonArray[nextIndex].surf;
 				if (nextPolyFlags & PF_NoTexture)
 					nextTexture = 0;
-				if (currentShader != nextShader && cv_grshaders.value && gr_shadersavailable)
+				if (currentShader != nextShader && cv_glshaders.value && gl_shadersavailable)
 				{
 					changeState = true;
 					changeShader = true;
@@ -336,7 +337,7 @@ void HWR_RenderBatches(void)
 					changeState = true;
 					changePolyFlags = true;
 				}
-				if (cv_grshaders.value && gr_shadersavailable)
+				if (cv_glshaders.value && gl_shadersavailable)
 				{
 					if (currentSurfaceInfo.PolyColor.rgba != nextSurfaceInfo.PolyColor.rgba ||
 						currentSurfaceInfo.TintColor.rgba != nextSurfaceInfo.TintColor.rgba ||

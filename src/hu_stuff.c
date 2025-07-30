@@ -47,6 +47,7 @@
 #endif
 
 #include "lua_hud.h"
+#include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
 
 #include "s_sound.h"
@@ -160,6 +161,8 @@ static char cechotext[1024];
 static tic_t cechotimer = 0;
 static tic_t cechoduration = 5*TICRATE;
 static INT32 cechoflags = 0;
+
+static huddrawlist_h luahuddrawlist_scores;
 
 //======================================================================
 //                          HEADS UP INIT
@@ -289,15 +292,16 @@ void HU_LoadGraphics(void)
 void HU_Init(void)
 {
 #ifndef NONET
-	COM_AddCommand("say", Command_Say_f);
-	COM_AddCommand("sayto", Command_Sayto_f);
-	COM_AddCommand("sayteam", Command_Sayteam_f);
-	COM_AddCommand("csay", Command_CSay_f);
+	COM_AddCommand("say", NULL, Command_Say_f);
+	COM_AddCommand("sayto", NULL, Command_Sayto_f);
+	COM_AddCommand("sayteam", NULL, Command_Sayteam_f);
+	COM_AddCommand("csay", NULL, Command_CSay_f);
 	RegisterNetXCmd(XD_SAY, Got_Saycmd);
 #endif
 
 	// set shift translation table
 	shiftxform = english_shiftxform;
+	luahuddrawlist_scores = LUA_HUD_CreateDrawList();
 
 	HU_LoadGraphics();
 }
@@ -665,13 +669,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
 			player_names[playernum]);
 		if (server)
-		{
-			XBOXSTATIC UINT8 buf[2];
-
-			buf[0] = (UINT8)playernum;
-			buf[1] = KICK_MSG_CON_FAIL;
-			SendNetXCmd(XD_KICK, &buf, 2);
-		}
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -685,13 +683,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[playernum]);
 				if (server)
-				{
-					XBOXSTATIC char buf[2];
-
-					buf[0] = (char)playernum;
-					buf[1] = KICK_MSG_CON_FAIL;
-					SendNetXCmd(XD_KICK, &buf, 2);
-				}
+					SendKick(playernum, KICK_MSG_CON_FAIL);
 				return;
 			}
 		}
@@ -1914,7 +1906,7 @@ static inline void HU_DrawCrosshair(void)
 
 #ifdef HWRENDER
 	if (rendermode != render_soft)
-		y = (INT32)gr_basewindowcentery;
+		y = (INT32)gl_basewindowcentery;
 	else
 #endif
 		y = viewwindowy + (viewheight>>1);
@@ -1935,7 +1927,7 @@ static inline void HU_DrawCrosshair2(void)
 
 #ifdef HWRENDER
 	if (rendermode != render_soft)
-		y = (INT32)gr_basewindowcentery;
+		y = (INT32)gl_basewindowcentery;
 	else
 #endif
 		y = viewwindowy + (viewheight>>1);
@@ -1944,7 +1936,7 @@ static inline void HU_DrawCrosshair2(void)
 	{
 #ifdef HWRENDER
 		if (rendermode != render_soft)
-			y += (INT32)gr_viewheight;
+			y += (INT32)gl_viewheight;
 		else
 #endif
 			y += viewheight;
@@ -2103,7 +2095,12 @@ void HU_Drawer(void)
 		}
 		else
 			HU_DrawCoopOverlay();
-		LUAh_ScoresHUD();
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_scores);
+			LUAh_ScoresHUD(luahuddrawlist_scores);
+		}
+		LUA_HUD_DrawList(luahuddrawlist_scores);
 	}
 
 	if (gamestate != GS_LEVEL)
@@ -2238,8 +2235,8 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 ping, UINT32 pl, boolean notext, INT32
 		}	
 	}
 
-	if (pl < UINT32_MAX && (!notext || vid.width >= 640))
-		V_DrawSmallString(dx, y+8, V_ALLOWLOWERCASE|flags, va("%d%%", pl)); // TODO: this is for testing, make a proper indicator soon
+	//if (pl < UINT32_MAX && (!notext || vid.width >= 640))
+		//V_DrawSmallString(dx, y+8, V_ALLOWLOWERCASE|flags, va("%d%%", pl)); // TODO: this is for testing, make a proper indicator soon
 
 	for (i=0; (i<3); i++) // Draw the ping bar
 	{

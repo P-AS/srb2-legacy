@@ -858,7 +858,7 @@ static void AM_drawGrid(INT32 color)
 // Determines visible lines, draws them.
 // This is LineDef based, not LineSeg based.
 //
-static inline void AM_drawWalls(void)
+static void AM_drawWalls(void)
 {
 	size_t i;
 	static mline_t l;

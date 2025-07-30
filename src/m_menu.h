@@ -74,13 +74,14 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
 
 // flags for items in the menu
 // menu handle (what we do when key is pressed
-#define IT_TYPE             14     // (2+4+8)
+#define IT_TYPE             15     // (1+2+4+8)
 #define IT_CALL              0     // call the function
+#define IT_SPACE             1     // no handling
 #define IT_ARROWS            2     // call function with 0 for left arrow and 1 for right arrow in param
 #define IT_KEYHANDLER        4     // call with the key in param
 #define IT_SUBMENU           6     // go to sub menu
 #define IT_CVAR              8     // handle as a cvar
-#define IT_SPACE            10     // no handling
+#define IT_PAIR             11     // no handling, define both sides of text
 #define IT_MSGHANDLER       12     // same as key but with event and sometime can handle y/n key (special for message
 
 #define IT_DISPLAY   (48+64+128)    // 16+32+64+128
@@ -145,6 +146,7 @@ typedef struct menuitem_s
 
 	const char *patch;
 	const char *text; // used when FONTBxx lump is found
+	const char *desc;
 
 // FIXME: should be itemaction_t
 	void *itemaction;
@@ -217,6 +219,7 @@ typedef struct
 
 extern description_t description[MAXSKINS];
 
+extern consvar_t cv_showfocuslost; 
 extern consvar_t cv_newgametype, cv_nextmap, cv_chooseskin, cv_serversort;
 extern CV_PossibleValue_t gametype_cons_t[];
 

@@ -6716,6 +6716,7 @@ static const char *const MOBJFLAG_LIST[] = {
 	"NOCLIPTHING",
 	"GRENADEBOUNCE",
 	"RUNSPAWNFUNC",
+	"PAPERCOLLISION",
 	NULL
 };
 
@@ -7031,6 +7032,7 @@ struct {
 
 	// Frame settings
 	{"FF_FRAMEMASK",FF_FRAMEMASK},
+	{"FF_PAPERSPRITE",FF_PAPERSPRITE},
 	{"FF_ANIMATE",FF_ANIMATE},
 	{"FF_FULLBRIGHT",FF_FULLBRIGHT},
 	{"FF_TRANSMASK",FF_TRANSMASK},
@@ -7419,6 +7421,7 @@ struct {
 	{"V_STEELMAP",V_STEELMAP},
 	{"V_PINKMAP",V_PINKMAP},
 	{"V_BROWNMAP",V_BROWNMAP},
+	{"V_PEACHMAP",V_PEACHMAP},
 	{"V_TRANSLUCENT",V_TRANSLUCENT},
 	{"V_10TRANS",V_10TRANS},
 	{"V_20TRANS",V_20TRANS},
@@ -8142,6 +8145,23 @@ static inline int lib_getenum(lua_State *L)
 	} else if (fastcmp(word,"mapmusposition")) {
 		lua_pushinteger(L, mapmusposition);
 		return 1;
+		// local player variables, by popular request
+	} else if (fastcmp(word,"consoleplayer")) { // player controlling console (aka local player 1)
+		if (!playeringame[consoleplayer])
+			return 0;
+		LUA_PushUserdata(L, &players[consoleplayer], META_PLAYER);
+		return 1;
+	} else if (fastcmp(word,"displayplayer")) { // player visible on screen (aka display player 1)
+		if (!playeringame[displayplayer])
+			return 0;
+		LUA_PushUserdata(L, &players[displayplayer], META_PLAYER);
+		return 1;
+	} else if (fastcmp(word,"secondarydisplayplayer")) { // local/display player 2, for splitscreen
+		if (!splitscreen || !playeringame[secondarydisplayplayer])
+			return 0;
+		LUA_PushUserdata(L, &players[secondarydisplayplayer], META_PLAYER);
+		return 1;
+	// end local player variables
 	} else if (fastcmp(word,"server")) {
 		if ((!multiplayer || !netgame) && !playeringame[serverplayer])
 			return 0;
@@ -8176,6 +8196,10 @@ static inline int lib_getenum(lua_State *L)
 		return 1;
 	} else if (fastcmp(word, "token")) {
 		lua_pushinteger(L, token);
+		return 1;
+	}
+	else if (fastcmp(word, "MAXTRANSLATIONS")) {
+		lua_pushinteger(L, numskincolors);
 		return 1;
 	}
 	return 0;

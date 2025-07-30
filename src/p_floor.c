@@ -3013,7 +3013,7 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 	{
 		for (b = topy; b > bottomy; b -= (32<<FRACBITS))
 		{
-			if (R_PointInSubsector(a, b)->sector == sec)
+			if (R_PointInSubsectorFast(a, b)->sector == sec)
 			{
 				mobj_t *spawned = NULL;
 				for (c = topz; c > *rover->bottomheight; c -= (32<<FRACBITS))
@@ -3232,8 +3232,8 @@ INT32 EV_MarioBlock(sector_t *sec, sector_t *roversector, fixed_t topheight, mob
 		block->vars[6] = 1; // low
 
 		// interpolation
-		R_CreateInterpolator_SectorPlane(&block->thinker, roversector, false);
-		R_CreateInterpolator_SectorPlane(&block->thinker, roversector, true);
+		R_CreateInterpolator_SectorPlane(&block->thinker, sec, false);
+		R_CreateInterpolator_SectorPlane(&block->thinker, sec, true);
 
 		if (itsamonitor)
 		{

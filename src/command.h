@@ -31,8 +31,8 @@ enum
 
 typedef void (*com_func_t)(void);
 
-void COM_AddCommand(const char *name, com_func_t func);
-int COM_AddLuaCommand(const char *name);
+void COM_AddCommand(const char *name, const char *desc, com_func_t func);
+int COM_AddLuaCommand(const char *name, const char *desc);
 
 size_t COM_Argc(void);
 const char *COM_Argv(size_t arg); // if argv > argc, returns empty string
@@ -120,6 +120,7 @@ typedef struct consvar_s //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NUL
 {
 	const char *name;
 	const char *defaultvalue;
+	const char *desc;
 	INT32 flags;            // flags see cvflags_t above
 	CV_PossibleValue_t *PossibleValue; // table of possible values
 	void (*func)(void);   // called on change, if CV_CALL set
@@ -132,6 +133,11 @@ typedef struct consvar_s //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NUL
 	char changed;         // has variable been changed by the user? 0 = no, 1 = yes
 	struct consvar_s *next;
 } consvar_t;
+
+
+/* name, defaultvalue, desc, flags,  PossibleValue, func */
+#define CVAR_INIT( ... ) \
+{ __VA_ARGS__, 0, NULL, NULL, 0U, (char)0, NULL }
 
 extern CV_PossibleValue_t CV_OnOff[];
 extern CV_PossibleValue_t CV_YesNo[];

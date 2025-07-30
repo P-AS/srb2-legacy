@@ -1413,7 +1413,6 @@ static void P_LoadRawSideDefs2(void *data)
 			case 606: //SoM: 4/4/2000: Just colormap transfer
 				// SoM: R_CreateColormap will only create a colormap in software mode...
 				// Perhaps we should just call it instead of doing the calculations here.
-				if (rendermode == render_soft || rendermode == render_none)
 				{
 					if (msd->toptexture[0] == '#' || msd->bottomtexture[0] == '#')
 					{
@@ -1436,11 +1435,6 @@ static void P_LoadRawSideDefs2(void *data)
 						else
 							sd->bottomtexture = num;
 					}
-					break;
-				}
-#ifdef HWRENDER
-				else
-				{
 					// for now, full support of toptexture only
 					if ((msd->toptexture[0] == '#' && msd->toptexture[1] && msd->toptexture[2] && msd->toptexture[3] && msd->toptexture[4] && msd->toptexture[5] && msd->toptexture[6])
 						|| (msd->bottomtexture[0] == '#' && msd->bottomtexture[1] && msd->bottomtexture[2] && msd->bottomtexture[3] && msd->bottomtexture[4] && msd->bottomtexture[5] && msd->bottomtexture[6]))
@@ -1492,28 +1486,8 @@ static void P_LoadRawSideDefs2(void *data)
 #undef ALPHA2INT
 #undef HEX2INT
 					}
-					else
-					{
-						if ((num = R_CheckTextureNumForName(msd->toptexture)) == -1)
-							sd->toptexture = 0;
-						else
-							sd->toptexture = num;
-
-						if ((num = R_CheckTextureNumForName(msd->midtexture)) == -1)
-							sd->midtexture = 0;
-						else
-							sd->midtexture = num;
-
-						if ((num = R_CheckTextureNumForName(msd->bottomtexture)) == -1)
-							sd->bottomtexture = 0;
-						else
-							sd->bottomtexture = num;
-					}
 					break;
 				}
-#else
-				break;
-#endif
 
 			case 413: // Change music
 			{
@@ -2609,7 +2583,6 @@ static void P_SetupCamera(void)
 		camera.y = players[displayplayer].mo->y;
 		camera.z = players[displayplayer].mo->z;
 		camera.angle = players[displayplayer].mo->angle;
-		camera.subsector = R_PointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 	}
 	else
 	{
@@ -2633,9 +2606,9 @@ static void P_SetupCamera(void)
 			camera.y = thing->y;
 			camera.z = thing->z;
 			camera.angle = FixedAngle((fixed_t)thing->angle << FRACBITS);
-			camera.subsector = R_PointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 		}
 	}
+	camera.subsector = R_PointInSubsectorFast(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 }
 
 static boolean P_CanSave(void)
@@ -2689,7 +2662,7 @@ void P_InitCamera(void)
 	if (!cv_analog2.changed)
 		CV_SetValue(&cv_analog2, 0);
 
-	displayplayer = consoleplayer; // Start with your OWN view, please!	
+	displayplayer = consoleplayer; // Start with your OWN view, please!
 }
 
 /** Loads a level from a lump or external wad.
@@ -2802,6 +2775,7 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 			lastwipetic = nowtime;
 			if (moviemode) // make sure we save frames for the white hold too
 				M_SaveFrame();
+			NetKeepAlive(); // Prevent timeout
 		}
 
 		ranspecialwipe = 1;
@@ -2996,14 +2970,14 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	globalweather = mapheaderinfo[gamemap-1]->weather;
 
 #ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode != render_soft && rendermode != render_none)
-	{
-		HWR_CreatePlanePolygons((INT32)numnodes - 1);
-
-			// Build the sky dome
-		HWR_ClearSkyDome();
-		HWR_BuildSkyDome();
-	}
+	// Jimita: Free extrasubsectors regardless of renderer.
+	// Maybe we're not in OpenGL anymore.
+	if (extrasubsectors)
+		free(extrasubsectors);
+	extrasubsectors = NULL;
+	// stuff like HWR_CreatePlanePolygons is called there
+	if (rendermode == render_opengl)
+		HWR_SetupLevel();
 #endif
 
 	// oh god I hope this helps
@@ -3092,7 +3066,7 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	netgameskip:
 
 	if (!reloadinggamestate)
-	{	
+	{
 		P_InitCamera();
 		localaiming = localaiming2 = 0;
 	}
@@ -3113,14 +3087,6 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 
 	// clear special respawning que
 	iquehead = iquetail = 0;
-
-	// preload graphics
-#ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode != render_soft && rendermode != render_none)
-	{
-		HWR_PrepLevelCache(numtextures);
-	}
-#endif
 
 	P_MapEnd();
 
@@ -3179,6 +3145,34 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 
 	return true;
 }
+
+#ifdef HWRENDER
+void HWR_SetupLevel(void)
+{
+
+	// Lactozilla (December 8, 2019)
+	// Level setup used to free EVERY mipmap from memory.
+	// Even mipmaps that aren't related to level textures.
+	// Presumably, the hardware render code used to store textures as level data.
+	// Meaning, they had memory allocated and marked with the PU_LEVEL tag.
+	// Level textures are only reloaded after R_LoadTextures, which is
+	// when the texture list is loaded.
+
+	// Sal: Unfortunately, NOT freeing them causes the dreaded Color Bug.
+	HWR_FreeMipmapCache();
+
+	// Jimita: Don't call this more than once!
+	if (!extrasubsectors)
+		HWR_CreatePlanePolygons((INT32)numnodes - 1);
+
+	// Build the sky dome
+	HWR_ClearSkyDome();
+	HWR_BuildSkyDome();
+
+	if (HWR_ShouldUsePaletteRendering())
+		HWR_SetMapPalette();
+}
+#endif
 
 //
 // P_RunSOC
@@ -3330,6 +3324,11 @@ boolean P_AddWadFile(const char *wadfilename)
 	// reload status bar (warning should have valid player!)
 	if (gamestate == GS_LEVEL)
 		ST_Start();
+
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+		HWR_FreeMipmapCache();
+#endif
 
 	// Prevent savefile cheating
 	if (cursaveslot >= 0)

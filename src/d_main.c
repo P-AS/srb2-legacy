@@ -123,6 +123,8 @@ boolean devparm = false; // started game with -devparm
 boolean singletics = false; // timedemo
 boolean lastdraw = false;
 
+static void D_CheckRendererState(void);
+
 postimg_t postimgtype = postimg_none;
 INT32 postimgparam;
 postimg_t postimgtype2 = postimg_none;
@@ -232,6 +234,7 @@ gamestate_t wipegamestate = GS_LEVEL;
 
 static void D_Display(void)
 {
+	INT32 setrenderstillneeded = 0;
 	boolean forcerefresh = false;
 	static boolean wipe = false;
 	INT32 wipedefindex = 0;
@@ -242,12 +245,38 @@ static void D_Display(void)
 	if (nodrawers)
 		return; // for comparative timing/profiling
 
+	// Jimita: Switching renderers works by checking
+	// if the game has to do it right when the frame
+	// needs to render. If so, five things will happen:
+	// 1. Interface functions will be called so
+	//    that switching to OpenGL creates a
+	//    GL context, and switching to Software
+	//    allocates screen buffers.
+	// 2. Software will set drawer functions,
+	//    and OpenGL will load textures and
+	//    create plane polygons, if necessary.
+	// 3. Functions related to switching video
+	//    modes (resolution) are called.
+	// 4. Patch data is freed from memory,
+	//    and recached if necessary.
+	// 5. The frame is ready to be drawn!
 
-	// check for change of screen size (video mode)
-	if (setmodeneeded && !wipe)
+	// stop movie if needs to change renderer
+	//if (setrenderneeded && (moviemode != MM_OFF))
+		//M_StopMovie();
+
+	// check for change of renderer or screen size (video mode)
+	if ((setrenderneeded || setmodeneeded) && !wipe)
+	{
+		if (setrenderneeded)
+		{
+			CONS_Debug(DBG_RENDER, "setrenderneeded set (%d)\n", setrenderneeded);
+			setrenderstillneeded = setrenderneeded;
+		}
 		SCR_SetMode(); // change video mode
+	}
 
-	if (vid.recalc)
+	if (vid.recalc || setrenderstillneeded)
 		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
 
 
@@ -255,11 +284,14 @@ static void D_Display(void)
 		R_CheckViewMorph();
 
 	// change the view size if needed
-	if (setsizeneeded)
+	if (setsizeneeded || setrenderstillneeded)
 	{
 		R_ExecuteSetViewSize();
 		forcerefresh = true; // force background redraw
 	}
+
+	// Jimita
+	D_CheckRendererState();
 
 	// draw buffered stuff to screen
 	// Used only by linux GGI version
@@ -351,6 +383,13 @@ static void D_Display(void)
 
 		case GS_WAITINGPLAYERS:
 			// The clientconnect drawer is independent...
+			if (netgame)
+			{
+				// I don't think HOM from nothing drawing is independent...
+				F_WaitingPlayersDrawer();
+				HU_Erase();
+				HU_Drawer();
+			}
 		case GS_DEDICATEDSERVER:
 		case GS_NULL:
 			break;
@@ -444,14 +483,23 @@ static void D_Display(void)
 	// draw pause pic
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-		INT32 py;
-		patch_t *patch;
-		if (automapactive)
-			py = 4;
+		if (cv_modernpause.value)
+		{
+			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
+			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
+			V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_YELLOWMAP, "Game Paused");
+		}
 		else
-			py = viewwindowy + 4;
-		patch = W_CachePatchName("M_PAUSE", PU_CACHE);
-		V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - SHORT(patch->width))/2, py, 0, patch);
+		{
+			INT32 py;
+			patch_t *patch;
+			if (automapactive)
+				py = 4;
+			else
+				py = viewwindowy + 4;
+			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
+			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - SHORT(patch->width))/2, py, 0, patch);
+		}
 	}
 
 	// vid size change is now finished if it was on...
@@ -527,8 +575,26 @@ static void D_Display(void)
 		I_FinishUpdate(); // page flip or blit buffer
 		PS_STOP_TIMING(ps_swaptime);
 	}
+
+	needpatchflush = false;
+	needpatchrecache = false;
 }
 
+// Jimita: Check the renderer's state
+// after a possible renderer switch.
+void D_CheckRendererState(void)
+{
+	// flush all patches from memory
+	// (also frees memory tagged with PU_CACHE)
+	// (which are not necessarily patches but I don't care)
+	if (needpatchflush)
+		Z_FlushCachedPatches();
+
+	// some patches have been freed,
+	// so cache them again
+	if (needpatchrecache)
+		R_ReloadHUDGraphics();
+}
 
 // =========================================================================
 // D_SRB2Loop
@@ -837,6 +903,15 @@ void D_StartTitle(void)
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
 
+	// reset to default player stuff
+	if (!dedicated)
+	{
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin.name,cv_defaultskin.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor.name,cv_defaultplayercolor.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin2.name,cv_defaultskin2.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor2.name,cv_defaultplayercolor2.string));
+	}
+
 	gameaction = ga_nothing;
 	displayplayer = consoleplayer = 0;
 	//demosequence = -1;
@@ -1060,7 +1135,6 @@ static void D_AndroidSetupHome(const char *userhome)
 }
 #endif
 
-
 //
 // D_SRB2Main
 //
@@ -1176,6 +1250,7 @@ void D_SRB2Main(void)
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, srb2home, PATHSEP);
 
+			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
 #else
 			snprintf(srb2home, sizeof srb2home, "%s", userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
@@ -1186,6 +1261,8 @@ void D_SRB2Main(void)
 
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, userhome, PATHSEP);
+
+			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
 #endif
 		}
 
@@ -1370,6 +1447,23 @@ void D_SRB2Main(void)
 	// set user default mode or mode set at cmdline
 	SCR_CheckDefaultMode();
 
+	// Jimita: Does the render mode need to change?
+	if ((setrenderneeded != 0) && (setrenderneeded != rendermode))
+	{
+		CONS_Printf(M_GetText("Switching the renderer...\n"));
+
+		// set needpatchflush / needpatchrecache true for D_CheckRendererState
+		needpatchflush = true;
+		needpatchrecache = true;
+
+		// Set cv_renderer to the new render mode
+		VID_CheckRenderer();
+		SCR_ChangeRendererCVars(rendermode);
+
+		// check the renderer's state
+		D_CheckRendererState();
+	}
+
 	wipegamestate = gamestate;
 
 	savedata.lives = 0; // flag this as not-used
@@ -1395,16 +1489,28 @@ void D_SRB2Main(void)
 	{
 		CONS_Printf("S_InitSfxChannels(): Setting up sound channels.\n");
 	}
-	if (M_CheckParm("-nosound"))
+	if (M_CheckParm("-noaudio")) // combines -nosound and -nomusic
+	{
 		sound_disabled = true;
-	if (M_CheckParm("-nomusic")) // combines -nomidimusic and -nodigmusic
-		midi_disabled = digital_disabled = true;
+		digital_disabled = true;
+		midi_disabled = true;
+	}
 	else
 	{
-		if (M_CheckParm("-nomidimusic"))
-			midi_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
-		if (M_CheckParm("-nodigmusic"))
-			digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
+		if (M_CheckParm("-nosound"))
+			sound_disabled = true;
+		if (M_CheckParm("-nomusic")) // combines -nomidimusic and -nodigmusic
+		{
+			digital_disabled = true;
+			midi_disabled = true;
+		}
+		else
+		{
+			if (M_CheckParm("-nomidimusic"))
+				midi_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
+			if (M_CheckParm("-nodigmusic"))
+				digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
+		}
 	}
 	I_StartupSound();
 	I_InitMusic();
@@ -1502,6 +1608,8 @@ void D_SRB2Main(void)
 		// Do this here so if you run SRB2 with eg +timelimit 5, the time limit counts
 		// as having been modified for the first game.
 		M_PushSpecialParameters(); // push all "+" parameter at the command buffer
+
+		COM_BufExecute(); // ensure the command buffer gets executed before the map starts (+skin)
 
 		if (M_CheckParm("-gametype") && M_IsNextParm())
 		{

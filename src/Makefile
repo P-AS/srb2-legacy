@@ -54,6 +54,8 @@
 # NOOPENMPT=1 - Disable module (tracker) music support.
 # NOMIXER=1 - Disable SDL Mixer (audio playback).
 # NOTHREADS=1 - Disable multithreading.
+# NOEXECINFO=1 - Disable stack trace dump support
+# NOLTO=1 - Disable link time optimizations
 #
 # Netplay incompatible
 # --------------------
@@ -244,6 +246,10 @@ debug_opts=-D_DEBUG
 else # build a normal optimized version
 debug_opts=-DNDEBUG
 opts+=-O3
+ifndef NOLTO
+opts+=-flto=auto
+libs+=-flto=auto
+endif
 endif
 
 # debug_opts also get passed to windres

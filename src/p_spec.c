@@ -2353,11 +2353,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					y = sides[line->sidenum[0]].rowoffset;
 					z = line->frontsector->ceilingheight;
 
-					P_UnsetThingPosition(mo);
-					mo->x += x;
-					mo->y += y;
-					mo->z += z;
-					P_SetThingPosition(mo);
+					P_SetOrigin(mo, mo->x + x, mo->y + y, mo->z + z);
 
 					if (mo->player)
 					{
@@ -2365,17 +2361,19 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 							P_SetOrigin(bot, bot->x + x, bot->y + y, bot->z + z);
 						if (splitscreen && mo->player == &players[secondarydisplayplayer] && camera2.chase)
 						{
+							camera2.reset = true;
 							camera2.x += x;
 							camera2.y += y;
 							camera2.z += z;
-							camera2.subsector = R_PointInSubsector(camera2.x, camera2.y);
+							camera2.subsector = R_PointInSubsectorFast(camera2.x, camera2.y);
 						}
 						else if (camera.chase && mo->player == &players[displayplayer])
 						{
+							camera.reset = true;
 							camera.x += x;
 							camera.y += y;
 							camera.z += z;
-							camera.subsector = R_PointInSubsector(camera.x, camera.y);
+							camera.subsector = R_PointInSubsectorFast(camera.x, camera.y);
 						}
 					}
 				}

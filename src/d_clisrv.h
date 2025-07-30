@@ -57,6 +57,11 @@ typedef enum
 	PT_WILLRESENDGAMESTATE, // Hey Client, I am about to resend you the gamestate!
 	PT_CANRECEIVEGAMESTATE, // Okay Server, I'm ready to receive it, you can go ahead.
 	PT_RECEIVEDGAMESTATE,   // Thank you Server, I am ready to play again!
+	PT_BASICKEEPALIVE, // Keep the network alive during wipes, as tics aren't advanced and NetUpdate isn't called
+
+	PT_SENDINGLUAFILE, // Server telling a client Lua needs to open a file
+	PT_ASKLUAFILE,     // Client telling the server they don't have the file
+	PT_HASLUAFILE,     // Client telling the server they have the file
 
 	// Add non-PT_CANFAIL packet types here to avoid breaking MS compatibility.
 
@@ -337,6 +342,10 @@ void D_ClientServerInit(void);
 void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum));
 void SendNetXCmd(netxcmd_t id, const void *param, size_t nparam);
 void SendNetXCmd2(netxcmd_t id, const void *param, size_t nparam); // splitsreen player
+void SendKick(UINT8 playernum, UINT8 msg);
+
+// Maintain connections to nodes without timing them all out.
+void NetKeepAlive(void);
 
 // Create any new ticcmds and broadcast to other players.
 void NetUpdate(void);

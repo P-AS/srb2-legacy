@@ -104,6 +104,7 @@
 #include "doomtype.h"
 #include "version.h"
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -126,6 +127,8 @@
 #if ((defined (_WIN32) && !defined (_WIN32_WCE)) || defined (__DJGPP__)) && !defined (_XBOX)
 #include <io.h>
 #endif
+
+FILE *fopenfile(const char*, const char*);
 
 //#define NOMD5
 
@@ -493,7 +496,7 @@ INT32 I_GetKey(void);
 #endif
 
 // Compile date and time and revision.
-extern const char *compdate, *comptime, *comprevision, *compbranch;
+extern const char *compdate, *comptime, *comprevision, *compbranch, *compnote;
 
 // Disabled code and code under testing
 // None of these that are disabled in the normal build are guaranteed to work perfectly
@@ -573,6 +576,9 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// \note	SRB2CB port.
 ///      	SRB2CB itself ported this from PrBoom+
 #define NEWCLIP
+
+/// Cache patches in Lua in a way that renderer switching will work flawlessly.
+//#define LUA_PATCH_SAFETY
 
 /// OpenGL shaders
 #define GL_SHADERS

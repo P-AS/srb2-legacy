@@ -10,8 +10,12 @@ echo -e "Downloaded assets: \n\n$(git lfs ls-files)"
 cd ../..
 
 # Clone the repo and build the application
-[ "$(uname -m)" == "i686" ] && IS64BIT="" || IS64BIT="64"
-make -C src/ LINUX$IS64BIT=1 -j$(nproc)
+if [ "$1" = "s" ]; then
+	echo -e "Skipping build\n"
+else
+	[ "$(uname -m)" == "i686" ] && IS64BIT="" || IS64BIT="64"
+	make -C src/ LINUX$IS64BIT=1 -j$(nproc)
+fi
 
 # Copy files to bin
 install -D bin/lsdl2srb2legacy AppDir/usr/bin/srb2legacy

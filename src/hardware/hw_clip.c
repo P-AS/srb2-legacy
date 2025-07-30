@@ -77,12 +77,6 @@
 #include "../tables.h"
 #include "r_opengl/r_opengl.h"
 
-#ifdef HAVE_SPHEREFRUSTRUM
-static GLdouble viewMatrix[16];
-static GLdouble projMatrix[16];
-float frustum[6][4];
-#endif
-
 typedef struct clipnode_s
 	{
 		struct clipnode_s *prev, *next;
@@ -322,16 +316,11 @@ void gld_clipper_Clear(void)
 
 angle_t gld_FrustumAngle(angle_t tiltangle, void *player)
 {
-	double floatangle;
 	angle_t a1;
+	double clipfov;
+	double floatangle;
 
 	float tilt = (float)fabs(((double)(int)tiltangle) / ANG1);
-
-	// NEWCLIP TODO: SRB2CBTODO: make a global render_fov for this function
-
-	float render_fov = HWR_GetPlayerFov(player);
-	float render_fovratio = (float)BASEVIDWIDTH / (float)BASEVIDHEIGHT; // SRB2CBTODO: NEWCLIPTODO: Is this right?
-	float render_multiplier = 64.0f / render_fovratio / RMUL;
 
 	if (tilt > 90.0f)
 	{
@@ -344,21 +333,28 @@ angle_t gld_FrustumAngle(angle_t tiltangle, void *player)
 
 	// ok, this is a gross hack that barely works...
 	// but at least it doesn't overestimate too much...
-	floatangle = 2.0f + (45.0f + (tilt / 1.9f)) * (float)render_fov * 48.0f / render_multiplier / 90.0f;
-	a1 = ANG1 * (int)floatangle;
-	if (a1 >= ANGLE_180)
+	clipfov = atan(1 / projMatrix[0]) * 360 / M_PI; // use the actual view of the scene
+	floatangle = 2.0f + (45.0f + (tilt / 1.9f)) * clipfov / 90.0f;
+	if (floatangle >= 180.0)
 		return 0xffffffff;
+	a1 = (angle_t)(ANG1 * (int)floatangle);
+
 	return a1;
 }
 
 // SRB2CB I don't think used any of this stuff, let's disable for now since SRB2 probably doesn't want it either
 // compiler complains about (p)glfloatv anyway, in case anyone wants this
 // only r_opengl.c can use the base gl funcs as it turns out, that's a problem for whoever wants sphere frustum checks
-// btw to renable define HAVE_SPHEREFRUSTRUM in hw_clip.h
-#ifdef HAVE_SPHEREFRUSTRUM
+// btw to renable define HAVE_SPHEREFRUSTUM in hw_clip.h
+#ifdef HAVE_SPHEREFRUSTUM
 //
-// gld_FrustrumSetup
+// gld_FrustumSetup
 //
+
+
+static GLdouble viewMatrix[16];
+static GLdouble projMatrix[16];
+float frustum[6][4];
 
 #define CALCMATRIX(a, b, c, d, e, f, g, h)\
 (float)(viewMatrix[a] * projMatrix[b] + \
@@ -376,7 +372,7 @@ frustum[i][1] /= t; \
 frustum[i][2] /= t; \
 frustum[i][3] /= t
 
-void gld_FrustrumSetup(void)
+void gld_FrustumSetup(void)
 {
 	float t;
 	float clip[16];

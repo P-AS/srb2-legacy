@@ -25,6 +25,11 @@ extern consvar_t cv_skin;
 extern consvar_t cv_playername2;
 extern consvar_t cv_playercolor2;
 extern consvar_t cv_skin2;
+// saved versions of the above six
+extern consvar_t cv_defaultplayercolor;
+extern consvar_t cv_defaultskin;
+extern consvar_t cv_defaultplayercolor2;
+extern consvar_t cv_defaultskin2;
 
 #ifdef SEENAMES
 extern consvar_t cv_seenames, cv_allowseenames;
@@ -145,6 +150,7 @@ typedef enum
 	XD_DEMOTED,     // 21
 	XD_LUACMD,      // 22
 	XD_LUAVAR,      // 23
+	XD_LUAFILE,     // 24
 	MAXNETXCMD
 } netxcmd_t;
 

@@ -40,6 +40,7 @@
 #endif
 
 #include "lua_hud.h"
+#include "lua_hudlib_drawlist.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -167,6 +168,8 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	{ 16, 152, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_INPUT
 };
 
+static huddrawlist_h luahuddrawlist_game;
+
 //
 // STATUS BAR CODE
 //
@@ -201,6 +204,7 @@ void ST_Ticker(void)
 
 // 0 is default, any others are special palettes.
 INT32 st_palette = 0;
+INT32 st_translucency = 10;
 
 void ST_doPaletteStuff(void)
 {
@@ -214,8 +218,8 @@ void ST_doPaletteStuff(void)
 		palette = 0;
 
 #ifdef HWRENDER
-	if (rendermode == render_opengl)
-		palette = 0; // No flashpals here in OpenGL
+if (rendermode == render_opengl && !HWR_ShouldUsePaletteRendering())
+	palette = 0; // Don't set the palette to a flashpal in OpenGL's truecolor mode
 #endif
 
 	palette = min(max(palette, 0), 13);
@@ -414,6 +418,7 @@ void ST_Init(void)
 		return;
 
 	ST_LoadGraphics();
+	luahuddrawlist_game = LUA_HUD_CreateDrawList();
 }
 
 // change the status bar too, when pressing F12 while viewing a demo.
@@ -1764,10 +1769,9 @@ static void ST_drawCTFHUD(void)
 	if (stplyr->gotflag)
 	{
 		patch_t *p = (stplyr->gotflag & GF_REDFLAG) ? gotrflag : gotbflag;
-		INT32 snapflags = (splitscreen && stplyr == &players[displayplayer]) ? V_SNAPTOTOP : 0;
 
 		if (splitscreen)
-			V_DrawSmallScaledPatch(312, STRINGY(24) + 42, V_SNAPTORIGHT|snapflags|V_HUDTRANS, p);
+			V_DrawSmallScaledPatch(312, STRINGY(24) + 42, V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_HUDTRANS, p);
 		else
 			V_DrawScaledPatch(304, 24 + 84, V_SNAPTORIGHT|V_SNAPTOTOP|V_HUDTRANS, p);
 	}
@@ -2053,7 +2057,14 @@ static void ST_overlayDrawer(void)
 	}
 
 	if (!(netgame || multiplayer) || !hu_showscores)
-		LUAh_GameHUD(stplyr);
+	{
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_game);
+			LUAh_GameHUD(stplyr, luahuddrawlist_game);
+		}
+		LUA_HUD_DrawList(luahuddrawlist_game);
+	}
 
 	// draw level title Tails
 	if (*mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer)) && LUA_HudEnabled(hud_stagetitle))
@@ -2127,9 +2138,11 @@ void ST_Drawer(void)
 	//25/08/99: Hurdler: palette changes is done for all players,
 	//                   not only player1! That's why this part
 	//                   of code is moved somewhere else.
-	if (rendermode == render_soft)
+	if (rendermode == render_soft || HWR_ShouldUsePaletteRendering())
 #endif
 		if (rendermode != render_none) ST_doPaletteStuff();
+
+	st_translucency = cv_translucenthud.value;
 
 	if (st_overlay)
 	{

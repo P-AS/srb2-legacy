@@ -53,20 +53,17 @@ void (*twosmultipatchtransfunc)(void); // for cols with transparent pixels AND t
 // ------------------
 viddef_t vid;
 INT32 setmodeneeded; //video mode change needed if > 0 (the mode number to set + 1)
+UINT8 setrenderneeded = 0;
 
 static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
 
 //added : 03-02-98: default screen mode, as loaded/saved in config
-#ifdef WII
-consvar_t cv_scr_width = {"scr_width", "640", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_scr_height = {"scr_height", "480", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_scr_depth = {"scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#else
-consvar_t cv_scr_width = {"scr_width", "1280", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_scr_height = {"scr_height", "800", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_scr_depth = {"scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
-consvar_t cv_renderview = {"renderview", "On", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_scr_width = CVAR_INIT ("scr_width", "1280", NULL, CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_height = CVAR_INIT ("scr_height", "800", NULL,  CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_width_w = CVAR_INIT ("scr_width_w", "640", NULL, CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_height_w = CVAR_INIT ("scr_height_w", "400", NULL, CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", "Bit depth of textures", CV_SAVE, scr_depth_cons_t, NULL);
+consvar_t cv_renderview = CVAR_INIT ("renderview", "On", NULL, 0, CV_OnOff, NULL);
 
 #ifdef NATIVESCREENRES
 static void SCR_ToggleNativeRes(void);
@@ -84,10 +81,14 @@ consvar_t cv_nativerescompare = NATIVERESCVAR("nativerescompare", "Width", nativ
 
 #endif
 
-
 static void SCR_ChangeFullscreen (void);
+static void SCR_ActuallyChangeRenderer(void);
+static CV_PossibleValue_t cv_renderer_t[] = {{1, "Software"}, {2, "OpenGL"}, {0, NULL}};
+consvar_t cv_renderer = CVAR_INIT ("renderer", "Software", "The current renderer", CV_SAVE|CV_CALL, cv_renderer_t, SCR_ChangeRenderer);
 
-consvar_t cv_fullscreen = {"fullscreen", "Yes", CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen, 0, NULL, NULL, 0, 0, NULL};
+static void SCR_ChangeFullscreen(void);
+
+consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", "If on, the game will take up the full screen rather than just a desktop window", CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen);
 
 // =========================================================================
 //                           SCREEN VARIABLES
@@ -100,19 +101,8 @@ UINT8 *scr_borderpatch; // flat used to fill the reduced view borders set at ST_
 
 //  Short and Tall sky drawer, for the current color mode
 void (*walldrawerfunc)(void);
-
-void SCR_SetMode(void)
+void SCR_SetDrawFuncs(void)
 {
-	if (dedicated)
-		return;
-
-	if (!setmodeneeded || WipeInAction)
-		return; // should never happen and don't change it during a wipe, BAD!
-
-	VID_SetMode(--setmodeneeded);
-
-	V_SetPalette(0);
-
 	//
 	//  setup the right draw routines for either 8bpp or 16bpp
 	//
@@ -148,8 +138,38 @@ void SCR_SetMode(void)
 	if (SCR_IsAspectCorrect(vid.width, vid.height))
 		CONS_Alert(CONS_WARNING, M_GetText("Resolution is not aspect-correct!\nUse a multiple of %dx%d\n"), BASEVIDWIDTH, BASEVIDHEIGHT);
 #endif*/
+
+	wallcolfunc = walldrawerfunc;
+}
+
+void SCR_SetMode(void)
+{
+	if (dedicated)
+		return;
+
+	if (!(setmodeneeded || setrenderneeded) || WipeInAction)
+		return; // should never happen and don't change it during a wipe, BAD!
+
+	// Jimita
+	if (setrenderneeded)
+	{
+		needpatchflush = true;
+		needpatchrecache = true;
+		VID_CheckRenderer();
+		if (!setmodeneeded)
+			VID_SetMode(vid.modenum);
+	}
+
+	if (setmodeneeded)
+		VID_SetMode(--setmodeneeded);
+
+	V_SetPalette(0);
+
+	SCR_SetDrawFuncs();
+
 	// set the apprpriate drawer for the sky (tall or INT16)
 	setmodeneeded = 0;
+	setrenderneeded = 0;
 }
 
 
@@ -304,20 +324,27 @@ void SCR_CheckDefaultMode(void)
 	}
 	else
 	{
-		CONS_Printf(M_GetText("Default resolution: %d x %d (%d bits)\n"), cv_scr_width.value,
-			cv_scr_height.value, cv_scr_depth.value);
-		// see note above
-		setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
+		CONS_Printf(M_GetText("Default resolution: %d x %d\n"), cv_scr_width.value, cv_scr_height.value);
+		CONS_Printf(M_GetText("Windowed resolution: %d x %d\n"), cv_scr_width_w.value, cv_scr_height_w.value);
+		CONS_Printf(M_GetText("Default bit depth: %d bits\n"), cv_scr_depth.value);
+		if (cv_fullscreen.value)
+			setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1; // see note above
+		else
+			setmodeneeded = VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value) + 1; // see note above
+
+		if (setmodeneeded <= 0)
+			CONS_Alert(CONS_WARNING, "Invalid resolution given, defaulting to base resolution\n");
 	}
+
+	SCR_ActuallyChangeRenderer();
 }
 
 // sets the modenum as the new default video mode to be saved in the config file
 void SCR_SetDefaultMode(void)
 {
 	// remember the default screen size
-	CV_SetValue(&cv_scr_width, vid.width);
-	CV_SetValue(&cv_scr_height, vid.height);
-	CV_SetValue(&cv_scr_depth, vid.bpp*8);
+	CV_SetValue(cv_fullscreen.value ? &cv_scr_width : &cv_scr_width_w, vid.width);
+	CV_SetValue(cv_fullscreen.value ? &cv_scr_height : &cv_scr_height_w, vid.height);
 }
 
 // Change fullscreen on/off according to cv_fullscreen
@@ -332,10 +359,79 @@ void SCR_ChangeFullscreen(void)
 	if (graphics_started)
 	{
 		VID_PrepareModeList();
-		setmodeneeded = VID_GetModeForSize(vid.width, vid.height) + 1;
+		if (cv_fullscreen.value)
+			setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
+		else
+			setmodeneeded = VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value) + 1;
+
+		if (setmodeneeded <= 0) // hacky safeguard
+		{
+			CONS_Alert(CONS_WARNING, "Invalid resolution given, defaulting to base resolution.\n");
+			setmodeneeded = VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT) + 1;
+		}
 	}
 	return;
 #endif
+}
+
+static int target_renderer = 0;
+
+void SCR_ActuallyChangeRenderer(void)
+{
+	setrenderneeded = target_renderer;
+
+#ifdef HWRENDER
+	// Well, it didn't even load anyway.
+	if ((vid.glstate == VID_GL_LIBRARY_ERROR) && (setrenderneeded == render_opengl))
+	{
+		if (M_CheckParm("-nogl"))
+			CONS_Alert(CONS_ERROR, "OpenGL rendering was disabled!\n");
+		else
+			CONS_Alert(CONS_ERROR, "OpenGL never loaded\n");
+		setrenderneeded = 0;
+		return;
+	}
+#endif
+
+	// setting the same renderer twice WILL crash your game, so let's not, please
+	if (rendermode == setrenderneeded)
+		setrenderneeded = 0;
+}
+
+// Jimita
+void SCR_ChangeRenderer(void)
+{
+	setrenderneeded = 0;
+
+	if (con_startup)
+	{
+		target_renderer = cv_renderer.value;
+#ifdef HWRENDER
+		if (M_CheckParm("-opengl") && (vid.glstate == VID_GL_LIBRARY_LOADED))
+			target_renderer = rendermode = render_opengl;
+		else
+#endif
+		if (M_CheckParm("-software"))
+			target_renderer = rendermode = render_soft;
+		// set cv_renderer back
+		SCR_ChangeRendererCVars(rendermode);
+		return;
+	}
+
+	if (cv_renderer.value == 1)
+		target_renderer = render_soft;
+	else if (cv_renderer.value == 2)
+		target_renderer = render_opengl;
+	SCR_ActuallyChangeRenderer();
+}
+
+void SCR_ChangeRendererCVars(INT32 mode)
+{
+	// set cv_renderer back
+	if (mode == render_soft)
+		CV_StealthSetValue(&cv_renderer, 1);
+	else if (mode == render_opengl)
+		CV_StealthSetValue(&cv_renderer, 2);
 }
 
 boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
@@ -416,10 +512,13 @@ void SCR_DisplayTicRate(void)
 	UINT32 cap = R_GetFramerateCap();
 	double fps = round(averageFPS);
 	INT32 hstep = 0;
+	INT32 flags = V_NOSCALESTART|V_USERHUDTRANS;
 	tic_t i;
 	tic_t ontic = I_GetTime();
 	tic_t totaltics = 0;
-	INT32 width;
+	INT32 xadjust = (cv_fpssize.value == 2) ? 4 : 8;
+	void (*stringdrawfunc) (INT32 x, INT32 y, INT32 option, const char *string) = NULL;
+	INT32 (*stringwidthfunc)(const char *string, INT32 option) = NULL;
 
 	if (gamestate == GS_NULL)
 		return;
@@ -447,34 +546,28 @@ void SCR_DisplayTicRate(void)
 	if (totaltics <= TICRATE/2) ticcntcolor = V_REDMAP;
 	else if (totaltics == TICRATE) ticcntcolor = V_SKYMAP;
 
+	switch (cv_fpssize.value)
+	{
+		case 0: // Normal
+			stringdrawfunc = V_DrawString;
+			stringwidthfunc = V_StringWidth;
+		break;
+
+		case 1: // Thin
+			stringdrawfunc = V_DrawThinString;
+			stringwidthfunc = V_ThinStringWidth;
+		break;
+
+		case 2: // Small
+			stringdrawfunc = V_DrawSmallString;
+			stringwidthfunc = V_SmallStringWidth;
+		break;
+	}
+
 	if (cv_ticrate.value == 2) // compact counter
 	{
-		switch (cv_fpssize.value)
-		{
-			case 0:
-			{
-				width = vid.dupx*V_StringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawString(vid.width-width, h,
-					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
-				break;
-			}
-
-			case 1:
-			{
-				width = vid.dupx*V_ThinStringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawThinString(vid.width-width, h,
-					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
-				break;
-			}
-
-			case 2:
-			{
-				width = vid.dupx*V_SmallStringWidth(va("%04.2f", averageFPS), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawSmallString(vid.width-width, h,
-					fpscntcolor|V_NOSCALESTART, va("%04.2f", averageFPS)); // use averageFPS directly
-				break;
-			}
-		}
+		INT32 width = vid.dupx*stringwidthfunc(va("%04.2f", averageFPS), V_NOSCALESTART);
+		stringdrawfunc(vid.width-width, h, fpscntcolor|flags, va("%04.2f", averageFPS)); // use averageFPS directly
 
 		if (cv_fpssize.value == 2)
 			hstep = 4*vid.dupy;
@@ -484,6 +577,7 @@ void SCR_DisplayTicRate(void)
 	else if (cv_ticrate.value == 1) // full counter
 	{
 		const char *drawnstr;
+		INT32 width;
 
 		// The highest assignable cap is < 1000, so 3 characters is fine.
 		if (cap > 0)
@@ -491,38 +585,10 @@ void SCR_DisplayTicRate(void)
 		else
 			drawnstr = va("%4.2f", averageFPS);
 
-		switch (cv_fpssize.value)
-		{
-			case 0:
-			{
-				width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
-						V_YELLOWMAP|V_NOSCALESTART, "FPS:");
-				V_DrawString(vid.width - width, h,
-						fpscntcolor|V_NOSCALESTART, drawnstr);
-				break;
-			}
+		width = vid.dupx * stringwidthfunc(drawnstr, flags);
 
-			case 1:
-			{
-				width = vid.dupx*V_ThinStringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawThinString((vid.width - 92 * vid.dupx + V_ThinStringWidth("FPS: ", V_NOSCALESTART)), h,
-						V_YELLOWMAP|V_NOSCALESTART, "FPS:");
-				V_DrawThinString(vid.width - width, h,
-						fpscntcolor|V_NOSCALESTART, drawnstr);
-				break;
-			}
-
-			case 2:
-			{
-				width = vid.dupx*V_SmallStringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawSmallString((vid.width - 92 * vid.dupx + V_SmallStringWidth("FPS: ", V_NOSCALESTART)), h,
-						V_YELLOWMAP|V_NOSCALESTART, "FPS:");
-				V_DrawSmallString(vid.width - width, h,
-						fpscntcolor|V_NOSCALESTART, drawnstr);
-				break;
-			}
-		}
+		stringdrawfunc(vid.width - ((7 * xadjust * vid.dupx) + (vid.dupx*stringwidthfunc("FPS: ", flags))), h, V_YELLOWMAP|flags, "FPS:");
+		stringdrawfunc(vid.width - width, h, fpscntcolor|flags, drawnstr);
 
 		if (cv_fpssize.value == 2)
 			hstep = 4*vid.dupy;
@@ -532,71 +598,15 @@ void SCR_DisplayTicRate(void)
 
 	if (cv_tpscounter.value == 2) // compact counter
 	{
-		switch (cv_fpssize.value)
-		{
-			case 0:
-			{
-				width = vid.dupx*V_StringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
-				break;
-			}
-
-			case 1:
-			{
-				width = vid.dupx*V_ThinStringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawThinString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
-				break;
-			}
-
-			case 2:
-			{
-				width = vid.dupx*V_SmallStringWidth(va("%02d", totaltics), V_NOSCALESTART); //this used to be a monstrosity
-				V_DrawSmallString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, va("%02d", totaltics));
-				break;
-			}
-		}
+		INT32 width = vid.dupx*stringwidthfunc(va("%d", totaltics), flags);
+		stringdrawfunc(vid.width-width, h-hstep, ticcntcolor|flags, va("%d", totaltics));
 	}
 	else if (cv_tpscounter.value == 1) // full counter
 	{
 		const char *drawnstr = va("%02d/%02d", totaltics, TICRATE);
-
-		// The highest assignable cap is < 1000, so 3 characters is fine.
-
-		switch (cv_fpssize.value)
-		{
-			case 0:
-			{
-				width = vid.dupx*V_StringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawString((vid.width - 92 * vid.dupx + V_StringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART, "TPS:");
-				V_DrawString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, drawnstr);
-				break;
-			}
-
-			case 1:
-			{
-				width = vid.dupx*V_ThinStringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawThinString((vid.width - 92 * vid.dupx + V_ThinStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART, "TPS:");
-				V_DrawThinString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, drawnstr);
-				break;
-			}
-
-			case 2:
-			{
-				width = vid.dupx*V_SmallStringWidth(drawnstr, V_NOSCALESTART); //same here
-				V_DrawSmallString((vid.width - 92 * vid.dupx + V_SmallStringWidth("TPS: ", V_NOSCALESTART)), h-hstep,
-					V_YELLOWMAP|V_NOSCALESTART, "TPS:");
-				V_DrawSmallString(vid.width-width, h-hstep,
-					ticcntcolor|V_NOSCALESTART, drawnstr);
-				break;
-			}
-		}
+		INT32 width = vid.dupx*stringwidthfunc(drawnstr, flags);
+		stringdrawfunc((vid.width - ((7 * xadjust * vid.dupx) + (vid.dupx*stringwidthfunc("TPS: ", flags)))), h-hstep, V_YELLOWMAP|flags, "TPS: ");
+		stringdrawfunc(vid.width - width, h-hstep, ticcntcolor|flags, drawnstr);
 	}
 	lasttic = ontic;
 }
@@ -609,7 +619,7 @@ void SCR_DisplayLocalPing(void)
 
 	if (cv_showping.value == 1 || shitping)	// only show 2 (warning) if our ping is at a bad level
 	{
-		INT32 dispy = 189;
+		INT32 dispy = 187;
 		INT32 transflag = shitping ? V_10TRANS*(leveltime/2) : 0;
 
 		if(cv_tpscounter.value && cv_ticrate.value)
