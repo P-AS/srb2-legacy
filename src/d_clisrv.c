@@ -170,6 +170,7 @@ typedef struct textcmdtic_s
 
 ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 static textcmdtic_t *textcmds[TEXTCMD_HASH_SIZE] = {NULL};
+static ticcmd_t playercmds[MAXPLAYERS];
 
 
 static consvar_t cv_showjoinaddress = CVAR_INIT ("showjoinaddress", "On", NULL, 0, CV_OnOff, NULL);
@@ -2601,6 +2602,8 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 
 	if (pnum == consoleplayer)
 	{
+		if (Playing())
+			LUAh_GameQuit();
 #ifdef DUMPCONSISTENCY
 		if (msg == KICK_MSG_CON_FAIL) SV_SavedGame();
 #endif
@@ -2705,9 +2708,7 @@ void D_ClientServerInit(void)
 	CV_RegisterVar(&cv_allownewplayer);
 	CV_RegisterVar(&cv_joinnextround);
 	CV_RegisterVar(&cv_showjoinaddress);
-	CV_RegisterVar(&cv_allowgamestateresend);
 	CV_RegisterVar(&cv_blamecfail);
-	CV_RegisterVar(&cv_dedicatedidletime);
 #ifdef DUMPCONSISTENCY
 	CV_RegisterVar(&cv_dumpconsistency);
 #endif
@@ -3236,6 +3237,8 @@ static void HandleConnect(SINT8 node)
 static void HandleShutdown(SINT8 node)
 {
 	(void)node;
+	if (Playing())
+		LUAh_GameQuit();
 	D_QuitNetGame();
 	CL_Reset();
 	D_StartTitle();
@@ -3250,6 +3253,8 @@ static void HandleShutdown(SINT8 node)
 static void HandleTimeout(SINT8 node)
 {
 	(void)node;
+	if (Playing())
+		LUAh_GameQuit();
 	D_QuitNetGame();
 	CL_Reset();
 	D_StartTitle();
@@ -3586,18 +3591,13 @@ FILESTAMP
 				|| netbuffer->packettype == PT_NODEKEEPALIVEMIS)
 				break;
 
-			// If we've alredy received a ticcmd for this tic, just submit it for the next one.
-			tic_t faketic = maketic;
-			if ((!!(netcmds[maketic % BACKUPTICS][netconsole].angleturn & TICCMD_RECEIVED))
-				&& (maketic - firstticstosend < BACKUPTICS - 1))
-				faketic++;
-
 			// Copy ticcmd
-			G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][netconsole], &netbuffer->u.clientpak.cmd, 1);
+			// store it in an internal buffer so the last packet takes precedence, which minimizes input lag
+			G_MoveTiccmd(&playercmds[netconsole], &netbuffer->u.clientpak.cmd, 1);
 
 			// Check ticcmd for "speed hacks"
-			if (netcmds[faketic%BACKUPTICS][netconsole].forwardmove > MAXPLMOVE || netcmds[faketic%BACKUPTICS][netconsole].forwardmove < -MAXPLMOVE
-				|| netcmds[faketic%BACKUPTICS][netconsole].sidemove > MAXPLMOVE || netcmds[faketic%BACKUPTICS][netconsole].sidemove < -MAXPLMOVE)
+			if (netcmds[maketic%BACKUPTICS][netconsole].forwardmove > MAXPLMOVE || netcmds[maketic%BACKUPTICS][netconsole].forwardmove < -MAXPLMOVE
+				|| netcmds[maketic%BACKUPTICS][netconsole].sidemove > MAXPLMOVE || netcmds[maketic%BACKUPTICS][netconsole].sidemove < -MAXPLMOVE)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), netconsole);
 				//D_Clearticcmd(k);
@@ -3609,8 +3609,7 @@ FILESTAMP
 			// Splitscreen cmd
 			if ((netbuffer->packettype == PT_CLIENT2CMD || netbuffer->packettype == PT_CLIENT2MIS)
 				&& nodetoplayer2[node] >= 0)
-				G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][(UINT8)nodetoplayer2[node]],
-					&netbuffer->u.client2pak.cmd2, 1);
+			G_MoveTiccmd(&playercmds[nodetoplayer2[node]], &netbuffer->u.client2pak.cmd2, 1);
 
 
 			// Check player consistancy during the level
@@ -4352,33 +4351,7 @@ void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
 // create missed tic
 static void SV_Maketic(void)
 {
-	INT32 j;
-
-	for (j = 0; j < MAXNETNODES; j++)
-	{
-		packetloss[(j < MAXPLAYERS) ? j : MAXPLAYERS-1][maketic%PACKETMEASUREWINDOW] = false; // Hack that I don't even know if it works
-		if (playerpernode[j])
-		{
-			INT32 player = nodetoplayer[j];
-			if ((netcmds[maketic%BACKUPTICS][player].angleturn & TICCMD_RECEIVED) == 0)
-			{ // we didn't receive this tic
-				INT32 i;
-
-				DEBFILE(va("MISS tic%4d for node %d\n", maketic, j));
-#if defined(PARANOIA) && 0
-				CONS_Debug(DBG_NETPLAY, "Client Misstic %d\n", maketic);
-#endif
-				// copy the old tic
-				for (i = 0; i < playerpernode[j]; i++, player = nodetoplayer2[j])
-				{
-					netcmds[maketic%BACKUPTICS][player] = netcmds[(maketic-1)%BACKUPTICS][player];
-					netcmds[maketic%BACKUPTICS][player].angleturn &= ~TICCMD_RECEIVED;
-				}
-				packetloss[(j < MAXPLAYERS) ? j : MAXPLAYERS-1][maketic%PACKETMEASUREWINDOW] = true;
-			}
-		}
-	}
-
+	G_MoveTiccmd(netcmds[maketic % BACKUPTICS], playercmds, MAXPLAYERS);
 	// all tic are now proceed make the next
 	maketic++;
 }

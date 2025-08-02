@@ -7276,7 +7276,11 @@ void P_MobjThinker(mobj_t *mobj)
 							i = P_RandomKey(numchoices); // Gotta love those random numbers!
 							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, spawnchance[i]);
 
-						// Transfer flags2 (strongbox, objectflip, ambush)
+						// If the monitor respawns randomly, transfer the flag.
+						if (mobj->flags & MF_AMBUSH)
+							newmobj->flags |= MF_AMBUSH;
+
+						// Transfer flags2 (strongbox, objectflip)
 						newmobj->flags2 = mobj->flags2;
 					}
 					else
@@ -9337,7 +9341,7 @@ ML_NOCLIMB : Direction not controllable
 				mthing->type != mobjinfo[MT_AXISTRANSFERLINE].doomednum &&
 				mthing->type != mobjinfo[MT_NIGHTSBUMPER].doomednum &&
 				mthing->type != mobjinfo[MT_STARPOST].doomednum)
-				mobj->flags2 |= MF_AMBUSH;
+				mobj->flags |= MF_AMBUSH;
 		}
 
 		if (mthing->options & MTF_OBJECTSPECIAL)

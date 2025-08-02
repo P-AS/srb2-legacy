@@ -74,6 +74,7 @@
 #include "../console.h"
 #include "../command.h"
 #include "../r_main.h"
+#include "../lua_hook.h"
 #include "sdlmain.h"
 #ifdef HWRENDER
 #include "../hardware/hw_main.h"
@@ -1070,8 +1071,9 @@ void I_GetEvent(void)
 					M_SetupJoystickMenu(0);
 			 	break;
 			case SDL_QUIT:
+				if (Playing())
+					LUAh_GameQuit();
 				I_Quit();
-				M_QuitResponse('y');
 				break;
 		}
 	}
@@ -1255,7 +1257,7 @@ void I_FinishUpdate(void)
 		HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_PALETTE_POSTPROCESS));
 		HWD.pfnDrawScreenTexture(HWD_SCREENTEXTURE_GENERIC2, NULL, 0);
 		HWD.pfnUnSetShader();
-	}		
+	}
 		OglSdlFinishUpdate(cv_vidwait.value);
 	}
 #endif
@@ -1467,7 +1469,7 @@ static UINT32 VID_GetRefreshRate(void)
 
 	if (SDL_GetCurrentDisplayMode(index, &m) != 0)
 	{
-		// Error has occurred. 
+		// Error has occurred.
 		return 0;
 	}
 
@@ -1646,7 +1648,7 @@ INT32 VID_SetMode(INT32 modeNum)
 	src_rect.h = vid.height;
 
 	refresh_rate = VID_GetRefreshRate();
-	
+
 	VID_CheckRenderer();
 	return SDL_TRUE;
 }
@@ -1812,7 +1814,7 @@ void I_StartupGraphics(void)
 	borderlesswindow = M_CheckParm("-borderless");
 
 	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY>>1,SDL_DEFAULT_REPEAT_INTERVAL<<2);
-	VID_Command_ModeList_f();
+	//VID_Command_ModeList_f();
 #ifdef HWRENDER
 	if (M_CheckParm("-nogl"))
 		vid.glstate = VID_GL_LIBRARY_ERROR; // Don't startup OpenGL
@@ -1865,7 +1867,7 @@ void I_StartupGraphics(void)
 	realwidth = (Uint16)vid.width;
 	realheight = (Uint16)vid.height;
 
-	VID_Command_Info_f();
+	//VID_Command_Info_f();
 	SDLdoUngrabMouse();
 
 	SDL_RaiseWindow(window);

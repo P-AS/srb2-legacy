@@ -29,6 +29,8 @@ set(SRB2_CONFIG_DEBUGMODE OFF CACHE BOOL
 	"Build a version with additional debug information.")
 set(SRB2_CONFIG_EXECINFO ON CACHE BOOL
 	"Enable stack trace dump support.")
+set(SRB2_CONFIG_LTO ON CACHE BOOL
+	"Enable link time optimizations, improves performance at the cost of longer link times.")
 
 if(${SRB2_CONFIG_DEDICATED})
 	set(SRB2_CONFIG_HAVE_GME NO)
@@ -177,6 +179,10 @@ if(${SRB2_CONFIG_EXECINFO} AND NOT ${CMAKE_SYSTEM} MATCHES Emscripten)
 else()
 	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
 	message(STATUS "You have disabled stack trace dump support")
+endif()
+
+if(SRB2_CONFIG_LTO AND NOT SRB2_CONFIG_DEBUGMODE)
+	set_property(TARGET SRB2SDL2 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 # Targets

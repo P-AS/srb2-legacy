@@ -593,6 +593,8 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_maxsend);
 	CV_RegisterVar(&cv_noticedownload);
 	CV_RegisterVar(&cv_downloadspeed);
+	CV_RegisterVar(&cv_dedicatedidletime);
+	CV_RegisterVar(&cv_allowgamestateresend);
 
 	COM_AddCommand("ping", NULL, Command_Ping_f);
 	CV_RegisterVar(&cv_nettimeout);
@@ -761,6 +763,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_alwaysfreelook2);
 	CV_RegisterVar(&cv_chasefreelook);
 	CV_RegisterVar(&cv_chasefreelook2);
+	CV_RegisterVar(&cv_showfocuslost);
 
 	// g_input.c
 	CV_RegisterVar(&cv_sideaxis);
@@ -835,6 +838,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_depth);
 	CV_RegisterVar(&cv_scr_width);
 	CV_RegisterVar(&cv_scr_height);
+	CV_RegisterVar(&cv_scr_width_w);
+	CV_RegisterVar(&cv_scr_height_w);
 
 	CV_RegisterVar(&cv_soundtest);
 
@@ -1416,7 +1421,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	if (server && (p != &players[consoleplayer] && p != &players[secondarydisplayplayer]))
 	{
 		boolean kick = false;
-		
+
 		// don't allow inaccessible colors
 		if (skincolors[p->skincolor].accessible == false)
 			kick = true;
@@ -3321,6 +3326,9 @@ static void Command_ListWADS_f(void)
   */
 static void Command_Version_f(void)
 {
+
+const char *platform = I_GetPlatform();
+
 #ifdef DEVELOP
 	CONS_Printf("Sonic Robo Blast 2 Legacy %s-%s (%s %s) ", NULL, Compbranch, comprevision, compdate, comptime);
 #else
@@ -3335,18 +3343,7 @@ static void Command_Version_f(void)
 #endif
 
 	// OS
-	// Would be nice to use SDL_GetPlatform for this
-#if defined (_WIN32) || defined (_WIN64)
-	CONS_Printf("Windows ");
-#elif defined(__linux__)
-	CONS_Printf("Linux ");
-#elif defined(MACOSX)
-	CONS_Printf("macOS ");
-#elif defined(UNIXCOMMON)
-	CONS_Printf("Unix (Common) ");
-#else
-	CONS_Printf("Other OS ");
-#endif
+	CONS_Printf("%s ", platform);
 
 	// Bitness
 	if (sizeof(void*) == 4)
@@ -3415,6 +3412,8 @@ static void Command_Playintro_f(void)
   */
 FUNCNORETURN static ATTRNORETURN void Command_Quit_f(void)
 {
+	if (Playing())
+		LUAh_GameQuit();
 	I_Quit();
 }
 
@@ -3942,6 +3941,9 @@ static void Command_Displayplayer_f(void)
 void Command_ExitGame_f(void)
 {
 	INT32 i;
+
+	if (Playing())
+		LUAh_GameQuit();
 
 	D_QuitNetGame();
 	CL_Reset();

@@ -998,6 +998,11 @@ void I_CursedWindowMovement (int xd, int yd)
 	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
 }
 
+const char *I_GetPlatform(void)
+{
+	return SDL_GetPlatform();
+}
+
 //
 // I_JoyScale
 //
@@ -2210,7 +2215,6 @@ ticcmd_t *I_BaseTiccmd2(void)
 	return &emptycmd2;
 }
 
-
 static Uint64 timer_frequency;
 
 precise_t I_GetPreciseTime(void)
@@ -2218,14 +2222,10 @@ precise_t I_GetPreciseTime(void)
 	return SDL_GetPerformanceCounter();
 }
 
-
-
 UINT64 I_GetPrecisePrecision(void)
 {
 	return SDL_GetPerformanceFrequency();
 }
-
-
 
 static UINT32 frame_rate;
 
@@ -2295,7 +2295,6 @@ void I_Sleep(UINT32 ms)
 #endif
 	SDL_Delay(ms);
 }
-
 
 void I_SleepDuration(precise_t duration)
 {

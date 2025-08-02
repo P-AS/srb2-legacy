@@ -24,6 +24,8 @@
 #include "i_video.h"
 #include "lua_hook.h"
 
+#include "qs22k.h" // qsort
+
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
 #endif

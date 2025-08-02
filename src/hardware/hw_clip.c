@@ -316,9 +316,9 @@ void gld_clipper_Clear(void)
 
 angle_t gld_FrustumAngle(angle_t tiltangle)
 {
+	angle_t a1;
 	double clipfov;
 	double floatangle;
-	angle_t a1;
 
 	float tilt = (float)fabs(((double)(int)tiltangle) / ANG1);
 
@@ -338,6 +338,7 @@ angle_t gld_FrustumAngle(angle_t tiltangle)
 	if (floatangle >= 180.0)
 		return 0xffffffff;
 	a1 = (angle_t)(ANG1 * (int)floatangle);
+
 	return a1;
 }
 

@@ -2776,8 +2776,6 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 	pglGetFloatv(GL_MODELVIEW_MATRIX, modelMatrix); // added for new coronas' code (without depth buffer)
 }
 
-
-
 EXPORT INT32  HWRAPI(GetTextureUsed) (void)
 {
 	FTextureInfo*   tmp = gl_cachehead;
@@ -2790,8 +2788,6 @@ EXPORT INT32  HWRAPI(GetTextureUsed) (void)
 	}
 	return res;
 }
-
-
 
 EXPORT void HWRAPI(PostImgRedraw) (float points[SCREENVERTS][SCREENVERTS][2])
 {
