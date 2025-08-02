@@ -268,7 +268,7 @@ endif()
 add_link_options("SHELL: -lidbfs.js")
 add_link_options("SHELL: -s EXPORTED_RUNTIME_METHODS=ccall,cwrap")
 add_link_options(
-  "SHELL: -s EXPORTED_FUNCTIONS=_main,_Command_ListWADS_f,_COM_ExecuteString,_P_AddWadFile"
+  "SHELL: -s EXPORTED_FUNCTIONS=_main,_main_program,_Command_ListWADS_f,_COM_ExecuteString,_P_AddWadFile"
 )
 add_link_options("SHELL: -s ASYNCIFY")
 add_link_options("SHELL: -sUSE_SDL=2")
@@ -292,7 +292,7 @@ target_link_options(
   -sUSE_LIBPNG
   -lidbfs.js
   -sEXPORTED_RUNTIME_METHODS=ccall,cwrap
-  -sEXPORTED_FUNCTIONS=_main,_P_AddWadFile
+  -sEXPORTED_FUNCTIONS=_main,_main_program,_P_AddWadFile
   -sASYNCIFY 
   -sALLOW_MEMORY_GROWTH=1
   -sINITIAL_MEMORY=983040000

@@ -169,6 +169,10 @@ static void InitLogging(void)
 #pragma GCC diagnostic ignored "-Wmissing-noreturn"
 #endif
 
+#if defined(__EMSCRIPTEN__)
+int main_program(void)
+{ 
+#else
 #ifdef FORCESDLMAIN
 int SDL_main(int argc, char **argv)
 #else
@@ -177,6 +181,7 @@ int main(int argc, char **argv)
 {
 	myargc = argc;
 	myargv = argv; /// \todo pull out path to exe from this string
+#endif
 
 	// disable text input right off the bat, since we don't need it at the start.
 	I_SetTextInputMode(false);
@@ -234,4 +239,16 @@ int main(int argc, char **argv)
 	// return to OS
 	return 0;
 }
+
+#if defined (__EMSCRIPTEN__) 
+int main(int argc, char **argv)
+{
+    myargc = argc;
+	myargv = argv;
+
+    I_MountIDBFS(); // Mount IndexedDB filesystem on entry
+
+	return 0;
+}
+#endif
 #endif

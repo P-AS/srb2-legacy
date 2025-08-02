@@ -310,5 +310,13 @@ void I_CursedWindowMovement(int xd, int yd);
 */
 const char *I_GetPlatform(void);
 
+/** \brief Mount IndexedDB filesystem for WASM, does nothing elsewhere
+*/
+void I_MountIDBFS(void);
+
+/** \brief Sync IndexedDB filesystem for WASM, does nothing elsewhere
+*/
+void I_SyncIDBFS(void);
+
 
 #endif
