@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3.0.1
         with:
           # Upload not entire repository
-          path: "./bin"
+          path: "build/bin/"
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4.0.5
