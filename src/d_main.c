@@ -659,7 +659,7 @@ void D_SRB2Loop(void)
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(W_GetNumForName("CONSBACK"), PU_CACHE));
 
 #if defined(__EMSCRIPTEN__)
-	emscripten_set_main_loop(D_RunFrame, 0, 0);
+	emscripten_set_main_loop(D_RunFrame, 0, 1);
 #else
 	for (;;)
 	{
