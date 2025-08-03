@@ -1218,10 +1218,6 @@ static menuitem_t OP_ColorOptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",    NULL,       &cv_mhue,        140},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,   &cv_msaturation, 145},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", NULL,   &cv_mgamma,      150},
-
-#ifdef HWRENDER
-	{IT_STRING | IT_CALL, NULL,   "OpenGL Options...", NULL,    M_OpenGLOptionsMenu,    160},
-#endif
 };
 
 static void M_VideoOptions(INT32 choice)
