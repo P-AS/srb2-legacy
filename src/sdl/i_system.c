@@ -2287,18 +2287,12 @@ void I_StartupTimer(void)
 
 void I_Sleep(UINT32 ms)
 {
-#if defined (__EMSCRIPTEN__)
-	if (emscripten_has_asyncify())
-	{
-		return emscripten_sleep(ms);
-	}
-#endif
 	SDL_Delay(ms);
 }
 
 void I_SleepDuration(precise_t duration)
 {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__EMSCRIPTEN__)
 	UINT64 precision = I_GetPrecisePrecision();
 	precise_t dest = I_GetPreciseTime() + duration;
 	precise_t slack = (precision / 5000); // 0.2 ms slack
