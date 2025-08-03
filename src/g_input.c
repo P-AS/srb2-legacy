@@ -1223,7 +1223,8 @@ void G_Controldefault(void)
 	gamecontrol[gc_screenshot ][1] = KEY_HAT1+1; // D-Pad Down
 	gamecontrol[gc_recordgif  ][0] = KEY_F9;
 	gamecontrol[gc_viewpoint  ][0] = KEY_F12;
-	gamecontrol[gc_systemmenu ][0] = KEY_JOY1+7; // Start
+	gamecontrol[gc_systemmenu ][0] = 'm';
+	gamecontrol[gc_systemmenu ][1] = KEY_JOY1+7; // Start
 	gamecontrolbis[gc_weaponnext][0] = KEY_2JOY1+1; // B
 	gamecontrolbis[gc_weaponprev][0] = KEY_2JOY1+2; // X
 	gamecontrolbis[gc_tossflag  ][0] = KEY_2JOY1+0; // A
