@@ -222,6 +222,11 @@ else()
 	add_subdirectory(sdl)
 endif()
 
+if(${CMAKE_SYSTEM} MATCHES Emscripten)
+	add_subdirectory(web)
+endif()
+
+
 if(${CMAKE_SYSTEM} MATCHES Windows)
 	add_subdirectory(win32)
 endif()

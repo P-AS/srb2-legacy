@@ -1,0 +1,82 @@
+module Status exposing (..)
+
+import Parser exposing ((|.), (|=), Parser, end, int, keyword, map, number, oneOf, run, spaces, succeed, symbol)
+
+
+type alias ByteCount =
+    Int
+
+
+type alias DownloadStatus =
+    { downloaded : ByteCount
+    , total : ByteCount
+    }
+
+
+type Status
+    = Downloading DownloadStatus
+    | Running
+    | Error
+    | NotStarted
+    | Starting
+    | Nothing
+
+
+downloadingData : Parser Status
+downloadingData =
+    succeed DownloadStatus
+        |. keyword "Downloading"
+        |. spaces
+        |. keyword "data"
+        |. symbol "..."
+        |. spaces
+        |. symbol "("
+        |= int
+        |. symbol "/"
+        |= int
+        |. symbol ")"
+        |. end
+        |> map Downloading
+
+
+running : Parser Status
+running =
+    succeed Running
+        |. keyword "Running"
+        |. symbol "..."
+
+
+parse : String -> Result (List Parser.DeadEnd) Status
+parse =
+    run <| oneOf [ downloadingData, running, map (\_ -> Nothing) spaces ]
+
+
+byteCountToMB : ByteCount -> String
+byteCountToMB count =
+    (count
+        // 1000000
+        |> String.fromInt
+    )
+        ++ "MB"
+
+
+toString : Status -> String
+toString status =
+    case status of
+        Downloading { downloaded, total } ->
+            "Downloading (" ++ (downloaded |> byteCountToMB) ++ "/" ++ (total |> byteCountToMB) ++ ")"
+
+        Running ->
+            "Running..."
+
+        Error ->
+            ""
+
+        NotStarted ->
+            "Not Started"
+
+        Starting ->
+            "Starting..."
+
+        Nothing ->
+            ""
