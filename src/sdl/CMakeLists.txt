@@ -75,7 +75,7 @@ if(${SDL2_FOUND})
 	endif()
 
 	if(${CMAKE_SYSTEM} MATCHES Emscripten)
-		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME "SRB2SDL2" SUFFIX ".html")
+		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacy SUFFIX ".html")
 	endif()
 
 	if(${CMAKE_SYSTEM} MATCHES Darwin)
@@ -279,6 +279,7 @@ add_link_options("SHELL: -s INITIAL_MEMORY=655360000")
 add_link_options("SHELL: -s STACK_SIZE=65536000")
 add_link_options("--preload-file=${PROJECT_SOURCE_DIR}/assets/installer@/")
 add_link_options("SHELL: --use-preload-plugins")
+add_link_options("SHELL: --shell-file ${CMAKE_SOURCE_DIR}/sdl/emscripten/srb2legacy.html")
 
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MIXER -DSOUND=SOUND_MIXER)
 target_compile_definitions(
@@ -300,6 +301,7 @@ target_link_options(
   --preload-file=${PROJECT_SOURCE_DIR}/assets/installer@/
   --use-preload-plugins 
   --use-preload-cache
+  --shell-file ${PROJECT_SOURCE_DIR}/src/sdl/emscripten/srb2legacy.html
   )
 target_compile_options(SRB2SDL2 PRIVATE -sUSE_SDL=2 -sUSE_SDL_MIXER=2
                                         -sUSE_ZLIB -sUSE_LIBPNG)
