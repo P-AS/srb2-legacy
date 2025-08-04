@@ -38,6 +38,11 @@ if(${SRB2_CONFIG_DEDICATED})
 	set(SRB2_CONFIG_HWRENDER NO)
 endif()
 
+if(${CMAKE_SYSTEM} MATCHES Emscripten)
+	set(SRB2_CONFIG_HWRENDER OFF)
+endif()
+
+
 ### use internal libraries?
 if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
 	set(SRB2_CONFIG_USE_INTERNAL_LIBRARIES OFF CACHE BOOL
