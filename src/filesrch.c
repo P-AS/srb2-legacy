@@ -533,7 +533,7 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 
 		// okay, now we actually want searchpath to incorporate d_name
 		strcpy(&searchpath[searchpathindex[depthleft]],dent->d_name);
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 		if (dent->d_type == DT_UNKNOWN)
 			if (lstat(searchpath,&fsstat) == 0 && S_ISDIR(fsstat.st_mode))
 				dent->d_type = DT_DIR;
