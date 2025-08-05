@@ -341,6 +341,7 @@ void R_AddMobjInterpolator(mobj_t *mobj)
 	interpolated_mobjs_len += 1;
 
 	R_ResetMobjInterpolationState(mobj);
+	mobj->resetinterp = true;
 }
 
 void R_RemoveMobjInterpolator(mobj_t *mobj)
