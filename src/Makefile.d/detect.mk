@@ -17,6 +17,7 @@ all_systems:=\
 	UNIX\
 	LINUX\
 	FREEBSD\
+	OPENBSD\
 	SDL\
 
 # check for user specified system

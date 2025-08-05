@@ -31,6 +31,7 @@
 # MINGW=1, MINGW64=1 - Windows (MinGW toolchain)
 # UNIX=1 - Generic Unix like system
 # FREEBSD=1
+# OPENBSD=1
 # SDL=1 - Use SDL backend. SDL is the only backend though
 #         and thus, always enabled.
 #

@@ -35,6 +35,9 @@ endif
 else ifdef FREEBSD
 UNIX=1
 platform=freebsd
+else ifdef OPENBSD
+UNIX=1
+platform=openbsd
 else ifdef SOLARIS # FIXME: UNTESTED
 UNIX=1
 platform=solaris
