@@ -99,7 +99,7 @@ consvar_t cv_glshaders = CVAR_INIT ("gr_shaders", "On", "Enable additional visua
 consvar_t cv_glallowshaders = CVAR_INIT ("gr_allowshaders", "On", "Allow clients to use custom shaders", CV_NETVAR, CV_OnOff, NULL);
 
 consvar_t cv_glfakecontrast = CVAR_INIT ("gr_fakecontrast", "Smooth", "Make walls darker based on their orientation, to contrast them from floors", CV_SAVE, grfakecontrast_cons_t, NULL);
-consvar_t cv_glslopecontrast = CVAR_INIT ("gr_slopecontrast", "Off", "Make slopes darker based on their orientation, to contast them from normal floors", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_glslopecontrast = CVAR_INIT ("gr_slopecontrast", "Off", "Make slopes darker based on their orientation, to contrast them from normal floors", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t grmodelinterpolation_cons_t[] = {{0, "Off"}, {1, "Sometimes"}, {2, "Always"}, {0, NULL}};
 

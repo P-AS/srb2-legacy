@@ -396,10 +396,10 @@ consvar_t cv_chasefreelook = CVAR_INIT ("chasemlook", "Off", "Allow using mousel
 consvar_t cv_chasefreelook2 = CVAR_INIT ("chasemlook2", "Off", "Allow using mouselook in third person", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_mousemove = CVAR_INIT ("mousemove", "Off", "Use the mouse to move the player", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_mousemove2 = CVAR_INIT ("mousemove2", "Off", "Use the mouse to move the player", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_analog = CVAR_INIT ("analog", "Off", "Whether or not to use analog mode", CV_CALL, CV_OnOff, Analog_OnChange);
-consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", "Whether or not to use analog mode", CV_CALL, CV_OnOff, Analog2_OnChange);
-consvar_t cv_useranalog = CVAR_INIT ("useranalog", "Off", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
-consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "Off", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
+consvar_t cv_analog = CVAR_INIT ("analog", "Off", NULL, CV_CALL, CV_OnOff, Analog_OnChange);
+consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", NULL, CV_CALL, CV_OnOff, Analog2_OnChange);
+consvar_t cv_useranalog = CVAR_INIT ("useranalog", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
+consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
 
 typedef enum
 {
@@ -2018,7 +2018,7 @@ void G_Ticker(boolean run)
 		case GS_TITLESCREEN:
 			F_TitleScreenTicker(run);
 			break;
-			
+
 		case GS_WAITINGPLAYERS:
 			if (netgame)
 				F_WaitingPlayersTicker();

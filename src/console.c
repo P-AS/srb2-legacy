@@ -122,7 +122,7 @@ static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", "Number of line
 // number of lines console move per frame
 // (con_speed needs a limit, apparently)
 static CV_PossibleValue_t speed_cons_t[] = {{0, "MIN"}, {64, "MAX"}, {0, NULL}};
-static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", "How hfast the console moves up and down, 0 is instant",  CV_SAVE, speed_cons_t, NULL);
+static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", "How fast the console moves up and down, 0 is instant",  CV_SAVE, speed_cons_t, NULL);
 
 // percentage of screen height to use for console
 static consvar_t cons_height = CVAR_INIT ("con_height", "50", "Percentage of screen height used for console",  CV_SAVE, CV_Unsigned, NULL);
@@ -586,11 +586,11 @@ static void CON_MoveConsole(void)
 		con_curlines -= FixedInt(fracmovement);
 		if (con_curlines < con_destlines)
 			con_curlines = con_destlines;
-		
+
 		if (con_destlines == 0) // If the console is being closed, not just moved up...
 			con_tick = 0; // ...don't show the blinking cursor
 	}
-	
+
 	fracmovement %= FRACUNIT; // Reset fracmovement's integer value, but keep the fraction
 }
 
@@ -1279,7 +1279,7 @@ void CONS_Printf(const char *fmt, ...)
 	if (con_started)
 		CON_Print(txt);
 
-	CON_LogMessage(txt);	
+	CON_LogMessage(txt);
 
 	// make sure new text is visible
 	con_scrollup = 0;
@@ -1602,13 +1602,13 @@ void CON_Drawer(void)
 	if (!con_started || !graphics_started)
 		return;
 
-	
+
 	if (needpatchrecache)
 	{
 		W_FlushCachedPatches();
 		HU_LoadGraphics();
 	}
-		
+
 
 	if (con_recalc)
 	{
@@ -1616,7 +1616,7 @@ void CON_Drawer(void)
 		if (con_curlines <= 0)
 			CON_ClearHUD();
 	}
-	
+
 		// console movement
 	if (con_curlines != con_destlines)
 		CON_MoveConsole();
@@ -1626,4 +1626,3 @@ void CON_Drawer(void)
 	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS)
 		CON_DrawHudlines();
 }
-

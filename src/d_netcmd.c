@@ -481,7 +481,7 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("mapmd5", NULL, Command_Mapmd5_f);
 
 	COM_AddCommand("addfile", "Add a file", Command_Addfile);
-	COM_AddCommand("listwad", "List currentlu added files, including those required by the game", Command_ListWADS_f);
+	COM_AddCommand("listwad", "List currently added files, including those required by the game", Command_ListWADS_f);
 	COM_AddCommand("runsoc", NULL, Command_RunSOC);
 	COM_AddCommand("pause", NULL, Command_Pause);
 	COM_AddCommand("suicide", NULL, Command_Suicide);
