@@ -282,41 +282,40 @@ consvar_t cv_mouse2opt = CVAR_INIT ("mouse2opt", "0", NULL, CV_SAVE, NULL, NULL)
 consvar_t cv_mouse2port = CVAR_INIT ("mouse2port", "COM2", NULL, CV_SAVE, mouse2port_cons_t, NULL);
 #endif
 
-consvar_t cv_matchboxes = CVAR_INIT ("matchboxes", "Normal", NULL, CV_SAVE|CV_NETVAR|CV_CHEAT, matchboxes_cons_t, NULL);
-consvar_t cv_specialrings = CVAR_INIT ("specialrings", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_powerstones = CVAR_INIT ("powerstones", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_matchboxes = CVAR_INIT ("matchboxes", "Normal", "What type of monitors to spawn in Ringslinger gametypes", CV_SAVE|CV_NETVAR|CV_CHEAT, matchboxes_cons_t, NULL);
+consvar_t cv_specialrings = CVAR_INIT ("specialrings", "On", "If off, only standard rings are allowed to spawn in Ringslinger", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_powerstones = CVAR_INIT ("powerstones", "On", "If enabled, emeralds will spawn in Ringslinger", CV_NETVAR, CV_OnOff, NULL);
 
-consvar_t cv_recycler =      CVAR_INIT ("tv_recycler",      "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_teleporters =   CVAR_INIT("tv_teleporter",    "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_superring =     CVAR_INIT("tv_superring",     "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_supersneakers = CVAR_INIT ("tv_supersneaker",  "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_invincibility = CVAR_INIT ("tv_invincibility", "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_jumpshield =    CVAR_INIT("tv_jumpshield",    "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_watershield =   CVAR_INIT("tv_watershield",   "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_ringshield =    CVAR_INIT("tv_ringshield",    "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_forceshield =   CVAR_INIT("tv_forceshield",   "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_bombshield =    CVAR_INIT("tv_bombshield",    "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_1up =           CVAR_INIT("tv_1up",           "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_eggmanbox =     CVAR_INIT("tv_eggman",        "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_recycler =      CVAR_INIT ("tv_recycler",      "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_teleporters =   CVAR_INIT("tv_teleporter",    "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_superring =     CVAR_INIT("tv_superring",     "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_supersneakers = CVAR_INIT ("tv_supersneaker",  "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_invincibility = CVAR_INIT ("tv_invincibility", "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_jumpshield =    CVAR_INIT("tv_jumpshield",    "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_watershield =   CVAR_INIT("tv_watershield",   "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_ringshield =    CVAR_INIT("tv_ringshield",    "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_forceshield =   CVAR_INIT("tv_forceshield",   "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_bombshield =    CVAR_INIT("tv_bombshield",    "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_1up =           CVAR_INIT("tv_1up",           "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_eggmanbox =     CVAR_INIT("tv_eggman",        "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
 
-consvar_t cv_ringslinger = CVAR_INIT ("ringslinger", "No", NULL, CV_NETVAR|CV_NOSHOWHELP|CV_CALL|CV_CHEAT, CV_YesNo,
-	Ringslinger_OnChange);
-consvar_t cv_gravity = CVAR_INIT ("gravity", "0.5", NULL, CV_RESTRICT|CV_FLOAT|CV_CALL, NULL, Gravity_OnChange);
+consvar_t cv_ringslinger = CVAR_INIT ("ringslinger", "No", "If enabled, ringslinger will be allowed in non-ringslinger gametypes", CV_NETVAR|CV_NOSHOWHELP|CV_CALL|CV_CHEAT, CV_YesNo, Ringslinger_OnChange);
+consvar_t cv_gravity = CVAR_INIT ("gravity", "0.5", "Multiplier for player weight", CV_RESTRICT|CV_FLOAT|CV_CALL, NULL, Gravity_OnChange);
 
 consvar_t cv_soundtest = CVAR_INIT ("soundtest", "0", NULL, CV_CALL, NULL, SoundTest_OnChange);
 
 static CV_PossibleValue_t minitimelimit_cons_t[] = {{15, "MIN"}, {9999, "MAX"}, {0, NULL}};
-consvar_t cv_countdowntime = CVAR_INIT ("countdowntime", "60", NULL, CV_NETVAR|CV_CHEAT, minitimelimit_cons_t, NULL);
+consvar_t cv_countdowntime = CVAR_INIT ("countdowntime", "60", "Time, in seconds, players have to finish a map after the first player has reached the goal in Race or Competition", CV_NETVAR|CV_CHEAT, minitimelimit_cons_t, NULL);
 
-consvar_t cv_touchtag = CVAR_INIT ("touchtag", "Off", NULL, CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_hidetime = CVAR_INIT ("hidetime", "30", NULL, CV_NETVAR|CV_CALL, minitimelimit_cons_t, Hidetime_OnChange);
+consvar_t cv_touchtag = CVAR_INIT ("touchtag", "Off", "If on, players can become IT by simply touching a seeker", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_hidetime = CVAR_INIT ("hidetime", "30", "Time, in seconds, players have to hide before the seeker is allowed to move", CV_NETVAR|CV_CALL, minitimelimit_cons_t, Hidetime_OnChange);
 
-consvar_t cv_autobalance = CVAR_INIT ("autobalance", "0", NULL, CV_NETVAR|CV_CALL, autobalance_cons_t, AutoBalance_OnChange);
-consvar_t cv_teamscramble = CVAR_INIT ("teamscramble", "Off", NULL, CV_NETVAR|CV_CALL|CV_NOINIT, teamscramble_cons_t, TeamScramble_OnChange);
-consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", NULL, CV_NETVAR, teamscramble_cons_t, NULL);
+consvar_t cv_autobalance = CVAR_INIT ("autobalance", "0", "Balance teams automatically based on team sizes", CV_NETVAR|CV_CALL, autobalance_cons_t, AutoBalance_OnChange);
+consvar_t cv_teamscramble = CVAR_INIT ("teamscramble", "Off", "Reassign player teams next time the map changes (see scrambleonchange to make this permanent)", CV_NETVAR|CV_CALL|CV_NOINIT, teamscramble_cons_t, TeamScramble_OnChange);
+consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", "If enabled, reassign player teams between maps", CV_NETVAR, teamscramble_cons_t, NULL);
 
-consvar_t cv_friendlyfire = CVAR_INIT ("friendlyfire", "Off", NULL, CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", NULL, CV_CALL, CV_OnOff, ItemFinder_OnChange);
+consvar_t cv_friendlyfire = CVAR_INIT ("friendlyfire", "Off", "Allow players to hit each other, regardless of their team", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", "Enables the Emblem Radar, notifying you when there in an emblem nearby", CV_CALL, CV_OnOff, ItemFinder_OnChange);
 
 // Scoring type options
 consvar_t cv_match_scoring = CVAR_INIT ("matchscoring", "Normal", NULL, CV_NETVAR|CV_CHEAT, match_scoring_cons_t, NULL);
@@ -481,8 +480,8 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("showmap", NULL, Command_Showmap_f);
 	COM_AddCommand("mapmd5", NULL, Command_Mapmd5_f);
 
-	COM_AddCommand("addfile", NULL, Command_Addfile);
-	COM_AddCommand("listwad", NULL, Command_ListWADS_f);
+	COM_AddCommand("addfile", "Add a file", Command_Addfile);
+	COM_AddCommand("listwad", "List currentlu added files, including those required by the game", Command_ListWADS_f);
 	COM_AddCommand("runsoc", NULL, Command_RunSOC);
 	COM_AddCommand("pause", NULL, Command_Pause);
 	COM_AddCommand("suicide", NULL, Command_Suicide);

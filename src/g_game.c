@@ -362,49 +362,44 @@ consvar_t cv_compactscoreboard= CVAR_INIT ("compactscoreboard", "Off", "Always u
 
 // chat timer thingy
 static CV_PossibleValue_t chattime_cons_t[] = {{5, "MIN"}, {999, "MAX"}, {0, NULL}};
-consvar_t cv_chattime = CVAR_INIT ("chattime", "8", NULL, CV_SAVE, chattime_cons_t, NULL);
+consvar_t cv_chattime = CVAR_INIT ("chattime", "8", "How long chat messages stay on screen", CV_SAVE, chattime_cons_t, NULL);
 
 // chatwidth
 static CV_PossibleValue_t chatwidth_cons_t[] = {{64, "MIN"}, {150, "MAX"}, {0, NULL}};
-consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "128", NULL, CV_SAVE, chatwidth_cons_t, NULL);
+consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "128", "Width of the chat box", CV_SAVE, chatwidth_cons_t, NULL);
 
 // chatheight
 static CV_PossibleValue_t chatheight_cons_t[] = {{6, "MIN"}, {22, "MAX"}, {0, NULL}};
-consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", NULL, CV_SAVE, chatheight_cons_t, NULL);
+consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", "Height of the chat box", CV_SAVE, chatheight_cons_t, NULL);
 
 // chat notifications (do you want to hear beeps? I'd understand if you didn't.)
 consvar_t cv_chatnotifications= CVAR_INIT ("chatnotifications", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // chat spam protection (why would you want to disable that???)
-consvar_t cv_chatspamprotection= CVAR_INIT ("chatspamprotection", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chatspamprotection= CVAR_INIT ("chatspamprotection", "On", "Filter messages from players excessively sending messages", CV_SAVE, CV_OnOff, NULL);
 
 // minichat text background
 consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
-consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", NULL, CV_SAVE, consolechat_cons_t, NULL);
+consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", "How chat looks", CV_SAVE, consolechat_cons_t, NULL);
 
 
-consvar_t cv_crosshair = CVAR_INIT ("crosshair", "Cross", NULL, CV_SAVE, crosshair_cons_t, NULL);
-consvar_t cv_crosshair2 = CVAR_INIT ("crosshair2", "Cross", NULL, CV_SAVE, crosshair_cons_t, NULL);
+consvar_t cv_crosshair = CVAR_INIT ("crosshair", "Cross", "Style of crosshair in first person", CV_SAVE, crosshair_cons_t, NULL);
+consvar_t cv_crosshair2 = CVAR_INIT ("crosshair2", "Cross", "Style of crosshair in first person", CV_SAVE, crosshair_cons_t, NULL);
 consvar_t cv_invertmouse = CVAR_INIT ("invertmouse", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_invertmouse2 = CVAR_INIT ("invertmouse2", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_alwaysfreelook = CVAR_INIT ("alwaysmlook", "On", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_alwaysfreelook2 = CVAR_INIT ("alwaysmlook2", "On", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_chasefreelook = CVAR_INIT ("chasemlook", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_chasefreelook2 = CVAR_INIT ("chasemlook2", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_mousemove = CVAR_INIT ("mousemove", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_mousemove2 = CVAR_INIT ("mousemove2", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_analog = CVAR_INIT ("analog", "Off", NULL, CV_CALL, CV_OnOff, Analog_OnChange);
-consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", NULL, CV_CALL, CV_OnOff, Analog2_OnChange);
-#ifdef DC
-consvar_t cv_useranalog = CVAR_INIT ("useranalog", "On", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
-consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "On", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
-#else
+consvar_t cv_alwaysfreelook = CVAR_INIT ("alwaysmlook", "On", "Always use mouselook, regardless of camera state", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_alwaysfreelook2 = CVAR_INIT ("alwaysmlook2", "On", "Always use mouselook, regardless of camera state", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chasefreelook = CVAR_INIT ("chasemlook", "Off", "Allow using mouselook in third person", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chasefreelook2 = CVAR_INIT ("chasemlook2", "Off", "Allow using mouselook in third person", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_mousemove = CVAR_INIT ("mousemove", "Off", "Use the mouse to move the player", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_mousemove2 = CVAR_INIT ("mousemove2", "Off", "Use the mouse to move the player", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_analog = CVAR_INIT ("analog", "Off", "Whether or not to use analog mode", CV_CALL, CV_OnOff, Analog_OnChange);
+consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", "Whether or not to use analog mode", CV_CALL, CV_OnOff, Analog2_OnChange);
 consvar_t cv_useranalog = CVAR_INIT ("useranalog", "Off", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
 consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "Off", NULL, CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
-#endif
 
 typedef enum
 {

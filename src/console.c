@@ -114,18 +114,18 @@ static void CONS_backcolor_Change(void);
 static char con_buffer[CON_BUFFERSIZE];
 
 // how many seconds the hud messages lasts on the screen
-static consvar_t cons_msgtimeout = CVAR_INIT ("con_hudtime", "5", NULL,  CV_SAVE, CV_Unsigned, NULL);
+static consvar_t cons_msgtimeout = CVAR_INIT ("con_hudtime", "5", "How long HUD messages stay on screen, in seconds",  CV_SAVE, CV_Unsigned, NULL);
 
 // number of lines displayed on the HUD
-static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", NULL,  CV_CALL|CV_SAVE, CV_Unsigned, CONS_hudlines_Change);
+static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", "Number of lines displayed on the HUD",  CV_CALL|CV_SAVE, CV_Unsigned, CONS_hudlines_Change);
 
 // number of lines console move per frame
 // (con_speed needs a limit, apparently)
 static CV_PossibleValue_t speed_cons_t[] = {{0, "MIN"}, {64, "MAX"}, {0, NULL}};
-static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", NULL,  CV_SAVE, speed_cons_t, NULL);
+static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", "How hfast the console moves up and down, 0 is instant",  CV_SAVE, speed_cons_t, NULL);
 
 // percentage of screen height to use for console
-static consvar_t cons_height = CVAR_INIT ("con_height", "50", NULL,  CV_SAVE, CV_Unsigned, NULL);
+static consvar_t cons_height = CVAR_INIT ("con_height", "50", "Percentage of screen height used for console",  CV_SAVE, CV_Unsigned, NULL);
 
 static CV_PossibleValue_t backpic_cons_t[] = {{0, "translucent"}, {1, "picture"}, {0, NULL}};
 // whether to use console background picture, or translucent mode

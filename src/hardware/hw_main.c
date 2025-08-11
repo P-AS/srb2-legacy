@@ -96,10 +96,10 @@ static CV_PossibleValue_t grshearing_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Thi
 
 static CV_PossibleValue_t grshaders_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Ignore custom shaders"}, {0, NULL}};
 consvar_t cv_glshaders = CVAR_INIT ("gr_shaders", "On", "Enable additional visual effects in OpenGL", CV_SAVE|CV_CALL, grshaders_cons_t, CV_glshaders_OnChange);
-consvar_t cv_glallowshaders = CVAR_INIT ("gr_allowshaders", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_glallowshaders = CVAR_INIT ("gr_allowshaders", "On", "Allow clients to use custom shaders", CV_NETVAR, CV_OnOff, NULL);
 
-consvar_t cv_glfakecontrast = CVAR_INIT ("gr_fakecontrast", "Smooth", NULL, CV_SAVE, grfakecontrast_cons_t, NULL);
-consvar_t cv_glslopecontrast = CVAR_INIT ("gr_slopecontrast", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_glfakecontrast = CVAR_INIT ("gr_fakecontrast", "Smooth", "Make walls darker based on their orientation, to contrast them from floors", CV_SAVE, grfakecontrast_cons_t, NULL);
+consvar_t cv_glslopecontrast = CVAR_INIT ("gr_slopecontrast", "Off", "Make slopes darker based on their orientation, to contast them from normal floors", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t grmodelinterpolation_cons_t[] = {{0, "Off"}, {1, "Sometimes"}, {2, "Always"}, {0, NULL}};
 
@@ -119,12 +119,11 @@ consvar_t cv_glfiltermode = CVAR_INIT ("gr_filtermode", "Nearest", "The type of 
 consvar_t cv_glanisotropicmode = CVAR_INIT ("gr_anisotropicmode", "1", "The intensity of anisotropic texture filtering", CV_CALL|CV_SAVE, glanisotropicmode_cons_t,
                              CV_anisotropic_ONChange);
 //static consvar_t cv_grzbuffer = CVAR_INIT ("gr_zbuffer", "On", NULL, 0, CV_OnOff);
-consvar_t cv_glcorrecttricks = CVAR_INIT ("gr_correcttricks", "Off", NULL, 0, CV_OnOff, NULL);
 consvar_t cv_glsolvetjoin = CVAR_INIT ("gr_solvetjoin", "On", NULL, 0, CV_OnOff, NULL);
 
-consvar_t cv_glbatching = CVAR_INIT ("gr_batching", "On", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_glbatching = CVAR_INIT ("gr_batching", "On", "Send polygons in batches to GPU, speeding up rendering", 0, CV_OnOff, NULL);
 
-consvar_t cv_glwireframe = CVAR_INIT ("gr_wireframe", "Off", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_glwireframe = CVAR_INIT ("gr_wireframe", "Off", "Use lines to render polygons, unlike in 2.2 this does not require DEVMODE", 0, CV_OnOff, NULL);
 
 consvar_t cv_glmodellighting = CVAR_INIT ("gr_modellighting", "Off", "Enable ambient lighting on models, if enabled", CV_SAVE|CV_CALL, CV_OnOff, CV_glmodellighting_OnChange);
 
@@ -134,12 +133,12 @@ consvar_t cv_glloadingscreen = CVAR_INIT ("gr_loadingscreen", "Off", "Enable the
 
 consvar_t cv_glmd2 = CVAR_INIT ("gr_md2", "Off", "Whether or not to use 3D Models", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_glmodelinterpolation = CVAR_INIT ("gr_modelinterpolation", "Sometimes", "When to interpolate model animations", CV_SAVE, grmodelinterpolation_cons_t, NULL);
-consvar_t cv_glspritebillboarding = CVAR_INIT ("gr_spritebillboarding", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_glspritebillboarding = CVAR_INIT ("gr_spritebillboarding", "Off", "Rotate sprites to face camera", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
 consvar_t cv_glpaletterendering = CVAR_INIT ("gr_paletterendering", "On", "Emulate software's limited palette (requires shaders)", CV_CALL|CV_SAVE, CV_OnOff, CV_glpaletterendering_OnChange);
-consvar_t cv_glpalettedepth = CVAR_INIT ("gr_palettedepth", "16 bits", NULL, CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_glpalettedepth_OnChange);
+consvar_t cv_glpalettedepth = CVAR_INIT ("gr_palettedepth", "16 bits", "Depth of the palette, 24 bits gives brighter color (requires palette rendering)", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_glpalettedepth_OnChange);
 
 consvar_t cv_glcurveshader = CVAR_INIT ("gr_curveshader", "Off", "wheeeeeee", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange);
 consvar_t cv_gllightdither = CVAR_INIT ("gr_lightdithering", "Off", "Adds a dither effect to lighting (requires shaders)", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange);
