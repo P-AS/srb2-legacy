@@ -6056,7 +6056,6 @@ void HWR_AddCommands(void)
 {
 	CV_RegisterVar(&cv_glfiltermode);
 	CV_RegisterVar(&cv_glanisotropicmode);
-	CV_RegisterVar(&cv_glcorrecttricks);
 	CV_RegisterVar(&cv_glsolvetjoin);
 	CV_RegisterVar(&cv_glbatching);
 	CV_RegisterVar(&cv_glwireframe);

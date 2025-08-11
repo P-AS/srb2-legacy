@@ -2668,7 +2668,7 @@ consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", "Show when a player is
 // max file size to send to a player (in kilobytes)
 static CV_PossibleValue_t maxsend_cons_t[] = {{-1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 consvar_t cv_maxsend = CVAR_INIT ("maxsend", "4096", "Maximum file size to send to joiners of a netgame, -1 is infinite", CV_SAVE, maxsend_cons_t, NULL);
-consvar_t cv_noticedownload = CVAR_INITs ("noticedownload", "Off", "Notify the server when a client starts downloading a file", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", "Notify the server when a client starts downloading a file", CV_SAVE, CV_OnOff, NULL);
 
 // Speed of file downloading (in packets per tic)
 static CV_PossibleValue_t downloadspeed_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
