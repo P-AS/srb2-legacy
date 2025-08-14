@@ -941,8 +941,8 @@ static menuitem_t OP_MainMenu[] =
 
 static menuitem_t OP_ControlsMenu[] =
 {
-	{IT_SUBMENU | IT_STRING, NULL, "Player 1 Controls...", NULL,  &OP_P1ControlsDef,  10},
-	{IT_SUBMENU | IT_STRING, NULL, "Player 2 Controls...", NULL,  &OP_P2ControlsDef,  20},
+	{IT_SUBMENU | IT_STRING, NULL, "Player 1 Controls...", "Controls for player 1",  &OP_P1ControlsDef,  10},
+	{IT_SUBMENU | IT_STRING, NULL, "Player 2 Controls...", "Controls for player 2",  &OP_P2ControlsDef,  20},
 
 	{IT_STRING  | IT_CVAR, NULL, "Controls per key", NULL,  &cv_controlperkey, 40},
 };

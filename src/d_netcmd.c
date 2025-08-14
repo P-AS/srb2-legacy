@@ -245,8 +245,8 @@ consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", NULL, CV_SAVE, CV_
 
 INT32 cv_debug;
 
-consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "On", NULL, CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
-consvar_t cv_usemouse2 = CVAR_INIT ("use_mouse2", "Off", NULL, CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse2);
+consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "On", "Use the mouse", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
+consvar_t cv_usemouse2 = CVAR_INIT ("use_mouse2", "Off", "Use the mouse", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse2);
 
 #if defined (DC) || defined (_XBOX) || defined (WMINPUT) || defined (_WII) || defined(HAVE_SDL) || defined(_WINDOWS) //joystick 1 and 2
 consvar_t cv_usejoystick = CVAR_INIT ("use_joystick", "1", NULL, CV_SAVE|CV_CALL, usejoystick_cons_t,
@@ -340,7 +340,7 @@ consvar_t cv_usemapnumlaps = CVAR_INIT ("usemaplaps", "Yes", NULL, CV_NETVAR, CV
 consvar_t cv_hazardlog = CVAR_INIT ("hazardlog", "Yes", "Whether or not to log when a player gets hurt in certain gamemodes", 0, CV_YesNo, NULL);
 
 consvar_t cv_forceskin = CVAR_INIT ("forceskin", "-1", NULL, CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
-consvar_t cv_downloading = CVAR_INIT ("downloading", "On", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_downloading = CVAR_INIT ("downloading", "On", "Allow players to download mods from the server", 0, CV_OnOff, NULL);
 consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", NULL, CV_NETVAR, CV_YesNo, NULL);
 
 consvar_t cv_killingdead = CVAR_INIT ("killingdead", "Off", NULL, CV_NETVAR, CV_OnOff, NULL);
@@ -363,7 +363,7 @@ consvar_t cv_pingmeasurement = CVAR_INIT ("pingmeasurement", "Milliseconds", NUL
 
 // Intermission time Tails 04-19-2002
 static CV_PossibleValue_t inttime_cons_t[] = {{0, "MIN"}, {3600, "MAX"}, {0, NULL}};
-consvar_t cv_inttime = CVAR_INIT ("inttime", "10", NULL, CV_NETVAR|CV_SAVE, inttime_cons_t, NULL);
+consvar_t cv_inttime = CVAR_INIT ("inttime", "10", "How long intermissions between levels in multiplayer last", CV_NETVAR|CV_SAVE, inttime_cons_t, NULL);
 
 static CV_PossibleValue_t advancemap_cons_t[] = {{0, "Off"}, {1, "Next"}, {2, "Random"}, {0, NULL}};
 consvar_t cv_advancemap = CVAR_INIT ("advancemap", "Next", NULL, CV_NETVAR, advancemap_cons_t, NULL);

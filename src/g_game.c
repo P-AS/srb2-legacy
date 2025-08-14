@@ -373,13 +373,13 @@ static CV_PossibleValue_t chatheight_cons_t[] = {{6, "MIN"}, {22, "MAX"}, {0, NU
 consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", "Height of the chat box", CV_SAVE, chatheight_cons_t, NULL);
 
 // chat notifications (do you want to hear beeps? I'd understand if you didn't.)
-consvar_t cv_chatnotifications= CVAR_INIT ("chatnotifications", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chatnotifications= CVAR_INIT ("chatnotifications", "On", "Play a beep sound when a chat message is received", CV_SAVE, CV_OnOff, NULL);
 
 // chat spam protection (why would you want to disable that???)
 consvar_t cv_chatspamprotection= CVAR_INIT ("chatspamprotection", "On", "Filter messages from players excessively sending messages", CV_SAVE, CV_OnOff, NULL);
 
 // minichat text background
-consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", "Have a tinted background on chat messages", CV_SAVE, CV_OnOff, NULL);
 
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
@@ -388,16 +388,16 @@ consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", "How chat looks", CV
 
 consvar_t cv_crosshair = CVAR_INIT ("crosshair", "Cross", "Style of crosshair in first person", CV_SAVE, crosshair_cons_t, NULL);
 consvar_t cv_crosshair2 = CVAR_INIT ("crosshair2", "Cross", "Style of crosshair in first person", CV_SAVE, crosshair_cons_t, NULL);
-consvar_t cv_invertmouse = CVAR_INIT ("invertmouse", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_invertmouse2 = CVAR_INIT ("invertmouse2", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_invertmouse = CVAR_INIT ("invertmouse", "Off", "Invert the direction of vertial mouselook", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_invertmouse2 = CVAR_INIT ("invertmouse2", "Off", "Invert the direction of vertial mouselook", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_alwaysfreelook = CVAR_INIT ("alwaysmlook", "On", "Always use mouselook, regardless of camera state", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_alwaysfreelook2 = CVAR_INIT ("alwaysmlook2", "On", "Always use mouselook, regardless of camera state", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_chasefreelook = CVAR_INIT ("chasemlook", "Off", "Allow using mouselook in third person", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_chasefreelook2 = CVAR_INIT ("chasemlook2", "Off", "Allow using mouselook in third person", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_mousemove = CVAR_INIT ("mousemove", "Off", "Use the mouse to move the player", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_mousemove2 = CVAR_INIT ("mousemove2", "Off", "Use the mouse to move the player", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_analog = CVAR_INIT ("analog", "Off", NULL, CV_CALL, CV_OnOff, Analog_OnChange);
-consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", NULL, CV_CALL, CV_OnOff, Analog2_OnChange);
+consvar_t cv_analog = CVAR_INIT ("analog", "Off", "This does not save, change useranalog instead!!", CV_CALL, CV_OnOff, Analog_OnChange);
+consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", "This does not save, change useranalog instead!!", CV_CALL, CV_OnOff, Analog2_OnChange);
 consvar_t cv_useranalog = CVAR_INIT ("useranalog", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
 consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
 
