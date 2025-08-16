@@ -2292,7 +2292,7 @@ void I_Sleep(UINT32 ms)
 
 void I_SleepDuration(precise_t duration)
 {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__EMSCRIPTEN__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__OPENBSD__) || defined(__EMSCRIPTEN__)
 	UINT64 precision = I_GetPrecisePrecision();
 	precise_t dest = I_GetPreciseTime() + duration;
 #ifdef __OpenBSD__
@@ -2866,39 +2866,6 @@ const char *I_ClipboardPaste(void)
 	return (const char *)&clipboard_modified;
 }
 
-void I_MountIDBFS(void) 
-{
-#ifdef __EMSCRIPTEN__
-	EM_ASM(
-       	try
-		{
-			if (!FS.analyzePath('/home').exists) FS.mkdir('/home');
-			if (!FS.analyzePath('/home/web_user').exists) FS.mkdir('/home/web_user');
-			FS.mount(IDBFS, {}, '/home/web_user'); // Emscripten home directory		
-			FS.syncfs(true, function (err) {
-			console.log(err);
-			Module.ccall("main_program", 'number', [], [], {async: true});
-        	});
-		} 
-		catch (err)
-		{
-			console.log(err);
-			Module.ccall("main_program", 'number', [], [], {async: true});
-		}
-    	);
-#endif
-}
-
-void I_SyncIDBFS(void)
-{
-#ifdef __EMSCRIPTEN__
-	EM_ASM(
-		FS.syncfs(function (err) { 
-		console.log(err); }
-	);
-	);
-#endif
-}
 
 /**	\brief	The isWadPathOk function
 
