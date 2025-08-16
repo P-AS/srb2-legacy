@@ -45,8 +45,6 @@
 #endif
 #include "../r_fps.h"
 #define R_FAKEFLOORS
-#define HWPRECIP
-//#define POLYSKY
 
 // ==========================================================================
 // the hardware driver object
@@ -60,10 +58,7 @@ struct hwdriver_s hwdriver;
 
 static void HWR_AddSprites(sector_t *sec);
 static void HWR_ProjectSprite(mobj_t *thing);
-#ifdef HWPRECIP
 static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing);
-#endif
-
 
 void HWR_AddTransparentFloor(lumpnum_t lumpnum, extrasubsector_t *xsub, boolean isceiling, fixed_t fixedheight,
                              INT32 lightlevel, INT32 alpha, sector_t *FOFSector, FBITFIELD blend, boolean fogplane, extracolormap_t *planecolormap);
@@ -101,10 +96,10 @@ static CV_PossibleValue_t grshearing_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Thi
 
 static CV_PossibleValue_t grshaders_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Ignore custom shaders"}, {0, NULL}};
 consvar_t cv_glshaders = CVAR_INIT ("gr_shaders", "On", "Enable additional visual effects in OpenGL", CV_SAVE|CV_CALL, grshaders_cons_t, CV_glshaders_OnChange);
-consvar_t cv_glallowshaders = CVAR_INIT ("gr_allowshaders", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_glallowshaders = CVAR_INIT ("gr_allowshaders", "On", "Allow clients to use custom shaders", CV_NETVAR, CV_OnOff, NULL);
 
-consvar_t cv_glfakecontrast = CVAR_INIT ("gr_fakecontrast", "Smooth", NULL, CV_SAVE, grfakecontrast_cons_t, NULL);
-consvar_t cv_glslopecontrast = CVAR_INIT ("gr_slopecontrast", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_glfakecontrast = CVAR_INIT ("gr_fakecontrast", "Smooth", "Make walls darker based on their orientation, to contrast them from floors", CV_SAVE, grfakecontrast_cons_t, NULL);
+consvar_t cv_glslopecontrast = CVAR_INIT ("gr_slopecontrast", "Off", "Make slopes darker based on their orientation, to contrast them from normal floors", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t grmodelinterpolation_cons_t[] = {{0, "Off"}, {1, "Sometimes"}, {2, "Always"}, {0, NULL}};
 
@@ -115,9 +110,6 @@ boolean drawsky = true;
 #ifndef NEWCLIP
 static consvar_t cv_glclipwalls = CVAR_INIT ("gr_clipwalls", "Off", NULL, 0, CV_OnOff, NULL);
 #endif
-//development variables for diverse uses
-static consvar_t cv_glalpha = CVAR_INIT ("gr_alpha", "160", NULL, 0, CV_Unsigned, NULL);
-static consvar_t cv_glbeta = CVAR_INIT ("gr_beta", "0", NULL, 0, CV_Unsigned, NULL);
 
 static float HWRWipeCounter = 1.0f;
 
@@ -127,12 +119,11 @@ consvar_t cv_glfiltermode = CVAR_INIT ("gr_filtermode", "Nearest", "The type of 
 consvar_t cv_glanisotropicmode = CVAR_INIT ("gr_anisotropicmode", "1", "The intensity of anisotropic texture filtering", CV_CALL|CV_SAVE, glanisotropicmode_cons_t,
                              CV_anisotropic_ONChange);
 //static consvar_t cv_grzbuffer = CVAR_INIT ("gr_zbuffer", "On", NULL, 0, CV_OnOff);
-consvar_t cv_glcorrecttricks = CVAR_INIT ("gr_correcttricks", "Off", NULL, 0, CV_OnOff, NULL);
 consvar_t cv_glsolvetjoin = CVAR_INIT ("gr_solvetjoin", "On", NULL, 0, CV_OnOff, NULL);
 
-consvar_t cv_glbatching = CVAR_INIT ("gr_batching", "On", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_glbatching = CVAR_INIT ("gr_batching", "On", "Send polygons in batches to GPU, speeding up rendering", 0, CV_OnOff, NULL);
 
-consvar_t cv_glwireframe = CVAR_INIT ("gr_wireframe", "Off", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_glwireframe = CVAR_INIT ("gr_wireframe", "Off", "Use lines to render polygons, unlike in 2.2 this does not require DEVMODE", 0, CV_OnOff, NULL);
 
 consvar_t cv_glmodellighting = CVAR_INIT ("gr_modellighting", "Off", "Enable ambient lighting on models, if enabled", CV_SAVE|CV_CALL, CV_OnOff, CV_glmodellighting_OnChange);
 
@@ -142,12 +133,12 @@ consvar_t cv_glloadingscreen = CVAR_INIT ("gr_loadingscreen", "Off", "Enable the
 
 consvar_t cv_glmd2 = CVAR_INIT ("gr_md2", "Off", "Whether or not to use 3D Models", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_glmodelinterpolation = CVAR_INIT ("gr_modelinterpolation", "Sometimes", "When to interpolate model animations", CV_SAVE, grmodelinterpolation_cons_t, NULL);
-consvar_t cv_glspritebillboarding = CVAR_INIT ("gr_spritebillboarding", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_glspritebillboarding = CVAR_INIT ("gr_spritebillboarding", "Off", "Rotate sprites to face camera", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t grpalettedepth_cons_t[] = {{16, "16 bits"}, {24, "24 bits"}, {0, NULL}};
 
 consvar_t cv_glpaletterendering = CVAR_INIT ("gr_paletterendering", "On", "Emulate software's limited palette (requires shaders)", CV_CALL|CV_SAVE, CV_OnOff, CV_glpaletterendering_OnChange);
-consvar_t cv_glpalettedepth = CVAR_INIT ("gr_palettedepth", "16 bits", NULL, CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_glpalettedepth_OnChange);
+consvar_t cv_glpalettedepth = CVAR_INIT ("gr_palettedepth", "16 bits", "Depth of the palette, 24 bits gives brighter color (requires palette rendering)", CV_SAVE|CV_CALL, grpalettedepth_cons_t, CV_glpalettedepth_OnChange);
 
 consvar_t cv_glcurveshader = CVAR_INIT ("gr_curveshader", "Off", "wheeeeeee", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange);
 consvar_t cv_gllightdither = CVAR_INIT ("gr_lightdithering", "Off", "Adds a dither effect to lighting (requires shaders)", CV_SAVE|CV_CALL, CV_OnOff, CV_glshaderoption_OnChange);
@@ -172,7 +163,7 @@ static void CV_glmodellighting_OnChange(void)
 	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, cv_glmodellighting.value);
 	// if shaders have been compiled, then they now need to be recompiled.
   if (gl_shadersavailable)
-  { 
+  {
 	HWR_CompileShaders();
   }
 }
@@ -188,7 +179,7 @@ static void CV_glpaletterendering_OnChange(void)
 }
 
 static void CV_glpalettedepth_OnChange(void)
-{	
+{
 	ONLY_IF_GL_LOADED
 	// refresh the screen palette
 	if (HWR_ShouldUsePaletteRendering())
@@ -241,10 +232,6 @@ static angle_t gl_xtoviewangle[MAXVIDWIDTH+1];
 // uncomment to remove the plane rendering
 #define DOPLANES
 //#define DOWALLS
-
-// test of drawing sky by polygons like in software with visplane, unfortunately
-// this doesn't work since we must have z for pixel and z for texture (not like now with z = oow)
-//#define POLYSKY
 
 // test change fov when looking up/down but bsp projection messup :(
 //#define NOCRAPPYMLOOK
@@ -797,50 +784,6 @@ if (PolyFlags & (PF_Translucent|PF_Fog))
 	}
 }
 
-#ifdef POLYSKY
-// this don't draw anything it only update the z-buffer so there isn't problem with
-// wall/things upper that sky (map12)
-static void HWR_RenderSkyPlane(extrasubsector_t *xsub, fixed_t fixedheight)
-{
-	polyvertex_t *pv;
-	float height; //constant y for all points on the convex flat polygon
-	FOutVector *v3d;
-	INT32 nrPlaneVerts;   //verts original define of convex flat polygon
-	INT32 i;
-
-	// no convex poly were generated for this subsector
-	if (!xsub->planepoly)
-		return;
-
-	height = FIXED_TO_FLOAT(fixedheight);
-
-	pv  = xsub->planepoly->pts;
-	nrPlaneVerts = xsub->planepoly->numpts;
-
-	if (nrPlaneVerts < 3) // not even a triangle?
-		return;
-
-	if (nrPlaneVerts > MAXPLANEVERTICES) // FIXME: exceeds plVerts size
-	{
-		CONS_Debug(DBG_RENDER, "polygon size of %d exceeds max value of %d vertices\n", nrPlaneVerts, MAXPLANEVERTICES);
-		return;
-	}
-
-	// transform
-	v3d = planeVerts;
-	for (i = 0; i < nrPlaneVerts; i++,v3d++,pv++)
-	{
-		v3d->s = 0.0f;
-		v3d->t = 0.0f;
-		v3d->x = pv->x;
-		v3d->y = height;
-		v3d->z = pv->y;
-	}
-
-	HWD.pfnDrawPolygon(NULL, planeVerts, nrPlaneVerts, PF_Invisible|PF_NoTexture|PF_Occlude);
-}
-#endif //polysky
-
 #endif //doplanes
 
 /*
@@ -1373,7 +1316,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 	lightnum = colormap ? lightnum : HWR_CalcWallLight(lightnum, vs.x, vs.y, ve.x, ve.y);
 
 	Surf.PolyColor.s.alpha = 255;
-	
+
 	INT32 gl_midtexture = R_GetTextureNum(gl_sidedef->midtexture);
 	GLMapTexture_t *grTex = NULL;
 
@@ -2203,7 +2146,7 @@ static cliprange_t     gl_solidsegs[MAXSEGS];
 static void printsolidsegs(void)
 {
 	cliprange_t *       start;
-	if (!hw_newend || cv_glbeta.value != 2)
+	if (!hw_newend)
 		return;
 	for (start = gl_solidsegs;start != hw_newend;start++)
 	{
@@ -3187,8 +3130,8 @@ static void HWR_Subsector(size_t num)
 	{
 		cullCeilingHeight = P_GetZAt(gl_frontsector->c_slope, viewx, viewy);
 		locCeilingHeight = P_GetZAt(gl_frontsector->c_slope, gl_frontsector->soundorg.x, gl_frontsector->soundorg.y);
-	}	
-	
+	}
+
 	if (gl_frontsector->ffloors)
 	{
 		boolean anyMoved = gl_frontsector->moved;
@@ -3245,12 +3188,6 @@ static void HWR_Subsector(size_t num)
 					PF_Occlude, floorlightlevel, levelflats[gl_frontsector->floorpic].lumpnum, NULL, 255, false, floorcolormap);
 			}
 		}
-		else
-		{
-#ifdef POLYSKY
-			HWR_RenderSkyPlane(&extrasubsectors[num], locFloorHeight);
-#endif
-		}
 	}
 
 	if (cullCeilingHeight > dup_viewz)
@@ -3267,19 +3204,11 @@ static void HWR_Subsector(size_t num)
 					PF_Occlude, ceilinglightlevel, levelflats[gl_frontsector->ceilingpic].lumpnum,NULL, 255, false, ceilingcolormap);
 			}
 		}
-		else
-		{
-#ifdef POLYSKY
-			HWR_RenderSkyPlane(&extrasubsectors[num], locCeilingHeight);
-#endif
-		}
 	}
 
-#ifndef POLYSKY
 	// Moved here because before, when above the ceiling and the floor does not have the sky flat, it doesn't draw the sky
 	if (gl_frontsector->ceilingpic == skyflatnum || gl_frontsector->floorpic == skyflatnum)
 		drawsky = true;
-#endif
 
 #ifdef R_FAKEFLOORS
 	if (gl_frontsector->ffloors)
@@ -4386,7 +4315,6 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	}
 }
 
-#ifdef HWPRECIP
 // Sprite drawer for precipitation
 static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 {
@@ -4490,8 +4418,6 @@ static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 
 	HWR_ProcessPolygon(&Surf, wallVerts, 4, blend|PF_Modulated, shader, false);
 }
-#endif
-
 // --------------------------------------------------------------------------
 // Sort vissprites by distance
 // --------------------------------------------------------------------------
@@ -4895,9 +4821,7 @@ static UINT8 sectorlight;
 static void HWR_AddSprites(sector_t *sec)
 {
 	mobj_t *thing;
-#ifdef HWPRECIP
 	precipmobj_t *precipthing;
-#endif
 	fixed_t limit_dist, hoop_limit_dist;
 
 	// BSP is traversed by subsector.
@@ -4923,7 +4847,6 @@ static void HWR_AddSprites(sector_t *sec)
 			HWR_ProjectSprite(thing);
 	}
 
-#ifdef HWPRECIP
 	// Someone seriously wants infinite draw distance for precipitation?
 	if ((limit_dist = (fixed_t)cv_drawdist_precip.value << FRACBITS))
 	{
@@ -4933,7 +4856,6 @@ static void HWR_AddSprites(sector_t *sec)
 				HWR_ProjectPrecipitationSprite(precipthing);
 		}
 	}
-#endif
 }
 
 // --------------------------------------------------------------------------
@@ -5202,7 +5124,6 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	vis->precip = false;
 }
 
-#ifdef HWPRECIP
 // Precipitation projector for hardware mode
 static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 {
@@ -5322,7 +5243,6 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	vis->precip = true;
 }
-#endif
 
 // ==========================================================================
 // Sky dome rendering, ported from PrBoom+
@@ -6136,9 +6056,8 @@ void HWR_AddCommands(void)
 {
 	CV_RegisterVar(&cv_glfiltermode);
 	CV_RegisterVar(&cv_glanisotropicmode);
-	CV_RegisterVar(&cv_glcorrecttricks);
 	CV_RegisterVar(&cv_glsolvetjoin);
-	CV_RegisterVar(&cv_glbatching);	
+	CV_RegisterVar(&cv_glbatching);
 	CV_RegisterVar(&cv_glwireframe);
 	CV_RegisterVar(&cv_glpaletterendering);
 	CV_RegisterVar(&cv_glpalettedepth);
@@ -6163,12 +6082,6 @@ static inline void HWR_AddEngineCommands(void)
 #ifndef NEWCLIP
 	CV_RegisterVar(&cv_glclipwalls);
 #endif
-
-	// engine development mode variables
-	// - usage may vary from version to version..
-	CV_RegisterVar(&cv_glalpha);
-	CV_RegisterVar(&cv_glbeta);
-
 	// engine commands
 	COM_AddCommand("gr_stats", NULL, Command_GrStats_f);
 }

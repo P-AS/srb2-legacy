@@ -24,8 +24,8 @@ modules:
     buildsystem: cmake-ninja
     sources:
       - type: archive
-        url: https://github.com/libgme/game-music-emu/archive/refs/tags/0.6.3.tar.gz
-        sha256: 4c5a7614acaea44e5cb1423817d2889deb82674ddbc4e3e1291614304b86fca0
+        url: https://github.com/libgme/game-music-emu/archive/refs/tags/0.6.4.tar.gz
+        sha256: f2360feb5a32ace226c583df4faf6eff74145c81264aaea11e17a1af2f6f101a
         x-checker-data:
           type: anitya
           project-id: 866
@@ -42,8 +42,8 @@ modules:
       - --without-portaudiocpp
     sources:
       - type: archive
-        url: https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.7.13+release.autotools.tar.gz
-        sha256: dcd7cde4f9c498eb496c4556e1c1b81353e2a74747e8270a42565117ea42e1f1
+        url: https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.8.2+release.autotools.tar.gz
+        sha256: 844e4ff98dbd9942bbe4a1048226f91f8bc5b460b7bec6489e67cedb3e0aac37
         x-checker-data:
           type: anitya
           project-id: 141468
