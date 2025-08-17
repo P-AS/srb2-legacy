@@ -116,6 +116,10 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_HUDTRANSHALF       0x000D0000
 #define V_HUDTRANS           0x000E0000 // draw the hud translucent
 #define V_HUDTRANSDOUBLE     0x000F0000
+// Macros follow
+#define V_USERHUDTRANSHALF   ((10-(cv_translucenthud.value/2))<<V_ALPHASHIFT)
+#define V_USERHUDTRANS       ((10-cv_translucenthud.value)<<V_ALPHASHIFT)
+#define V_USERHUDTRANSDOUBLE ((10-min(cv_translucenthud.value*2, 10))<<V_ALPHASHIFT)
 
 #define V_AUTOFADEOUT        0x00100000 // used by CECHOs, automatic fade out when almost over
 #define V_RETURN8            0x00200000 // 8 pixel return instead of 12
@@ -149,10 +153,11 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_DrawSmallTranslucentPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT/2, s, p, NULL)
 #define V_DrawTinyTranslucentPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT/4, s, p, NULL)
 #define V_DrawSciencePatch(x,y,s,p,sc) V_DrawFixedPatch(x,y,sc,s,p,NULL)
-void V_DrawFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, const UINT8 *colormap);
+#define V_DrawFixedPatch(x,y,sc,s,p,c) V_DrawStretchyFixedPatch(x,y,sc,sc,s,p,c)
+void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap);
 void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
 
-void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT8 skincolor);
+void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor);
 
 // Draw a linear block of pixels into the view buffer.
 void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const UINT8 *src);
@@ -164,7 +169,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c);
 void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum);
 
 // fade down the screen buffer before drawing the menu over
-void V_DrawFadeScreen(void);
+void V_DrawFadeScreen(UINT16 color, UINT8 strength);
 
 void V_DrawFadeConsBack(INT32 plines);
 

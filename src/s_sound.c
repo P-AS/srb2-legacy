@@ -66,52 +66,48 @@ static void ModFilter_OnChange(void);
 
 // commands for music and sound servers
 #ifdef MUSSERV
-consvar_t musserver_cmd = {"musserver_cmd", "musserver", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t musserver_arg = {"musserver_arg", "-t 20 -f -u 0 -i music.dta", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t musserver_cmd = CVAR_INIT ("musserver_cmd", "musserver", NULL, CV_SAVE, NULL, NULL);
+consvar_t musserver_arg = CVAR_INIT ("musserver_arg", "-t 20 -f -u 0 -i music.dta", NULL, CV_SAVE, NULL, NULL);
 #endif
 #ifdef SNDSERV
-consvar_t sndserver_cmd = {"sndserver_cmd", "llsndserv", CV_SAVE, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t sndserver_arg = {"sndserver_arg", "-quiet", CV_SAVE, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t sndserver_cmd = CVAR_INIT ("sndserver_cmd", "llsndserv", NULL, CV_SAVE, NULL);
+consvar_t sndserver_arg = CVAR_INIT ("sndserver_arg", "-quiet", NULL, CV_SAVE, NULL);
 #endif
 
 #if defined (_WINDOWS) && !defined (SURROUND) //&& defined (_X86_)
 #define SURROUND
 #endif
 
-#if defined (_WIN32_WCE) || defined (DC) || defined(GP2X)
-consvar_t cv_samplerate = {"samplerate", "11025", 0, CV_Unsigned, NULL, 11025, NULL, NULL, 0, 0, NULL}; //Alam: For easy hacking?
-#elif defined(_PSP) || defined(_WINDOWS)
-consvar_t cv_samplerate = {"samplerate", "44100", 0, CV_Unsigned, NULL, 44100, NULL, NULL, 0, 0, NULL}; //Alam: For easy hacking?
-#elif defined(_WII)
-consvar_t cv_samplerate = {"samplerate", "32000", 0, CV_Unsigned, NULL, 32000, NULL, NULL, 0, 0, NULL}; //Alam: For easy hacking?
+#ifdef _WINDOWS
+consvar_t cv_samplerate = CVAR_INIT ("samplerate", "44100", NULL, 0, CV_Unsigned, NULL); //Alam: For easy hacking?
 #else
-consvar_t cv_samplerate = {"samplerate", "22050", 0, CV_Unsigned, NULL, 22050, NULL, NULL, 0, 0, NULL}; //Alam: For easy hacking?
+consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", NULL, 0, CV_Unsigned, NULL); //Alam: For easy hacking?
 #endif
 
 // stereo reverse
-consvar_t stereoreverse = {"stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // if true, all sounds are loaded at game startup
-static consvar_t precachesound = {"precachesound", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t precachesound = CVAR_INIT ("precachesound", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 
 // actual general (maximum) sound & music volume, saved into the config
-consvar_t cv_soundvolume = {"soundvolume", "18", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_digmusicvolume = {"digmusicvolume", "18", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_midimusicvolume = {"midimusicvolume", "18", CV_SAVE, soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "18", "Volume of sound effects", CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_digmusicvolume = CVAR_INIT ("digmusicvolume", "18", "Volume of digital music", CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_midimusicvolume = CVAR_INIT ("midimusicvolume", "18", "Volume of MIDI music", CV_SAVE, soundvolume_cons_t, NULL);
 // number of channels available
 #if defined (_WIN32_WCE) || defined (DC) || defined (PSP) || defined(GP2X)
-consvar_t cv_numChannels = {"snd_channels", "8", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "8", NULL, CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
 #else
-consvar_t cv_numChannels = {"snd_channels", "32", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "32", NULL, CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
 #endif
 
-static consvar_t surround = {"surround", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_resetmusic = {"resetmusic", "No", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t surround = CVAR_INIT ("surround", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_resetmusic = CVAR_INIT ("resetmusic", "No", NULL, CV_SAVE, CV_YesNo, NULL);
 
 // Sound system toggles, saved into the config
-consvar_t cv_gamedigimusic = {"digimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_gamemidimusic = {"midimusic", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameMIDIMusic_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_gamesounds = {"sounds", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_gamedigimusic = CVAR_INIT ("digimusic", "On", "Enable or disable digital music", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange);
+consvar_t cv_gamemidimusic = CVAR_INIT ("midimusic", "On", "Enable or disable MIDI music", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameMIDIMusic_OnChange);
+consvar_t cv_gamesounds = CVAR_INIT ("sounds", "On", "Enable or disable sound effects", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange);
 
 // Music preference
 static CV_PossibleValue_t cons_musicpref_t[] = {
@@ -119,16 +115,16 @@ static CV_PossibleValue_t cons_musicpref_t[] = {
 	{1, "MIDI"},
 	{0, NULL}
 };
-consvar_t cv_musicpref = {"musicpref", "Digital", CV_SAVE|CV_CALL|CV_NOINIT, cons_musicpref_t, MusicPref_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_musicpref = CVAR_INIT ("musicpref", "Digital", "Preferred type of music to use, if available", CV_SAVE|CV_CALL|CV_NOINIT, cons_musicpref_t, MusicPref_OnChange);
 
 // Window focus sound sytem toggles
-consvar_t cv_playmusicifunfocused = {"playmusicifunfocused", "No", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_playsoundsifunfocused = {"playsoundsifunfocused", "No", CV_SAVE, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused", "No", "Play music if game window is not focused", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_playsoundsifunfocused = CVAR_INIT ("playsoundsifunfocused", "No", "Play sound effects if game window is not focused", CV_SAVE, CV_YesNo, NULL);
 
 #ifdef HAVE_OPENMPT
 openmpt_module *openmpt_mhandle = NULL;
 static CV_PossibleValue_t interpolationfilter_cons_t[] = {{0, "Default"}, {1, "None"}, {2, "Linear"}, {4, "Cubic"}, {8, "Windowed sinc"}, {0, NULL}};
-consvar_t cv_modfilter = {"modfilter", "0", CV_SAVE|CV_CALL, interpolationfilter_cons_t, ModFilter_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_modfilter = CVAR_INIT ("modfilter", "0", "Filter to use for module music", CV_SAVE|CV_CALL, interpolationfilter_cons_t, ModFilter_OnChange);
 #endif
 
 #define S_MAX_VOLUME 127
@@ -295,8 +291,8 @@ void S_RegisterSoundStuff(void)
 	CV_RegisterVar(&cv_modfilter);
 #endif
 
-	COM_AddCommand("tunes", Command_Tunes_f);
-	COM_AddCommand("restartaudio", Command_RestartAudio_f);
+	COM_AddCommand("tunes", NULL, Command_Tunes_f);
+	COM_AddCommand("restartaudio", NULL, Command_RestartAudio_f);
 
 #if defined (macintosh) && !defined (HAVE_SDL) // mp3 playlist stuff
 	{
@@ -1031,7 +1027,7 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 	{
 		fixed_t x, y, yl, yh, xl, xh, newdist;
 
-		if (R_PointInSubsector(listensource.x, listensource.y)->sector->ceilingpic == skyflatnum)
+		if (R_PointInSubsectorFast(listensource.x, listensource.y)->sector->ceilingpic == skyflatnum)
 			approx_dist = 0;
 		else
 		{
@@ -1044,7 +1040,7 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 			for (y = yl; y <= yh; y += FRACUNIT*64)
 				for (x = xl; x <= xh; x += FRACUNIT*64)
 				{
-					if (R_PointInSubsector(x, y)->sector->ceilingpic == skyflatnum)
+					if (R_PointInSubsectorFast(x, y)->sector->ceilingpic == skyflatnum)
 					{
 						// Found the outdoors!
 						newdist = S_CalculateSoundDistance(listensource.x, listensource.y, 0, x, y, 0);
@@ -1594,13 +1590,6 @@ void S_PauseAudio(void)
 {
 	if (I_SongPlaying() && !I_SongPaused())
 		I_PauseSong();
-
-	// pause cd music
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
-	I_PauseCD();
-#else
-	I_StopCD();
-#endif
 }
 
 void S_ResumeAudio(void)
@@ -1610,9 +1599,6 @@ void S_ResumeAudio(void)
 
 	if (I_SongPlaying() && I_SongPaused())
 		I_ResumeSong();
-
-	// resume cd music
-	I_ResumeCD();
 }
 
 void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume)
@@ -1631,10 +1617,6 @@ void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume)
 		CONS_Alert(CONS_WARNING, "midimusicvolume should be between 0-31\n");
 	CV_SetValue(&cv_midimusicvolume, seqvolume&31);
 	actualmidimusicvolume = cv_midimusicvolume.value;   //check for change of var
-
-#ifdef DJGPPDOS
-	digvolume = seqvolume = 31;
-#endif
 
 	switch(I_SongType())
 	{
@@ -1793,7 +1775,7 @@ static void Command_RestartAudio_f(void)
 
 void GameSounds_OnChange(void)
 {
-	if (M_CheckParm("-nosound"))
+	if (M_CheckParm("-nosound") || M_CheckParm("-noaudio"))
 		return;
 
 	if (sound_disabled)
@@ -1811,7 +1793,7 @@ void GameSounds_OnChange(void)
 
 void GameDigiMusic_OnChange(void)
 {
-	if (M_CheckParm("-nomusic"))
+	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio"))
 		return;
 	else if (M_CheckParm("-nodigmusic"))
 		return;
@@ -1845,7 +1827,7 @@ void GameDigiMusic_OnChange(void)
 
 void GameMIDIMusic_OnChange(void)
 {
-	if (M_CheckParm("-nomusic"))
+	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio"))
 		return;
 	else if (M_CheckParm("-nomidimusic"))
 		return;

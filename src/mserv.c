@@ -210,8 +210,8 @@ static void MasterServer_OnChange(void);
 static void ServerName_OnChange(void);
 
 #define DEF_PORT "28900"
-consvar_t cv_masterserver = {"masterserver", "ms.srb2classic.net:"DEF_PORT, CV_SAVE, NULL, MasterServer_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_servername = {"servername", "SRB2 server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, ServerName_OnChange, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_masterserver = CVAR_INIT ("masterserver", "ms.srb2classic.net:"DEF_PORT, "The URL for the Master Server", CV_SAVE, NULL, MasterServer_OnChange);
+consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", "Name of the server as displayed on the server listing", CV_SAVE|CV_CALL|CV_NOINIT, NULL, ServerName_OnChange);
 
 INT16 ms_RoomId = -1;
 
@@ -255,7 +255,7 @@ void AddMServCommands(void)
 #ifndef NONET
 	CV_RegisterVar(&cv_masterserver);
 	CV_RegisterVar(&cv_servername);
-	COM_AddCommand("listserv", Command_Listserv_f);
+	COM_AddCommand("listserv", NULL,  Command_Listserv_f);
 #endif
 }
 
@@ -698,8 +698,8 @@ static void AddToMasterServer(void *userdata)
 	strcpy(info->port, int2str(current_port));
 	strcpy(info->name, cv_servername.string);
 	M_Memcpy(&info->room, & room, sizeof (INT32));
-#if VERSION > 0 || SUBVERSION > 0
-	sprintf(info->version, "%d.%d.%d", VERSION/100, VERSION%100, SUBVERSION);
+#ifndef DEVELOP
+	strcpy(info->version, SRB2VERSION);
 #else // Trunk build, send revision info
 	strcpy(info->version, GetRevisionString());
 #endif
@@ -748,7 +748,7 @@ static void RemoveFromMasterServer(void *userdata)
 	strcpy(info->ip, "");
 	strcpy(info->port, int2str(current_port));
 	strcpy(info->name, registered_server.name);
-	sprintf(info->version, "%d.%d.%d", VERSION/100, VERSION%100, SUBVERSION);
+	strcpy(info->version, SRB2VERSION);
 
 	msg.type = REMOVE_SERVER_MSG;
 	msg.length = (UINT32)sizeof (msg_server_t);

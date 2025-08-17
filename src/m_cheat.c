@@ -520,7 +520,7 @@ void Command_Teleport_f(void)
 		return;
 	}
 
-	ss = R_PointInSubsector(intx*FRACUNIT, inty*FRACUNIT);
+	ss = R_PointInSubsectorFast(intx*FRACUNIT, inty*FRACUNIT);
 	if (!ss || ss->sector->ceilingheight - ss->sector->floorheight < p->mo->height)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Not a valid location.\n"));
@@ -542,7 +542,7 @@ void Command_Teleport_f(void)
 	CONS_Printf(M_GetText("Teleporting to %d, %d, %d...\n"), intx, inty, FixedInt(intz));
 
 	P_MapStart();
-	if (!P_SetOrigin(p->mo, p->mo->x+intx*FRACUNIT, p->mo->y+inty*FRACUNIT, intz))
+	if (!P_SetOrigin(p->mo, intx*FRACUNIT, inty*FRACUNIT, intz))
 		CONS_Alert(CONS_WARNING, M_GetText("Unable to teleport to that spot!\n"));
 	else
 		S_StartSound(p->mo, sfx_mixup);
@@ -583,6 +583,18 @@ void Command_Weather_f(void)
 	CONS_Printf(M_GetText("Previewing weather %s...\n"), COM_Argv(1));
 
 	P_SwitchWeather(atoi(COM_Argv(1)));
+}
+
+void Command_Toggletwod_f(void)
+{
+	player_t *p = &players[consoleplayer];
+
+	REQUIRE_DEVMODE;
+	REQUIRE_INLEVEL;
+	REQUIRE_SINGLEPLAYER;
+
+	if (p->mo)
+		p->mo->flags2 ^= MF2_TWOD;
 }
 
 #ifdef _DEBUG
@@ -774,9 +786,9 @@ static CV_PossibleValue_t op_mapthing_t[] = {{0, "MIN"}, {4095, "MAX"}, {0, NULL
 static CV_PossibleValue_t op_speed_t[] = {{1, "MIN"}, {128, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t op_flags_t[] = {{0, "MIN"}, {15, "MAX"}, {0, NULL}};
 
-consvar_t cv_mapthingnum = {"op_mapthingnum", "0", CV_NOTINNET, op_mapthing_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_speed = {"op_speed", "16", CV_NOTINNET, op_speed_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_opflags = {"op_flags", "0", CV_NOTINNET, op_flags_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_mapthingnum = CVAR_INIT ("op_mapthingnum", "0", NULL, CV_NOTINNET, op_mapthing_t, NULL);
+consvar_t cv_speed = CVAR_INIT ("op_speed", "16", NULL, CV_NOTINNET, op_speed_t, NULL);
+consvar_t cv_opflags = CVAR_INIT ("op_flags", "0", NULL, CV_NOTINNET, op_flags_t, NULL);
 
 boolean objectplacing = false;
 mobjtype_t op_currentthing = 0; // For the object placement mode
@@ -789,7 +801,7 @@ static mobjflag2_t op_oldflags2 = 0;
 static UINT32 op_oldeflags = 0;
 static fixed_t op_oldmomx = 0, op_oldmomy = 0, op_oldmomz = 0, op_oldheight = 0;
 static statenum_t op_oldstate = 0;
-static UINT8 op_oldcolor = 0;
+static UINT16 op_oldcolor = 0;
 
 //
 // Static calculation / common output help
@@ -1138,23 +1150,17 @@ void OP_ObjectplaceMovement(player_t *player)
 	if (player->pflags & PF_ATTACKDOWN)
 	{
 		// Are ANY objectplace buttons pressed?  If no, remove flag.
-		if (!(cmd->buttons & (BT_ATTACK|BT_TOSSFLAG|BT_CAMRIGHT|BT_CAMLEFT)))
+		if (!(cmd->buttons & (BT_ATTACK|BT_TOSSFLAG)))
 			player->pflags &= ~PF_ATTACKDOWN;
 
 		// Do nothing.
 		return;
 	}
 
-	if (cmd->buttons & BT_CAMLEFT)
-	{
+	if (cmd->buttons & BT_WEAPONPREV)
 		OP_CycleThings(-1);
-		player->pflags |= PF_ATTACKDOWN;
-	}
-	else if (cmd->buttons & BT_CAMRIGHT)
-	{
+	else if (cmd->buttons & BT_WEAPONNEXT)
 		OP_CycleThings(1);
-		player->pflags |= PF_ATTACKDOWN;
-	}
 
 	// Place an object and add it to the maplist
 	if (cmd->buttons & BT_ATTACK)
@@ -1237,10 +1243,10 @@ void Command_ObjectPlace_f(void)
 			HU_DoCEcho(va(M_GetText(
 				"\\\\\\\\\\\\\\\\\\\\\\\\\x82"
 				"   Objectplace Controls:   \x80\\\\"
-				"Camera L/R: Cycle mapthings\\"
-				"      Jump: Float up       \\"
-				"      Spin: Float down     \\"
-				" Fire Ring: Place object   \\")));
+				"Weapon Next/Prev: Cycle mapthings\\"
+				"            Jump: Float up       \\"
+				"            Spin: Float down     \\"
+				"       Fire Ring: Place object   \\")));
 		}
 
 		// Save all the player's data.

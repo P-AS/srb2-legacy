@@ -25,6 +25,11 @@ extern consvar_t cv_skin;
 extern consvar_t cv_playername2;
 extern consvar_t cv_playercolor2;
 extern consvar_t cv_skin2;
+// saved versions of the above six
+extern consvar_t cv_defaultplayercolor;
+extern consvar_t cv_defaultskin;
+extern consvar_t cv_defaultplayercolor2;
+extern consvar_t cv_defaultskin2;
 
 #ifdef SEENAMES
 extern consvar_t cv_seenames, cv_allowseenames;
@@ -103,13 +108,12 @@ extern consvar_t cv_ringslinger, cv_soundtest;
 
 extern consvar_t cv_specialrings, cv_powerstones, cv_matchboxes, cv_competitionboxes;
 
-#ifdef NEWPING
 extern consvar_t cv_maxping;
-#endif
+extern consvar_t cv_pingtimeout;
+extern consvar_t cv_showping;
+extern consvar_t cv_pingmeasurement;
 
 extern consvar_t cv_skipmapcheck;
-
-extern consvar_t cv_showping;
 
 extern consvar_t cv_sleep;
 
@@ -118,10 +122,6 @@ extern consvar_t cv_ps_samplesize;
 extern consvar_t cv_ps_descriptor;
 
 extern consvar_t cv_freedemocamera;
-
-#ifndef NONET
-extern consvar_t cv_netcompat;
-#endif
 
 extern consvar_t cv_lastserver;
 
@@ -144,12 +144,13 @@ typedef enum
 	XD_RANDOMSEED,  // 15
 	XD_RUNSOC,      // 16
 	XD_REQADDFILE,  // 17
-	XD_DELFILE,     // 18
+	// UNUSED       // 18 (ditto)
 	XD_SETMOTD,     // 19
 	XD_SUICIDE,     // 20
 	XD_DEMOTED,     // 21
 	XD_LUACMD,      // 22
 	XD_LUAVAR,      // 23
+	XD_LUAFILE,     // 24
 	MAXNETXCMD
 } netxcmd_t;
 

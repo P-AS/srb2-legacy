@@ -35,9 +35,9 @@
 
 // protos.
 static CV_PossibleValue_t viewheight_cons_t[] = {{16, "MIN"}, {56, "MAX"}, {0, NULL}};
-consvar_t cv_viewheight = {"viewheight", VIEWHEIGHTS, 0, viewheight_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_viewheight = CVAR_INIT ("viewheight", VIEWHEIGHTS, NULL, 0, viewheight_cons_t, NULL);
 #ifdef WALLSPLATS
-consvar_t cv_splats = {"splats", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_splats = CVAR_INIT ("splats", "On", CV_SAVE, CV_OnOff, NULL);
 #endif
 
 actioncache_t actioncachehead;
@@ -1038,7 +1038,7 @@ fixed_t P_CameraFloorZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, fix
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_PointInSubsectorFast(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -1114,7 +1114,7 @@ fixed_t P_CameraCeilingZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, f
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_PointInSubsectorFast(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -3497,7 +3497,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 	if (!itsatwodlevel)
 		P_CheckCameraPosition(thiscam->x, thiscam->y, thiscam);
 
-	thiscam->subsector = R_PointInSubsector(thiscam->x, thiscam->y);
+	thiscam->subsector = R_PointInSubsectorFast(thiscam->x, thiscam->y);
 	thiscam->floorz = tmfloorz;
 	thiscam->ceilingz = tmceilingz;
 
@@ -5727,11 +5727,7 @@ void P_SpawnParaloop(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 numb
 		mobj->fuse = (radius>>(FRACBITS+2)) + 1;
 
 		if (spawncenter)
-		{
-			mobj->x = x;
-			mobj->y = y;
-			mobj->z = z;
-		}
+			P_SetOrigin(mobj, x, y, z);
 
 		if (mobj->fuse <= 1)
 			mobj->fuse = 2;
@@ -7229,33 +7225,33 @@ void P_MobjThinker(mobj_t *mobj)
 								else if (players[consoleplayer].ctfteam == 1)
 									S_StartSound(NULL, sfx_hoop3);
 
-								blueflag = flagmo;
-							}
+							blueflag = flagmo;
 						}
-						P_RemoveMobj(mobj);
-						return;
-					case MT_YELLOWTV: // Ring shield box
-					case MT_BLUETV: // Force shield box
-					case MT_GREENTV: // Water shield box
-					case MT_BLACKTV: // Bomb shield box
-					case MT_WHITETV: // Jump shield box
-					case MT_SNEAKERTV: // Super Sneaker box
-					case MT_SUPERRINGBOX: // 10-Ring box
-					case MT_REDRINGBOX: // Red Team 10-Ring box
-					case MT_BLUERINGBOX: // Blue Team 10-Ring box
-					case MT_INV: // Invincibility box
-					case MT_MIXUPBOX: // Teleporter Mixup box
-					case MT_RECYCLETV: // Recycler box
-					case MT_SCORETVSMALL:
-					case MT_SCORETVLARGE:
-					case MT_PRUP: // 1up!
-					case MT_EGGMANBOX: // Eggman box
-					case MT_GRAVITYBOX: // Gravity box
-					case MT_QUESTIONBOX:
-						if ((mobj->flags & MF_AMBUSH || mobj->flags2 & MF2_STRONGBOX) && mobj->type != MT_QUESTIONBOX)
-						{
-							mobjtype_t spawnchance[64];
-							INT32 numchoices = 0, i = 0;
+					}
+					P_RemoveMobj(mobj);
+					return;
+				case MT_YELLOWTV: // Ring shield box
+				case MT_BLUETV: // Force shield box
+				case MT_GREENTV: // Water shield box
+				case MT_BLACKTV: // Bomb shield box
+				case MT_WHITETV: // Jump shield box
+				case MT_SNEAKERTV: // Super Sneaker box
+				case MT_SUPERRINGBOX: // 10-Ring box
+				case MT_REDRINGBOX: // Red Team 10-Ring box
+				case MT_BLUERINGBOX: // Blue Team 10-Ring box
+				case MT_INV: // Invincibility box
+				case MT_MIXUPBOX: // Teleporter Mixup box
+				case MT_RECYCLETV: // Recycler box
+				case MT_SCORETVSMALL:
+				case MT_SCORETVLARGE:
+				case MT_PRUP: // 1up!
+				case MT_EGGMANBOX: // Eggman box
+				case MT_GRAVITYBOX: // Gravity box
+				case MT_QUESTIONBOX:
+					if ((mobj->flags & MF_AMBUSH || mobj->flags2 & MF2_STRONGBOX) && mobj->type != MT_QUESTIONBOX)
+					{
+						mobjtype_t spawnchance[64];
+						INT32 numchoices = 0, i = 0;
 
 	// This define should make it a lot easier to organize and change monitor weights
 	#define SETMONITORCHANCES(type, strongboxamt, weakboxamt) \
@@ -7280,16 +7276,16 @@ void P_MobjThinker(mobj_t *mobj)
 							i = P_RandomKey(numchoices); // Gotta love those random numbers!
 							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, spawnchance[i]);
 
-							// If the monitor respawns randomly, transfer the flag.
-							if (mobj->flags & MF_AMBUSH)
-								newmobj->flags |= MF_AMBUSH;
+						// If the monitor respawns randomly, transfer the flag.
+						if (mobj->flags & MF_AMBUSH)
+							newmobj->flags |= MF_AMBUSH;
 
-							// Transfer flags2 (strongbox, objectflip)
-							newmobj->flags2 = mobj->flags2;
-						}
-						else
-						{
-							newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
+						// Transfer flags2 (strongbox, objectflip)
+						newmobj->flags2 = mobj->flags2;
+					}
+					else
+					{
+						newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
 
 							// Transfer flags2 (strongbox, objectflip)
 							newmobj->flags2 = mobj->flags2;
@@ -7946,6 +7942,11 @@ void P_RemoveMobj(mobj_t *mobj)
 	//
 	// Remove any references to other mobjs.
 	P_SetTarget(&mobj->target, P_SetTarget(&mobj->tracer, NULL));
+
+	// clear the reference from the mapthing
+	if (mobj->spawnpoint)
+		mobj->spawnpoint->mobj = NULL;
+
     R_RemoveMobjInterpolator(mobj);
 
 	// free block
@@ -8016,14 +8017,15 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 
 	// free block
 	P_RemoveThinker((thinker_t *)mobj);
+	R_RemoveMobjInterpolator(mobj);
 }
 
 static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_itemrespawntime = {"respawnitemtime", "30", CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_itemrespawn = {"respawnitem", "On", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_itemrespawntime = CVAR_INIT ("respawnitemtime", "30", NULL, CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL);
+consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
 static CV_PossibleValue_t flagtime_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_flagtime = {"flagtime", "30", CV_NETVAR|CV_CHEAT, flagtime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_suddendeath = {"suddendeath", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_flagtime = CVAR_INIT ("flagtime", "30", NULL, CV_NETVAR|CV_CHEAT, flagtime_cons_t, NULL);
+consvar_t cv_suddendeath = CVAR_INIT ("suddendeath", "Off", NULL, CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 
 void P_SpawnPrecipitation(void)
 {
@@ -8184,7 +8186,7 @@ void P_PrecipitationEffects(void)
 		for (y = yl; y <= yh; y += FRACUNIT*64)
 			for (x = xl; x <= xh; x += FRACUNIT*64)
 			{
-				if (R_PointInSubsector(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
+				if (R_PointInSubsectorFast(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
 				{
 					newdist = S_CalculateSoundDistance(players[displayplayer].mo->x, players[displayplayer].mo->y, 0, x, y, 0);
 					if (newdist < closedist)

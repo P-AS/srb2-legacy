@@ -78,6 +78,8 @@
 
 #include "p_slopes.h"
 
+boolean g_reloadinggamestate = false;
+
 //
 // Map MD5, calculated on level load.
 // Sent to clients in PT_SERVERINFO.
@@ -172,66 +174,66 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
-	DEH_WriteUndoline("LEVELNAME", mapheaderinfo[num]->lvlttl, UNDO_NONE);
+
 	mapheaderinfo[num]->lvlttl[0] = '\0';
-	DEH_WriteUndoline("SUBTITLE", mapheaderinfo[num]->subttl, UNDO_NONE);
+
 	mapheaderinfo[num]->subttl[0] = '\0';
-	DEH_WriteUndoline("ACT", va("%d", mapheaderinfo[num]->actnum), UNDO_NONE);
+
 	mapheaderinfo[num]->actnum = 0;
-	DEH_WriteUndoline("TYPEOFLEVEL", va("%d", mapheaderinfo[num]->typeoflevel), UNDO_NONE);
+
 	mapheaderinfo[num]->typeoflevel = 0;
-	DEH_WriteUndoline("NEXTLEVEL", va("%d", mapheaderinfo[num]->nextlevel), UNDO_NONE);
+
 	mapheaderinfo[num]->nextlevel = (INT16)(i + 1);
-	DEH_WriteUndoline("MUSIC", mapheaderinfo[num]->musname, UNDO_NONE);
+
 	snprintf(mapheaderinfo[num]->musname, 7, "%sM", G_BuildMapName(i));
 	mapheaderinfo[num]->musname[6] = 0;
-	DEH_WriteUndoline("MUSICTRACK", va("%d", mapheaderinfo[num]->mustrack), UNDO_NONE);
+
 	mapheaderinfo[num]->mustrack = 0;
-	DEH_WriteUndoline("MUSICPOS", va("%d", mapheaderinfo[num]->muspos), UNDO_NONE);
+
 	mapheaderinfo[num]->muspos = 0;
-	DEH_WriteUndoline("MUSICINTERFADEOUT", va("%d", mapheaderinfo[num]->musinterfadeout), UNDO_NONE);
+
 	mapheaderinfo[num]->musinterfadeout = 0;
-	DEH_WriteUndoline("MUSICINTER", mapheaderinfo[num]->musintername, UNDO_NONE);
+
 	mapheaderinfo[num]->musintername[0] = '\0';
-	DEH_WriteUndoline("FORCECHARACTER", va("%d", mapheaderinfo[num]->forcecharacter), UNDO_NONE);
+
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
-	DEH_WriteUndoline("WEATHER", va("%d", mapheaderinfo[num]->weather), UNDO_NONE);
+
 	mapheaderinfo[num]->weather = 0;
-	DEH_WriteUndoline("SKYNUM", va("%d", mapheaderinfo[num]->skynum), UNDO_NONE);
+
 	mapheaderinfo[num]->skynum = 1;
-	DEH_WriteUndoline("SKYBOXSCALEX", va("%d", mapheaderinfo[num]->skybox_scalex), UNDO_NONE);
+
 	mapheaderinfo[num]->skybox_scalex = 16;
-	DEH_WriteUndoline("SKYBOXSCALEY", va("%d", mapheaderinfo[num]->skybox_scaley), UNDO_NONE);
+
 	mapheaderinfo[num]->skybox_scaley = 16;
-	DEH_WriteUndoline("SKYBOXSCALEZ", va("%d", mapheaderinfo[num]->skybox_scalez), UNDO_NONE);
+
 	mapheaderinfo[num]->skybox_scalez = 16;
-	DEH_WriteUndoline("INTERSCREEN", mapheaderinfo[num]->interscreen, UNDO_NONE);
+
 	mapheaderinfo[num]->interscreen[0] = '#';
-	DEH_WriteUndoline("RUNSOC", mapheaderinfo[num]->runsoc, UNDO_NONE);
+
 	mapheaderinfo[num]->runsoc[0] = '#';
-	DEH_WriteUndoline("SCRIPTNAME", mapheaderinfo[num]->scriptname, UNDO_NONE);
+
 	mapheaderinfo[num]->scriptname[0] = '#';
-	DEH_WriteUndoline("PRECUTSCENENUM", va("%d", mapheaderinfo[num]->precutscenenum), UNDO_NONE);
+
 	mapheaderinfo[num]->precutscenenum = 0;
-	DEH_WriteUndoline("CUTSCENENUM", va("%d", mapheaderinfo[num]->cutscenenum), UNDO_NONE);
+
 	mapheaderinfo[num]->cutscenenum = 0;
-	DEH_WriteUndoline("COUNTDOWN", va("%d", mapheaderinfo[num]->countdown), UNDO_NONE);
+
 	mapheaderinfo[num]->countdown = 0;
-	DEH_WriteUndoline("PALLETE", va("%u", mapheaderinfo[num]->palette), UNDO_NONE);
+
 	mapheaderinfo[num]->palette = UINT16_MAX;
-	DEH_WriteUndoline("NUMLAPS", va("%u", mapheaderinfo[num]->numlaps), UNDO_NONE);
+
 	mapheaderinfo[num]->numlaps = NUMLAPS_DEFAULT;
-	DEH_WriteUndoline("UNLOCKABLE", va("%s", mapheaderinfo[num]->unlockrequired), UNDO_NONE);
+
 	mapheaderinfo[num]->unlockrequired = -1;
-	DEH_WriteUndoline("LEVELSELECT", va("%d", mapheaderinfo[num]->levelselect), UNDO_NONE);
+
 	mapheaderinfo[num]->levelselect = 0;
-	DEH_WriteUndoline("BONUSTYPE", va("%d", mapheaderinfo[num]->bonustype), UNDO_NONE);
+
 	mapheaderinfo[num]->bonustype = 0;
-	DEH_WriteUndoline("SAVEOVERRIDE", va("%d", mapheaderinfo[num]->saveoverride), UNDO_NONE);
+
 	mapheaderinfo[num]->saveoverride = SAVE_DEFAULT;
-	DEH_WriteUndoline("LEVELFLAGS", va("%d", mapheaderinfo[num]->levelflags), UNDO_NONE);
+
 	mapheaderinfo[num]->levelflags = 0;
-	DEH_WriteUndoline("MENUFLAGS", va("%d", mapheaderinfo[num]->menuflags), UNDO_NONE);
+
 	mapheaderinfo[num]->menuflags = 0;
 	// TODO grades support for delfile (pfft yeah right)
 	P_DeleteGrades(num);
@@ -239,7 +241,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
 
-	DEH_WriteUndoline(va("# uload for map %d", i), NULL, UNDO_DONE);
+
 }
 
 /** Allocates a new map-header structure.
@@ -1411,7 +1413,6 @@ static void P_LoadRawSideDefs2(void *data)
 			case 606: //SoM: 4/4/2000: Just colormap transfer
 				// SoM: R_CreateColormap will only create a colormap in software mode...
 				// Perhaps we should just call it instead of doing the calculations here.
-				if (rendermode == render_soft || rendermode == render_none)
 				{
 					if (msd->toptexture[0] == '#' || msd->bottomtexture[0] == '#')
 					{
@@ -1434,11 +1435,6 @@ static void P_LoadRawSideDefs2(void *data)
 						else
 							sd->bottomtexture = num;
 					}
-					break;
-				}
-#ifdef HWRENDER
-				else
-				{
 					// for now, full support of toptexture only
 					if ((msd->toptexture[0] == '#' && msd->toptexture[1] && msd->toptexture[2] && msd->toptexture[3] && msd->toptexture[4] && msd->toptexture[5] && msd->toptexture[6])
 						|| (msd->bottomtexture[0] == '#' && msd->bottomtexture[1] && msd->bottomtexture[2] && msd->bottomtexture[3] && msd->bottomtexture[4] && msd->bottomtexture[5] && msd->bottomtexture[6]))
@@ -1490,28 +1486,8 @@ static void P_LoadRawSideDefs2(void *data)
 #undef ALPHA2INT
 #undef HEX2INT
 					}
-					else
-					{
-						if ((num = R_CheckTextureNumForName(msd->toptexture)) == -1)
-							sd->toptexture = 0;
-						else
-							sd->toptexture = num;
-
-						if ((num = R_CheckTextureNumForName(msd->midtexture)) == -1)
-							sd->midtexture = 0;
-						else
-							sd->midtexture = num;
-
-						if ((num = R_CheckTextureNumForName(msd->bottomtexture)) == -1)
-							sd->bottomtexture = 0;
-						else
-							sd->bottomtexture = num;
-					}
 					break;
 				}
-#else
-				break;
-#endif
 
 			case 413: // Change music
 			{
@@ -2247,14 +2223,13 @@ lumpnum_t lastloadedmaplumpnum; // for comparative savegame
 //
 // Some player initialization for map start.
 //
-static void P_LevelInitStuff(void)
+static void P_LevelInitStuff(boolean reloadinggamestate)
 {
 	INT32 i;
 
 	leveltime = 0;
 
-	localaiming = 0;
-	localaiming2 = 0;
+
 
 	// special stage tokens, emeralds, and ring total
 	tokenbits = 0;
@@ -2278,7 +2253,10 @@ static void P_LevelInitStuff(void)
 	// circuit, race and competition stuff
 	circuitmap = false;
 	numstarposts = 0;
-	totalrings = timeinmap = 0;
+	totalrings = 0;
+
+	if (!reloadinggamestate)
+		timeinmap = 0;
 
 	// special stage
 	stagefailed = false;
@@ -2356,7 +2334,7 @@ void P_LoadThingsOnly(void)
 			P_RemoveMobj(mo);
 	}
 
-	P_LevelInitStuff();
+	P_LevelInitStuff(false);
 
 	if (W_IsLumpWad(lastloadedmaplumpnum)) // welp it's a map wad in a pk3
 	{ // HACK: Open wad file rather quickly so we can use the things lump
@@ -2368,6 +2346,9 @@ void P_LoadThingsOnly(void)
 	}
 	else // phew it's just a WAD
 		P_PrepareThings(lastloadedmaplumpnum + ML_THINGS);
+
+	localaiming = 0;
+	localaiming2 = 0;
 	P_LoadThings();
 
 	P_SpawnSecretItems(true);
@@ -2602,7 +2583,6 @@ static void P_SetupCamera(void)
 		camera.y = players[displayplayer].mo->y;
 		camera.z = players[displayplayer].mo->z;
 		camera.angle = players[displayplayer].mo->angle;
-		camera.subsector = R_PointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 	}
 	else
 	{
@@ -2626,9 +2606,9 @@ static void P_SetupCamera(void)
 			camera.y = thing->y;
 			camera.z = thing->z;
 			camera.angle = FixedAngle((fixed_t)thing->angle << FRACBITS);
-			camera.subsector = R_PointInSubsector(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 		}
 	}
+	camera.subsector = R_PointInSubsectorFast(camera.x, camera.y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 }
 
 static boolean P_CanSave(void)
@@ -2653,12 +2633,44 @@ static boolean P_CanSave(void)
 			&& (gamemap != lastmapsaved));
 }
 
+void P_InitCamera(void)
+{
+ 	P_SetupCamera();
+
+	// Salt: CV_ClearChangedFlags() messes with your settings :(
+	/*if (!cv_cam_height.changed)
+		CV_Set(&cv_cam_height, cv_cam_height.defaultvalue);
+
+	if (!cv_cam_dist.changed)
+		CV_Set(&cv_cam_dist, cv_cam_dist.defaultvalue);
+
+	if (!cv_cam2_height.changed)
+		CV_Set(&cv_cam2_height, cv_cam2_height.defaultvalue);
+
+	if (!cv_cam2_dist.changed)
+		CV_Set(&cv_cam2_dist, cv_cam2_dist.defaultvalue);*/
+
+	// Though, I don't think anyone would care about cam_rotate being reset back to the only value that makes sense :P
+	if (!cv_cam_rotate.changed)
+		CV_Set(&cv_cam_rotate, cv_cam_rotate.defaultvalue);
+
+	if (!cv_cam2_rotate.changed)
+		CV_Set(&cv_cam2_rotate, cv_cam2_rotate.defaultvalue);
+
+	if (!cv_analog.changed)
+			CV_SetValue(&cv_analog, 0);
+	if (!cv_analog2.changed)
+		CV_SetValue(&cv_analog2, 0);
+
+	displayplayer = consoleplayer; // Start with your OWN view, please!
+}
+
 /** Loads a level from a lump or external wad.
   *
   * \param skipprecip If true, don't spawn precipitation.
   * \todo Clean up, refactor, split up; get rid of the bloat.
   */
-boolean P_SetupLevel(boolean skipprecip)
+boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 {
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
@@ -2671,6 +2683,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	boolean chase;
 
 	levelloading = true;
+	g_reloadinggamestate = reloadinggamestate;
 
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
@@ -2701,7 +2714,7 @@ boolean P_SetupLevel(boolean skipprecip)
 	if (cv_runscripts.value && mapheaderinfo[gamemap-1]->scriptname[0] != '#')
 		P_RunLevelScript(mapheaderinfo[gamemap-1]->scriptname);
 
-	P_LevelInitStuff();
+	P_LevelInitStuff(reloadinggamestate);
 
 	postimgtype = postimgtype2 = postimg_none;
 
@@ -2755,13 +2768,14 @@ boolean P_SetupLevel(boolean skipprecip)
 			// wait loop
 			while (!((nowtime = I_GetTime()) - lastwipetic))
 			{
-			I_Sleep(cv_sleep.value);
-			I_UpdateTime(cv_timescale.value);
+				I_Sleep(cv_sleep.value);
+				I_UpdateTime(cv_timescale.value);
 			}
 
 			lastwipetic = nowtime;
 			if (moviemode) // make sure we save frames for the white hold too
 				M_SaveFrame();
+			NetKeepAlive(); // Prevent timeout
 		}
 
 		ranspecialwipe = 1;
@@ -2777,7 +2791,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	// Let's fade to black here
 	// But only if we didn't do the special stage wipe
-	if (rendermode != render_none && !ranspecialwipe)
+	if (rendermode != render_none && !ranspecialwipe && !reloadinggamestate)
 	{
 		F_WipeStartScreen();
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -2847,8 +2861,6 @@ boolean P_SetupLevel(boolean skipprecip)
 	P_SetupLevelSky(mapheaderinfo[gamemap-1]->skynum, true);
 
 	P_MakeMapMD5(lastloadedmaplumpnum, &mapmd5);
-
-
 
 	// HACK ALERT: Cache the WAD, get the map data into the tables, free memory.
 	// As it is implemented right now, we're assuming an uncompressed WAD.
@@ -2950,7 +2962,7 @@ boolean P_SetupLevel(boolean skipprecip)
 			break;
 
 	// set up world state
-	P_SpawnSpecials(fromnetsave);
+	P_SpawnSpecials(fromnetsave, reloadinggamestate);
 
 	if (loadprecip) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
 		P_SpawnPrecipitation();
@@ -2958,14 +2970,14 @@ boolean P_SetupLevel(boolean skipprecip)
 	globalweather = mapheaderinfo[gamemap-1]->weather;
 
 #ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode != render_soft && rendermode != render_none)
-	{
-		HWR_CreatePlanePolygons((INT32)numnodes - 1);
-
-			// Build the sky dome
-		HWR_ClearSkyDome();
-		HWR_BuildSkyDome();
-	}
+	// Jimita: Free extrasubsectors regardless of renderer.
+	// Maybe we're not in OpenGL anymore.
+	if (extrasubsectors)
+		free(extrasubsectors);
+	extrasubsectors = NULL;
+	// stuff like HWR_CreatePlanePolygons is called there
+	if (rendermode == render_opengl)
+		HWR_SetupLevel();
 #endif
 
 	// oh god I hope this helps
@@ -3053,36 +3065,10 @@ boolean P_SetupLevel(boolean skipprecip)
 	// landing point for netgames.
 	netgameskip:
 
-	if (!dedicated)
+	if (!reloadinggamestate)
 	{
-		P_SetupCamera();
-
-		// Salt: CV_ClearChangedFlags() messes with your settings :(
-		/*if (!cv_cam_height.changed)
-			CV_Set(&cv_cam_height, cv_cam_height.defaultvalue);
-
-		if (!cv_cam_dist.changed)
-			CV_Set(&cv_cam_dist, cv_cam_dist.defaultvalue);
-
-		if (!cv_cam2_height.changed)
-			CV_Set(&cv_cam2_height, cv_cam2_height.defaultvalue);
-
-		if (!cv_cam2_dist.changed)
-			CV_Set(&cv_cam2_dist, cv_cam2_dist.defaultvalue);*/
-
-		// Though, I don't think anyone would care about cam_rotate being reset back to the only value that makes sense :P
-		if (!cv_cam_rotate.changed)
-			CV_Set(&cv_cam_rotate, cv_cam_rotate.defaultvalue);
-
-		if (!cv_cam2_rotate.changed)
-			CV_Set(&cv_cam2_rotate, cv_cam2_rotate.defaultvalue);
-
-		if (!cv_analog.changed)
-			CV_SetValue(&cv_analog, 0);
-		if (!cv_analog2.changed)
-			CV_SetValue(&cv_analog2, 0);
-
-		displayplayer = consoleplayer; // Start with your OWN view, please!
+		P_InitCamera();
+		localaiming = localaiming2 = 0;
 	}
 
 	if (cv_useranalog.value)
@@ -3102,21 +3088,10 @@ boolean P_SetupLevel(boolean skipprecip)
 	// clear special respawning que
 	iquehead = iquetail = 0;
 
-	// Fab : 19-07-98 : start cd music for this level (note: can be remapped)
-	I_PlayCD((UINT8)(gamemap), false);
-
-	// preload graphics
-#ifdef HWRENDER // not win32 only 19990829 by Kin
-	if (rendermode != render_soft && rendermode != render_none)
-	{
-		HWR_PrepLevelCache(numtextures);
-	}
-#endif
-
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
-	if (rendermode != render_none)
+	if (rendermode != render_none && !reloadinggamestate)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, (ranspecialwipe) ? 0 : 31);
 
 	if (precache || dedicated)
@@ -3157,7 +3132,8 @@ boolean P_SetupLevel(boolean skipprecip)
 				G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
 		}
 		P_PreTicker(2);
-		LUAh_MapLoad();
+		if (!reloadinggamestate)
+			LUAh_MapLoad();
 	}
 
 	if (rendermode != render_none)
@@ -3169,6 +3145,34 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	return true;
 }
+
+#ifdef HWRENDER
+void HWR_SetupLevel(void)
+{
+
+	// Lactozilla (December 8, 2019)
+	// Level setup used to free EVERY mipmap from memory.
+	// Even mipmaps that aren't related to level textures.
+	// Presumably, the hardware render code used to store textures as level data.
+	// Meaning, they had memory allocated and marked with the PU_LEVEL tag.
+	// Level textures are only reloaded after R_LoadTextures, which is
+	// when the texture list is loaded.
+
+	// Sal: Unfortunately, NOT freeing them causes the dreaded Color Bug.
+	HWR_FreeMipmapCache();
+
+	// Jimita: Don't call this more than once!
+	if (!extrasubsectors)
+		HWR_CreatePlanePolygons((INT32)numnodes - 1);
+
+	// Build the sky dome
+	HWR_ClearSkyDome();
+	HWR_BuildSkyDome();
+
+	if (HWR_ShouldUsePaletteRendering())
+		HWR_SetMapPalette();
+}
+#endif
 
 //
 // P_RunSOC
@@ -3321,6 +3325,11 @@ boolean P_AddWadFile(const char *wadfilename)
 	if (gamestate == GS_LEVEL)
 		ST_Start();
 
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+		HWR_FreeMipmapCache();
+#endif
+
 	// Prevent savefile cheating
 	if (cursaveslot >= 0)
 		cursaveslot = -1;
@@ -3334,31 +3343,3 @@ boolean P_AddWadFile(const char *wadfilename)
 
 	return true;
 }
-
-#ifdef DELFILE
-boolean P_DelWadFile(void)
-{
-	sfxenum_t i;
-	const UINT16 wadnum = (UINT16)(numwadfiles - 1);
-	const lumpnum_t lumpnum = numwadfiles<<16;
-	//lumpinfo_t *lumpinfo = wadfiles[wadnum]->lumpinfo;
-	R_DelSkins(wadnum); // only used by DELFILE
-	R_DelSpriteDefs(wadnum); // only used by DELFILE
-	for (i = 0; i < NUMSFX; i++)
-	{
-		if (S_sfx[i].lumpnum != LUMPERROR && S_sfx[i].lumpnum >= lumpnum)
-		{
-			S_StopSoundByNum(i);
-			S_RemoveSoundFx(i);
-			if (S_sfx[i].lumpnum != LUMPERROR)
-			{
-				I_FreeSfx(&S_sfx[i]);
-				S_sfx[i].lumpnum = LUMPERROR;
-			}
-		}
-	}
-	W_UnloadWadFile(wadnum); // only used by DELFILE
-	R_LoadTextures();
-	return false;
-}
-#endif

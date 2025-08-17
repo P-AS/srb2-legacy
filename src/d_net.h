@@ -18,6 +18,8 @@
 #ifndef __D_NET__
 #define __D_NET__
 
+#include "doomdef.h"
+
 // Max computers in a game
 #define MAXNETNODES (MAXPLAYERS+4)
 #define BROADCASTADDR MAXNETNODES
@@ -34,6 +36,9 @@ extern INT32 packetheaderlength;
 boolean Net_GetNetStat(void);
 extern INT32 getbytes;
 extern INT64 sendbytes; // Realtime updated
+
+#define PACKETMEASUREWINDOW (TICRATE*2)
+extern boolean packetloss[MAXPLAYERS][PACKETMEASUREWINDOW];
 
 extern SINT8 nodetoplayer[MAXNETNODES];
 extern SINT8 nodetoplayer2[MAXNETNODES]; // Say the numplayer for this node if any (splitscreen)

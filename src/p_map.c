@@ -492,6 +492,74 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	if (abs(thing->x - tmx) >= blockdist || abs(thing->y - tmy) >= blockdist)
 		return true; // didn't hit it
 
+	if (thing->flags & MF_PAPERCOLLISION) // CAUTION! Very easy to get stuck inside MF_SOLID objects. Giving the player MF_PAPERCOLLISION is a bad idea unless you know what you're doing.
+	{
+		fixed_t cosradius, sinradius;
+		vertex_t v1, v2; // fake vertexes
+		line_t junk; // fake linedef
+		cosradius = FixedMul(thing->radius, FINECOSINE(thing->angle>>ANGLETOFINESHIFT));
+		sinradius = FixedMul(thing->radius, FINESINE(thing->angle>>ANGLETOFINESHIFT));
+
+		v1.x = thing->x - cosradius;
+		v1.y = thing->y - sinradius;
+		v2.x = thing->x + cosradius;
+		v2.y = thing->y + sinradius;
+
+		junk.v1 = &v1;
+		junk.v2 = &v2;
+		junk.dx = v2.x - v1.x;
+		junk.dy = v2.y - v1.y;
+
+		if (tmthing->flags & MF_PAPERCOLLISION) // more strenuous checking to prevent clipping issues
+		{
+			INT32 check1, check2, check3, check4;
+			cosradius = FixedMul(tmthing->radius, FINECOSINE(tmthing->angle>>ANGLETOFINESHIFT));
+			sinradius = FixedMul(tmthing->radius, FINESINE(tmthing->angle>>ANGLETOFINESHIFT));
+			check1 = P_PointOnLineSide(tmx - cosradius, tmy - sinradius, &junk);
+			check2 = P_PointOnLineSide(tmx + cosradius, tmy + sinradius, &junk);
+			check3 = P_PointOnLineSide(tmx + tmthing->momx - cosradius, tmy + tmthing->momy - sinradius, &junk);
+			check4 = P_PointOnLineSide(tmx + tmthing->momx + cosradius, tmy + tmthing->momy + sinradius, &junk);
+			if ((check1 == check2) && (check2 == check3) && (check3 == check4))
+				return true; // the line doesn't cross between collider's start or end
+		}
+		else
+		{
+			if ((P_PointOnLineSide(tmx - tmthing->radius, tmy - tmthing->radius, &junk)
+			== P_PointOnLineSide(tmx + tmthing->radius, tmy + tmthing->radius, &junk))
+			&& (P_PointOnLineSide(tmx + tmthing->radius, tmy - tmthing->radius, &junk)
+			== P_PointOnLineSide(tmx - tmthing->radius, tmy + tmthing->radius, &junk)))
+				return true; // the line doesn't cross between either pair of opposite corners
+		}
+	}
+	else if (tmthing->flags & MF_PAPERCOLLISION)
+	{
+		fixed_t cosradius, sinradius;
+		vertex_t v1, v2; // fake vertexes
+		line_t junk; // fake linedef
+
+		cosradius = FixedMul(tmthing->radius, FINECOSINE(tmthing->angle>>ANGLETOFINESHIFT));
+		sinradius = FixedMul(tmthing->radius, FINESINE(tmthing->angle>>ANGLETOFINESHIFT));
+
+		v1.x = tmx - cosradius;
+		v1.y = tmy - sinradius;
+		v2.x = tmx + cosradius;
+		v2.y = tmy + sinradius;
+
+		junk.v1 = &v1;
+		junk.v2 = &v2;
+		junk.dx = v2.x - v1.x;
+		junk.dy = v2.y - v1.y;
+
+		// no need to check whether thing has MF_PAPERCOLLISION, since checked above
+
+		if ((P_PointOnLineSide(thing->x - thing->radius, thing->y - thing->radius, &junk)
+		== P_PointOnLineSide(thing->x + thing->radius, thing->y + thing->radius, &junk))
+		&& (P_PointOnLineSide(thing->x + thing->radius, thing->y - thing->radius, &junk)
+		== P_PointOnLineSide(thing->x - thing->radius, thing->y + thing->radius, &junk)))
+			return true; // the line doesn't cross between either pair of opposite corners
+	}
+
+
 	{
 		UINT8 shouldCollide = LUAh_MobjCollide(thing, tmthing); // checks hook for thing's type
 		if (P_MobjWasRemoved(tmthing) || P_MobjWasRemoved(thing))
@@ -1100,6 +1168,7 @@ static boolean PIT_CheckCameraLine(line_t *ld)
 
 	// this line is out of the if so upper and lower textures can be hit by a splat
 	blockingline = ld;
+
 	if (!ld->backsector) // one sided line
 	{
 		if (P_PointOnLineSide(mapcampointer->x, mapcampointer->y, ld))
@@ -1147,6 +1216,17 @@ static boolean PIT_CheckLine(line_t *ld)
 	if (P_BoxOnLineSide(tmbbox, ld) != -1)
 		return true;
 
+if (tmthing->flags & MF_PAPERCOLLISION) // Caution! Turning whilst up against a wall will get you stuck. You probably shouldn't give the player this flag.
+	{
+		fixed_t cosradius, sinradius;
+		cosradius = FixedMul(tmthing->radius, FINECOSINE(tmthing->angle>>ANGLETOFINESHIFT));
+		sinradius = FixedMul(tmthing->radius, FINESINE(tmthing->angle>>ANGLETOFINESHIFT));
+		if (P_PointOnLineSide(tmx - cosradius, tmy - sinradius, ld)
+		== P_PointOnLineSide(tmx + cosradius, tmy + sinradius, ld))
+			return true; // the line doesn't cross between collider's start or end
+
+	}
+
 	// A line has been hit
 
 	// The moving thing's destination position will cross
@@ -1160,6 +1240,17 @@ static boolean PIT_CheckLine(line_t *ld)
 
 	// this line is out of the if so upper and lower textures can be hit by a splat
 	blockingline = ld;
+
+	{
+		UINT8 shouldCollide = LUAh_MobjLineCollide(tmthing, blockingline); // checks hook for thing's type
+		if (P_MobjWasRemoved(tmthing))
+			return true; // one of them was removed???
+		if (shouldCollide == 1)
+			return false; // force collide
+		else if (shouldCollide == 2)
+			return true; // force no collide
+	}
+
 	if (!ld->backsector) // one sided line
 	{
 		if (P_PointOnLineSide(tmthing->x, tmthing->y, ld))
@@ -1530,7 +1621,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 	tmbbox[BOXRIGHT] = x + thiscam->radius;
 	tmbbox[BOXLEFT] = x - thiscam->radius;
 
-	newsubsec = R_PointInSubsector(x, y);
+	newsubsec = R_PointInSubsectorFast(x, y);
 	ceilingline = blockingline = NULL;
 
 	mapcampointer = thiscam;
@@ -1700,7 +1791,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 //
 boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 {
-	subsector_t *s = R_PointInSubsector(x, y);
+	subsector_t *s = R_PointInSubsectorFast(x, y);
 	boolean retval = true;
 	boolean itsatwodlevel = false;
 

@@ -20,6 +20,11 @@ extern lua_State *gL;
 #define META_STATE "STATE_T*"
 #define META_MOBJINFO "MOBJINFO_T*"
 #define META_SFXINFO "SFXINFO_T*"
+#define META_SKINCOLOR "SKINCOLOR_T*"
+#define META_COLORRAMP "SKINCOLOR_T*RAMP"
+#define META_SPRITEINFO "SPRITEINFO_T*"
+#define META_PIVOTLIST "SPRITEFRAMEPIVOT_T[]"
+#define META_FRAMEPIVOT "SPRITEFRAMEPIVOT_T*"
 
 #define META_MOBJ "MOBJ_T*"
 #define META_MAPTHING "MAPTHING_T*"
@@ -50,6 +55,8 @@ extern lua_State *gL;
 #define META_PATCH "PATCH_T*"
 #define META_COLORMAP "COLORMAP"
 #define META_CAMERA "CAMERA_T*"
+
+#define META_SFXINFO "SFXINFO_T*"
 
 boolean luaL_checkboolean(lua_State *L, int narg);
 

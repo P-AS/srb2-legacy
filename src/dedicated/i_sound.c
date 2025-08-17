@@ -21,10 +21,6 @@
 #include "../i_sound.h"
 #include "../s_sound.h"
 
-consvar_t cd_volume = {"cd_volume","31",CV_SAVE,soundvolume_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-
-consvar_t cdUpdate  = {"cd_update","1",CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
-
 /**	\brief Sound subsystem runing and waiting
 */
 UINT8 sound_started = false;
@@ -335,62 +331,5 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
 {
 	(void)ms;
 	(void)looping;
-	return false;
-}
-
-/// ------------------------
-//  CD MUSIC I/O
-/// ------------------------
-
-/**	\brief  cd music interface
-*/
-UINT8 cdaudio_started;
-
-/**	\brief Startup the CD system
-*/
-void I_InitCD(void){}
-
-/**	\brief Stop the CD playback
-*/
-void I_StopCD(void){}
-
-/**	\brief Pause the CD playback
-*/
-void I_PauseCD(void){}
-
-/**	\brief Resume the CD playback
-*/
-void I_ResumeCD(void){}
-
-/**	\brief Shutdown the CD system
-*/
-void I_ShutdownCD(void){}
-
-/**	\brief Update the CD info
-*/
-void I_UpdateCD(void){}
-
-/**	\brief	The I_PlayCD function
-
-	\param	track	CD track number
-	\param	looping	if true, loop the track
-
-	\return	void
-*/
-void I_PlayCD(UINT8 track, UINT8 looping)
-{
-	(void)track;
-	(void)looping;
-}
-
-/**	\brief	The I_SetVolumeCD function
-
-	\param	volume	volume level to set at
-
-	\return	return 0 on failure
-*/
-boolean I_SetVolumeCD(INT32 volume)
-{
-	(void)volume;
 	return false;
 }

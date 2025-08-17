@@ -60,6 +60,10 @@ void F_StartContinue(void);
 void F_ContinueTicker(void);
 void F_ContinueDrawer(void);
 
+void F_StartWaitingPlayers(void);
+void F_WaitingPlayersTicker(void);
+void F_WaitingPlayersDrawer(void);
+
 extern INT32 titlescrollspeed;
 
 //

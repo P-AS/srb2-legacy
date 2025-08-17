@@ -108,7 +108,7 @@ typedef enum
 	// Don't use the blocklinks (inert but displayable)
 	MF_NOBLOCKMAP       = 1<<4,
 	// Not to be activated by sound, deaf monster.
-	MF_AMBUSH           = 1<<5,
+	MF_AMBUSH            = 1<<5,
 	// You can push this object. It can activate switches and things by pushing it on top.
 	MF_PUSHABLE         = 1<<6,
 	// Object is a boss.
@@ -160,7 +160,9 @@ typedef enum
 	MF_GRENADEBOUNCE    = 1<<28,
 	// Run the action thinker on spawn.
 	MF_RUNSPAWNFUNC     = 1<<29,
-	// free: 1<<30 and 1<<31
+	// Thin, paper-like collision bound (for visual equivalent, see FF_PAPERSPRITE)
+	MF_PAPERCOLLISION  = 1<<30,
+	// free: 1<<31
 } mobjflag_t;
 
 typedef enum
@@ -305,7 +307,7 @@ typedef struct mobj_s
 	void *skin; // overrides 'sprite' when non-NULL (for player bodies to 'remember' the skin)
 	// Player and mobj sprites in multiplayer modes are modified
 	//  using an internal color lookup table for re-indexing.
-	UINT8 color; // This replaces MF_TRANSLATION. Use 0 for default (no translation).
+	UINT16 color; // This replaces MF_TRANSLATION. Use 0 for default (no translation).
 
 	// Interaction info, by BLOCKMAP.
 	// Links in blocks (if needed).

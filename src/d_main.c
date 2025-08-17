@@ -30,7 +30,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 //int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
 #endif
 
-#if (defined (_WIN32) && !defined (_WIN32_WCE)) && !defined (_XBOX)
+#ifdef _WIN32
 #include <direct.h>
 #include <malloc.h>
 #endif
@@ -76,7 +76,7 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
 #include "keys.h"
-#include "filesrch.h" // refreshdirmenu, mainwadstally 
+#include "filesrch.h" // refreshdirmenu, mainwadstally
 #include "r_fps.h"
 #include "m_perfstats.h"
 
@@ -84,10 +84,6 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "config.h"
 #else
 #include "config.h.in"
-#endif
-
-#ifdef _XBOX
-#include "sdl12/SRB2XBOX/xboxhelp.h"
 #endif
 
 #ifdef HWRENDER
@@ -104,6 +100,11 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 
 #include "lua_script.h"
 
+
+// Version numbers for netplay :upside_down_face:
+int    VERSION;
+int SUBVERSION;
+
 // platform independant focus loss
 UINT8 window_notinfocus = false;
 INT32 window_x;
@@ -116,10 +117,13 @@ INT32 window_y;
 static const char *pagename = "MAP1PIC";
 static char *startupwadfiles[MAX_WADFILES];
 
+UINT16 numskincolors;
 boolean devparm = false; // started game with -devparm
 
 boolean singletics = false; // timedemo
 boolean lastdraw = false;
+
+static void D_CheckRendererState(void);
 
 postimg_t postimgtype = postimg_none;
 INT32 postimgparam;
@@ -177,10 +181,6 @@ void D_PostEvent(const event_t *ev)
 	events[eventhead] = *ev;
 	eventhead = (eventhead+1) & (MAXEVENTS-1);
 }
-// just for lock this function
-#if defined (PC_DOS) && !defined (DOXYGEN)
-void D_PostEvent_end(void) {};
-#endif
 
 // modifier keys
 // Now handled in I_OsPolling
@@ -234,6 +234,7 @@ gamestate_t wipegamestate = GS_LEVEL;
 
 static void D_Display(void)
 {
+	INT32 setrenderstillneeded = 0;
 	boolean forcerefresh = false;
 	static boolean wipe = false;
 	INT32 wipedefindex = 0;
@@ -244,24 +245,53 @@ static void D_Display(void)
 	if (nodrawers)
 		return; // for comparative timing/profiling
 
+	// Jimita: Switching renderers works by checking
+	// if the game has to do it right when the frame
+	// needs to render. If so, five things will happen:
+	// 1. Interface functions will be called so
+	//    that switching to OpenGL creates a
+	//    GL context, and switching to Software
+	//    allocates screen buffers.
+	// 2. Software will set drawer functions,
+	//    and OpenGL will load textures and
+	//    create plane polygons, if necessary.
+	// 3. Functions related to switching video
+	//    modes (resolution) are called.
+	// 4. Patch data is freed from memory,
+	//    and recached if necessary.
+	// 5. The frame is ready to be drawn!
 
-	// check for change of screen size (video mode)
-	if (setmodeneeded && !wipe)
+	// stop movie if needs to change renderer
+	//if (setrenderneeded && (moviemode != MM_OFF))
+		//M_StopMovie();
+
+	// check for change of renderer or screen size (video mode)
+	if ((setrenderneeded || setmodeneeded) && !wipe)
+	{
+		if (setrenderneeded)
+		{
+			CONS_Debug(DBG_RENDER, "setrenderneeded set (%d)\n", setrenderneeded);
+			setrenderstillneeded = setrenderneeded;
+		}
 		SCR_SetMode(); // change video mode
+	}
 
-	if (vid.recalc)
+	if (vid.recalc || setrenderstillneeded)
 		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
 
-	
+
 	if (rendermode == render_soft && !splitscreen)
 		R_CheckViewMorph();
 
 	// change the view size if needed
-	if (setsizeneeded)
+	if (setsizeneeded || setrenderstillneeded)
 	{
 		R_ExecuteSetViewSize();
 		forcerefresh = true; // force background redraw
 	}
+
+	// Jimita
+	D_CheckRendererState();
 
 	// draw buffered stuff to screen
 	// Used only by linux GGI version
@@ -353,6 +383,13 @@ static void D_Display(void)
 
 		case GS_WAITINGPLAYERS:
 			// The clientconnect drawer is independent...
+			if (netgame)
+			{
+				// I don't think HOM from nothing drawing is independent...
+				F_WaitingPlayersDrawer();
+				HU_Erase();
+				HU_Drawer();
+			}
 		case GS_DEDICATEDSERVER:
 		case GS_NULL:
 			break;
@@ -406,7 +443,7 @@ static void D_Display(void)
 			{
 				if (!splitscreen)
 					R_ApplyViewMorph();
-					
+
 				if (postimgtype)
 					V_DoPostProcessor(0, postimgtype, postimgparam);
 				if (postimgtype2)
@@ -446,14 +483,23 @@ static void D_Display(void)
 	// draw pause pic
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-		INT32 py;
-		patch_t *patch;
-		if (automapactive)
-			py = 4;
+		if (cv_modernpause.value)
+		{
+			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
+			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
+			V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_YELLOWMAP, "Game Paused");
+		}
 		else
-			py = viewwindowy + 4;
-		patch = W_CachePatchName("M_PAUSE", PU_CACHE);
-		V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - SHORT(patch->width))/2, py, 0, patch);
+		{
+			INT32 py;
+			patch_t *patch;
+			if (automapactive)
+				py = 4;
+			else
+				py = viewwindowy + 4;
+			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
+			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - SHORT(patch->width))/2, py, 0, patch);
+		}
 	}
 
 	// vid size change is now finished if it was on...
@@ -529,8 +575,26 @@ static void D_Display(void)
 		I_FinishUpdate(); // page flip or blit buffer
 		PS_STOP_TIMING(ps_swaptime);
 	}
+
+	needpatchflush = false;
+	needpatchrecache = false;
 }
 
+// Jimita: Check the renderer's state
+// after a possible renderer switch.
+void D_CheckRendererState(void)
+{
+	// flush all patches from memory
+	// (also frees memory tagged with PU_CACHE)
+	// (which are not necessarily patches but I don't care)
+	if (needpatchflush)
+		Z_FlushCachedPatches();
+
+	// some patches have been freed,
+	// so cache them again
+	if (needpatchrecache)
+		R_ReloadHUDGraphics();
+}
 
 // =========================================================================
 // D_SRB2Loop
@@ -767,6 +831,22 @@ void D_AdvanceDemo(void)
 	advancedemo = true;
 }
 
+
+static void
+D_ConvertVersionNumbers (void)
+{
+	/* leave at defaults (0) under DEVELOP */
+#ifndef DEVELOP
+	int major;
+	int minor;
+
+	sscanf(SRB2VERSION, "%d.%d.%d", &major, &minor, &SUBVERSION);
+
+	/* this is stupid */
+	VERSION = ( major * 100 ) + minor;
+#endif
+}
+
 // =========================================================================
 // D_SRB2Main
 // =========================================================================
@@ -779,7 +859,7 @@ void D_StartTitle(void)
 	INT32 i;
 
 	S_StopMusic();
-	
+
 	if (netgame)
 	{
 		if (gametype == GT_COOP)
@@ -822,6 +902,15 @@ void D_StartTitle(void)
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
+
+	// reset to default player stuff
+	if (!dedicated)
+	{
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin.name,cv_defaultskin.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor.name,cv_defaultplayercolor.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin2.name,cv_defaultskin2.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor2.name,cv_defaultplayercolor2.string));
+	}
 
 	gameaction = ga_nothing;
 	displayplayer = consoleplayer = 0;
@@ -972,55 +1061,6 @@ static void IdentifyVersion(void)
 #endif
 }
 
-/* ======================================================================== */
-// Just print the nice red titlebar like the original SRB2 for DOS.
-/* ======================================================================== */
-#ifdef PC_DOS
-static inline void D_Titlebar(char *title1, char *title2)
-{
-	// SRB2 banner
-	clrscr();
-	textattr((BLUE<<4)+WHITE);
-	clreol();
-	cputs(title1);
-
-	// standard srb2 banner
-	textattr((RED<<4)+WHITE);
-	clreol();
-	gotoxy((80-strlen(title2))/2, 2);
-	cputs(title2);
-	normvideo();
-	gotoxy(1,3);
-}
-#endif
-
-//
-// Center the title string, then add the date and time of compilation.
-//
-static inline void D_MakeTitleString(char *s)
-{
-	char temp[82];
-	char *t;
-	const char *u;
-	INT32 i;
-
-	for (i = 0, t = temp; i < 82; i++)
-		*t++=' ';
-
-	for (t = temp + (80-strlen(s))/2, u = s; *u != '\0' ;)
-		*t++ = *u++;
-
-	u = compdate;
-	for (t = temp + 1, i = 11; i-- ;)
-		*t++ = *u++;
-	u = comptime;
-	for (t = temp + 71, i = 8; i-- ;)
-		*t++ = *u++;
-
-	temp[80] = '\0';
-	strcpy(s, temp);
-}
-
 
 //
 // D_SRB2Main
@@ -1028,11 +1068,12 @@ static inline void D_MakeTitleString(char *s)
 void D_SRB2Main(void)
 {
 	INT32 p;
-	char srb2[82]; // srb2 title banner
-	char title[82];
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
+
+	/* break the version string into version numbers, for netplay */
+	D_ConvertVersionNumbers();
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
@@ -1049,7 +1090,7 @@ void D_SRB2Main(void)
 	"in this program.\n\n");
 
 	// keep error messages until the final flush(stderr)
-#if !defined (PC_DOS) && !defined (_WIN32_WCE) && !defined(NOTERMIOS)
+#if !defined(NOTERMIOS)
 	if (setvbuf(stderr, NULL, _IOFBF, 1000))
 		I_OutputMsg("setvbuf didnt work\n");
 #endif
@@ -1091,21 +1132,6 @@ void D_SRB2Main(void)
 	dedicated = M_CheckParm("-dedicated") != 0;
 #endif
 
-	strcpy(title, "Sonic Robo Blast 2");
-	strcpy(srb2, "Sonic Robo Blast 2");
-	D_MakeTitleString(srb2);
-
-#ifdef PC_DOS
-	D_Titlebar(srb2, title);
-#endif
-
-#if defined (__OS2__) && !defined (HAVE_SDL)
-	// set PM window title
-	snprintf(pmData->title, sizeof (pmData->title),
-		"Sonic Robo Blast 2" VERSIONSTRING ": %s",
-		title);
-	pmData->title[sizeof (pmData->title) - 1] = '\0';
-#endif
 
 	if (devparm)
 		CONS_Printf(M_GetText("Development mode ON.\n"));
@@ -1146,6 +1172,7 @@ void D_SRB2Main(void)
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, srb2home, PATHSEP);
 
+			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
 #else
 			snprintf(srb2home, sizeof srb2home, "%s", userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
@@ -1156,6 +1183,8 @@ void D_SRB2Main(void)
 
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, userhome, PATHSEP);
+
+			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
 #endif
 		}
 
@@ -1245,6 +1274,9 @@ void D_SRB2Main(void)
 	// Setup character tables
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
+
+	// load colors
+	M_InitSkincolors();
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
@@ -1337,15 +1369,28 @@ void D_SRB2Main(void)
 	// set user default mode or mode set at cmdline
 	SCR_CheckDefaultMode();
 
+	// Jimita: Does the render mode need to change?
+	if ((setrenderneeded != 0) && (setrenderneeded != rendermode))
+	{
+		CONS_Printf(M_GetText("Switching the renderer...\n"));
+
+		// set needpatchflush / needpatchrecache true for D_CheckRendererState
+		needpatchflush = true;
+		needpatchrecache = true;
+
+		// Set cv_renderer to the new render mode
+		VID_CheckRenderer();
+		SCR_ChangeRendererCVars(rendermode);
+
+		// check the renderer's state
+		D_CheckRendererState();
+	}
+
 	wipegamestate = gamestate;
 
 	savedata.lives = 0; // flag this as not-used
 
 	//------------------------------------------------ COMMAND LINE PARAMS
-
-	// Initialize CD-Audio
-	if (M_CheckParm("-usecd") && !dedicated)
-		I_InitCD();
 
 	if (M_CheckParm("-noupload"))
 		COM_BufAddText("downloading 0\n");
@@ -1366,16 +1411,28 @@ void D_SRB2Main(void)
 	{
 		CONS_Printf("S_InitSfxChannels(): Setting up sound channels.\n");
 	}
-	if (M_CheckParm("-nosound"))
+	if (M_CheckParm("-noaudio")) // combines -nosound and -nomusic
+	{
 		sound_disabled = true;
-	if (M_CheckParm("-nomusic")) // combines -nomidimusic and -nodigmusic
-		midi_disabled = digital_disabled = true;
+		digital_disabled = true;
+		midi_disabled = true;
+	}
 	else
 	{
-		if (M_CheckParm("-nomidimusic"))
-			midi_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
-		if (M_CheckParm("-nodigmusic"))
-			digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
+		if (M_CheckParm("-nosound"))
+			sound_disabled = true;
+		if (M_CheckParm("-nomusic")) // combines -nomidimusic and -nodigmusic
+		{
+			digital_disabled = true;
+			midi_disabled = true;
+		}
+		else
+		{
+			if (M_CheckParm("-nomidimusic"))
+				midi_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
+			if (M_CheckParm("-nodigmusic"))
+				digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
+		}
 	}
 	I_StartupSound();
 	I_InitMusic();
@@ -1474,6 +1531,8 @@ void D_SRB2Main(void)
 		// as having been modified for the first game.
 		M_PushSpecialParameters(); // push all "+" parameter at the command buffer
 
+		COM_BufExecute(); // ensure the command buffer gets executed before the map starts (+skin)
+
 		if (M_CheckParm("-gametype") && M_IsNextParm())
 		{
 			// from Command_Map_f
@@ -1527,7 +1586,7 @@ void D_SRB2Main(void)
 		pagename = "TITLESKY";
 		levelstarttic = gametic;
 		G_SetGamestate(GS_LEVEL);
-		if (!P_SetupLevel(false))
+		if (!P_SetupLevel(false, false))
 			I_Quit(); // fail so reset game stuff
 	}
 }
@@ -1585,4 +1644,3 @@ const char *D_Home(void)
 	if (usehome) return userhome;
 	else return NULL;
 }
-

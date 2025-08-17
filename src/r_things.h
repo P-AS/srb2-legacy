@@ -17,6 +17,10 @@
 #include "sounds.h"
 #include "r_plane.h"
 
+// "Left" and "Right" character symbols for additional rotation functionality
+#define ROT_L ('L' - '0')
+#define ROT_R ('R' - '0')
+
 // number of sprite lumps for spritewidth,offset,topoffset lookup tables
 // Fab: this is a hack : should allocate the lookup tables per sprite
 #define MAXVISSPRITES 2048 // added 2-2-98 was 128
@@ -47,10 +51,6 @@ void R_SortVisSprites(void);
 //faB: find sprites in wadfile, replace existing, add new ones
 //     (only sprites from namelist are added or replaced)
 void R_AddSpriteDefs(UINT16 wadnum);
-
-#ifdef DELFILE
-void R_DelSpriteDefs(UINT16 wadnum);
-#endif
 
 //SoM: 6/5/2000: Light sprites correctly!
 void R_AddSprites(sector_t *sec, INT32 lightlevel);
@@ -109,6 +109,7 @@ typedef struct
 	// Definable color translation table
 	UINT8 starttranscolor;
 	UINT8 prefcolor;
+	UINT16 supercolor;
 	fixed_t highresscale; // scale of highres, default is 0.5
 
 	// specific sounds per skin
@@ -122,7 +123,11 @@ typedef enum
 {
 	SC_NONE = 0,
 	SC_TOP = 1,
-	SC_BOTTOM = 2
+	SC_BOTTOM = 2,
+	SC_VFLIP = 3,
+	SC_NOTVISIBLE = 4,
+	SC_CUTMASK    = SC_TOP|SC_BOTTOM|SC_NOTVISIBLE,
+	SC_FLAGMASK   = ~SC_CUTMASK
 } spritecut_e;
 
 // A vissprite_t is a thing that will be drawn during a refresh,
@@ -142,7 +147,8 @@ typedef struct vissprite_s
 	fixed_t pz, pzt; // physical bottom/top for sorting with 3D floors
 
 	fixed_t startfrac; // horizontal position of x1
-	fixed_t scale;
+	fixed_t scale, sortscale; // sortscale only differs from scale for flat sprites
+	fixed_t scalestep; // only for flat sprites, 0 otherwise
 	fixed_t xiscale; // negative if flipped
 
 	fixed_t texturemid;
@@ -178,7 +184,7 @@ typedef struct vissprite_s
 	fixed_t thingscale;
 } vissprite_t;
 
-extern UINT32 visspritecount;
+extern UINT32 visspritecount, numvisiblesprites;
 
 // A drawnode is something that points to a 3D floor, 3D side, or masked
 // middle texture. This is used for sorting with sprites.
@@ -201,10 +207,6 @@ void SetPlayerSkin(INT32 playernum,const char *skinname);
 void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
 INT32 R_SkinAvailable(const char *name);
 void R_AddSkins(UINT16 wadnum);
-
-#ifdef DELFILE
-void R_DelSkins(UINT16 wadnum);
-#endif
 
 void R_InitDrawNodes(void);
 
@@ -244,6 +246,11 @@ FUNCMATH FUNCINLINE static ATTRINLINE UINT8 R_Char2Frame(char cn)
 	if (cn == '@') return 63;
 	return 255;
 #endif
+}
+
+FUNCMATH FUNCINLINE static ATTRINLINE boolean R_ValidSpriteAngle(UINT8 rotation)
+{
+	return ((rotation <= 8) || (rotation == ROT_L) || (rotation == ROT_R));
 }
 
 #endif //__R_THINGS__

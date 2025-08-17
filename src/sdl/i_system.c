@@ -276,10 +276,14 @@ static void write_backtrace(INT32 signal)
 	int fd = -1;
 	time_t rawtime;
 	struct tm timeinfo;
+#ifndef NOEXECINFO
 	size_t bt_size;
+#endif
 
 	enum { BT_SIZE = 1024, STR_SIZE = 32 };
+#ifndef NOEXECINFO
 	void *funcptrs[BT_SIZE];
+#endif
 	char timestr[STR_SIZE];
 
 	const char *filename = va("%s" PATHSEP "%s", srb2home, "crash-log.txt");
@@ -313,12 +317,14 @@ static void write_backtrace(INT32 signal)
 	bt_write_file(fd, strsignal(signal));
 	bt_write_file(fd, "\n"); // Newline for the signal name
 
+#ifndef NOEXECINFO
 	bt_write_all(fd, "\nBacktrace:\n");
 
 	// Flood the output and log with the backtrace
 	bt_size = backtrace(funcptrs, BT_SIZE);
 	backtrace_symbols_fd(funcptrs, bt_size, fd);
 	backtrace_symbols_fd(funcptrs, bt_size, STDERR_FILENO);
+#endif
 
 	bt_write_file(fd, "\n"); // Write another newline to the log so it looks nice :)
 
@@ -329,8 +335,6 @@ static void write_backtrace(INT32 signal)
 }
 
 #endif // UNIXBACKTRACE
-
-
 
 static void I_ReportSignal(int num, int coredumped)
 {
@@ -590,6 +594,7 @@ void I_GetConsoleEvents(void)
 			return;
 
 		ev.type = ev_console;
+		ev.data1 = 0;
 		if (read(STDIN_FILENO, &key, 1) == -1 || !key)
 			return;
 
@@ -616,7 +621,7 @@ void I_GetConsoleEvents(void)
 			}
 			else continue;
 		}
-		else
+		else if (tty_con.cursor < sizeof (tty_con.buffer))
 		{
 			// push regular character
 			ev.data1 = tty_con.buffer[tty_con.cursor] = key;
@@ -975,6 +980,11 @@ INT32 I_GetKey (void)
 void I_CursedWindowMovement (int xd, int yd)
 {
 	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
+}
+
+const char *I_GetPlatform(void)
+{
+	return SDL_GetPlatform();
 }
 
 //
@@ -2149,8 +2159,8 @@ void I_SetTextInputMode(boolean active)
 
 boolean I_GetTextInputMode(void)
 {
-	boolean inputtextactive = (boolean)SDL_IsTextInputActive();
-	
+	boolean inputtextactive = (SDL_IsTextInputActive()) ? true : false;
+
 	return inputtextactive;
 }
 
@@ -2189,7 +2199,6 @@ ticcmd_t *I_BaseTiccmd2(void)
 	return &emptycmd2;
 }
 
-
 static Uint64 timer_frequency;
 
 precise_t I_GetPreciseTime(void)
@@ -2197,14 +2206,10 @@ precise_t I_GetPreciseTime(void)
 	return SDL_GetPerformanceCounter();
 }
 
-
-
 UINT64 I_GetPrecisePrecision(void)
 {
 	return SDL_GetPerformanceFrequency();
 }
-
-
 
 static UINT32 frame_rate;
 
@@ -2269,13 +2274,16 @@ void I_Sleep(UINT32 ms)
 	SDL_Delay(ms);
 }
 
-
 void I_SleepDuration(precise_t duration)
 {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__OpenBSD__)
 	UINT64 precision = I_GetPrecisePrecision();
 	precise_t dest = I_GetPreciseTime() + duration;
+#ifdef __OpenBSD__
+	precise_t slack = (precision / 50); // 20 ms slack
+#else
 	precise_t slack = (precision / 5000); // 0.2 ms slack
+#endif
 	if (duration > slack)
 	{
 		duration -= slack;
@@ -2284,7 +2292,11 @@ void I_SleepDuration(precise_t duration)
 			.tv_nsec = duration * 1000000000 / precision % 1000000000,
 		};
 		int status;
+#ifdef __OpenBSD__
+		do status = nanosleep(&ts, &ts);
+#else
 		do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+#endif
 		while (status == EINTR);
 	}
 
@@ -2425,6 +2437,9 @@ INT32 I_StartupSystem(void)
 	 SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
+#if SDL_VERSION_ATLEAST(2,0,22)
+	SDL_SetHint(SDL_HINT_APP_NAME, "SRB2 Legacy");
+#endif
 	if (SDL_Init(0) < 0)
 		I_Error("SRB2: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
 #ifndef NOMUMBLE
@@ -2460,7 +2475,6 @@ void I_Quit(void)
 	D_QuitNetGame();
 	I_ShutdownMusic();
 	I_ShutdownSound();
-	I_ShutdownCD();
 	// use this for 1.28 19990220 by Kin
 	I_ShutdownGraphics();
 	I_ShutdownInput();
@@ -2521,16 +2535,14 @@ void I_Error(const char *error, ...)
 		if (errorcount == 3)
 			I_ShutdownSound();
 		if (errorcount == 4)
-			I_ShutdownCD();
-		if (errorcount == 5)
 			I_ShutdownGraphics();
-		if (errorcount == 6)
+		if (errorcount == 5)
 			I_ShutdownInput();
-		if (errorcount == 7)
+		if (errorcount == 6)
 			I_ShutdownSystem();
-		if (errorcount == 8)
+		if (errorcount == 7)
 			SDL_Quit();
-		if (errorcount == 9)
+		if (errorcount == 8)
 		{
 			M_SaveConfig(NULL);
 			G_SaveGameData();
@@ -2577,7 +2589,6 @@ void I_Error(const char *error, ...)
 	D_QuitNetGame();
 	I_ShutdownMusic();
 	I_ShutdownSound();
-	I_ShutdownCD();
 	// use this for 1.28 19990220 by Kin
 	I_ShutdownGraphics();
 	I_ShutdownInput();

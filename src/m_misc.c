@@ -63,10 +63,10 @@ typedef off_t off64_t;
 
 #if defined(__MINGW32__) && ((__GNUC__ > 7) || (__GNUC__ == 6 && __GNUC_MINOR__ >= 3)) && (__GNUC__ < 8)
 #define PRIdS "u"
-#elif defined (_WIN32)
+#elif defined(_WIN32) && !defined(__MINGW64__)
 #define PRIdS "Iu"
-#elif defined (_PSP) || defined (_arch_dreamcast) || defined (DJGPP) || defined (_WII) || defined (_NDS) || defined (_PS3)
-#define PRIdS "u"
+#elif defined(_WIN32) && defined(__MINGW64__)
+#define PRIdS PRIuPTR
 #else
 #define PRIdS "zu"
 #endif
@@ -105,13 +105,13 @@ typedef off_t off64_t;
 #endif
 
 static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2, "SRB2"}, {3, "CUSTOM"}, {0, NULL}};
-consvar_t cv_screenshot_option = {"screenshot_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_screenshot_folder = {"screenshot_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_screenshot_option = CVAR_INIT ("screenshot_option", "Default", NULL, CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange);
+consvar_t cv_screenshot_folder = CVAR_INIT ("screenshot_folder", "", NULL, CV_SAVE, NULL, NULL);
 
 static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
-consvar_t cv_moviemode = {"moviemode_mode", "GIF", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_movie_option = {"movie_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Moviemode_option_Onchange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_movie_folder = {"movie_folder", "", CV_SAVE, NULL, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_moviemode = CVAR_INIT ("moviemode_mode", "GIF", NULL, CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange);
+consvar_t cv_movie_option = CVAR_INIT ("movie_option", "Default", NULL, CV_SAVE|CV_CALL, screenshot_cons_t, Moviemode_option_Onchange);
+consvar_t cv_movie_folder = CVAR_INIT ("movie_folder", "", NULL, CV_SAVE, NULL, NULL);
 
 static CV_PossibleValue_t zlib_mem_level_t[] = {
 	{1, "(Min Memory) 1"},
@@ -153,16 +153,16 @@ static CV_PossibleValue_t apng_delay_t[] = {
 
 // zlib memory usage is as follows:
 // (1 << (zlib_window_bits+2)) +  (1 << (zlib_level+9))
-consvar_t cv_zlib_memory = {"png_memory_level", "7", CV_SAVE, zlib_mem_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_level = {"png_compress_level", "(Optimal) 6", CV_SAVE, zlib_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_strategy = {"png_strategy", "Normal", CV_SAVE, zlib_strategy_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_window_bits = {"png_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_memory = CVAR_INIT ("png_memory_level", "7", NULL, CV_SAVE, zlib_mem_level_t, NULL);
+consvar_t cv_zlib_level = CVAR_INIT ("png_compress_level", "(Optimal) 6", NULL, CV_SAVE, zlib_level_t, NULL);
+consvar_t cv_zlib_strategy = CVAR_INIT ("png_strategy", "Normal", NULL, CV_SAVE, zlib_strategy_t, NULL);
+consvar_t cv_zlib_window_bits = CVAR_INIT ("png_window_size", "32k", NULL, CV_SAVE, zlib_window_bits_t, NULL);
 
-consvar_t cv_zlib_memorya = {"apng_memory_level", "(Max Memory) 9", CV_SAVE, zlib_mem_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_levela = {"apng_compress_level", "4", CV_SAVE, zlib_level_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_strategya = {"apng_strategy", "RLE", CV_SAVE, zlib_strategy_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_zlib_window_bitsa = {"apng_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_apng_delay = {"apng_speed", "1/2x", CV_SAVE, apng_delay_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_zlib_memorya = CVAR_INIT ("apng_memory_level", "(Max Memory) 9", NULL, CV_SAVE, zlib_mem_level_t, NULL);
+consvar_t cv_zlib_levela = CVAR_INIT ("apng_compress_level", "4", NULL, CV_SAVE, zlib_level_t, NULL);
+consvar_t cv_zlib_strategya = CVAR_INIT ("apng_strategy", "RLE", NULL, CV_SAVE, zlib_strategy_t, NULL);
+consvar_t cv_zlib_window_bitsa = CVAR_INIT ("apng_window_size", "32k", NULL, CV_SAVE, zlib_window_bits_t, NULL);
+consvar_t cv_apng_delay = CVAR_INIT ("apng_speed", "1/2x", NULL, CV_SAVE, apng_delay_t, NULL);
 
 boolean takescreenshot = false; // Take a screenshot this tic
 
@@ -270,8 +270,8 @@ size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag)
 	size_t count, length;
 	UINT8 *buf;
 
-	if (FIL_ReadFileOK(name))
-		handle = fopen(name, "rb");
+	//if (FIL_ReadFileOK(name))
+		handle = fopenfile(name, "rb");
 
 	if (!handle)
 		return 0;
@@ -724,8 +724,6 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	 "SDL";
 #elif defined (_WINDOWS)
 	 "DirectX";
-#elif defined (PC_DOS)
-	 "Allegro";
 #else
 	 "Unknown";
 #endif
@@ -1975,3 +1973,95 @@ const char *M_FileError(FILE *fp)
 	else
 		return "end-of-file";
 }
+
+/** Return the number of parts of this path.
+*/
+int M_PathParts(const char *path)
+{
+	int n;
+	const char *p;
+	const char *t;
+	if (path == NULL)
+		return 0;
+	for (n = 0, p = path ;; ++n)
+	{
+		t = p;
+		if (( p = strchr(p, PATHSEP[0]) ))
+			p += strspn(p, PATHSEP);
+		else
+		{
+			if (*t)/* there is something after the final delimiter */
+				n++;
+			break;
+		}
+	}
+	return n;
+}
+
+/** Check whether a path is an absolute path.
+*/
+boolean M_IsPathAbsolute(const char *path)
+{
+#ifdef _WIN32
+	return ( strncmp(&path[1], ":\\", 2) == 0 );
+#else
+	return ( path[0] == '/' );
+#endif
+}
+
+/** I_mkdir for each part of the path.
+*/
+void M_MkdirEachUntil(const char *cpath, int start, int end, int mode)
+{
+	char path[MAX_WADPATH];
+	char *p;
+	char *t;
+
+	if (end > 0 && end <= start)
+		return;
+
+	strlcpy(path, cpath, sizeof path);
+#ifdef _WIN32
+	if (strncmp(&path[1], ":\\", 2) == 0)
+		p = &path[3];
+	else
+#endif
+		p = path;
+
+	if (end > 0)
+		end -= start;
+
+	for (; start > 0; --start)
+	{
+		p += strspn(p, PATHSEP);
+		if (!( p = strchr(p, PATHSEP[0]) ))
+			return;
+	}
+	p += strspn(p, PATHSEP);
+	for (;;)
+	{
+		if (end > 0 && !--end)
+			break;
+
+		t = p;
+		if (( p = strchr(p, PATHSEP[0]) ))
+		{
+			*p = '\0';
+			I_mkdir(path, mode);
+			*p = PATHSEP[0];
+			p += strspn(p, PATHSEP);
+		}
+		else
+		{
+			if (*t)
+				I_mkdir(path, mode);
+			break;
+		}
+	}
+}
+
+void M_MkdirEach(const char *path, int start, int mode)
+{
+	M_MkdirEachUntil(path, start, -1, mode);
+}
+

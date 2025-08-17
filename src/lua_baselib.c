@@ -23,6 +23,8 @@
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
 #include "d_netcmd.h" // IsPlayerAdmin
+#include "m_menu.h" // M_CheckColor, M_GetColorNext, M_GetColorPrev
+#include "r_draw.h"
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -148,6 +150,30 @@ static int lib_isPlayerAdmin(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	lua_pushboolean(L, IsPlayerAdmin(player-players));
+	return 1;
+}
+
+// M_MENU
+/////////////
+
+static int lib_mCheckColor(lua_State *L)
+{
+	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
+	lua_pushboolean(L, M_CheckColor(color));
+	return 1;
+}
+
+static int lib_mGetColorNext(lua_State *L)
+{
+	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
+	lua_pushinteger(L, M_GetColorNext(color));
+	return 1;
+}
+
+static int lib_mGetColorPrev(lua_State *L)
+{
+	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
+	lua_pushinteger(L, M_GetColorPrev(color));
 	return 1;
 }
 
@@ -785,7 +811,7 @@ static int lib_pRestoreMusic(lua_State *L)
 static int lib_pSpawnShieldOrb(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
+	//NOHUD
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	P_SpawnShieldOrb(player);
@@ -1780,6 +1806,36 @@ static int lib_rTextureNumForName(lua_State *L)
 	return 1;
 }
 
+// R_DRAW
+////////////
+static int lib_rGetColorByName(lua_State *L)
+{
+	const char* colorname = luaL_checkstring(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, R_GetColorByName(colorname));
+	return 1;
+}
+
+static int lib_rGetSuperColorByName(lua_State *L)
+{
+	const char* colorname = luaL_checkstring(L, 1);
+	//HUDSAFE
+	lua_pushinteger(L, R_GetSuperColorByName(colorname));
+	return 1;
+}
+
+// Lua exclusive function, returns the name of a color from the SKINCOLOR_ constant.
+// SKINCOLOR_GREEN > "Green" for example
+static int lib_rGetNameByColor(lua_State *L)
+{
+	UINT16 colornum = (UINT16)luaL_checkinteger(L, 1);
+	if (!colornum || colornum >= numskincolors)
+		return luaL_error(L, "skincolor %d out of range (1 - %d).", colornum, numskincolors-1);
+	lua_pushstring(L, skincolors[colornum].name);
+	return 1;
+}
+
+
 // S_SOUND
 ////////////
 
@@ -1819,7 +1875,7 @@ static int lib_sStartSoundAtVolume(lua_State *L)
 	sfxenum_t sound_id = luaL_checkinteger(L, 2);
 	INT32 volume = (INT32)luaL_checkinteger(L, 3);
 	player_t *player = NULL;
-	NOHUD
+	//NOHUD
 
 	if (!lua_isnil(L, 1))
 	{
@@ -1843,7 +1899,7 @@ static int lib_sStartSoundAtVolume(lua_State *L)
 static int lib_sStopSound(lua_State *L)
 {
 	void *origin = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	NOHUD
+	//NOHUD
 	if (!origin)
 		return LUA_ErrInvalid(L, "mobj_t");
 	S_StopSound(origin);
@@ -1860,7 +1916,7 @@ static int lib_sChangeMusic(lua_State *L)
 	boolean looping;
 	player_t *player = NULL;
 	UINT16 music_flags = 0;
-	NOHUD
+	//NOHUD
 
 	if (lua_isnumber(L, 1))
 	{
@@ -1920,7 +1976,7 @@ static int lib_sSpeedMusic(lua_State *L)
 	fixed_t fixedspeed = luaL_checkfixed(L, 1);
 	float speed = FIXED_TO_FLOAT(fixedspeed);
 	player_t *player = NULL;
-	NOHUD
+	//NOHUD
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
 	{
 		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
@@ -1935,7 +1991,7 @@ static int lib_sSpeedMusic(lua_State *L)
 static int lib_sStopMusic(lua_State *L)
 {
 	player_t *player = NULL;
-	NOHUD
+	//NOHUD
 	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
 	{
 		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1951,7 +2007,7 @@ static int lib_sSetInternalMusicVolume(lua_State *L)
 {
 	UINT32 volume = (UINT32)luaL_checkinteger(L, 1);
 	player_t *player = NULL;
-	NOHUD
+	//NOHUD
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
 	{
 		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
@@ -1971,7 +2027,7 @@ static int lib_sSetInternalMusicVolume(lua_State *L)
 static int lib_sStopFadingMusic(lua_State *L)
 {
 	player_t *player = NULL;
-	NOHUD
+	//NOHUD
 	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
 	{
 		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -1994,7 +2050,7 @@ static int lib_sFadeMusic(lua_State *L)
 	UINT32 ms;
 	INT32 source_volume;
 	player_t *player = NULL;
-	NOHUD
+	//NOHUD
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
 	{
 		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
@@ -2035,7 +2091,7 @@ static int lib_sFadeOutStopMusic(lua_State *L)
 {
 	UINT32 ms = (UINT32)luaL_checkinteger(L, 1);
 	player_t *player = NULL;
-	NOHUD
+	//NOHUD
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
 	{
 		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
@@ -2051,10 +2107,30 @@ static int lib_sFadeOutStopMusic(lua_State *L)
 	return 1;
 }
 
+static int lib_sGetMusicLength(lua_State *L)
+{
+	lua_pushinteger(L, S_GetMusicLength());
+	return 1;
+}
+
+static int lib_sGetMusicPosition(lua_State *L)
+{
+	lua_pushinteger(L, S_GetMusicPosition());
+	return 1;
+}
+
+static int lib_sSetMusicPosition(lua_State *L)
+{
+	UINT32 pos = (UINT32)luaL_checkinteger(L, 1);
+	lua_pushboolean(L, S_SetMusicPosition(pos));
+	return 1;
+}
+
+
 static int lib_sOriginPlaying(lua_State *L)
 {
 	void *origin = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	NOHUD
+	//NOHUD
 	if (!origin)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, S_OriginPlaying(origin));
@@ -2064,7 +2140,7 @@ static int lib_sOriginPlaying(lua_State *L)
 static int lib_sIdPlaying(lua_State *L)
 {
 	sfxenum_t id = luaL_checkinteger(L, 1);
-	NOHUD
+	//NOHUD
 	if (id >= NUMSFX)
 		return luaL_error(L, "sfx %d out of range (0 - %d)", id, NUMSFX-1);
 	lua_pushboolean(L, S_IdPlaying(id));
@@ -2075,7 +2151,7 @@ static int lib_sSoundPlaying(lua_State *L)
 {
 	void *origin = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	sfxenum_t id = luaL_checkinteger(L, 2);
-	NOHUD
+	//NOHUD
 	if (!origin)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (id >= NUMSFX)
@@ -2255,6 +2331,11 @@ static luaL_Reg lib[] = {
 	{"P_SignedRandom",lib_pSignedRandom}, // MACRO
 	{"P_RandomChance",lib_pRandomChance}, // MACRO
 
+	// m_menu
+	{"M_CheckColor",lib_mCheckColor},
+	{"M_GetColorNext",lib_mGetColorNext},
+	{"M_GetColorPrev",lib_mGetColorPrev},
+
 	// p_maputil
 	{"P_AproxDistance",lib_pAproxDistance},
 	{"P_ClosestPointOnLine",lib_pClosestPointOnLine},
@@ -2398,6 +2479,11 @@ static luaL_Reg lib[] = {
 	{"R_CheckTextureNumForName",lib_rCheckTextureNumForName},
 	{"R_TextureNumForName",lib_rTextureNumForName},
 
+	// r_draw
+	{"R_GetColorByName", lib_rGetColorByName},
+	{"R_GetSuperColorByName", lib_rGetSuperColorByName},
+	{"R_GetNameByColor", lib_rGetNameByColor},
+
 	// s_sound
 	{"S_StartSound",lib_sStartSound},
 	{"S_StartSoundAtVolume",lib_sStartSoundAtVolume},
@@ -2409,6 +2495,9 @@ static luaL_Reg lib[] = {
 	{"S_StopFadingMusic",lib_sStopFadingMusic},
 	{"S_FadeMusic",lib_sFadeMusic},
 	{"S_FadeOutStopMusic",lib_sFadeOutStopMusic},
+	{"S_GetMusicLength",lib_sGetMusicLength},
+	{"S_GetMusicPosition",lib_sGetMusicPosition},
+	{"S_SetMusicPosition",lib_sSetMusicPosition},
 	{"S_OriginPlaying",lib_sOriginPlaying},
 	{"S_IdPlaying",lib_sIdPlaying},
 	{"S_SoundPlaying",lib_sSoundPlaying},

@@ -467,6 +467,7 @@ enum
 	ARCH_SECTOR,
 	ARCH_SLOPE,
 	ARCH_MAPHEADER,
+	ARCH_SKINCOLOR,
 
 	ARCH_TEND=0xFF,
 };
@@ -487,6 +488,7 @@ static const struct {
 	{META_SECTOR,   ARCH_SECTOR},
 	{META_SLOPE,    ARCH_SLOPE},
 	{META_MAPHEADER,   ARCH_MAPHEADER},
+	{META_SKINCOLOR,   ARCH_SKINCOLOR},
 	{NULL,          ARCH_NULL}
 };
 
@@ -712,6 +714,13 @@ static UINT8 ArchiveValue(int TABLESINDEX, int myindex)
 			}
 			break;
 		}
+		case ARCH_SKINCOLOR:
+		{
+			skincolor_t *info = *((skincolor_t **)lua_touserdata(gL, myindex));
+			WRITEUINT8(save_p, ARCH_SKINCOLOR);
+			WRITEUINT16(save_p, info - skincolors);
+			break;
+		}
 		default:
 			WRITEUINT8(save_p, ARCH_NULL);
 			return 2;
@@ -911,6 +920,9 @@ static UINT8 UnArchiveValue(int TABLESINDEX)
 	case ARCH_MAPHEADER:
 		LUA_PushUserdata(gL, mapheaderinfo[READUINT16(save_p)], META_MAPHEADER);
 		break;
+	case ARCH_SKINCOLOR:
+		LUA_PushUserdata(gL, &skincolors[READUINT16(save_p)], META_SKINCOLOR);
+		break;
 	case ARCH_TEND:
 		return 1;
 	}
@@ -1005,7 +1017,7 @@ void LUA_Archive(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i])
+		if (!playeringame[i] && i > 0)	// NEVER skip player 0, this is for dedi servs.
 			continue;
 		// all players in game will be archived, even if they just add a 0.
 		ArchiveExtVars(&players[i], "player");
@@ -1038,7 +1050,7 @@ void LUA_UnArchive(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i])
+		if (!playeringame[i] && i > 0)	// same here, this is to synch dediservs properly.
 			continue;
 		UnArchiveExtVars(&players[i]);
 	}

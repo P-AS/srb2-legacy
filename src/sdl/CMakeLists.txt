@@ -118,7 +118,12 @@ if(${SDL2_FOUND})
 		)
 	endif()
 
+	if("${CMAKE_SYSTEM_NAME}" MATCHES "OpenBSD")
+		target_link_libraries(SRB2SDL2 PRIVATE pthread execinfo m)
+	endif()
+
 	if(${CMAKE_SYSTEM} MATCHES "Haiku")
+		target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
 		target_link_libraries(SRB2SDL2 PRIVATE network)
 	endif()
 

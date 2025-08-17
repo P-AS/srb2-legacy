@@ -41,6 +41,7 @@
 #include "dehacked.h"
 #include "d_clisrv.h"
 #include "r_defs.h"
+#include "r_data.h"
 #include "i_time.h"
 #include "i_system.h"
 #include "md5.h"
@@ -54,12 +55,6 @@
 #include "r_data.h"
 #include "hardware/hw_main.h"
 #include "hardware/hw_glob.h"
-#endif
-
-#ifdef PC_DOS
-#include <stdio.h> // for snprintf
-int	snprintf(char *str, size_t n, const char *fmt, ...);
-//int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
 #endif
 
 #ifndef O_BINARY
@@ -665,14 +660,12 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 	return lumpinfo;
 }
 
+
 static void W_ReadFileShaders(wadfile_t *wadfile)
 {
 #ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
+	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED))
 		HWR_LoadCustomShadersFromFile(numwadfiles - 1, W_FileHasFolders(wadfile));
-		HWR_CompileShaders();
-	}
 #else
 	(void)wadfile;
 #endif
@@ -851,38 +844,6 @@ UINT16 W_InitFile(const char *filename)
 	W_InvalidateLumpnumCache();
 	return wadfile->numlumps;
 }
-
-#ifdef DELFILE
-void W_UnloadWadFile(UINT16 num)
-{
-	INT32 i;
-	wadfile_t *delwad = wadfiles[num];
-	lumpcache_t *lumpcache;
-	if (num == 0)
-		return;
-	CONS_Printf(M_GetText("Removing WAD %s...\n"), wadfiles[num]->filename);
-
-	DEH_UnloadDehackedWad(num);
-	wadfiles[num] = NULL;
-	lumpcache = delwad->lumpcache;
-	numwadfiles--;
-#ifdef HWRENDER
-	if (rendermode != render_soft && rendermode != render_none)
-		HWR_FreeTextureCache();
-	M_AATreeFree(delwad->hwrcache);
-#endif
-	if (*lumpcache)
-	{
-		for (i = 0;i < delwad->numlumps;i++)
-			Z_ChangeTag(lumpcache[i], PU_PURGELEVEL);
-	}
-	Z_Free(lumpcache);
-	fclose(delwad->handle);
-	Z_Free(delwad->filename);
-	Z_Free(delwad);
-	CONS_Printf(M_GetText("Done unloading WAD.\n"));
-}
-#endif
 
 /** Tries to load a series of files.
   * All files are wads unless they have an extension of ".soc" or ".lua".
@@ -1589,7 +1550,6 @@ void *W_CacheLumpNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 
 void *W_CacheLumpNum(lumpnum_t lumpnum, INT32 tag)
 {
-
 	return W_CacheLumpNumPwad(WADFILENUM(lumpnum),LUMPNUM(lumpnum),tag);
 }
 
@@ -1670,11 +1630,30 @@ void *W_CacheLumpName(const char *name, INT32 tag)
 // Cache a patch into heap memory, convert the patch format as necessary
 //
 
+void W_FlushCachedPatches(void)
+{
+	if (needpatchflush)
+	{
+		Z_FreeTag(PU_CACHE);
+		Z_FreeTag(PU_PATCH);
+		Z_FreeTag(PU_HUDGFX);
+		Z_FreeTag(PU_HWRPATCHINFO);
+		Z_FreeTag(PU_HWRMODELTEXTURE);
+		Z_FreeTag(PU_HWRCACHE);
+		Z_FreeTags(PU_HWRCACHE_UNLOCKED, PU_HWRPATCHINFO_UNLOCKED);
+		Z_FreeTags(PU_HWRCACHE_UNLOCKED, PU_HWRMODELTEXTURE_UNLOCKED);
+	}
+	needpatchflush = false;
+}
+
 // Software-only compile cache the data without conversion
 #ifdef HWRENDER
 static inline void *W_CachePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 {
 	GLPatch_t *grPatch;
+
+	if (needpatchflush)
+		W_FlushCachedPatches();
 
 	if (rendermode == render_soft || rendermode == render_none)
 		return W_CacheLumpNumPwad(wad, lump, tag);
@@ -1684,11 +1663,11 @@ static inline void *W_CachePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 
 	grPatch = HWR_GetCachedGLPatchPwad(wad, lump);
 
-	if (grPatch->mipmap->grInfo.data)
+	if (grPatch->mipmap->data)
 	{
 		if (tag == PU_CACHE)
 			tag = PU_HWRCACHE;
-		Z_ChangeTag(grPatch->mipmap->grInfo.data, tag);
+		Z_ChangeTag(grPatch->mipmap->data, tag);
 	}
 	else
 	{
@@ -2091,7 +2070,7 @@ int W_VerifyNMUSlumps(const char *filename)
 
 		{"SHADERS", 7}, // Shader definitions
 		{"SH_", 3}, // GLSL shader
-	
+
 
 		{NULL, 0},
 	};

@@ -45,6 +45,7 @@
 #define  _CREATE_DLL_  // necessary for Unix AND Windows
 #include "../../doomdef.h"
 #include "../hw_drv.h"
+#include "../../z_zone.h"
 
 // ==========================================================================
 //                                                                DEFINITIONS
@@ -58,9 +59,9 @@
 
 // todo: find some way of getting SDL to log to ogllog.txt, without
 // interfering with r_opengl.dll
-#ifdef HAVE_SDL
-#undef DEBUG_TO_FILE
-#endif
+//#ifdef HAVE_SDL
+//#undef DEBUG_TO_FILE
+//#endif
 //#if defined(HAVE_SDL) && !defined(_DEBUG)
 //#undef DEBUG_TO_FILE
 //#endif
@@ -137,6 +138,8 @@ extern boolean		supportMipMap;
 */
 extern INT32            oglflags;
 extern GLint            textureformatGL;
+
+extern GLfloat projMatrix[16];
 
 typedef enum
 {

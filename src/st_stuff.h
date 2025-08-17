@@ -44,10 +44,6 @@ void ST_LoadGraphics(void);
 // face load graphics, called when skin changes
 void ST_LoadFaceGraphics(char *facestr, char *superstr, INT32 playernum);
 void ST_ReloadSkinFaceGraphics(void);
-#ifdef DELFILE
-void ST_UnLoadFaceGraphics(INT32 skinnum);
-#endif
-
 void ST_doPaletteStuff(void);
 
 // return if player a is in the same team as player b
@@ -59,6 +55,7 @@ boolean ST_SameTeam(player_t *a, player_t *b);
 
 extern boolean st_overlay; // sb overlay on or off when fullscreen
 extern INT32 st_palette; // 0 is default, any others are special palettes.
+extern INT32 st_translucency;
 
 extern lumpnum_t st_borderpatchnum;
 // patches, also used in intermission

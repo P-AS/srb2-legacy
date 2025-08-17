@@ -24,9 +24,16 @@
 #include "p_setup.h" // levelflats
 #include "v_video.h" // pLocalPalette
 #include "dehacked.h"
+#ifdef HWRENDER
+#include "hardware/hw_glob.h" // HWR_ClearLightTables
+#endif
 
 #if defined (_WIN32) || defined (_WIN32_WCE)
 #include <malloc.h> // alloca(sizeof)
+#endif
+
+#ifdef HWRENDER
+#include "hardware/hw_main.h" // HWR_LoadTextures
 #endif
 
 #if defined(_MSC_VER)
@@ -404,7 +411,16 @@ void R_LoadTextures(void)
 	// but the alternative is to spend a ton of time checking and re-checking all previous entries just to skip any potentially patched textures.
 	for (w = 0, numtextures = 0; w < numwadfiles; w++)
 	{
-		// Count the textures from TEXTURES lumps
+		if (W_FileHasFolders(wadfiles[w]))
+		{
+			texstart = W_CheckNumForFolderStartPK3("textures/", (UINT16)w, 0);
+			texend = W_CheckNumForFolderEndPK3("textures/", (UINT16)w, texstart);
+		}
+		else
+		{
+			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0) + 1;
+			texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
+		}
 
 		texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, 0);
 		while (texturesLumpPos != INT16_MAX)
@@ -413,34 +429,22 @@ void R_LoadTextures(void)
 			texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, texturesLumpPos + 1);
 		}
 
-		// Count single-patch textures
-
-		if (wadfiles[w]->type == RET_PK3)
-		{
-			texstart = W_CheckNumForFolderStartPK3("textures/", (UINT16)w, 0);
-			texend = W_CheckNumForFolderEndPK3("textures/", (UINT16)w, texstart);
-		}
-		else
-		{
-			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0);
-			texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
-		}
-
+		// Add all the textures between TX_START and TX_END
 		if (texstart == INT16_MAX || texend == INT16_MAX)
 			continue;
 
-		texstart++; // Do not count the first marker
-
 		// PK3s have subfolders, so we can't just make a simple sum
-		if (wadfiles[w]->type == RET_PK3)
+		if (W_FileHasFolders(wadfiles[w]))
 		{
 			for (j = texstart; j < texend; j++)
 			{
-				if (!W_IsLumpFolder((UINT16)w, j)) // Check if lump is a folder; if not, then count it
-					numtextures++;
+				if (W_IsLumpFolder((UINT16)w, j)) // Check if lump is a folder; if not, then count it
+					continue;
+
+				numtextures++;
 			}
 		}
-		else // Add all the textures between TX_START and TX_END
+		else
 		{
 			numtextures += (UINT32)(texend - texstart);
 		}
@@ -471,7 +475,7 @@ void R_LoadTextures(void)
 	for (i = 0, w = 0; w < numwadfiles; w++)
 	{
 		// Get the lump numbers for the markers in the WAD, if they exist.
-		if (wadfiles[w]->type == RET_PK3)
+		if (W_FileHasFolders(wadfiles[w]))
 		{
 			texstart = W_CheckNumForFolderStartPK3("textures/", (UINT16)w, 0);
 			texend = W_CheckNumForFolderEndPK3("textures/", (UINT16)w, texstart);
@@ -484,7 +488,7 @@ void R_LoadTextures(void)
 		}
 		else
 		{
-			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0);
+			texstart = W_CheckNumForNamePwad(TX_START, (UINT16)w, 0) + 1;
 			texend = W_CheckNumForNamePwad(TX_END, (UINT16)w, 0);
 			texturesLumpPos = W_CheckNumForNamePwad("TEXTURES", (UINT16)w, 0);
 			if (texturesLumpPos != INT16_MAX)
@@ -494,19 +498,20 @@ void R_LoadTextures(void)
 		if (texstart == INT16_MAX || texend == INT16_MAX)
 			continue;
 
-		texstart++; // Do not count the first marker
-
 		// Work through each lump between the markers in the WAD.
 		for (j = 0; j < (texend - texstart); j++)
 		{
-			if (wadfiles[w]->type == RET_PK3)
+			UINT16 wadnum = (UINT16)w;
+			lumpnum_t lumpnum = texstart + j;
+
+			if (W_FileHasFolders(wadfiles[w]))
 			{
-				if (W_IsLumpFolder((UINT16)w, texstart + j)) // Check if lump is a folder
+				if (W_IsLumpFolder(wadnum, lumpnum)) // Check if lump is a folder
 					continue; // If it is then SKIP IT
 			}
 			patchlump = W_CacheLumpNumPwad((UINT16)w, texstart + j, PU_CACHE);
 
-			//CONS_Printf("\n\"%s\" is a single patch, dimensions %d x %d",W_CheckNameForNumPwad((UINT16)w,texstart+j),patchlump->width, patchlump->height);
+			//CONS_Printf("\n\"%s\" is a single patch, dimensions %d x %d",W_CheckNameForNumPwad(wadnum, lumpnum), patchlump->width, patchlump->height);
 			texture = textures[i] = Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);
 
 			// Set texture properties.
@@ -523,7 +528,7 @@ void R_LoadTextures(void)
 			patch->wad = (UINT16)w;
 			patch->lump = texstart + j;
 
-			Z_Unlock(patchlump);
+			Z_Free(patchlump);
 
 			k = 1;
 			while (k << 1 <= texture->width)
@@ -533,6 +538,10 @@ void R_LoadTextures(void)
 			i++;
 		}
 	}
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+		HWR_LoadTextures(numtextures);
+#endif
 }
 
 static texpatch_t *R_ParsePatch(boolean actuallyLoadPatch)
@@ -1116,6 +1125,10 @@ void R_ClearColormaps(void)
 		foundcolormaps[i] = LUMPERROR;
 
 	memset(extra_colormaps, 0, sizeof (extra_colormaps));
+#ifdef HWRENDER
+if (rendermode == render_opengl)
+	HWR_ClearLightTables();
+#endif
 }
 
 INT32 R_ColormapNumForName(char *name)
@@ -1162,7 +1175,6 @@ INT32 R_ColormapNumForName(char *name)
 //
 static double deltas[256][3], map[256][3];
 
-UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b);
 static int RoundUp(double number);
 
 INT32 R_CreateColormap(char *p1, char *p2, char *p3)
@@ -1266,7 +1278,7 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 	extra_colormaps[mapnum].fog = fog;
 
 	// This code creates the colormap array used by software renderer
-	if (rendermode == render_soft)
+	if (rendermode != render_none)
 	{
 		double r, g, b, cbrightness;
 		int p;
@@ -1342,16 +1354,20 @@ INT32 R_CreateColormap(char *p1, char *p2, char *p3)
 
 // Thanks to quake2 source!
 // utils3/qdata/images.c
-UINT8 NearestColor(UINT8 r, UINT8 g, UINT8 b)
+UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette)
 {
 	int dr, dg, db;
 	int distortion, bestdistortion = 256 * 256 * 4, bestcolor = 0, i;
 
+	// Use local palette if none specified
+	if (palette == NULL)
+		palette = pLocalPalette;
+
 	for (i = 0; i < 256; i++)
 	{
-		dr = r - pLocalPalette[i].s.red;
-		dg = g - pLocalPalette[i].s.green;
-		db = b - pLocalPalette[i].s.blue;
+		dr = r - palette[i].s.red;
+		dg = g - palette[i].s.green;
+		db = b - palette[i].s.blue;
 		distortion = dr*dr + dg*dg + db*db;
 		if (distortion < bestdistortion)
 		{
@@ -1611,7 +1627,7 @@ void R_PrecacheLevel(void)
 				lump = sf->lumppat[k];
 				if (devparm)
 					spritememory += W_LumpLength(lump);
-				W_CachePatchNum(lump, PU_CACHE);
+				W_CachePatchNum(lump, PU_PATCH);
 			}
 		}
 	}

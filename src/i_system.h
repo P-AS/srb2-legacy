@@ -306,6 +306,9 @@ void I_RegisterSysCommands(void);
 
 void I_CursedWindowMovement(int xd, int yd);
 
+/** \brief Get the current platform
+*/
+const char *I_GetPlatform(void);
 
 
 #endif

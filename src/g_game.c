@@ -48,6 +48,7 @@
 #include "m_cond.h" // condition sets
 #include "md5.h" // demo checksums
 #include "r_fps.h" // Uncapped
+#include "dehacked.h"
 
 
 gameaction_t gameaction;
@@ -56,7 +57,7 @@ UINT8 ultimatemode = false;
 
 boolean botingame;
 UINT8 botskin;
-UINT8 botcolor;
+UINT16 botcolor;
 
 JoyType_t Joystick;
 JoyType_t Joystick2;
@@ -127,10 +128,10 @@ INT16 sstage_end;
 boolean looptitle = false;
 boolean useNightsSS = false;
 
-UINT8 skincolor_redteam = SKINCOLOR_RED;
-UINT8 skincolor_blueteam = SKINCOLOR_BLUE;
-UINT8 skincolor_redring = SKINCOLOR_RED;
-UINT8 skincolor_bluering = SKINCOLOR_STEELBLUE;
+UINT16 skincolor_redteam = SKINCOLOR_RED;
+UINT16 skincolor_blueteam = SKINCOLOR_BLUE;
+UINT16 skincolor_redring = SKINCOLOR_RED;
+UINT16 skincolor_bluering = SKINCOLOR_STEELBLUE;
 
 tic_t countdowntimer = 0;
 boolean countdowntimeup = false;
@@ -257,7 +258,7 @@ static struct {
 	UINT8 flags; // EZT flags
 
 	// EZT_COLOR
-	UINT8 color, lastcolor;
+	UINT16 color, lastcolor;
 
 	// EZT_SCALE
 	fixed_t scale, lastscale;
@@ -271,7 +272,8 @@ static struct {
 // There is no conflict here.
 typedef struct demoghost {
 	UINT8 checksum[16];
-	UINT8 *buffer, *p, color;
+	UINT8 *buffer, *p;
+	UINT16 color;
 	UINT16 version;
 	mobj_t oldmo, *mo;
 	struct demoghost *next;
@@ -356,53 +358,48 @@ static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 
 // it automatically becomes compact with 20+ players, but if you like it, I guess you can turn that on!
-consvar_t cv_compactscoreboard= {"compactscoreboard", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_compactscoreboard= CVAR_INIT ("compactscoreboard", "Off", "Always use the compact scoreboard, regardless of the number of players in the game", CV_SAVE, CV_OnOff, NULL);
 
 // chat timer thingy
 static CV_PossibleValue_t chattime_cons_t[] = {{5, "MIN"}, {999, "MAX"}, {0, NULL}};
-consvar_t cv_chattime = {"chattime", "8", CV_SAVE, chattime_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chattime = CVAR_INIT ("chattime", "8", "How long chat messages stay on screen", CV_SAVE, chattime_cons_t, NULL);
 
 // chatwidth
 static CV_PossibleValue_t chatwidth_cons_t[] = {{64, "MIN"}, {150, "MAX"}, {0, NULL}};
-consvar_t cv_chatwidth = {"chatwidth", "128", CV_SAVE, chatwidth_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "128", "Width of the chat box", CV_SAVE, chatwidth_cons_t, NULL);
 
 // chatheight
 static CV_PossibleValue_t chatheight_cons_t[] = {{6, "MIN"}, {22, "MAX"}, {0, NULL}};
-consvar_t cv_chatheight= {"chatheight", "8", CV_SAVE, chatheight_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", "Height of the chat box", CV_SAVE, chatheight_cons_t, NULL);
 
 // chat notifications (do you want to hear beeps? I'd understand if you didn't.)
-consvar_t cv_chatnotifications= {"chatnotifications", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatnotifications= CVAR_INIT ("chatnotifications", "On", "Play a beep sound when a chat message is received", CV_SAVE, CV_OnOff, NULL);
 
 // chat spam protection (why would you want to disable that???)
-consvar_t cv_chatspamprotection= {"chatspamprotection", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatspamprotection= CVAR_INIT ("chatspamprotection", "On", "Filter messages from players excessively sending messages", CV_SAVE, CV_OnOff, NULL);
 
 // minichat text background
-consvar_t cv_chatbacktint = {"chatbacktint", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", "Have a tinted background on chat messages", CV_SAVE, CV_OnOff, NULL);
 
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
-consvar_t cv_consolechat = {"chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", "How chat looks", CV_SAVE, consolechat_cons_t, NULL);
 
 
-consvar_t cv_crosshair = {"crosshair", "Cross", CV_SAVE, crosshair_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_crosshair2 = {"crosshair2", "Cross", CV_SAVE, crosshair_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_invertmouse = {"invertmouse", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_invertmouse2 = {"invertmouse2", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_alwaysfreelook = {"alwaysmlook", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_alwaysfreelook2 = {"alwaysmlook2", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_chasefreelook = {"chasemlook", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_chasefreelook2 = {"chasemlook2", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_mousemove = {"mousemove", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_mousemove2 = {"mousemove2", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_analog = {"analog", "Off", CV_CALL, CV_OnOff, Analog_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_analog2 = {"analog2", "Off", CV_CALL, CV_OnOff, Analog2_OnChange, 0, NULL, NULL, 0, 0, NULL};
-#ifdef DC
-consvar_t cv_useranalog = {"useranalog", "On", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_useranalog2 = {"useranalog2", "On", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange, 0, NULL, NULL, 0, 0, NULL};
-#else
-consvar_t cv_useranalog = {"useranalog", "Off", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_useranalog2 = {"useranalog2", "Off", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange, 0, NULL, NULL, 0, 0, NULL};
-#endif
+consvar_t cv_crosshair = CVAR_INIT ("crosshair", "Cross", "Style of crosshair in first person", CV_SAVE, crosshair_cons_t, NULL);
+consvar_t cv_crosshair2 = CVAR_INIT ("crosshair2", "Cross", "Style of crosshair in first person", CV_SAVE, crosshair_cons_t, NULL);
+consvar_t cv_invertmouse = CVAR_INIT ("invertmouse", "Off", "Invert the direction of vertial mouselook", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_invertmouse2 = CVAR_INIT ("invertmouse2", "Off", "Invert the direction of vertial mouselook", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_alwaysfreelook = CVAR_INIT ("alwaysmlook", "On", "Always use mouselook, regardless of camera state", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_alwaysfreelook2 = CVAR_INIT ("alwaysmlook2", "On", "Always use mouselook, regardless of camera state", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chasefreelook = CVAR_INIT ("chasemlook", "Off", "Allow using mouselook in third person", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_chasefreelook2 = CVAR_INIT ("chasemlook2", "Off", "Allow using mouselook in third person", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_mousemove = CVAR_INIT ("mousemove", "Off", "Use the mouse to move the player", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_mousemove2 = CVAR_INIT ("mousemove2", "Off", "Use the mouse to move the player", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_analog = CVAR_INIT ("analog", "Off", "This does not save, change useranalog instead!!", CV_CALL, CV_OnOff, Analog_OnChange);
+consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", "This does not save, change useranalog instead!!", CV_CALL, CV_OnOff, Analog2_OnChange);
+consvar_t cv_useranalog = CVAR_INIT ("useranalog", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
+consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
 
 typedef enum
 {
@@ -418,75 +415,25 @@ typedef enum
 	AXISFIRENORMAL,
 } axis_input_e;
 
-#if defined (_WII) || defined  (WMINPUT)
-consvar_t cv_turnaxis = {"joyaxis_turn", "LStick.X", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_moveaxis = {"joyaxis_move", "LStick.Y", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_sideaxis = {"joyaxis_side", "RStick.X", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_lookaxis = {"joyaxis_look", "RStick.Y", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_jumpaxis = {"joyaxis_jump", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_spinaxis = {"joyaxis_spin", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_fireaxis = {"joyaxis_fire", "LAnalog", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_firenaxis = {"joyaxis_firenormal", "RAnalog", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#else
-consvar_t cv_turnaxis = {"joyaxis_turn", "X-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#ifdef PSP
-consvar_t cv_moveaxis = {"joyaxis_move", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#else
-consvar_t cv_moveaxis = {"joyaxis_move", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
-#ifdef _arch_dreamcast
-consvar_t cv_sideaxis = {"joyaxis_side", "Triggers", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#elif defined (_XBOX)
-consvar_t cv_sideaxis = {"joyaxis_side", "Alt X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_lookaxis = {"joyaxis_look", "Alt Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#elif defined (PSP)
-consvar_t cv_sideaxis = {"joyaxis_side", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#else
-consvar_t cv_sideaxis = {"joyaxis_side", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
-#ifndef _XBOX
-#ifdef PSP
-consvar_t cv_lookaxis = {"joyaxis_look", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#else
-consvar_t cv_lookaxis = {"joyaxis_look", "Y-Rudder-", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
-#endif
-consvar_t cv_jumpaxis = {"joyaxis_jump", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_spinaxis = {"joyaxis_spin", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_fireaxis = {"joyaxis_fire", "Z-Axis-", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_firenaxis = {"joyaxis_firenormal", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
 
-#if defined (_WII) || defined  (WMINPUT)
-consvar_t cv_turnaxis2 = {"joyaxis2_turn", "LStick.X", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_moveaxis2 = {"joyaxis2_move", "LStick.Y", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_sideaxis2 = {"joyaxis2_side", "RStick.X", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_lookaxis2 = {"joyaxis2_look", "RStick.Y", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_jumpaxis2 = {"joyaxis2_jump", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_spinaxis2 = {"joyaxis2_spin", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_fireaxis2 = {"joyaxis2_fire", "LAnalog", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_firenaxis2 = {"joyaxis2_firenormal", "RAnalog", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#else
-consvar_t cv_turnaxis2 = {"joyaxis2_turn", "X-Rudder", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_moveaxis2 = {"joyaxis2_move", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#ifdef _arch_dreamcast
-consvar_t cv_sideaxis2 = {"joyaxis2_side", "Triggers", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#elif defined (_XBOX)
-consvar_t cv_sideaxis2 = {"joyaxis2_side", "Alt X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_lookaxis2 = {"joyaxis2_look", "Alt Y-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#elif defined (_PSP)
-consvar_t cv_sideaxis2 = {"joyaxis2_side", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#else
-consvar_t cv_sideaxis2 = {"joyaxis2_side", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
-#ifndef _XBOX
-consvar_t cv_lookaxis2 = {"joyaxis2_look", "Y-Rudder-", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
-consvar_t cv_jumpaxis2 = {"joyaxis2_jump", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_spinaxis2 = {"joyaxis2_spin", "None", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_fireaxis2 = {"joyaxis2_fire", "Z-Axis-", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_firenaxis2 = {"joyaxis2_firenormal", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-#endif
+consvar_t cv_turnaxis = CVAR_INIT ("joyaxis_turn", "X-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_moveaxis = CVAR_INIT ("joyaxis_move", "Y-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "X-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_lookaxis = CVAR_INIT ("joyaxis_look", "Y-Rudder-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_jumpaxis = CVAR_INIT ("joyaxis_jump", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_spinaxis = CVAR_INIT ("joyaxis_spin", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_fireaxis = CVAR_INIT ("joyaxis_fire", "Z-Axis-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_firenaxis = CVAR_INIT ("joyaxis_firenormal", "Z-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+
+
+consvar_t cv_turnaxis2 = CVAR_INIT ("joyaxis2_turn", "X-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_moveaxis2 = CVAR_INIT ("joyaxis2_move", "Y-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "X-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_lookaxis2 = CVAR_INIT ("joyaxis2_look", "Y-Rudder-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_jumpaxis2 = CVAR_INIT ("joyaxis2_jump", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_spinaxis2 = CVAR_INIT ("joyaxis2_spin", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_fireaxis2 = CVAR_INIT ("joyaxis2_fire", "Z-Axis-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_firenaxis2 = CVAR_INIT ("joyaxis2_firenormal", "Z-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 
 
 #if MAXPLAYERS > 32
@@ -1716,7 +1663,7 @@ void G_DoLoadLevel(boolean resetplayer)
 	}
 
 	// Setup the level.
-	if (!P_SetupLevel(false))
+	if (!P_SetupLevel(false, false)) // this never returns false?
 	{
 		// fail so reset game stuff
 		Command_ExitGame_f();
@@ -2069,8 +2016,13 @@ void G_Ticker(boolean run)
 			break;
 
 		case GS_TITLESCREEN:
-		case GS_WAITINGPLAYERS:
 			F_TitleScreenTicker(run);
+			break;
+
+		case GS_WAITINGPLAYERS:
+			if (netgame)
+				F_WaitingPlayersTicker();
+			HU_Ticker();
 			break;
 
 		case GS_DEDICATEDSERVER:
@@ -2160,7 +2112,7 @@ void G_PlayerReborn(INT32 player)
 	INT16 totalring;
 	UINT8 laps;
 	UINT8 mare;
-	UINT8 skincolor;
+	UINT16 skincolor;
 	INT32 skin;
 	tic_t jointime;
 	boolean spectator;
@@ -3644,7 +3596,8 @@ void G_SaveGame(UINT32 savegameslot)
 //
 void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar, boolean SSSG, boolean FLS)
 {
-	UINT8 color = 0;
+	UINT8 color = skins[pickedchar].prefcolor;
+
 	paused = false;
 
 	if (demoplayback)
@@ -3667,8 +3620,6 @@ void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar, b
 		SplitScreen_OnChange();
 	}
 
-	if (!color)
-		color = skins[pickedchar].prefcolor;
 	SetPlayerSkinByNum(consoleplayer, pickedchar);
 	CV_StealthSet(&cv_skin, skins[pickedchar].name);
 	CV_StealthSetValue(&cv_playercolor, color);
@@ -3822,7 +3773,7 @@ char *G_BuildMapTitle(INT32 mapnum)
 // DEMO RECORDING
 //
 
-#define DEMOVERSION 0x0009
+#define DEMOVERSION 0x000B // Changed because of color names
 #define DEMOHEADER  "\xF0" "SRB2Replay" "\x0F"
 
 #define DF_GHOST        0x01 // This demo contains ghost data too!
@@ -4016,13 +3967,13 @@ void G_GhostAddColor(ghostcolor_t color)
 {
 	if (!demorecording || !(demoflags & DF_GHOST))
 		return;
-	if (ghostext.lastcolor == (UINT8)color)
+	if (ghostext.lastcolor == (UINT16)color)
 	{
 		ghostext.flags &= ~EZT_COLOR;
 		return;
 	}
 	ghostext.flags |= EZT_COLOR;
-	ghostext.color = (UINT8)color;
+	ghostext.color = (UINT16)color;
 }
 
 void G_GhostAddScale(fixed_t scale)
@@ -4157,7 +4108,7 @@ void G_WriteGhostTic(mobj_t *ghost)
 		WRITEUINT8(demo_p,ghostext.flags);
 		if (ghostext.flags & EZT_COLOR)
 		{
-			WRITEUINT8(demo_p,ghostext.color);
+			WRITEUINT16(demo_p,ghostext.color);
 			ghostext.lastcolor = ghostext.color;
 		}
 		if (ghostext.flags & EZT_SCALE)
@@ -4251,7 +4202,7 @@ void G_ConsGhostTic(void)
 	{ // But wait, there's more!
 		ziptic = READUINT8(demo_p);
 		if (ziptic & EZT_COLOR)
-			demo_p++;
+			demo_p += (demoversion<DEMOVERSION) ? 1 : sizeof(UINT16);
 		if (ziptic & EZT_SCALE)
 			demo_p += sizeof(fixed_t);
 		if (ziptic & EZT_HIT)
@@ -4386,7 +4337,7 @@ void G_GhostTicker(void)
 			ziptic = READUINT8(g->p);
 			if (ziptic & EZT_COLOR)
 			{
-				g->color = READUINT8(g->p);
+				g->color = (demoversion<DEMOVERSION) ? READUINT8(g->p) : READUINT8(g->p);
 				switch(g->color)
 				{
 				default:
@@ -4493,11 +4444,17 @@ void G_GhostTicker(void)
 		switch(g->color)
 		{
 		case GHC_SUPER: // Super Sonic (P_DoSuperStuff)
-			g->mo->color = SKINCOLOR_SUPER1;
+			if (g->mo->skin)
+			{
+				skin_t *skin = (skin_t *)g->mo->skin;
+				g->mo->color = skin->supercolor;
+			}
+			else
+				g->mo->color = SKINCOLOR_SUPER1;
 			g->mo->color += abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4);
 			break;
 		case GHC_INVINCIBLE: // Mario invincibility (P_CheckInvincibilityTimer)
-			g->mo->color = (UINT8)(leveltime % MAXSKINCOLORS);
+			g->mo->color = (UINT16)(leveltime % FIRSTSUPERCOLOR);
 			break;
 		default:
 			break;
@@ -4761,7 +4718,7 @@ void G_RecordMetal(void)
 void G_BeginRecording(void)
 {
 	UINT8 i;
-	char name[16];
+	char name[MAXCOLORNAME+1];
 	player_t *player = &players[consoleplayer];
 
 	if (demo_p)
@@ -4824,12 +4781,16 @@ void G_BeginRecording(void)
 	demo_p += 16;
 
 	// Color
-	for (i = 0; i < 16 && cv_playercolor.string[i]; i++)
-		name[i] = cv_playercolor.string[i];
-	for (; i < 16; i++)
+	UINT8 skincolor = players[0].skincolor;
+	if (skincolor >= numskincolors)
+		skincolor = SKINCOLOR_NONE;
+	const char *skincolor_name = skincolors[skincolor].name;
+	for (i = 0; i < MAXCOLORNAME && skincolor_name[i]; i++)
+		name[i] = skincolor_name[i];
+	for (; i < MAXCOLORNAME; i++)
 		name[i] = '\0';
-	M_Memcpy(demo_p,name,16);
-	demo_p += 16;
+	M_Memcpy(demo_p,name,MAXCOLORNAME);
+	demo_p += MAXCOLORNAME;
 
 	// Stats
 	WRITEUINT8(demo_p,player->charability);
@@ -4996,6 +4957,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
 	case 0x000A:
 		break;
 	// too old, cannot support.
@@ -5070,14 +5032,14 @@ void G_DoPlayDemo(char *defdemoname)
 {
 	UINT8 i;
 	lumpnum_t l;
-	char skin[17],color[17],*n,*pdemoname;
+	char skin[17],color[MAXCOLORNAME+1],*n,*pdemoname;
 	UINT8 version,subversion,charability,charability2,thrustfactor,accelstart,acceleration;
 	UINT32 randseed;
 	fixed_t actionspd,mindash,maxdash,normalspeed,runspeed,jumpfactor;
 	char msg[1024];
 
 	skin[16] = '\0';
-	color[16] = '\0';
+	color[MAXCOLORNAME] = '\0';
 
 	n = defdemoname+strlen(defdemoname);
 	while (*n != '/' && *n != '\\' && n != defdemoname)
@@ -5137,6 +5099,7 @@ void G_DoPlayDemo(char *defdemoname)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
 	case 0x000A:
 		break;
 	// too old, cannot support.
@@ -5207,8 +5170,8 @@ void G_DoPlayDemo(char *defdemoname)
 	demo_p += 16;
 
 	// Color
-	M_Memcpy(color,demo_p,16);
-	demo_p += 16;
+	M_Memcpy(color,demo_p, (demoversion < 0x000B) ? 16 : MAXCOLORNAME);
+	demo_p += (demoversion < 0x000B) ? 16 : MAXCOLORNAME;
 
 	charability = READUINT8(demo_p);
 	charability2 = READUINT8(demo_p);
@@ -5262,8 +5225,8 @@ void G_DoPlayDemo(char *defdemoname)
 	SetPlayerSkin(0, skin);
 
 	// Set color
-	for (i = 0; i < MAXSKINCOLORS; i++)
-		if (!stricmp(Color_Names[i],color))
+	for (i = 0; i < numskincolors; i++)
+		if (!stricmp(skincolors[i].name,color))
 		{
 			players[0].skincolor = i;
 			break;
@@ -5299,7 +5262,7 @@ void G_AddGhost(char *defdemoname)
 {
 	INT32 i;
 	lumpnum_t l;
-	char name[17],skin[17],color[17],*n,*pdemoname,md5[16];
+	char name[17],skin[17],color[MAXCOLORNAME+1],*n,*pdemoname,md5[16];
 	demoghost *gh;
 	UINT8 flags;
 	UINT8 *buffer,*p;
@@ -5308,7 +5271,7 @@ void G_AddGhost(char *defdemoname)
 
 	name[16] = '\0';
 	skin[16] = '\0';
-	color[16] = '\0';
+	color[MAXCOLORNAME] = '\0';
 
 	n = defdemoname+strlen(defdemoname);
 	while (*n != '/' && *n != '\\' && n != defdemoname)
@@ -5356,6 +5319,8 @@ void G_AddGhost(char *defdemoname)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
+	case 0x000A:
 		break;
 	// too old, cannot support.
 	default:
@@ -5418,8 +5383,8 @@ void G_AddGhost(char *defdemoname)
 	p += 16;
 
 	// Color
-	M_Memcpy(color, p,16);
-	p += 16;
+	M_Memcpy(color,p, (ghostversion < 0x000B) ? 16 : MAXCOLORNAME);
+	p += (ghostversion < 0x000B) ? 16 : MAXCOLORNAME;
 
 	// Ghosts do not have a player structure to put this in.
 	p++; // charability
@@ -5507,10 +5472,10 @@ void G_AddGhost(char *defdemoname)
 
 	// Set color
 	gh->mo->color = ((skin_t*)gh->mo->skin)->prefcolor;
-	for (i = 0; i < MAXSKINCOLORS; i++)
-		if (!stricmp(Color_Names[i],color))
+	for (i = 0; i < numskincolors; i++)
+		if (!stricmp(skincolors[i].name,color))
 		{
-			gh->mo->color = (UINT8)i;
+			gh->mo->color = (UINT16)i;
 			break;
 		}
 	gh->oldmo.color = gh->mo->color;
@@ -5581,6 +5546,8 @@ void G_DoPlayMetal(void)
 	case DEMOVERSION: // latest always supported
 	// compatibility available?
 	case 0x0008:
+	case 0x0009:
+	case 0x000A:
 		break;
 	// too old, cannot support.
 	default:

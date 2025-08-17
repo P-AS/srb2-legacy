@@ -1119,9 +1119,9 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 	return NULL;
 }
 
-skincolors_t M_GetEmblemColor(emblem_t *em)
+skincolornum_t M_GetEmblemColor(emblem_t *em)
 {
-	if (!em || em->color >= MAXSKINCOLORS)
+	if (!em || em->color >= numskincolors)
 		return SKINCOLOR_NONE;
 	return em->color;
 }
@@ -1135,9 +1135,9 @@ const char *M_GetEmblemPatch(emblem_t *em)
 	return pnamebuf;
 }
 
-skincolors_t M_GetExtraEmblemColor(extraemblem_t *em)
+skincolornum_t M_GetExtraEmblemColor(extraemblem_t *em)
 {
-	if (!em || em->color >= MAXSKINCOLORS)
+	if (!em || em->color >= numskincolors)
 		return SKINCOLOR_NONE;
 	return em->color;
 }

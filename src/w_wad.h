@@ -128,9 +128,6 @@ void W_Shutdown(void);
 FILE *W_OpenWadFile(const char **filename, boolean useerrors);
 // Load and add a wadfile to the active wad files, returns numbers of lumps, INT16_MAX on error
 UINT16 W_InitFile(const char *filename);
-#ifdef DELFILE
-void W_UnloadWadFile(UINT16 num);
-#endif
 
 // W_InitMultipleFiles returns 1 if all is okay, 0 otherwise,
 // so that it stops with a message if a file was not found, but not if all is okay.
@@ -193,6 +190,7 @@ void *W_CachePatchNum(lumpnum_t lumpnum, INT32 tag); // return a patch_t
 #endif
 
 void W_UnlockCachedPatch(void *patch);
+void W_FlushCachedPatches(void);
 
 void W_VerifyFileMD5(UINT16 wadfilenum, const char *matchmd5);
 

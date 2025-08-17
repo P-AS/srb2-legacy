@@ -87,10 +87,18 @@ typedef struct viddef_s
 #ifdef HWRENDER
 	INT32/*fixed_t*/ fsmalldupx, fsmalldupy;
 	INT32/*fixed_t*/ fmeddupx, fmeddupy;
+	INT32 glstate;
 #endif
 } viddef_t;
 #define VIDWIDTH vid.width
 #define VIDHEIGHT vid.height
+
+enum
+{
+	VID_GL_LIBRARY_NOTLOADED  = 0,
+	VID_GL_LIBRARY_LOADED     = 1,
+	VID_GL_LIBRARY_ERROR      = -1,
+};
 
 // internal additional info for vesa modes only
 typedef struct
@@ -144,21 +152,25 @@ extern void (*twosmultipatchtransfunc)(void);
 extern viddef_t vid;
 extern INT32 setmodeneeded; // mode number to set if needed, or 0
 
+void SCR_ChangeRenderer(void);
+void SCR_ChangeRendererCVars(INT32 mode);
+extern UINT8 setrenderneeded;
+
 extern INT32 scr_bpp;
 extern UINT8 *scr_borderpatch; // patch used to fill the view borders
 
-extern consvar_t cv_scr_width, cv_scr_height, cv_scr_depth, cv_renderview, cv_fullscreen;
+extern consvar_t cv_scr_width, cv_scr_height, cv_scr_width_w, cv_scr_height_w, cv_scr_depth, cv_fullscreen;
+extern consvar_t cv_renderview, cv_renderer;
 // wait for page flipping to end or not
 extern consvar_t cv_vidwait;
-
 extern consvar_t cv_timescale;
-
 
 // quick fix for tall/short skies, depending on bytesperpixel
 extern void (*walldrawerfunc)(void);
 
 // Change video mode, only at the start of a refresh.
 void SCR_SetMode(void);
+void SCR_SetDrawFuncs(void);
 // Recalc screen size dependent stuff
 void SCR_Recalc(void);
 // Check parms once at startup

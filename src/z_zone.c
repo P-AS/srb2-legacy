@@ -114,10 +114,10 @@ void Z_Init(void)
 	CONS_Printf("System memory: %sMB - Free: %sMB\n", sizeu1(total>>20), sizeu2(memfree));
 
 	// Note: This allocates memory. Watch out.
-	COM_AddCommand("memfree", Command_Memfree_f);
+	COM_AddCommand("memfree", NULL, Command_Memfree_f);
 
 #ifdef ZDEBUG
-	COM_AddCommand("memdump", Command_Memdump_f);
+	COM_AddCommand("memdump", NULL, Command_Memdump_f);
 #endif
 }
 
@@ -456,6 +456,27 @@ void Z_IterateTags(INT32 lowtag, INT32 hightag, boolean (*iterfunc)(void *))
 	}
 }
 
+// for renderer switching, free a bunch of stuff
+boolean needpatchflush = false;
+boolean needpatchrecache = false;
+
+// flush all patches from memory
+// (also frees memory tagged with PU_CACHE)
+// (which are not necessarily patches but I don't care)
+void Z_FlushCachedPatches(void)
+{
+	CONS_Debug(DBG_RENDER, "Z_FlushCachedPatches()...\n");
+	Z_FreeTag(PU_CACHE);
+	Z_FreeTag(PU_PATCH);
+	Z_FreeTag(PU_HUDGFX);
+	Z_FreeTag(PU_HWRPATCHINFO);
+	Z_FreeTag(PU_HWRMODELTEXTURE);
+	Z_FreeTag(PU_HWRCACHE);
+	Z_FreeTag(PU_HWRCACHE_UNLOCKED);
+	Z_FreeTag(PU_HWRPATCHINFO_UNLOCKED);
+	Z_FreeTag(PU_HWRMODELTEXTURE_UNLOCKED);
+}
+
 // -----------------
 // Utility functions
 // -----------------
@@ -705,6 +726,7 @@ static void Command_Memfree_f(void)
 		CONS_Printf(M_GetText("Cached textures        : %7s KB\n"), sizeu1(Z_TagUsage(PU_HWRCACHE)>>10));
 		CONS_Printf(M_GetText("Texture colormaps      : %7s KB\n"), sizeu1(Z_TagUsage(PU_HWRPATCHCOLMIPMAP)>>10));
 		CONS_Printf(M_GetText("Plane polygons         : %7s KB\n"), sizeu1(Z_TagUsage(PU_HWRPLANE)>>10));
+		CONS_Printf(M_GetText("HW model textures : %7s KB\n"), sizeu1(Z_TagUsage(PU_HWRMODELTEXTURE)>>10));
 		CONS_Printf(M_GetText("All GPU textures       : %7d KB\n"), HWR_GetTextureUsed()>>10);
 	}
 #endif

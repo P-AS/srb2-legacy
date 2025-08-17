@@ -749,6 +749,31 @@ void I_CursedWindowMovement (int xd, int yd)
 	(void)yd;
 }
 
+const char *I_GetPlatform(void)
+{
+#if defined (_WIN32) || defined (_WIN64)
+	return "Windows";
+#elif defined(__linux__)
+	return "Linux";
+#elif defined(MACOSX)
+	return "macOS";
+#elif defined(__FreeBSD__)
+	return "FreeBSD";
+#elif defined(__OpenBSD__)
+	return "OpenBSD";
+#elif defined (__NetBSD__)
+	return "NetBSD";
+#elif defined (__HAIKU__)
+	return "Haiku";
+#elif defined (__ANDROID__)
+	return "Android";
+#elif defined(UNIXCOMMON)
+	return "Unix (Common)";
+#else
+	"Other OS";
+#endif
+}
+
 //
 // I_JoyScale
 //
@@ -1184,10 +1209,14 @@ void I_Sleep(UINT32 ms)
 
 void I_SleepDuration(precise_t duration)
 {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__OpenBSD__)
 	UINT64 precision = I_GetPrecisePrecision();
 	precise_t dest = I_GetPreciseTime() + duration;
+#ifdef __OpenBSD__
+	precise_t slack = (precision / 50); // 20 ms slack
+#else
 	precise_t slack = (precision / 5000); // 0.2 ms slack
+#endif
 	if (duration > slack)
 	{
 		duration -= slack;
@@ -1196,7 +1225,11 @@ void I_SleepDuration(precise_t duration)
 			.tv_nsec = duration * 1000000000 / precision % 1000000000,
 		};
 		int status;
+#ifdef __OpenBSD__
+		do status = nanosleep(&ts, &ts);
+#else
 		do status = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts);
+#endif
 		while (status == EINTR);
 	}
 
@@ -1304,7 +1337,6 @@ void I_Quit(void)
 	D_QuitNetGame();
 	I_ShutdownMusic();
 	I_ShutdownSound();
-	I_ShutdownCD();
 	// use this for 1.28 19990220 by Kin
 	I_ShutdownGraphics();
 	I_ShutdownSystem();
@@ -1354,8 +1386,6 @@ void I_Error(const char *error, ...)
 			I_ShutdownMusic();
 		if (errorcount == 2)
 			I_ShutdownSound();
-		if (errorcount == 3)
-			I_ShutdownCD();
 		if (errorcount == 4)
 			I_ShutdownGraphics();
 		if (errorcount == 5)
@@ -1398,7 +1428,6 @@ void I_Error(const char *error, ...)
 	D_QuitNetGame();
 	I_ShutdownMusic();
 	I_ShutdownSound();
-	I_ShutdownCD();
 	// use this for 1.28 19990220 by Kin
 	I_ShutdownGraphics();
 	I_ShutdownSystem();

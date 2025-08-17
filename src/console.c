@@ -114,22 +114,22 @@ static void CONS_backcolor_Change(void);
 static char con_buffer[CON_BUFFERSIZE];
 
 // how many seconds the hud messages lasts on the screen
-static consvar_t cons_msgtimeout = {"con_hudtime", "5", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_msgtimeout = CVAR_INIT ("con_hudtime", "5", "How long HUD messages stay on screen, in seconds",  CV_SAVE, CV_Unsigned, NULL);
 
 // number of lines displayed on the HUD
-static consvar_t cons_hudlines = {"con_hudlines", "5", CV_CALL|CV_SAVE, CV_Unsigned, CONS_hudlines_Change, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", "Number of lines displayed on the HUD",  CV_CALL|CV_SAVE, CV_Unsigned, CONS_hudlines_Change);
 
 // number of lines console move per frame
 // (con_speed needs a limit, apparently)
 static CV_PossibleValue_t speed_cons_t[] = {{0, "MIN"}, {64, "MAX"}, {0, NULL}};
-static consvar_t cons_speed = {"con_speed", "8", CV_SAVE, speed_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", "How fast the console moves up and down, 0 is instant",  CV_SAVE, speed_cons_t, NULL);
 
 // percentage of screen height to use for console
-static consvar_t cons_height = {"con_height", "50", CV_SAVE, CV_Unsigned, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_height = CVAR_INIT ("con_height", "50", "Percentage of screen height used for console",  CV_SAVE, CV_Unsigned, NULL);
 
 static CV_PossibleValue_t backpic_cons_t[] = {{0, "translucent"}, {1, "picture"}, {0, NULL}};
 // whether to use console background picture, or translucent mode
-static consvar_t cons_backpic = {"con_backpic", "translucent", CV_SAVE, backpic_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+static consvar_t cons_backpic = CVAR_INIT ("con_backpic", "translucent", NULL,  CV_SAVE, backpic_cons_t, NULL);
 
 static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{2, "Sepia"},
 												{3, "Brown"},		{4, "Pink"},		{5, "Raspberry"},
@@ -137,10 +137,10 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{9, "Gold"},		{10,"Yellow"},		{11,"Emerald"},
 												{12,"Green"},		{13,"Cyan"},		{14,"Steel"},
 												{15,"Periwinkle"},	{16,"Blue"},		{17,"Purple"},
-												{18,"Lavender"},
+												{18,"Lavender"}, {19,"Gray"},
 												{0, NULL}};
 
-consvar_t cons_backcolor = {"con_backcolor", "Green", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Green", "Color of the console background",  CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change);
 
 static void CON_Print(char *msg);
 
@@ -280,6 +280,7 @@ void CON_SetupBackColormap(void)
 		case 16:	palindex = 239;	break; 	// Blue
 		case 17:	palindex = 199; shift = 7; 	break; 	// Purple
 		case 18:	palindex = 255; shift = 7; 	break; 	// Lavender
+		case 19:	palindex = 15; shift = 7;	break; 	// Gray
 		// Default green
 		default:	palindex = 175; break;
 
@@ -410,8 +411,8 @@ void CON_Init(void)
 
 	// register our commands
 	//
-	COM_AddCommand("cls", CONS_Clear_f);
-	COM_AddCommand("english", CONS_English_f);
+	COM_AddCommand("cls", NULL,  CONS_Clear_f);
+	COM_AddCommand("english", NULL,  CONS_English_f);
 	// set console full screen for game startup MAKE SURE VID_Init() done !!!
 	con_destlines = vid.height;
 	con_curlines = vid.height;
@@ -428,7 +429,7 @@ void CON_Init(void)
 		CV_RegisterVar(&cons_height);
 		CV_RegisterVar(&cons_backpic);
 		CV_RegisterVar(&cons_backcolor);
-		COM_AddCommand("bind", CONS_Bind_f);
+		COM_AddCommand("bind", NULL,  CONS_Bind_f);
 	}
 	else
 	{
@@ -585,11 +586,11 @@ static void CON_MoveConsole(void)
 		con_curlines -= FixedInt(fracmovement);
 		if (con_curlines < con_destlines)
 			con_curlines = con_destlines;
-		
+
 		if (con_destlines == 0) // If the console is being closed, not just moved up...
 			con_tick = 0; // ...don't show the blinking cursor
 	}
-	
+
 	fracmovement %= FRACUNIT; // Reset fracmovement's integer value, but keep the fraction
 }
 
@@ -1274,33 +1275,20 @@ void CONS_Printf(const char *fmt, ...)
 	DEBFILE(txt);
 #endif
 
-	if (!con_started)
-	{
-#if defined (_XBOX) && defined (__GNUC__)
-		if (!keyboard_started) debugPrint(txt);
-#endif
-#ifdef PC_DOS
-		CON_LogMessage(txt);
-		free(txt);
-		return;
-#endif
-	}
-	else
-		// write message in con text buffer
+	// write message in con text buffer
+	if (con_started)
 		CON_Print(txt);
 
-#ifndef PC_DOS
 	CON_LogMessage(txt);
-#endif
 
 	// make sure new text is visible
 	con_scrollup = 0;
 
 	// if not in display loop, force screen update
-	if (con_startup)
+	if (con_startup && (!setrenderneeded))
 	{
 #if (defined (_WINDOWS)) || (defined (__OS2__) && !defined (HAVE_SDL))
-		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_CACHE);
+		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_PATCH);
 
 		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
 		V_DrawScaledPatch(0, 0, 0, con_backpic);
@@ -1557,7 +1545,7 @@ static void CON_DrawConsole(void)
 	// draw console background
 	if (cons_backpic.value || con_forcepic)
 	{
-		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_CACHE);
+		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_PATCH);
 
 		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
 		V_DrawScaledPatch(0, 0, 0, con_backpic);
@@ -1614,9 +1602,21 @@ void CON_Drawer(void)
 	if (!con_started || !graphics_started)
 		return;
 
+
+	if (needpatchrecache)
+	{
+		W_FlushCachedPatches();
+		HU_LoadGraphics();
+	}
+
+
 	if (con_recalc)
+	{
 		CON_RecalcSize();
-	
+		if (con_curlines <= 0)
+			CON_ClearHUD();
+	}
+
 		// console movement
 	if (con_curlines != con_destlines)
 		CON_MoveConsole();
@@ -1626,4 +1626,3 @@ void CON_Drawer(void)
 	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS)
 		CON_DrawHudlines();
 }
-
