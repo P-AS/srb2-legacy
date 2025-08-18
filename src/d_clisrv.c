@@ -123,7 +123,7 @@ UINT8 hu_redownloadinggamestate = 0;
 // true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
 boolean hu_stopped = false;
 
-consvar_t cv_dedicatedidletime = CVAR_INIT ("dedicatedidletime", "10", NULL, CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_dedicatedidletime = CVAR_INIT ("dedicatedidletime", "10", "Amount of time it takes for dedicated servers to start idling", CV_SAVE, CV_Unsigned, NULL);
 
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
@@ -174,10 +174,10 @@ static textcmdtic_t *textcmds[TEXTCMD_HASH_SIZE] = {NULL};
 static ticcmd_t playercmds[MAXPLAYERS];
 
 
-static consvar_t cv_showjoinaddress = CVAR_INIT ("showjoinaddress", "On", NULL, 0, CV_OnOff, NULL);
+static consvar_t cv_showjoinaddress = CVAR_INIT ("showjoinaddress", "On", "Show the IP address of players joining a netgame", 0, CV_OnOff, NULL);
 
 static CV_PossibleValue_t playbackspeed_cons_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
-consvar_t cv_playbackspeed = CVAR_INIT ("playbackspeed", "1", NULL, 0, playbackspeed_cons_t, NULL);
+consvar_t cv_playbackspeed = CVAR_INIT ("playbackspeed", "1", "Playback speed of demos", 0, playbackspeed_cons_t, NULL);
 
 static inline void *G_DcpyTiccmd(void* dest, const ticcmd_t* src, const size_t n)
 {
@@ -2657,23 +2657,23 @@ static void Command_ResendGamestate(void)
 }
 
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
-consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", NULL, CV_SAVE, netticbuffer_cons_t, NULL);
+consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", "Amount of tics to save in a buffer, reduces network induced frame lag", CV_SAVE, netticbuffer_cons_t, NULL);
 
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", "Allow or disallow players from joining a netgame", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", NULL, CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", NULL, CV_SAVE, maxplayers_cons_t, NULL);
-consvar_t cv_allowgamestateresend = CVAR_INIT ("allowgamestateresend", "On", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", "The maximum amount of players that can join a netgame", CV_SAVE, maxplayers_cons_t, NULL);
+consvar_t cv_allowgamestateresend = CVAR_INIT ("allowgamestateresend", "On", "Allow the server to resend the gamestate if a client goes out of synch", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", "Show when a player is out of synch", 0, CV_OnOff, NULL);
 
 // max file size to send to a player (in kilobytes)
 static CV_PossibleValue_t maxsend_cons_t[] = {{-1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
-consvar_t cv_maxsend = CVAR_INIT ("maxsend", "4096", NULL, CV_SAVE, maxsend_cons_t, NULL);
-consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_maxsend = CVAR_INIT ("maxsend", "4096", "Maximum file size to send to joiners of a netgame, -1 is infinite", CV_SAVE, maxsend_cons_t, NULL);
+consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", "Notify the server when a client starts downloading a file", CV_SAVE, CV_OnOff, NULL);
 
 // Speed of file downloading (in packets per tic)
 static CV_PossibleValue_t downloadspeed_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", NULL, CV_SAVE, downloadspeed_cons_t, NULL);
+consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", "The speed of file downloading in packets per tic", CV_SAVE, downloadspeed_cons_t, NULL);
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
 

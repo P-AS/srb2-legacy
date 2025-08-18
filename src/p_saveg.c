@@ -130,6 +130,7 @@ static void P_NetArchivePlayers(void)
 
 		WRITESTRINGN(save_p, player_names[i], MAXPLAYERNAME);
 		WRITEANGLE(save_p, players[i].aiming);
+		WRITEANGLE(save_p, players[i].viewrollangle);
 		WRITEANGLE(save_p, players[i].awayviewaiming);
 		WRITEINT32(save_p, players[i].awayviewtics);
 		WRITEINT32(save_p, players[i].health);
@@ -308,6 +309,7 @@ static void P_NetUnArchivePlayers(void)
 
 		READSTRINGN(save_p, player_names[i], MAXPLAYERNAME);
 		players[i].aiming = READANGLE(save_p);
+		players[i].viewrollangle = READANGLE(save_p);
 		players[i].awayviewaiming = READANGLE(save_p);
 		players[i].awayviewtics = READINT32(save_p);
 		players[i].health = READINT32(save_p);

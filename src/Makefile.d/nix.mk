@@ -29,3 +29,7 @@ ifdef FREEBSD
 opts+=-I/usr/X11R6/include -DLINUX -DFREEBSD
 libs+=-L/usr/X11R6/lib -lkvm
 endif
+
+ifdef OPENBSD
+libs+=-lexecinfo -lpthread
+endif

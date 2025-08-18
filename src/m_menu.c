@@ -948,8 +948,8 @@ static menuitem_t OP_MainMenu[] =
 
 static menuitem_t OP_ControlsMenu[] =
 {
-	{IT_SUBMENU | IT_STRING, NULL, "Player 1 Controls...", NULL,  &OP_P1ControlsDef,  10},
-	{IT_SUBMENU | IT_STRING, NULL, "Player 2 Controls...", NULL,  &OP_P2ControlsDef,  20},
+	{IT_SUBMENU | IT_STRING, NULL, "Player 1 Controls...", "Controls for player 1",  &OP_P1ControlsDef,  10},
+	{IT_SUBMENU | IT_STRING, NULL, "Player 2 Controls...", "Controls for player 2",  &OP_P2ControlsDef,  20},
 
 	{IT_STRING  | IT_CVAR, NULL, "Controls per key", NULL,  &cv_controlperkey, 40},
 };
@@ -1225,10 +1225,6 @@ static menuitem_t OP_ColorOptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Hue",    NULL,       &cv_mhue,        140},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,   &cv_msaturation, 145},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Brightness", NULL,   &cv_mgamma,      150},
-
-#ifdef HWRENDER
-	{IT_STRING | IT_CALL, NULL,   "OpenGL Options...", NULL,    M_OpenGLOptionsMenu,    160},
-#endif
 };
 
 #ifdef NATIVESCREENRES
@@ -3245,53 +3241,6 @@ void M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
 {
 	// Solid color textbox.
 	V_DrawFill(x+5, y+5, width*8+6, boxlines*8+6, 239);
-	//V_DrawFill(x+8, y+8, width*8, boxlines*8, 31);
-/*
-	patch_t *p;
-	INT32 cx, cy, n;
-	INT32 step, boff;
-
-	step = 8;
-	boff = 8;
-
-	// draw left side
-	cx = x;
-	cy = y;
-	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_TL], PU_PATCH));
-	cy += boff;
-	p = W_CachePatchNum(viewborderlump[BRDR_L], PU_PATCH);
-	for (n = 0; n < boxlines; n++)
-	{
-		V_DrawScaledPatch(cx, cy, V_WRAPY, p);
-		cy += step;
-	}
-	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_BL], PU_PATCH));
-
-	// draw middle
-	V_DrawFlatFill(x + boff, y + boff, width*step, boxlines*step, st_borderpatchnum);
-
-	cx += boff;
-	cy = y;
-	while (width > 0)
-	{
-		V_DrawScaledPatch(cx, cy, V_WRAPX, W_CachePatchNum(viewborderlump[BRDR_T], PU_PATCH));
-		V_DrawScaledPatch(cx, y + boff + boxlines*step, V_WRAPX, W_CachePatchNum(viewborderlump[BRDR_B], PU_PATCH));
-		width--;
-		cx += step;
-	}
-
-	// draw right side
-	cy = y;
-	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_TR], PU_PATCH));
-	cy += boff;
-	p = W_CachePatchNum(viewborderlump[BRDR_R], PU_PATCH);
-	for (n = 0; n < boxlines; n++)
-	{
-		V_DrawScaledPatch(cx, cy, V_WRAPY, p);
-		cy += step;
-	}
-	V_DrawScaledPatch(cx, cy, 0, W_CachePatchNum(viewborderlump[BRDR_BR], PU_PATCH));
-*/
 }
 
 //

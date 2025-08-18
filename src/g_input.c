@@ -29,7 +29,7 @@ consvar_t cv_mousesens = CVAR_INIT ("mousesens", "20", NULL, CV_SAVE, mousesens_
 consvar_t cv_mousesens2 = CVAR_INIT ("mousesens2", "20", NULL, CV_SAVE, mousesens_cons_t, NULL);
 consvar_t cv_mouseysens = CVAR_INIT ("mouseysens", "20", NULL, CV_SAVE, mousesens_cons_t, NULL);
 consvar_t cv_mouseysens2 = CVAR_INIT ("mouseysens2", "20", NULL, CV_SAVE, mousesens_cons_t, NULL);
-consvar_t cv_controlperkey = CVAR_INIT ("controlperkey", "One", NULL, CV_SAVE, onecontrolperkey_cons_t, NULL);
+consvar_t cv_controlperkey = CVAR_INIT ("controlperkey", "One", "The amount of keybinds that an action can be assigned to", CV_SAVE, onecontrolperkey_cons_t, NULL);
 
 INT32 mousex, mousey;
 INT32 mlooky; // like mousey but with a custom sensitivity for mlook

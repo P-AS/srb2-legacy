@@ -65,9 +65,6 @@ static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum);
 static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum);
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum);
-#ifdef DELFILE
-static void Got_Delfilecmd(UINT8 **cp, INT32 playernum);
-#endif
 static void Got_Addfilecmd(UINT8 **cp, INT32 playernum);
 static void Got_Pause(UINT8 **cp, INT32 playernum);
 static void Got_Suicide(UINT8 **cp, INT32 playernum);
@@ -116,9 +113,6 @@ static void Command_ResetCamera_f(void);
 
 static void Command_Addfile(void);
 static void Command_ListWADS_f(void);
-#ifdef DELFILE
-static void Command_Delfile(void);
-#endif
 static void Command_RunSOC(void);
 static void Command_Pause(void);
 static void Command_Suicide(void);
@@ -251,8 +245,8 @@ consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", NULL, CV_SAVE, CV_
 
 INT32 cv_debug;
 
-consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "On", NULL, CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
-consvar_t cv_usemouse2 = CVAR_INIT ("use_mouse2", "Off", NULL, CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse2);
+consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "On", "Use the mouse", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
+consvar_t cv_usemouse2 = CVAR_INIT ("use_mouse2", "Off", "Use the mouse", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse2);
 
 #if defined (DC) || defined (_XBOX) || defined (WMINPUT) || defined (_WII) || defined(HAVE_SDL) || defined(_WINDOWS) //joystick 1 and 2
 consvar_t cv_usejoystick = CVAR_INIT ("use_joystick", "1", NULL, CV_SAVE|CV_CALL, usejoystick_cons_t,
@@ -288,41 +282,40 @@ consvar_t cv_mouse2opt = CVAR_INIT ("mouse2opt", "0", NULL, CV_SAVE, NULL, NULL)
 consvar_t cv_mouse2port = CVAR_INIT ("mouse2port", "COM2", NULL, CV_SAVE, mouse2port_cons_t, NULL);
 #endif
 
-consvar_t cv_matchboxes = CVAR_INIT ("matchboxes", "Normal", NULL, CV_SAVE|CV_NETVAR|CV_CHEAT, matchboxes_cons_t, NULL);
-consvar_t cv_specialrings = CVAR_INIT ("specialrings", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_powerstones = CVAR_INIT ("powerstones", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_matchboxes = CVAR_INIT ("matchboxes", "Normal", "What type of monitors to spawn in Ringslinger gametypes", CV_SAVE|CV_NETVAR|CV_CHEAT, matchboxes_cons_t, NULL);
+consvar_t cv_specialrings = CVAR_INIT ("specialrings", "On", "If off, only standard rings are allowed to spawn in Ringslinger", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_powerstones = CVAR_INIT ("powerstones", "On", "If enabled, emeralds will spawn in Ringslinger", CV_NETVAR, CV_OnOff, NULL);
 
-consvar_t cv_recycler =      CVAR_INIT ("tv_recycler",      "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_teleporters =   CVAR_INIT("tv_teleporter",    "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_superring =     CVAR_INIT("tv_superring",     "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_supersneakers = CVAR_INIT ("tv_supersneaker",  "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_invincibility = CVAR_INIT ("tv_invincibility", "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_jumpshield =    CVAR_INIT("tv_jumpshield",    "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_watershield =   CVAR_INIT("tv_watershield",   "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_ringshield =    CVAR_INIT("tv_ringshield",    "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_forceshield =   CVAR_INIT("tv_forceshield",   "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_bombshield =    CVAR_INIT("tv_bombshield",    "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_1up =           CVAR_INIT("tv_1up",           "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
-consvar_t cv_eggmanbox =     CVAR_INIT("tv_eggman",        "5", NULL, CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_recycler =      CVAR_INIT ("tv_recycler",      "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_teleporters =   CVAR_INIT("tv_teleporter",    "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_superring =     CVAR_INIT("tv_superring",     "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_supersneakers = CVAR_INIT ("tv_supersneaker",  "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_invincibility = CVAR_INIT ("tv_invincibility", "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_jumpshield =    CVAR_INIT("tv_jumpshield",    "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_watershield =   CVAR_INIT("tv_watershield",   "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_ringshield =    CVAR_INIT("tv_ringshield",    "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_forceshield =   CVAR_INIT("tv_forceshield",   "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_bombshield =    CVAR_INIT("tv_bombshield",    "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_1up =           CVAR_INIT("tv_1up",           "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
+consvar_t cv_eggmanbox =     CVAR_INIT("tv_eggman",        "5", "Chances of this monitor type to spawn", CV_NETVAR|CV_CHEAT, chances_cons_t, NULL);
 
-consvar_t cv_ringslinger = CVAR_INIT ("ringslinger", "No", NULL, CV_NETVAR|CV_NOSHOWHELP|CV_CALL|CV_CHEAT, CV_YesNo,
-	Ringslinger_OnChange);
-consvar_t cv_gravity = CVAR_INIT ("gravity", "0.5", NULL, CV_RESTRICT|CV_FLOAT|CV_CALL, NULL, Gravity_OnChange);
+consvar_t cv_ringslinger = CVAR_INIT ("ringslinger", "No", "If enabled, ringslinger will be allowed in non-ringslinger gametypes", CV_NETVAR|CV_NOSHOWHELP|CV_CALL|CV_CHEAT, CV_YesNo, Ringslinger_OnChange);
+consvar_t cv_gravity = CVAR_INIT ("gravity", "0.5", "Multiplier for player weight", CV_RESTRICT|CV_FLOAT|CV_CALL, NULL, Gravity_OnChange);
 
 consvar_t cv_soundtest = CVAR_INIT ("soundtest", "0", NULL, CV_CALL, NULL, SoundTest_OnChange);
 
 static CV_PossibleValue_t minitimelimit_cons_t[] = {{15, "MIN"}, {9999, "MAX"}, {0, NULL}};
-consvar_t cv_countdowntime = CVAR_INIT ("countdowntime", "60", NULL, CV_NETVAR|CV_CHEAT, minitimelimit_cons_t, NULL);
+consvar_t cv_countdowntime = CVAR_INIT ("countdowntime", "60", "Time, in seconds, players have to finish a map after the first player has reached the goal in Race or Competition", CV_NETVAR|CV_CHEAT, minitimelimit_cons_t, NULL);
 
-consvar_t cv_touchtag = CVAR_INIT ("touchtag", "Off", NULL, CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_hidetime = CVAR_INIT ("hidetime", "30", NULL, CV_NETVAR|CV_CALL, minitimelimit_cons_t, Hidetime_OnChange);
+consvar_t cv_touchtag = CVAR_INIT ("touchtag", "Off", "If on, players can become IT by simply touching a seeker", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_hidetime = CVAR_INIT ("hidetime", "30", "Time, in seconds, players have to hide before the seeker is allowed to move", CV_NETVAR|CV_CALL, minitimelimit_cons_t, Hidetime_OnChange);
 
-consvar_t cv_autobalance = CVAR_INIT ("autobalance", "0", NULL, CV_NETVAR|CV_CALL, autobalance_cons_t, AutoBalance_OnChange);
-consvar_t cv_teamscramble = CVAR_INIT ("teamscramble", "Off", NULL, CV_NETVAR|CV_CALL|CV_NOINIT, teamscramble_cons_t, TeamScramble_OnChange);
-consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", NULL, CV_NETVAR, teamscramble_cons_t, NULL);
+consvar_t cv_autobalance = CVAR_INIT ("autobalance", "0", "Balance teams automatically based on team sizes", CV_NETVAR|CV_CALL, autobalance_cons_t, AutoBalance_OnChange);
+consvar_t cv_teamscramble = CVAR_INIT ("teamscramble", "Off", "Reassign player teams next time the map changes (see scrambleonchange to make this permanent)", CV_NETVAR|CV_CALL|CV_NOINIT, teamscramble_cons_t, TeamScramble_OnChange);
+consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", "If enabled, reassign player teams between maps", CV_NETVAR, teamscramble_cons_t, NULL);
 
-consvar_t cv_friendlyfire = CVAR_INIT ("friendlyfire", "Off", NULL, CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", NULL, CV_CALL, CV_OnOff, ItemFinder_OnChange);
+consvar_t cv_friendlyfire = CVAR_INIT ("friendlyfire", "Off", "Allow players to hit each other, regardless of their team", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", "Enables the Emblem Radar, notifying you when there in an emblem nearby", CV_CALL, CV_OnOff, ItemFinder_OnChange);
 
 // Scoring type options
 consvar_t cv_match_scoring = CVAR_INIT ("matchscoring", "Normal", NULL, CV_NETVAR|CV_CHEAT, match_scoring_cons_t, NULL);
@@ -347,7 +340,7 @@ consvar_t cv_usemapnumlaps = CVAR_INIT ("usemaplaps", "Yes", NULL, CV_NETVAR, CV
 consvar_t cv_hazardlog = CVAR_INIT ("hazardlog", "Yes", "Whether or not to log when a player gets hurt in certain gamemodes", 0, CV_YesNo, NULL);
 
 consvar_t cv_forceskin = CVAR_INIT ("forceskin", "-1", NULL, CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
-consvar_t cv_downloading = CVAR_INIT ("downloading", "On", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_downloading = CVAR_INIT ("downloading", "On", "Allow players to download mods from the server", 0, CV_OnOff, NULL);
 consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", NULL, CV_NETVAR, CV_YesNo, NULL);
 
 consvar_t cv_killingdead = CVAR_INIT ("killingdead", "Off", NULL, CV_NETVAR, CV_OnOff, NULL);
@@ -370,7 +363,7 @@ consvar_t cv_pingmeasurement = CVAR_INIT ("pingmeasurement", "Milliseconds", NUL
 
 // Intermission time Tails 04-19-2002
 static CV_PossibleValue_t inttime_cons_t[] = {{0, "MIN"}, {3600, "MAX"}, {0, NULL}};
-consvar_t cv_inttime = CVAR_INIT ("inttime", "10", NULL, CV_NETVAR|CV_SAVE, inttime_cons_t, NULL);
+consvar_t cv_inttime = CVAR_INIT ("inttime", "10", "How long intermissions between levels in multiplayer last", CV_NETVAR|CV_SAVE, inttime_cons_t, NULL);
 
 static CV_PossibleValue_t advancemap_cons_t[] = {{0, "Off"}, {1, "Next"}, {2, "Random"}, {0, NULL}};
 consvar_t cv_advancemap = CVAR_INIT ("advancemap", "Next", NULL, CV_NETVAR, advancemap_cons_t, NULL);
@@ -423,7 +416,6 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"RANDOMSEED",
 	"RUNSOC",
 	"REQADDFILE",
-	"DELFILE",
 	"SETMOTD",
 	"SUICIDE",
 	"LUACMD",
@@ -458,9 +450,6 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_EXITLEVEL, Got_ExitLevelcmd);
 	RegisterNetXCmd(XD_ADDFILE, Got_Addfilecmd);
 	RegisterNetXCmd(XD_REQADDFILE, Got_RequestAddfilecmd);
-#ifdef DELFILE
-	RegisterNetXCmd(XD_DELFILE, Got_Delfilecmd);
-#endif
 	RegisterNetXCmd(XD_PAUSE, Got_Pause);
 	RegisterNetXCmd(XD_SUICIDE, Got_Suicide);
 	RegisterNetXCmd(XD_RUNSOC, Got_RunSOCcmd);
@@ -491,12 +480,8 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("showmap", NULL, Command_Showmap_f);
 	COM_AddCommand("mapmd5", NULL, Command_Mapmd5_f);
 
-	COM_AddCommand("addfile", NULL, Command_Addfile);
-	COM_AddCommand("listwad", NULL, Command_ListWADS_f);
-
-#ifdef DELFILE
-	COM_AddCommand("delfile", NULL, Command_Delfile);
-#endif
+	COM_AddCommand("addfile", "Add a file", Command_Addfile);
+	COM_AddCommand("listwad", "List currently added files, including those required by the game", Command_ListWADS_f);
 	COM_AddCommand("runsoc", NULL, Command_RunSOC);
 	COM_AddCommand("pause", NULL, Command_Pause);
 	COM_AddCommand("suicide", NULL, Command_Suicide);
@@ -3138,42 +3123,6 @@ static void Command_Addfile(void)
 		SendNetXCmd(XD_ADDFILE, buf, buf_p - buf);
 }
 
-#ifdef DELFILE
-/** removes the last added pwad at runtime.
-  * Searches for sounds, maps, music and images to remove
-  */
-static void Command_Delfile(void)
-{
-	if (gamestate == GS_LEVEL)
-	{
-		CONS_Printf(M_GetText("You must NOT be in a level to use this.\n"));
-		return;
-	}
-
-	if (netgame && !(server || adminplayer == consoleplayer))
-	{
-		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
-		return;
-	}
-
-	if (numwadfiles <= mainwads)
-	{
-		CONS_Printf(M_GetText("No additional WADs are loaded.\n"));
-		return;
-	}
-
-	if (!(netgame || multiplayer))
-	{
-		P_DelWadFile();
-		if (mainwads == numwadfiles && modifiedgame)
-			modifiedgame = false;
-		return;
-	}
-
-	SendNetXCmd(XD_DELFILE, NULL, 0);
-}
-#endif
-
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 {
 	char filename[241];
@@ -3238,27 +3187,6 @@ static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 
 	COM_BufAddText(va("addfile %s\n", filename));
 }
-
-#ifdef DELFILE
-static void Got_Delfilecmd(UINT8 **cp, INT32 playernum)
-{
-	if (playernum != serverplayer && playernum != adminplayer)
-	{
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal delfile command received from %s\n"), player_names[playernum]);
-		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL);
-		return;
-	}
-	(void)cp;
-
-	if (numwadfiles <= mainwads) //sanity
-		return;
-
-	P_DelWadFile();
-	if (mainwads == numwadfiles && modifiedgame)
-		modifiedgame = false;
-}
-#endif
 
 static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 {

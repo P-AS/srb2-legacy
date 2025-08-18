@@ -168,11 +168,11 @@ static void FlipCam2_OnChange(void);
 void SendWeaponPref(void);
 void SendWeaponPref2(void);
 
-consvar_t cv_tailspickup = CVAR_INIT ("tailspickup", "On", NULL, CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_chasecam = CVAR_INIT ("chasecam", "On",  NULL,CV_CALL, CV_OnOff, ChaseCam_OnChange);
-consvar_t cv_chasecam2 = CVAR_INIT ("chasecam2", "On", NULL, CV_CALL, CV_OnOff, ChaseCam2_OnChange);
-consvar_t cv_flipcam = CVAR_INIT ("flipcam", "No", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam_OnChange);
-consvar_t cv_flipcam2 = CVAR_INIT ("flipcam2", "No", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam2_OnChange);
+consvar_t cv_tailspickup = CVAR_INIT ("tailspickup", "On", "Prevents tails from picking up players and also makes them solid", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_chasecam = CVAR_INIT ("chasecam", "On",  "Use the third person camera", CV_CALL, CV_OnOff, ChaseCam_OnChange);
+consvar_t cv_chasecam2 = CVAR_INIT ("chasecam2", "On", "Use the third person camera", CV_CALL, CV_OnOff, ChaseCam2_OnChange);
+consvar_t cv_flipcam = CVAR_INIT ("flipcam", "No", "Flip the camera with changes in gravity", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam_OnChange);
+consvar_t cv_flipcam2 = CVAR_INIT ("flipcam2", "No", "Flip the camera with changes in gravity", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam2_OnChange);
 
 consvar_t cv_shadow = CVAR_INIT ("shadow", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_shadowoffs = CVAR_INIT ("offsetshadows", "Off", NULL, CV_SAVE, CV_OnOff, NULL);

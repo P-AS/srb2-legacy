@@ -144,7 +144,7 @@ typedef enum
 	XD_RANDOMSEED,  // 15
 	XD_RUNSOC,      // 16
 	XD_REQADDFILE,  // 17
-	XD_DELFILE,     // 18
+	// UNUSED       // 18 (ditto)
 	XD_SETMOTD,     // 19
 	XD_SUICIDE,     // 20
 	XD_DEMOTED,     // 21
