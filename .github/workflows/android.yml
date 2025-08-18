@@ -23,5 +23,5 @@ jobs:
       run: cd android && ./gradlew build
     - uses: actions/upload-artifact@v4
       with:
-        name: srb2legacy-android
+        name: srb2legacy-android-${{ github.sha }}
         path: android/app/build/outputs/apk/
