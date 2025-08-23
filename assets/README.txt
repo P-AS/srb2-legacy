@@ -1,40 +1,28 @@
-SONIC ROBO BLAST 2
+SONIC ROBO BLAST 2 LEGACY
 
-Sonic Robo Blast 2 (SRB2) is a 3D Sonic the Hedgehog fangame based on a
-modified version of Doom Legacy.
+SRB2 Legacy is an updated fork of Sonic Robo Blast 2 2.1.25.
+The goal of SRB2 Legacy is to include essential fixes and QOL improvements seen
+in 2.2.
 
 LICENSE
 
-The source code for SRB2 is licensed under the GNU General Public
+The source code for SRB2 Legacy is licensed under the GNU General Public
 License, Version 2. See LICENSE.txt for the full text of this license.
 
-SRB2 uses various third-party libraries, including SDL, SDL Mixer, and
+SRB2 Legacy uses various third-party libraries, including SDL, SDL Mixer, and
 their dependencies. See LICENSE-3RD-PARTY.txt for the licenses of these
 libraries.
 
 SOURCE CODE
 
-You may obtain the source code for SRB2, including the source code for
+You may obtain the source code for SRB2 Legacy, including the source code for
 specific version releases, at the following web sites:
 
-STJr GitLab:
-https://git.magicalgirl.moe/STJr/SRB2
-
 GitHub:
-https://github.com/STJr/SRB2
+https://github.com/P-AS/srb2-legacy
 
-CONTACT
-
-You may contact Sonic Team Junior via the following web sites:
-
-SRB2.ORG:
-https://www.srb2.org
-
-SRB2 Message Board:
-https://mb.srb2.org
-
-SRB2 Official Discord:
-https://discord.gg/pYDXzpX
+STJr GitLab Mirror:
+https://git.do.srb2.org/PAS/srb2-legacy
 
 COPYRIGHT AND DISCLAIMER
 
