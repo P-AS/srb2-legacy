@@ -78,9 +78,8 @@ typedef struct
 // =========================================================================
 
 #define MAX_WADPATH 512
-#define MAX_WADFILES 255 // maximum of wad files used at the same time
-// Can be set all the way up to 255 but not 256,
-// because a UINT8 will never be >= 256, probably breaking some conditionals.
+#define MAX_WADFILES 48 // maximum of wad files used at the same time
+// (there is a max of simultaneous open files anyway, and this should be plenty)
 
 #define lumpcache_t void *
 
@@ -129,9 +128,6 @@ void W_Shutdown(void);
 FILE *W_OpenWadFile(const char **filename, boolean useerrors);
 // Load and add a wadfile to the active wad files, returns numbers of lumps, INT16_MAX on error
 UINT16 W_InitFile(const char *filename);
-#ifdef DELFILE
-void W_UnloadWadFile(UINT16 num);
-#endif
 
 // W_InitMultipleFiles returns 1 if all is okay, 0 otherwise,
 // so that it stops with a message if a file was not found, but not if all is okay.

@@ -21,6 +21,8 @@
 #include "p_slopes.h"
 #include "z_zone.h" // Check R_Prep3DFloors
 
+#include "qs22k.h" // qsort
+
 seg_t *curline;
 side_t *sidedef;
 line_t *linedef;
@@ -258,11 +260,11 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 		boolean underwater;
 
 		if (splitscreen && viewplayer == &players[secondarydisplayplayer] && camera2.chase)
-			heightsec = R_PointInSubsector(camera2.x, camera2.y)->sector->heightsec;
+			heightsec = R_PointInSubsectorFast(camera2.x, camera2.y)->sector->heightsec;
 		else if (camera.chase && viewplayer == &players[displayplayer])
-			heightsec = R_PointInSubsector(camera.x, camera.y)->sector->heightsec;
+			heightsec = R_PointInSubsectorFast(camera.x, camera.y)->sector->heightsec;
 		else if (viewmobj)
-			heightsec = R_PointInSubsector(viewmobj->x, viewmobj->y)->sector->heightsec;
+			heightsec = R_PointInSubsectorFast(viewmobj->x, viewmobj->y)->sector->heightsec;
 		else
 			return sec;
 		underwater = heightsec != -1 && viewz <= sectors[heightsec].floorheight;
@@ -1302,7 +1304,7 @@ void R_RenderBSPNode(INT32 bspnum)
 {
 	node_t *bsp;
 	INT32 side;
-	
+
 	ps_numbspcalls.value.i++;
 
 	while (!(bspnum & NF_SUBSECTOR))  // Found a subsector?
@@ -1310,7 +1312,7 @@ void R_RenderBSPNode(INT32 bspnum)
 		bsp = &nodes[bspnum];
 
 		// Decide which side the view point is on.
-		side = R_PointOnSide(viewx, viewy, bsp);
+		side = R_PointOnSideFast(viewx, viewy, bsp);
 		// Recursively divide front space.
 		R_RenderBSPNode(bsp->children[side]);
 

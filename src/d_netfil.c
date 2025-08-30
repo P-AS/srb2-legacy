@@ -77,6 +77,7 @@ typedef struct filetx_s
 	UINT32 size; // Size of the file
 	UINT8 fileid;
 	INT32 node; // Destination
+	boolean textmode; // For files requested by Lua without the "b" option
 	struct filetx_s *next; // Next file in the list
 } filetx_t;
 
@@ -102,44 +103,28 @@ char downloaddir[512] = "DOWNLOAD";
 INT32 lastfilenum = -1;
 #endif
 
+luafiletransfer_t *luafiletransfers = NULL;
+boolean waitingforluafiletransfer = false;
+char luafiledir[256 + 16] = "luafiles";
+
 /** Fills a serverinfo packet with information about wad files loaded.
   *
   * \todo Give this function a better name since it is in global scope.
   * Used to have size limiting built in - now handed via W_LoadWadFile in w_wad.c
   *
   */
-UINT8 *PutFileNeeded(UINT16 firstfile)
+UINT8 *PutFileNeeded(void)
 {
-	size_t i;
-	UINT8 count = 0;
-	UINT8 *p_start = netbuffer->packettype == PT_MOREFILESNEEDED ? netbuffer->u.filesneededcfg.files : netbuffer->u.serverinfo.fileneeded;
-	UINT8 *p = p_start;
+	size_t i, count = 0;
+	UINT8 *p = netbuffer->u.serverinfo.fileneeded;
 	char wadfilename[MAX_WADPATH] = "";
 	UINT8 filestatus;
 
-	for (i = mainwads; i < numwadfiles; i++)
+	for (i = 0; i < numwadfiles; i++)
 	{
 		// If it has only music/sound lumps, don't put it in the list
 		if (!wadfiles[i]->important)
 			continue;
-
-		if (firstfile)
-		{ // Skip files until we reach the first file.
-			firstfile--;
-			continue;
-		}
-
-		nameonly(strcpy(wadfilename, wadfiles[i]->filename));
-
-		if (p + 1 + 4 + strlen(wadfilename) + 16 > p_start + MAXFILENEEDED)
-		{
-			// Too many files to send all at once
-			if (netbuffer->packettype == PT_MOREFILESNEEDED)
-				netbuffer->u.filesneededcfg.more = 1;
-			else
-				netbuffer->u.serverinfo.flags |= SV_LOTSOFADDONS;
-			break;
-		}
 
 		filestatus = 1; // Importance - not really used any more, holds 1 by default for backwards compat with MS
 
@@ -155,33 +140,30 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 
 		count++;
 		WRITEUINT32(p, wadfiles[i]->filesize);
+		nameonly(strcpy(wadfilename, wadfiles[i]->filename));
 		WRITESTRINGN(p, wadfilename, MAX_WADPATH);
 		WRITEMEM(p, wadfiles[i]->md5sum, 16);
 	}
-	if (netbuffer->packettype == PT_MOREFILESNEEDED)
-		netbuffer->u.filesneededcfg.num = count;
-	else
-		netbuffer->u.serverinfo.fileneedednum = count;
+	netbuffer->u.serverinfo.fileneedednum = (UINT8)count;
 
 	return p;
 }
 
 /** Parses the serverinfo packet and fills the fileneeded table on client
   *
-  * \param fileneedednum_parm The number of files (sent in this page) needed to join the server
+  * \param fileneedednum_parm The number of files needed to join the server
   * \param fileneededstr The memory block containing the list of needed files
-  * \param firstfile The first file index to read from
   *
   */
-void D_ParseFileneeded(INT32 fileneedednum_parm, UINT8 *fileneededstr, UINT16 firstfile)
+void D_ParseFileneeded(INT32 fileneedednum_parm, UINT8 *fileneededstr)
 {
 	INT32 i;
 	UINT8 *p;
 	UINT8 filestatus;
 
-	fileneedednum = firstfile + fileneedednum_parm;
+	fileneedednum = fileneedednum_parm;
 	p = (UINT8 *)fileneededstr;
-	for (i = firstfile; i < fileneedednum; i++)
+	for (i = 0; i < fileneedednum; i++)
 	{
 		fileneeded[i].status = FS_NOTFOUND; // We haven't even started looking for the file yet
 		filestatus = READUINT8(p); // The first byte is the file status
@@ -190,6 +172,7 @@ void D_ParseFileneeded(INT32 fileneedednum_parm, UINT8 *fileneededstr, UINT16 fi
 		fileneeded[i].file = NULL; // The file isn't open yet
 		READSTRINGN(p, fileneeded[i].filename, MAX_WADPATH); // The next bytes are the file name
 		READMEM(p, fileneeded[i].md5sum, 16); // The last 16 bytes are the file checksum
+		fileneeded[i].textmode = false;
 	}
 }
 
@@ -201,6 +184,7 @@ void CL_PrepareDownloadSaveGame(const char *tmpsave)
 	fileneeded[0].file = NULL;
 	memset(fileneeded[0].md5sum, 0, 16);
 	strcpy(fileneeded[0].filename, tmpsave);
+	fileneeded[0].textmode = false;
 }
 
 /** Checks the server to see if we CAN download all the files,
@@ -362,8 +346,7 @@ INT32 CL_CheckFiles(void)
 	// the first is the iwad (the main wad file)
 	// we don't care if it's called srb2.srb or srb2.wad.
 	// Never download the IWAD, just assume it's there and identical
-	// ...No! Why were we sending the base wads to begin with??
-	//fileneeded[0].status = FS_OPEN;
+	fileneeded[0].status = FS_OPEN;
 
 	// Modified game handling -- check for an identical file list
 	// must be identical in files loaded AND in order
@@ -371,7 +354,7 @@ INT32 CL_CheckFiles(void)
 	if (modifiedgame)
 	{
 		CONS_Debug(DBG_NETPLAY, "game is modified; only doing basic checks\n");
-		for (i = 0, j = mainwads; i < fileneedednum || j < numwadfiles;)
+		for (i = 1, j = 1; i < fileneedednum || j < numwadfiles;)
 		{
 			if (j < numwadfiles && !wadfiles[j]->important)
 			{
@@ -398,12 +381,15 @@ INT32 CL_CheckFiles(void)
 		return 1;
 	}
 
-	for (i = 0; i < fileneedednum; i++)
+	// See W_LoadWadFile in w_wad.c
+	packetsize = packetsizetally;
+
+	for (i = 1; i < fileneedednum; i++)
 	{
 		CONS_Debug(DBG_NETPLAY, "searching for '%s' ", fileneeded[i].filename);
 
 		// Check in already loaded files
-		for (j = mainwads; wadfiles[j]; j++)
+		for (j = 1; wadfiles[j]; j++)
 		{
 			nameonly(strcpy(wadfilename, wadfiles[j]->filename));
 			if (!stricmp(wadfilename, fileneeded[i].filename) &&
@@ -419,7 +405,8 @@ INT32 CL_CheckFiles(void)
 
 		packetsize += nameonlylength(fileneeded[i].filename) + 22;
 
-		if (mainwads+filestoget >= MAX_WADFILES)
+		if ((numwadfiles+filestoget >= MAX_WADFILES)
+		|| (packetsize > MAXFILENEEDED*sizeof(UINT8)))
 			return 3;
 
 		filestoget++;
@@ -476,6 +463,163 @@ void CL_LoadServerFiles(void)
 	}
 }
 
+void AddLuaFileTransfer(const char *filename, const char *mode)
+{
+	luafiletransfer_t **prevnext; // A pointer to the "next" field of the last transfer in the list
+	luafiletransfer_t *filetransfer;
+	static INT32 id;
+
+	//CONS_Printf("AddLuaFileTransfer \"%s\"\n", filename);
+
+	// Find the last transfer in the list and set a pointer to its "next" field
+	prevnext = &luafiletransfers;
+	while (*prevnext)
+		prevnext = &((*prevnext)->next);
+
+	// Allocate file transfer information and append it to the transfer list
+	filetransfer = malloc(sizeof(luafiletransfer_t));
+	if (!filetransfer)
+		I_Error("AddLuaFileTransfer: Out of memory\n");
+	*prevnext = filetransfer;
+	filetransfer->next = NULL;
+
+	// Allocate the file name
+	filetransfer->filename = strdup(filename);
+	if (!filetransfer->filename)
+		I_Error("AddLuaFileTransfer: Out of memory\n");
+
+	// Create and allocate the real file name
+	if (server)
+		filetransfer->realfilename = strdup(va("%s" PATHSEP "%s",
+												luafiledir, filename));
+	else
+		filetransfer->realfilename = strdup(va("%s" PATHSEP "client" PATHSEP "$$$%d%d.tmp",
+												luafiledir, rand(), rand()));
+	if (!filetransfer->realfilename)
+		I_Error("AddLuaFileTransfer: Out of memory\n");
+
+	strlcpy(filetransfer->mode, mode, sizeof(filetransfer->mode));
+
+	if (server)
+	{
+		INT32 i;
+
+		// Set status to "waiting" for everyone
+		for (i = 0; i < MAXNETNODES; i++)
+			filetransfer->nodestatus[i] = LFTNS_WAITING;
+
+		if (!luafiletransfers->next) // Only if there is no transfer already going on
+		{
+			if (FIL_ReadFileOK(filetransfer->realfilename))
+				SV_PrepareSendLuaFileToNextNode();
+			else
+			{
+				// Send a net command with 0 as its first byte to indicate the file couldn't be opened
+				UINT8 success = 0;
+				SendNetXCmd(XD_LUAFILE, &success, 1);
+			}
+		}
+	}
+
+	// Store the callback so it can be called once everyone has the file
+	filetransfer->id = id;
+	StoreLuaFileCallback(id);
+	id++;
+
+	if (waitingforluafiletransfer)
+	{
+		waitingforluafiletransfer = false;
+		CL_PrepareDownloadLuaFile();
+	}
+}
+
+void SV_PrepareSendLuaFileToNextNode(void)
+{
+	INT32 i;
+	UINT8 success = 1;
+
+    // Find a client to send the file to
+	for (i = 1; i < MAXNETNODES; i++)
+		if (nodeingame[i] && luafiletransfers->nodestatus[i] == LFTNS_WAITING) // Node waiting
+		{
+			// Tell the client we're about to send them the file
+			netbuffer->packettype = PT_SENDINGLUAFILE;
+			if (!HSendPacket(i, true, 0, 0))
+				I_Error("Failed to send a PT_SENDINGLUAFILE packet\n"); // !!! Todo: Handle failure a bit better lol
+
+			luafiletransfers->nodestatus[i] = LFTNS_ASKED;
+
+			return;
+		}
+
+	// No client found, everyone has the file
+	// Send a net command with 1 as its first byte to indicate the file could be opened
+	SendNetXCmd(XD_LUAFILE, &success, 1);
+}
+
+void SV_HandleLuaFileSent(UINT8 node)
+{
+	luafiletransfers->nodestatus[node] = LFTNS_SENT;
+	SV_PrepareSendLuaFileToNextNode();
+}
+
+void RemoveLuaFileTransfer(void)
+{
+	luafiletransfer_t *filetransfer = luafiletransfers;
+
+	RemoveLuaFileCallback(filetransfer->id);
+
+	luafiletransfers = filetransfer->next;
+
+	free(filetransfer->filename);
+	free(filetransfer->realfilename);
+	free(filetransfer);
+}
+
+void RemoveAllLuaFileTransfers(void)
+{
+	while (luafiletransfers)
+		RemoveLuaFileTransfer();
+}
+
+void SV_AbortLuaFileTransfer(INT32 node)
+{
+	if (luafiletransfers
+	&& (luafiletransfers->nodestatus[node] == LFTNS_ASKED
+	||  luafiletransfers->nodestatus[node] == LFTNS_SENDING))
+	{
+		luafiletransfers->nodestatus[node] = LFTNS_WAITING;
+		SV_PrepareSendLuaFileToNextNode();
+	}
+}
+
+void CL_PrepareDownloadLuaFile(void)
+{
+	// If there is no transfer in the list, this normally means the server
+	// called io.open before us, so we have to wait until we call it too
+	if (!luafiletransfers)
+	{
+		waitingforluafiletransfer = true;
+		return;
+	}
+
+	// Tell the server we are ready to receive the file
+	netbuffer->packettype = PT_ASKLUAFILE;
+	HSendPacket(servernode, true, 0, 0);
+
+	fileneedednum = 1;
+	fileneeded[0].status = FS_REQUESTED;
+	fileneeded[0].totalsize = UINT32_MAX;
+	fileneeded[0].file = NULL;
+	memset(fileneeded[0].md5sum, 0, 16);
+	strcpy(fileneeded[0].filename, luafiletransfers->realfilename);
+	fileneeded[0].textmode = !strchr(luafiletransfers->mode, 'b');
+
+	// Make sure all directories in the file path exist
+	MakePathDirs(fileneeded[0].filename);
+}
+
+
 // Number of files to send
 // Little optimization to quickly test if there is a file in the queue
 static INT32 filestosend = 0;
@@ -486,6 +630,7 @@ static INT32 filestosend = 0;
   * \param filename The file to send
   * \param fileid ???
   * \sa SV_SendRam
+  * \sa SV_SendLuaFile
   *
   */
 static boolean SV_SendFile(INT32 node, const char *filename, UINT8 fileid)
@@ -576,6 +721,7 @@ static boolean SV_SendFile(INT32 node, const char *filename, UINT8 fileid)
   * \param freemethod How to free the block after it has been sent
   * \param fileid ???
   * \sa SV_SendFile
+  * \sa SV_SendLuaFile
   *
   */
 void SV_SendRam(INT32 node, void *data, size_t size, freemethod_t freemethod, UINT8 fileid)
@@ -605,6 +751,55 @@ void SV_SendRam(INT32 node, void *data, size_t size, freemethod_t freemethod, UI
 	DEBFILE(va("Sending ram %p(size:%u) to %d (id=%u)\n",p->id.ram,p->size,node,fileid));
 
 	filestosend++;
+}
+
+/** Adds a file requested by Lua to the file list for a node
+  *
+  * \param node The node to send the file to
+  * \param filename The file to send
+  * \sa SV_SendFile
+  * \sa SV_SendRam
+  *
+  */
+boolean SV_SendLuaFile(INT32 node, const char *filename, boolean textmode)
+{
+	filetx_t **q; // A pointer to the "next" field of the last file in the list
+	filetx_t *p; // The new file request
+	//INT32 i;
+	//char wadfilename[MAX_WADPATH];
+
+	luafiletransfers->nodestatus[node] = LFTNS_SENDING;
+
+	// Find the last file in the list and set a pointer to its "next" field
+	q = &transfer[node].txlist;
+	while (*q)
+		q = &((*q)->next);
+
+	// Allocate a file request and append it to the file list
+	p = *q = (filetx_t *)malloc(sizeof (filetx_t));
+	if (!p)
+		I_Error("SV_SendLuaFile: No more memory\n");
+
+	// Initialise with zeros
+	memset(p, 0, sizeof (filetx_t));
+
+	// Allocate the file name
+	p->id.filename = (char *)malloc(MAX_WADPATH); // !!!
+	if (!p->id.filename)
+		I_Error("SV_SendLuaFile: No more memory\n");
+
+	// Set the file name and get rid of the path
+	strlcpy(p->id.filename, filename, MAX_WADPATH); // !!!
+	//nameonly(p->id.filename);
+
+	// Open in text mode if required by the Lua script
+	p->textmode = textmode;
+
+	DEBFILE(va("Sending Lua file %s to %d\n", filename, node));
+	p->ram = SF_FILE; // It's a file, we need to close it and free its name once we're done sending it
+	p->next = NULL; // End of list
+	filestosend++;
+	return true;
 }
 
 /** Stops sending a file for a node, and removes the file request from the list,
@@ -712,7 +907,7 @@ void SV_FileSendTicker(void)
 				long filesize;
 
 				transfer[i].currentfile =
-					fopen(f->id.filename, "rb");
+					fopen(f->id.filename, f->textmode ? "r" : "rb");
 
 				if (!transfer[i].currentfile)
 					I_Error("File %s does not exist",
@@ -743,11 +938,20 @@ void SV_FileSendTicker(void)
 			size = f->size-transfer[i].position;
 		if (ram)
 			M_Memcpy(p->data, &f->id.ram[transfer[i].position], size);
-		else if (fread(p->data, 1, size, transfer[i].currentfile) != size)
-			I_Error("SV_FileSendTicker: can't read %s byte on %s at %d because %s", sizeu1(size), f->id.filename, transfer[i].position, M_FileError(transfer[i].currentfile));
+		else
+		{
+			size_t n = fread(p->data, 1, size, transfer[i].currentfile);
+			if (n != size) // Either an error or Windows turning CR-LF into LF
+			{
+				if (f->textmode && feof(transfer[i].currentfile))
+                    size = n;
+				else if (fread(p->data, 1, size, transfer[i].currentfile) != size)
+					I_Error("SV_FileSendTicker: can't read %s byte on %s at %d because %s", sizeu1(size), f->id.filename, transfer[i].position, M_FileError(transfer[i].currentfile));
+			}
+		}
 		p->position = LONG(transfer[i].position);
 		// Put flag so receiver knows the total size
-		if (transfer[i].position + size == f->size)
+		if (transfer[i].position + size == f->size || (f->textmode && feof(transfer[i].currentfile)))
 			p->position |= LONG(0x80000000);
 		p->fileid = f->fileid;
 		p->size = SHORT((UINT16)size);
@@ -756,7 +960,7 @@ void SV_FileSendTicker(void)
 		if (HSendPacket(i, true, 0, FILETXHEADER + size)) // Reliable SEND
 		{ // Success
 			transfer[i].position = (UINT32)(transfer[i].position + size);
-			if (transfer[i].position == f->size) // Finish?
+			if (transfer[i].position == f->size || (f->textmode && feof(transfer[i].currentfile))) // Finish?
 				SV_EndFileSend(i);
 		}
 		else
@@ -802,7 +1006,7 @@ void Got_Filetxpak(void)
 	{
 		if (file->file)
 			I_Error("Got_Filetxpak: already open file\n");
-		file->file = fopen(filename, "wb");
+		file->file = fopen(filename, file->textmode ? "w" : "wb");
 		if (!file->file)
 			I_Error("Can't create file %s: %s", filename, strerror(errno));
 		CONS_Printf("\r%s...\n",filename);
@@ -823,7 +1027,7 @@ void Got_Filetxpak(void)
 		}
 		// We can receive packet in the wrong order, anyway all os support gaped file
 		fseek(file->file, pos, SEEK_SET);
-		if (fwrite(netbuffer->u.filetxpak.data,size,1,file->file) != 1)
+		if (size && fwrite(netbuffer->u.filetxpak.data,size,1,file->file) != 1)
 			I_Error("Can't write to %s: %s\n",filename, M_FileError(file->file));
 		file->currentsize += size;
 
@@ -835,6 +1039,13 @@ void Got_Filetxpak(void)
 			file->status = FS_FOUND;
 			CONS_Printf(M_GetText("Downloading %s...(done)\n"),
 				filename);
+			
+			if (luafiletransfers)
+			{
+				// Tell the server we have received the file
+				netbuffer->packettype = PT_HASLUAFILE;
+				HSendPacket(servernode, true, 0, 0);
+			}
 		}
 	}
 	else
@@ -996,6 +1207,17 @@ filestatus_t findfile(char *filename, const UINT8 *wantedmd5sum, boolean complet
 		badmd5 = true;
 	// if not found at all, just move on without doing anything
 
+	if (cv_addons_option.value == 3 && *cv_addons_folder.string != '\0')
+	{
+		// next, check any custom directory if specified
+		homecheck = filesearch(filename, cv_addons_folder.string, wantedmd5sum, completepath, 10);
+
+		if (homecheck == FS_FOUND) // we found the file, so return that we have :)
+			return FS_FOUND;
+		else if (homecheck == FS_MD5SUMBAD) // file has a bad md5; move on and look for a file with the right md5
+			badmd5 = true;
+		// if not found at all, just move on without doing anything
+	}
 	// next, check SRB2's "path" directory
 	homecheck = filesearch(filename, srb2path, wantedmd5sum, completepath, 10);
 

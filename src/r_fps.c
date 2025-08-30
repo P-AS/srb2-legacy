@@ -22,7 +22,7 @@
 #include "p_polyobj.h"
 #include "z_zone.h"
 #include "d_net.h" //MAXSPLITSCREENPLAYERS
-#include "hardware/hw_main.h" //cv_grshearing
+#include "hardware/hw_main.h" //cv_glshearing
 
 
 static CV_PossibleValue_t fpscap_cons_t[] = {
@@ -38,7 +38,7 @@ static CV_PossibleValue_t fpscap_cons_t[] = {
 	{0, NULL}
 };
 
-consvar_t cv_fpscap = {"fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate",  "Limit framerate to value specified", CV_SAVE, fpscap_cons_t, NULL);
 
 ps_metric_t ps_interp_frac = {0};
 ps_metric_t ps_interp_lag = {0};
@@ -151,8 +151,8 @@ static void R_SetupFreelook(player_t *player, boolean skybox)
 	if (rendermode == render_soft
 #ifdef HWRENDER
 		|| (rendermode == render_opengl
-			&& (cv_grshearing.value == 1
-			|| (cv_grshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
+			&& (cv_glshearing.value == 1
+			|| (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
 #endif
 		)
 	{
@@ -211,7 +211,7 @@ void R_InterpolateView(fixed_t frac)
 	// this is gonna create some interesting visual errors for long distance teleports...
 	// might want to recalculate the view sector every frame instead...
 	viewplayer = newview->player;
-	viewsector = R_PointInSubsector(viewx, viewy)->sector;
+	viewsector = R_PointInSubsectorFast(viewx, viewy)->sector;
 	viewsky = newview->sky;
 
 	// well, this ain't pretty
@@ -307,7 +307,7 @@ void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
 	(void)frac;
-	
+
 	out->x =  mobj->x;
 	out->y =  mobj->y;
 	out->z =  mobj->z;
@@ -329,12 +329,11 @@ void R_AddMobjInterpolator(mobj_t *mobj)
 			interpolated_mobjs_capacity *= 2;
 		}
 
-		interpolated_mobjs = Z_ReallocAlign(
+		interpolated_mobjs = Z_Realloc(
 			interpolated_mobjs,
 			sizeof(mobj_t *) * interpolated_mobjs_capacity,
 			PU_LEVEL,
-			NULL,
-			64
+			NULL
 		);
 	}
 
@@ -342,6 +341,7 @@ void R_AddMobjInterpolator(mobj_t *mobj)
 	interpolated_mobjs_len += 1;
 
 	R_ResetMobjInterpolationState(mobj);
+	mobj->resetinterp = true;
 }
 
 void R_RemoveMobjInterpolator(mobj_t *mobj)
@@ -431,12 +431,11 @@ static void AddInterpolator(levelinterpolator_t* interpolator)
 			levelinterpolators_size *= 2;
 		}
 
-		levelinterpolators = Z_ReallocAlign(
+		levelinterpolators = Z_Realloc(
 			(void*) levelinterpolators,
 			sizeof(levelinterpolator_t*) * levelinterpolators_size,
 			PU_LEVEL,
-			NULL,
-			sizeof(levelinterpolator_t*) * 8
+			NULL
 		);
 	}
 	levelinterpolators[levelinterpolators_len] = interpolator;
@@ -445,12 +444,8 @@ static void AddInterpolator(levelinterpolator_t* interpolator)
 
 static levelinterpolator_t *CreateInterpolator(levelinterpolator_type_e type, thinker_t *thinker)
 {
-	levelinterpolator_t *ret = (levelinterpolator_t*) Z_CallocAlign(
-		sizeof(levelinterpolator_t),
-		PU_LEVEL,
-		NULL,
-		sizeof(levelinterpolator_t) * 8
-	);
+	levelinterpolator_t *ret = (levelinterpolator_t*) Z_Calloc(
+		sizeof(levelinterpolator_t), PU_LEVEL, NULL);
 	ret->type = type;
 	ret->thinker = thinker;
 	AddInterpolator(ret);
@@ -514,6 +509,7 @@ void R_CreateInterpolator_Polyobj(thinker_t *thinker, polyobj_t *polyobj)
 
 	interp->polyobj.oldcx = interp->polyobj.bakcx = polyobj->centerPt.x;
 	interp->polyobj.oldcy = interp->polyobj.bakcy = polyobj->centerPt.y;
+	interp->polyobj.oldangle = interp->polyobj.bakangle = polyobj->angle;
 }
 
 /*void R_CreateInterpolator_DynSlope(thinker_t *thinker, pslope_t *slope)
@@ -536,6 +532,15 @@ void R_InitializeLevelInterpolators(void)
 	levelinterpolators_len = 0;
 	levelinterpolators_size = 0;
 	levelinterpolators = NULL;
+}
+
+static void RecalculatePolyobjectSegAngles(polyobj_t *polyobj)
+{
+	for (size_t i = 0; i < polyobj->segCount; i++)
+	{
+		seg_t *seg = polyobj->segs[i];
+		seg->angle = R_PointToAngle2(seg->v1->x, seg->v1->y, seg->v2->x, seg->v2->y);
+	}
 }
 
 static void UpdateLevelInterpolatorState(levelinterpolator_t *interp)
@@ -569,10 +574,13 @@ static void UpdateLevelInterpolatorState(levelinterpolator_t *interp)
 			interp->polyobj.bakvertices[i * 2    ] = interp->polyobj.polyobj->vertices[i]->x;
 			interp->polyobj.bakvertices[i * 2 + 1] = interp->polyobj.polyobj->vertices[i]->y;
 		}
+		RecalculatePolyobjectSegAngles(interp->polyobj.polyobj);
 		interp->polyobj.oldcx = interp->polyobj.bakcx;
 		interp->polyobj.oldcy = interp->polyobj.bakcy;
+		interp->polyobj.oldangle = interp->polyobj.bakangle;
 		interp->polyobj.bakcx = interp->polyobj.polyobj->centerPt.x;
 		interp->polyobj.bakcy = interp->polyobj.polyobj->centerPt.y;
+		interp->polyobj.bakangle = interp->polyobj.polyobj->angle;
 		break;
     /*case LVLINTERP_DynSlope:
 		FV3_Copy(&interp->dynslope.oldo, &interp->dynslope.bako);
@@ -657,8 +665,10 @@ void R_ApplyLevelInterpolators(fixed_t frac)
 				interp->polyobj.polyobj->vertices[ii]->x = R_LerpFixed(interp->polyobj.oldvertices[ii * 2    ], interp->polyobj.bakvertices[ii * 2    ], frac);
 				interp->polyobj.polyobj->vertices[ii]->y = R_LerpFixed(interp->polyobj.oldvertices[ii * 2 + 1], interp->polyobj.bakvertices[ii * 2 + 1], frac);
 			}
+			RecalculatePolyobjectSegAngles(interp->polyobj.polyobj);
 			interp->polyobj.polyobj->centerPt.x = R_LerpFixed(interp->polyobj.oldcx, interp->polyobj.bakcx, frac);
 			interp->polyobj.polyobj->centerPt.y = R_LerpFixed(interp->polyobj.oldcy, interp->polyobj.bakcy, frac);
+			interp->polyobj.polyobj->angle = R_LerpAngle(interp->polyobj.oldangle, interp->polyobj.bakangle, frac);
 			break;
         /*case LVLINTERP_DynSlope:
 			R_LerpVector3(&interp->dynslope.oldo, &interp->dynslope.bako, frac, &interp->dynslope.slope->o);
@@ -711,8 +721,10 @@ void R_RestoreLevelInterpolators(void)
 				interp->polyobj.polyobj->vertices[ii]->x = interp->polyobj.bakvertices[ii * 2    ];
 				interp->polyobj.polyobj->vertices[ii]->y = interp->polyobj.bakvertices[ii * 2 + 1];
 			}
+			RecalculatePolyobjectSegAngles(interp->polyobj.polyobj);
 			interp->polyobj.polyobj->centerPt.x = interp->polyobj.bakcx;
 			interp->polyobj.polyobj->centerPt.y = interp->polyobj.bakcy;
+			interp->polyobj.polyobj->angle = interp->polyobj.bakangle;
 			break;
         /*case LVLINTERP_DynSlope:
 			FV3_Copy(&interp->dynslope.slope->o, &interp->dynslope.bako);

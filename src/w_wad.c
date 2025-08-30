@@ -690,6 +690,7 @@ UINT16 W_InitFile(const char *filename)
 	restype_t type;
 	UINT16 numlumps = 0;
 	size_t i;
+	size_t packetsize;
 	UINT8 md5sum[16];
 	boolean important;
 
@@ -721,8 +722,24 @@ UINT16 W_InitFile(const char *filename)
 	if ((handle = W_OpenWadFile(&filename, true)) == NULL)
 		return INT16_MAX;
 
-	important = !W_VerifyNMUSlumps(filename);
+	// Check if wad files will overflow fileneededbuffer. Only the filename part
+	// is send in the packet; cf.
+	// see PutFileNeeded in d_netfil.c
+	if ((important = !W_VerifyNMUSlumps(filename)))
+	{
+		packetsize = packetsizetally + nameonlylength(filename) + 22;
 
+		if (packetsize > MAXFILENEEDED*sizeof(UINT8))
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Maximum wad files reached\n"));
+			refreshdirmenu |= REFRESHDIR_MAX;
+			if (handle)
+				fclose(handle);
+			return INT16_MAX;
+		}
+
+		packetsizetally = packetsize;
+	}
 
 #ifndef NOMD5
 	//
@@ -827,40 +844,6 @@ UINT16 W_InitFile(const char *filename)
 	W_InvalidateLumpnumCache();
 	return wadfile->numlumps;
 }
-
-#ifdef DELFILE
-void W_UnloadWadFile(UINT16 num)
-{
-	INT32 i;
-	wadfile_t *delwad = wadfiles[num];
-	lumpcache_t *lumpcache;
-	if (num == 0)
-		return;
-	CONS_Printf(M_GetText("Removing WAD %s...\n"), wadfiles[num]->filename);
-
-	DEH_UnloadDehackedWad(num);
-	wadfiles[num] = NULL;
-	lumpcache = delwad->lumpcache;
-	numwadfiles--;
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		HWR_FreeTextureCache();
-	}
-	M_AATreeFree(delwad->hwrcache);
-#endif
-	if (*lumpcache)
-	{
-		for (i = 0;i < delwad->numlumps;i++)
-			Z_ChangeTag(lumpcache[i], PU_PURGELEVEL);
-	}
-	Z_Free(lumpcache);
-	fclose(delwad->handle);
-	Z_Free(delwad->filename);
-	Z_Free(delwad);
-	CONS_Printf(M_GetText("Done unloading WAD.\n"));
-}
-#endif
 
 /** Tries to load a series of files.
   * All files are wads unless they have an extension of ".soc" or ".lua".
@@ -1680,11 +1663,11 @@ static inline void *W_CachePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 
 	grPatch = HWR_GetCachedGLPatchPwad(wad, lump);
 
-	if (grPatch->mipmap->grInfo.data)
+	if (grPatch->mipmap->data)
 	{
 		if (tag == PU_CACHE)
 			tag = PU_HWRCACHE;
-		Z_ChangeTag(grPatch->mipmap->grInfo.data, tag);
+		Z_ChangeTag(grPatch->mipmap->data, tag);
 	}
 	else
 	{
@@ -2087,7 +2070,7 @@ int W_VerifyNMUSlumps(const char *filename)
 
 		{"SHADERS", 7}, // Shader definitions
 		{"SH_", 3}, // GLSL shader
-	
+
 
 		{NULL, 0},
 	};

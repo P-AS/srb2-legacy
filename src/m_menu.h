@@ -146,6 +146,7 @@ typedef struct menuitem_s
 
 	const char *patch;
 	const char *text; // used when FONTBxx lump is found
+	const char *desc;
 
 // FIXME: should be itemaction_t
 	void *itemaction;
@@ -218,6 +219,7 @@ typedef struct
 
 extern description_t description[MAXSKINS];
 
+extern consvar_t cv_showfocuslost; 
 extern consvar_t cv_newgametype, cv_nextmap, cv_chooseskin, cv_serversort;
 extern CV_PossibleValue_t gametype_cons_t[];
 

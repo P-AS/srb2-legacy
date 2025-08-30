@@ -26,10 +26,8 @@ extern consvar_t cv_playername2;
 extern consvar_t cv_playercolor2;
 extern consvar_t cv_skin2;
 // saved versions of the above six
-extern consvar_t cv_defaultplayername;
 extern consvar_t cv_defaultplayercolor;
 extern consvar_t cv_defaultskin;
-extern consvar_t cv_defaultplayername2;
 extern consvar_t cv_defaultplayercolor2;
 extern consvar_t cv_defaultskin2;
 
@@ -146,12 +144,13 @@ typedef enum
 	XD_RANDOMSEED,  // 15
 	XD_RUNSOC,      // 16
 	XD_REQADDFILE,  // 17
-	XD_DELFILE,     // 18
+	// UNUSED       // 18 (ditto)
 	XD_SETMOTD,     // 19
 	XD_SUICIDE,     // 20
 	XD_DEMOTED,     // 21
 	XD_LUACMD,      // 22
 	XD_LUAVAR,      // 23
+	XD_LUAFILE,     // 24
 	MAXNETXCMD
 } netxcmd_t;
 

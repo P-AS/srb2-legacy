@@ -32,8 +32,8 @@ jobs:
     - name: Build SRB2 Legacy
       run: make -C src/ --keep-going -j$(nproc) LINUX64=1
 
-    - name: Build SRB2 Legacy AppImage
-      run: chmod +x srb2-legacy-appimage.sh && ./srb2-legacy-appimage.sh s
+    - name: Package SRB2 Legacy AppImage
+      run: chmod +x srb2-legacy-appimage.sh && ./srb2-legacy-appimage.sh --noassets --skipbuild
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
