@@ -34,7 +34,9 @@ android {
         if (defaultConfig.ext.useBuildDate)
             srb2PackageName += "-" + (new Date()).format('yyyyMMdd')
 
-        setProperty("archivesBaseName", srb2PackageName)
+        base {
+        	archivesName = srb2PackageName
+        }
     }
     sourceSets.main {
         jniLibs.srcDir 'libs'
