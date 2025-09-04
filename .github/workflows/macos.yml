@@ -15,11 +15,11 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Install dependencies
-      run: brew install --formula sdl2 sdl2_mixer game-music-emu miniupnpc libopenmpt cmake
+      run: brew install --formula sdl2 sdl2_mixer game-music-emu miniupnpc libopenmpt
 
     - name: Configure CMake
       run: |
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSRB2_CONFIG_HAVE_GME=OFF -DSRB2_CONFIG_HAVE_OPENMPT=OFF
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
     - name: Build SRB2 Legacy
       run: ninja -C build

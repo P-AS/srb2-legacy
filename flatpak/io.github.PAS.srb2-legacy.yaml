@@ -1,6 +1,6 @@
 app-id: io.github.PAS.srb2-legacy
 runtime: org.freedesktop.Platform
-runtime-version: '24.08'
+runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 command: srb2legacy
 finish-args:
@@ -53,6 +53,7 @@ modules:
   - name: srb2legacy
     buildsystem: simple
     build-commands:
+      - make clean
       - make LINUX64=1 -j $FLATPAK_BUILDER_N_JOBS
       - install -D -m 755 -t $FLATPAK_DEST/bin bin/lsdl2srb2legacy
       - install -D -m 644 srb2.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
