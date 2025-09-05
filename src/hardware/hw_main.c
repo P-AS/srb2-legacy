@@ -2092,8 +2092,6 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 boolean checkforemptylines = true;
 // Don't modify anything here, just check
 // Kalaron: Modified for sloped linedefs
-// Don't modify anything here, just check
-// Kalaron: Modified for sloped linedefs
 static boolean CheckClip(seg_t * seg, sector_t * afrontsector, sector_t * abacksector)
 {
 	fixed_t frontf1,frontf2, frontc1, frontc2; // front floor/ceiling ends
