@@ -2842,7 +2842,7 @@ void InitColorLUT(RGBA_t *palette)
 void V_Init(void)
 {
 	INT32 i;
-	const INT32 screensize = vid.rowbytes * vid.height;
+	INT32 screensize = vid.rowbytes * vid.height;
 
 	LoadMapPalette();
 	for (i = 0; i < NUMSCREENS; i++)
@@ -2863,7 +2863,9 @@ void V_Init(void)
 			// we need to allocate these relative to their cpu restrictions to not trigger segfaults
 			// TODO: add support for sve and neon
 #ifdef USE_SSE_ALIGNED
-			screens[i] = aligned_alloc(128, screensize);
+			while (screensize & 15)
+				screensize++;
+			screens[i] = aligned_alloc(16, screensize);
 #else
 			screens[i] = malloc(screensize);
 #endif
