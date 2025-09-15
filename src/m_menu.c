@@ -2507,7 +2507,7 @@ boolean M_Responder(event_t *ev)
 				return true;
 
 			case KEY_F11: // Fullscreen toggle, also processed inside
-				CV_SetValue(&cv_fullscreen, !cv_fullscreen.value);
+				CV_AddValue(&cv_fullscreen, 1);
 				return true;
 
 			// Spymode on F12 handled in game logic
@@ -2728,7 +2728,7 @@ boolean M_Responder(event_t *ev)
 			return true;
 
 		case KEY_F11: // Fullscreen toggle, also processed outside menus
-			CV_SetValue(&cv_fullscreen, !cv_fullscreen.value);
+			CV_AddValue(&cv_fullscreen, 1);
 			return true;
 
 		default:
@@ -8712,7 +8712,7 @@ static void M_DrawVideoMode(void)
 			va("Default mode is %c%dx%d",
 				(SCR_IsAspectCorrect(cv_scr_width.value, cv_scr_height.value)) ? 0x83 : 0x80,
 				cv_scr_width.value, cv_scr_height.value));
-		V_DrawCenteredString(BASEVIDWIDTH/2, OP_VideoModeDef.y + 124, (cv_fullscreen.value ? V_TRANSLUCENT : 0),
+		V_DrawCenteredString(BASEVIDWIDTH/2, OP_VideoModeDef.y + 124, (cv_fullscreen.value == 1 ? V_TRANSLUCENT : 0),
 			va("Windowed mode is %c%dx%d",
 				(SCR_IsAspectCorrect(cv_scr_width_w.value, cv_scr_height_w.value)) ? 0x83 : (!(VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value)+1) ? 0x85 : 0x80),
 				cv_scr_width_w.value, cv_scr_height_w.value));
@@ -8951,7 +8951,7 @@ static void M_HandleVideoMode(INT32 ch)
 			CV_Set(&cv_scr_height, cv_scr_height.defaultvalue);
 			CV_Set(&cv_scr_width_w, cv_scr_width_w.defaultvalue);
 			CV_Set(&cv_scr_height_w, cv_scr_height_w.defaultvalue);
-			if (cv_fullscreen.value)
+			if (cv_fullscreen.value == 1)
 				setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value)+1;
 			else
 				setmodeneeded = VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value)+1;
@@ -8963,7 +8963,7 @@ static void M_HandleVideoMode(INT32 ch)
 
 		case KEY_F11:
 			S_StartSound(NULL, sfx_menu1);
-			CV_SetValue(&cv_fullscreen, !cv_fullscreen.value);
+			CV_AddValue(&cv_fullscreen, 1);
 			break;
 
 		default:

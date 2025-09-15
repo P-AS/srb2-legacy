@@ -88,7 +88,9 @@ consvar_t cv_renderer = CVAR_INIT ("renderer", "Software", "The current renderer
 
 static void SCR_ChangeFullscreen(void);
 
-consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", "If on, the game will take up the full screen rather than just a desktop window", CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen);
+static CV_PossibleValue_t fullscreen_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Borderless"}, {0, NULL}};
+
+consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", "If on, the game will take up the full screen rather than just a desktop window", CV_SAVE|CV_CALL, fullscreen_cons_t, SCR_ChangeFullscreen);
 
 // =========================================================================
 //                           SCREEN VARIABLES
@@ -327,7 +329,7 @@ void SCR_CheckDefaultMode(void)
 		CONS_Printf(M_GetText("Default resolution: %d x %d\n"), cv_scr_width.value, cv_scr_height.value);
 		CONS_Printf(M_GetText("Windowed resolution: %d x %d\n"), cv_scr_width_w.value, cv_scr_height_w.value);
 		CONS_Printf(M_GetText("Default bit depth: %d bits\n"), cv_scr_depth.value);
-		if (cv_fullscreen.value)
+		if (cv_fullscreen.value == 1)
 			setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1; // see note above
 		else
 			setmodeneeded = VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value) + 1; // see note above
@@ -343,14 +345,16 @@ void SCR_CheckDefaultMode(void)
 void SCR_SetDefaultMode(void)
 {
 	// remember the default screen size
-	CV_SetValue(cv_fullscreen.value ? &cv_scr_width : &cv_scr_width_w, vid.width);
-	CV_SetValue(cv_fullscreen.value ? &cv_scr_height : &cv_scr_height_w, vid.height);
+	CV_SetValue((cv_fullscreen.value == 1)  ? &cv_scr_width : &cv_scr_width_w, vid.width);
+	CV_SetValue((cv_fullscreen.value == 1) ? &cv_scr_height : &cv_scr_height_w, vid.height);
 }
 
 // Change fullscreen on/off according to cv_fullscreen
 void SCR_ChangeFullscreen(void)
 {
 #ifdef DIRECTFULLSCREEN
+	I_SetBorderlessWindow();
+	
 	// allow_fullscreen is set by VID_PrepareModeList
 	// it is used to prevent switching to fullscreen during startup
 	if (!allow_fullscreen)
@@ -359,7 +363,7 @@ void SCR_ChangeFullscreen(void)
 	if (graphics_started)
 	{
 		VID_PrepareModeList();
-		if (cv_fullscreen.value)
+		if (cv_fullscreen.value == 1)
 			setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
 		else
 			setmodeneeded = VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value) + 1;

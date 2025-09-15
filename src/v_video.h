@@ -19,6 +19,18 @@
 #include "r_defs.h"
 
 #if defined(__SSE__)
+#if defined(__APPLE__)
+#include <Availability.h>
+// 'aligned_alloc' is only available on macOS 10.15 or newer
+#if defined(TARGET_OS_OSX) && (__MAC_OS_X_VERSION_MIN_REQUIRED >= 101500)
+#define USE_SSE_ALIGNED
+#endif
+#else
+#define USE_SSE_ALIGNED
+#endif
+#endif
+
+#ifdef USE_SSE_ALIGNED
 #ifdef _WIN32
 #include <malloc.h>
 #define aligned_alloc(align, size) _aligned_malloc(size, align)
