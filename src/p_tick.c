@@ -716,7 +716,7 @@ void P_Ticker(boolean run)
 			quake.x = M_RandomRange(-ir,ir);
 			quake.y = M_RandomRange(-ir,ir);
 			quake.z = M_RandomRange(-ir,ir);
-			if(cv_quakelive.value && !cv_fullscreen.value)
+			if(cv_quakelive.value && !(cv_fullscreen.value == 1))
 				I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
 			ir >>= 2;
 			ir = M_RandomRange(-ir,ir);

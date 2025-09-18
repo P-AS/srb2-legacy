@@ -454,7 +454,7 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 	if (srcrowbytes == destrowbytes)
 	{
 		size_t i = srcrowbytes * height;
-#if defined(__SSE__)
+#ifdef USE_SSE_ALIGNED
 		while (i >= 16)
 		{
 			// TODO: find where the buffer is misaligned at times and align it
@@ -892,7 +892,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	if (rendermode == render_none)
 		return;
 
-	
+
 	v_translevel = NULL;
 	if (alphalevel)
 	{
@@ -2842,12 +2842,12 @@ void InitColorLUT(RGBA_t *palette)
 void V_Init(void)
 {
 	INT32 i;
-	const INT32 screensize = vid.rowbytes * vid.height;
+	INT32 screensize = vid.rowbytes * vid.height;
 
 	LoadMapPalette();
 	for (i = 0; i < NUMSCREENS; i++)
 	{
-#if defined(__SSE__)
+#ifdef USE_SSE_ALIGNED
 		aligned_free(screens[i]);
 #else
 		free(screens[i]);
@@ -2862,8 +2862,10 @@ void V_Init(void)
 		{
 			// we need to allocate these relative to their cpu restrictions to not trigger segfaults
 			// TODO: add support for sve and neon
-#if defined(__SSE__)
-			screens[i] = aligned_alloc(128, screensize);
+#ifdef USE_SSE_ALIGNED
+			while (screensize & 15)
+				screensize++;
+			screens[i] = aligned_alloc(16, screensize);
 #else
 			screens[i] = malloc(screensize);
 #endif

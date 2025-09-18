@@ -1,4 +1,4 @@
-#define SRB2VERSION "2.1.29"/* this must be the first line, for cmake !! */
+#define SRB2VERSION "2.1.30"/* this must be the first line, for cmake !! */
 
 // The Modification ID; must be obtained from Rob ( https://mb.srb2.org/private.php?do=newpm&u=546 ).
 // DO NOT try to set this otherwise, or your modification will be unplayable through the Master Server.
@@ -12,4 +12,4 @@
 #define MODVERSION 34
 
 // Define this as a prerelease version suffix
-//#define BETAVERSION "Nightly"
+#define BETAVERSION "Nightly"
