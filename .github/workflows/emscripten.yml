@@ -1,5 +1,5 @@
 # Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: Emscripten
 
 on:
   # Runs on pushes targeting the default branch
@@ -31,10 +31,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
-        
-         
-      - name: Setup Pages 
-        uses: actions/configure-pages@v5.0.0 
+
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5.0.0
 
       - name: Setup emsdk
         uses: mymindstorm/setup-emsdk@v14
@@ -49,7 +49,7 @@ jobs:
       - name: Get CMake
         uses: symbitic/install-cmake@master
 
-      - name: Build 
+      - name: Build
         run: |
           git clone https://git.do.srb2.org/STJr/srb2assets-public.git -b SRB2_2.1 assets/installer
 
