@@ -1,6 +1,6 @@
 # SRB2 Legacy
 
-SRB2 Legacy is an updated fork of [Sonic Robo Blast 2](https://srb2.org) 2.1.25.  
+SRB2 Legacy is an updated fork of [Sonic Robo Blast 2](https://srb2.org) 2.1.25.
 The goal of SRB2 Legacy is to include essential fixes and QOL improvements seen in 2.2.
 
 ## Dependencies
@@ -12,7 +12,7 @@ The goal of SRB2 Legacy is to include essential fixes and QOL improvements seen 
 
 ## Compiling
 
-See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling)  
+See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling)
 Alternatively, you can also use [srb2bld](https://mb.srb2.org/addons/srb2bld-srb2-build-package-manager-cli.3727/)
 
 ## Nightlies

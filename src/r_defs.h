@@ -579,20 +579,12 @@ typedef struct
 	UINT16 children[2];
 } node_t;
 
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
-
 // posts are runs of non masked source pixels
 typedef struct
 {
 	UINT8 topdelta; // -1 is the last post in a column
 	UINT8 length;   // length data bytes follows
 } post_t;
-
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
 
 // column_t is a list of 0 or more post_t, (UINT8)-1 terminated
 typedef post_t column_t;
@@ -653,10 +645,6 @@ typedef enum
 	RGBA32          = 4,  // 32 bit rgba
 } pic_mode_t;
 
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
-
 // Patches.
 // A patch holds one or more columns.
 // Patches are used for sprites and all masked pictures, and we compose
@@ -673,10 +661,6 @@ typedef struct
 	// the [0] is &columnofs[width]
 } patch_t;
 
-#ifdef _MSC_VER
-#pragma warning(disable :  4200)
-#endif
-
 // a pic is an unmasked block of pixels, stored in horizontal way
 typedef struct
 {
@@ -688,14 +672,6 @@ typedef struct
 	INT16 reserved1; // set to 0
 	UINT8 data[0];
 } pic_t;
-
-#ifdef _MSC_VER
-#pragma warning(default : 4200)
-#endif
-
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
 
 typedef enum
 {

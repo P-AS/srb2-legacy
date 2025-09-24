@@ -23,15 +23,7 @@
 #ifdef HAVE_SDL
 #define _MATH_DEFINES_DEFINED
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
-
 #include "SDL_opengl.h" //Alam_GBC: Simple, yes?
-
-#ifdef _MSC_VER
-#pragma warning(default : 4214 4244)
-#endif
 
 #else
 #include <GL/gl.h>

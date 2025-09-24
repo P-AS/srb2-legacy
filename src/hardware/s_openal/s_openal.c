@@ -450,11 +450,6 @@ EXPORT void HWRAPI( Shutdown ) ( void )
 	//TODO:check?
 }
 
-#ifdef _MSC_VER
-#pragma warning(disable :  4200)
-#pragma pack(1)
-#endif
-
 typedef struct
 {
 	ALushort header;     // 3?
@@ -463,11 +458,6 @@ typedef struct
 	ALushort dummy;     // 0
 	ALubyte  data[0];    // data;
 } ATTRPACK dssfx_t;
-
-#ifdef _MSC_VER
-#pragma pack()
-#pragma warning(default : 4200)
-#endif
 
 static ALsizei getfreq(ALvoid *sfxdata, size_t len)
 {
@@ -995,4 +985,3 @@ EXPORT void _fini()
 #endif
 }
 #endif
-
