@@ -9,7 +9,16 @@ on:
 jobs:
   build:
     continue-on-error: true
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch:
+          - runner: macos-latest
+            name: aarch64
+          - runner: macos-15-intel
+            name: x86_64
+
+    name: ${{ matrix.arch.name }}
+    runs-on: ${{ matrix.arch.runner }}
 
     steps:
     - uses: actions/checkout@v4
@@ -18,8 +27,7 @@ jobs:
       run: brew install --formula sdl2 sdl2_mixer game-music-emu miniupnpc libopenmpt
 
     - name: Configure CMake
-      run: |
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
     - name: Build SRB2 Legacy
       run: ninja -C build
@@ -27,6 +35,5 @@ jobs:
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: srb2legacy-macOS-aarch64-${{ github.sha }}
-        path: |
-          build/bin
+        name: srb2legacy-macOS-${{ matrix.arch.name }}-${{ github.sha }}
+        path: build/bin
