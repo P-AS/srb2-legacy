@@ -41,12 +41,10 @@
 
 #include "hw_main.h"
 #include "../v_video.h"
-#ifdef HAVE_PNG
 
-#ifndef _MSC_VER
+#ifdef HAVE_PNG
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
 #endif
 
 #ifndef _LFS64_LARGEFILE
@@ -641,7 +639,7 @@ spritemd2found:
 #define SETBRIGHTNESS(brightness,r,g,b) \
 	brightness = (UINT8)(((1063*(UINT16)(r))/5000) + ((3576*(UINT16)(g))/5000) + ((361*(UINT16)(b))/5000))
 
-// Uncomment this if you ever implement TC_RAINBOW	
+// Uncomment this if you ever implement TC_RAINBOW
 //#define HAVE_RAINBOWCOLORMAP
 
 static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, INT32 skinnum, skincolornum_t color)

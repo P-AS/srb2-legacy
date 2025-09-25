@@ -95,11 +95,8 @@ consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "18", "Volume of sound effe
 consvar_t cv_digmusicvolume = CVAR_INIT ("digmusicvolume", "18", "Volume of digital music", CV_SAVE, soundvolume_cons_t, NULL);
 consvar_t cv_midimusicvolume = CVAR_INIT ("midimusicvolume", "18", "Volume of MIDI music", CV_SAVE, soundvolume_cons_t, NULL);
 // number of channels available
-#if defined (_WIN32_WCE) || defined (DC) || defined (PSP) || defined(GP2X)
-consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "8", NULL, CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
-#else
-consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "32", NULL, CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
-#endif
+static CV_PossibleValue_t numChannels_cons_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
+consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "64", NULL, CV_SAVE|CV_CALL, numChannels_cons_t, SetChannelsNum);
 
 static consvar_t surround = CVAR_INIT ("surround", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_resetmusic = CVAR_INIT ("resetmusic", "No", NULL, CV_SAVE, CV_YesNo, NULL);
@@ -329,17 +326,6 @@ static void SetChannelsNum(void)
 	Z_Free(channels);
 	channels = NULL;
 
-
-	if (cv_numChannels.value == 999999999) //Alam_GBC: OH MY ROD!(ROD rimmiced with GOD!)
-		CV_StealthSet(&cv_numChannels,cv_numChannels.defaultvalue);
-
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_SetSourcesNum();
-		return;
-	}
-#endif
 	if (cv_numChannels.value)
 		channels = (channel_t *)Z_Malloc(cv_numChannels.value * sizeof (channel_t), PU_STATIC, NULL);
 	numofchannels = cv_numChannels.value;

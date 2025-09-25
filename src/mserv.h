@@ -18,10 +18,6 @@
 // lowered from 32 due to menu changes
 #define NUM_LIST_ROOMS 16
 
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
-
 typedef union
 {
 	char buffer[16]; // information such as password
@@ -67,10 +63,6 @@ typedef struct
 	INT32 hostonly;
 } ATTRPACK msg_ban_t;
 
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
-
 // ================================ GLOBALS ===============================
 
 extern consvar_t cv_masterserver, cv_servername;
@@ -99,4 +91,3 @@ extern msg_rooms_t room_list[NUM_LIST_ROOMS+1];
 void AddMServCommands(void);
 
 #endif
-

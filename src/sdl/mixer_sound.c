@@ -20,14 +20,7 @@
 #include "../z_zone.h"
 #include "../byteptr.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
 #include "SDL.h"
-#ifdef _MSC_VER
-#pragma warning(default : 4214 4244)
-#endif
-
 #include "SDL_mixer.h"
 
 /* This is the version number macro for the current SDL_mixer version: */
@@ -54,10 +47,8 @@
 #define GME_BASS 1.0f
 
 #ifdef HAVE_ZLIB
-#ifndef _MSC_VER
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
 #endif
 
 #ifndef _LFS64_LARGEFILE
@@ -1082,7 +1073,7 @@ boolean I_LoadSong(char *data, size_t len)
 		else
 			return true;
 	}
-#endif	
+#endif
 
 	rw = SDL_RWFromMem(data, len);
 	if (rw != NULL)
@@ -1428,4 +1419,3 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
 		return false;
 }
 #endif
-

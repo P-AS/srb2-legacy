@@ -129,7 +129,7 @@ typedef struct
 	boolean     mirror;          // SRB2Kart: Encore Mode
 #endif
 	boolean     roll;
-	FLOAT       rollangle; 
+	FLOAT       rollangle;
 	boolean     shearing;        // 14042019
 	float       viewaiming;      // 17052019
 } FTransform;

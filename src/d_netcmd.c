@@ -3208,7 +3208,7 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	ncs = findfile(filename,md5sum,true);
+	ncs = findfile(filename, md5sum, true);
 
 	if (ncs != FS_FOUND || !P_AddWadFile(filename))
 	{

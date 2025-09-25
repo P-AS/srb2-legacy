@@ -19,12 +19,7 @@
 #endif
 
 #include <string.h>
-#ifndef _WIN32_WCE
 #include <sys/types.h>
-#endif
-#ifdef _MSC_VER
-#pragma warning(disable :  4127)
-#endif
 
 #if defined (STDC_HEADERS) || defined (_LIBC)
  #include <stdlib.h>
