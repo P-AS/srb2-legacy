@@ -36,11 +36,6 @@
 #define O_BINARY 0
 #endif
 
-
-
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
 typedef struct
 {
 	UINT8 id_field_length ; // 1
@@ -54,9 +49,6 @@ typedef struct
 	UINT8 image_pix_size  ; //17
 	UINT8 image_descriptor; //18
 } ATTRPACK TGAHeader; // sizeof is 18
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
 
 
 static UINT8 softwaretranstogl[11]    = {  0, 25, 51, 76,102,127,153,178,204,229,255};
@@ -586,7 +578,7 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 	{
 		RGBA_t *palette = HWR_GetTexturePalette();
 		Surf.PolyColor.rgba = palette[color&0xFF].rgba;
-		
+
         if (HWR_ShouldUsePaletteRendering())
 			Surf.PolyColor.s.alpha = softwaretranstogl[strength];
 		else
@@ -998,10 +990,8 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 
 #ifdef HAVE_PNG
 
-#ifndef _MSC_VER
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
 #endif
 
 #ifndef _LFS64_LARGEFILE

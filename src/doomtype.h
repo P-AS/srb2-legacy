@@ -25,66 +25,7 @@
 #include <windows.h>
 #endif
 
-#ifdef _NDS
-#include <nds.h>
-#endif
-
 /* 7.18.1.1  Exact-width integer types */
-#ifdef _MSC_VER
-// libopenmpt.h will include stdint.h later;
-// include it now so that INT8_MAX etc. don't get redefined
-#ifdef HAVE_OPENMPT
-#include <stdint.h>
-#endif
-
-#define UINT8 unsigned __int8
-#define SINT8 signed __int8
-
-#define UINT16 unsigned __int16
-#define INT16 __int16
-
-#define INT32 __int32
-#define UINT32 unsigned __int32
-
-#define INT64  __int64
-#define UINT64 unsigned __int64
-
-typedef long ssize_t;
-
-/* Older Visual C++ headers don't have the Win64-compatible typedefs... */
-#if (_MSC_VER <= 1200)
-	#ifndef DWORD_PTR
-		#define DWORD_PTR DWORD
-	#endif
-	#ifndef PDWORD_PTR
-		#define PDWORD_PTR PDWORD
-	#endif
-#endif
-#elif defined (_arch_dreamcast) // KOS Dreamcast
-#include <arch/types.h>
-
-#define UINT8 unsigned char
-#define SINT8 signed char
-
-#define UINT16 uint16
-#define INT16 int16
-
-#define INT32 int
-#define UINT32 unsigned int
-#define INT64  int64
-#define UINT64 uint64
-#elif defined (__DJGPP__)
-#define UINT8 unsigned char
-#define SINT8 signed char
-
-#define UINT16 unsigned short int
-#define INT16 signed short int
-
-#define INT32 signed long
-#define UINT32 unsigned long
-#define INT64  signed long long
-#define UINT64 unsigned long long
-#else
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 
@@ -98,7 +39,6 @@ typedef long ssize_t;
 #define UINT32 uint32_t
 #define INT64  int64_t
 #define UINT64 uint64_t
-#endif
 
 #ifdef __APPLE_CC__
 #define DIRECTFULLSCREEN 1
@@ -108,64 +48,14 @@ typedef long ssize_t;
 
 /* Strings and some misc platform specific stuff */
 
-#if defined (_MSC_VER) || defined (__OS2__)
-	// Microsoft VisualC++
-#ifdef _MSC_VER
-#if (_MSC_VER <= 1800) // MSVC 2013 and back
-	#define snprintf                _snprintf
-#if (_MSC_VER <= 1200) // MSVC 6.0 and back
-	#define vsnprintf               _vsnprintf
-#endif
-#endif
-#endif
-	#define strncasecmp             strnicmp
-	#define strcasecmp              stricmp
-	#define inline                  __inline
-#elif defined (__WATCOMC__)
-	#include <dos.h>
-	#include <sys\types.h>
-	#include <direct.h>
-	#include <malloc.h>
-	#define strncasecmp             strnicmp
-	#define strcasecmp              strcmpi
-#endif
-#ifdef _PSP
-	#include <malloc.h>
-#elif (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 	#undef stricmp
 	#define stricmp(x,y) strcasecmp(x,y)
 	#undef strnicmp
 	#define strnicmp(x,y,n) strncasecmp(x,y,n)
 #endif
-#ifdef _WIN32_WCE
-#ifndef __GNUC__
-	#define stricmp(x,y)            _stricmp(x,y)
-	#define strnicmp                _strnicmp
-#endif
-	#define strdup                  _strdup
-	#define strupr                  _strupr
-	#define strlwr                  _strlwr
-#endif
 
-#if defined (macintosh) //|| defined (__APPLE__) //skip all boolean/Boolean crap
-	#define true 1
-	#define false 0
-	#define min(x,y) (((x)<(y)) ? (x) : (y))
-	#define max(x,y) (((x)>(y)) ? (x) : (y))
-
-#ifdef macintosh
-	#define stricmp strcmp
-	#define strnicmp strncmp
-#endif
-
-	#define boolean INT32
-
-	#ifndef O_BINARY
-	#define O_BINARY 0
-	#endif
-#endif //macintosh
-
-#if defined (PC_DOS) || defined (_WIN32) || defined (_WII) || defined (_PSP) || defined (_arch_dreamcast) || defined (__HAIKU__) || defined(_NDS)  || defined(_PS3)
+#if defined (_WIN32) || defined (__HAIKU__)
 #define HAVE_DOSSTR_FUNCS
 #endif
 
@@ -186,8 +76,8 @@ int strlwr(char *n); // from dosstr.c
 #include <stddef.h> // for size_t
 
 #ifndef SRB2_HAVE_STRLCPY
-size_t strlcat(char *dst, const char *src, size_t siz);
-size_t strlcpy(char *dst, const char *src, size_t siz);
+size_t strlcat(char *dst, const char *src, size_t dsize);
+size_t strlcpy(char *dst, const char *src, size_t dsize);
 #endif
 
 // Macro for use with char foo[FOOSIZE+1] type buffers.
@@ -301,18 +191,6 @@ typedef bool boolean;
 	#endif
 
 	#define ATTRUNUSED __attribute__((unused))
-
-	// Xbox-only macros
-	#ifdef _XBOX
-		#define FILESTAMP I_OutputMsg("%s:%d\n",__FILE__,__LINE__);
-		#define XBOXSTATIC static
-	#endif
-#elif defined (_MSC_VER)
-	#define ATTRNORETURN __declspec(noreturn)
-	#define ATTRINLINE __forceinline
-	#if _MSC_VER > 1200 // >= MSVC 6.0
-		#define ATTRNOINLINE __declspec(noinline)
-	#endif
 #endif
 
 #ifndef FUNCPRINTF

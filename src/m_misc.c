@@ -73,12 +73,8 @@ typedef off_t off64_t;
 
 #ifdef HAVE_PNG
 
-#ifndef _MSC_VER
-#ifndef _WII
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
-#endif
 #endif
 
 #ifndef _LFS64_LARGEFILE
@@ -2064,4 +2060,3 @@ void M_MkdirEach(const char *path, int start, int mode)
 {
 	M_MkdirEachUntil(path, start, -1, mode);
 }
-
