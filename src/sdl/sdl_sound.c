@@ -1560,5 +1560,4 @@ static boolean I_StartGMESong(const char *musicname, boolean looping)
 }
 #endif
 
-#endif
 #endif //HAVE_SDL
