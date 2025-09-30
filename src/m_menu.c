@@ -2731,12 +2731,17 @@ void M_Drawer(void)
 			}
 			else
 			{
-				char *menucompnote = Z_StrDup(compnote);
-				if(strlen(compnote) > 15) // Don't want it to potentially cross over into the menu, somewhat of a magic number but ehh it works on most resolutions
+				char *menucompnote = Z_Malloc(19, PU_STATIC, NULL);
+				if (strlen(compnote) > 15) // Don't want it to potentially cross over into the menu, somewhat of a magic number but ehh it works on most resolutions
 				{
-				   strncpy(menucompnote, compnote, 15);
-				   menucompnote[15] = '\0';
-				   strcat(menucompnote, "...");
+					strncpy(menucompnote, compnote, 15);
+					menucompnote[15] = '\0';
+					strcat(menucompnote, "...");
+				}
+				else
+				{
+					strncpy(menucompnote, compnote, 18);
+					menucompnote[18] = '\0';
 				}
 #ifdef DEVELOP // Development -- show revision / branch info
 				V_DrawThinString(vid.dupx, vid.height - 17*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);
