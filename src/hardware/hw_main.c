@@ -103,8 +103,9 @@ consvar_t cv_glslopecontrast = CVAR_INIT ("gr_slopecontrast", "Off", "Make slope
 
 static CV_PossibleValue_t grmodelinterpolation_cons_t[] = {{0, "Off"}, {1, "Sometimes"}, {2, "Always"}, {0, NULL}};
 
-
 boolean drawsky = true;
+
+angle_t lastviewrollangle;
 
 // needs fix: walls are incorrectly clipped one column less
 #ifndef NEWCLIP
@@ -5495,7 +5496,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 		dometransform.scalez = 1;
 		dometransform.fovxangle = fpov; // Tails
 		dometransform.fovyangle = fpov; // Tails
-		if (player->viewrollangle != 0)
+		if (player->viewrollangle != 0 || lastviewrollangle != 0)
 		{
 			fixed_t rol = AngleFixed(player->viewrollangle);
 			dometransform.rollangle = FIXED_TO_FLOAT(rol);
@@ -5779,7 +5780,7 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	if (player->viewrollangle != 0)
+	if (player->viewrollangle != 0 || lastviewrollangle != 0)
 	{
 		fixed_t rol = AngleFixed(player->viewrollangle);
 		atransform.rollangle = FIXED_TO_FLOAT(rol);
@@ -5864,7 +5865,6 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 // ==========================================================================
 void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 {
-
 	const float fpov = FixedToFloat(R_GetPlayerFov(player));
 	postimg_t *type;
 
@@ -5930,14 +5930,10 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	gl_viewsin = FIXED_TO_FLOAT(viewsin);
 	gl_viewcos = FIXED_TO_FLOAT(viewcos);
 
-
-
 	//04/01/2000: Hurdler: added for T&L
 	//                     It should replace all other gl_viewxxx when finished
 	HWR_SetTransformAiming(&atransform, player, false);
 	atransform.angley = (float)(viewangle>>ANGLETOFINESHIFT)*(360.0f/(float)FINEANGLES);
-
-
 
 	gl_viewludsin = FIXED_TO_FLOAT(FINECOSINE(gl_aimingangle>>ANGLETOFINESHIFT));
 	gl_viewludcos = FIXED_TO_FLOAT(-FINESINE(gl_aimingangle>>ANGLETOFINESHIFT));
@@ -5956,7 +5952,7 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	atransform.scalez = 1;
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	if (player->viewrollangle != 0)
+	if (player->viewrollangle != 0 || lastviewrollangle != 0)
 	{
 		fixed_t rol = AngleFixed(player->viewrollangle);
 		atransform.rollangle = FIXED_TO_FLOAT(rol);
@@ -5969,7 +5965,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	//------------------------------------------------------------------------
 	HWR_ClearView(); // Clears the depth buffer and resets the view I believe
 
-
 	if (!skybox && drawsky) // Don't draw the regular sky if there's a skybox
 		HWR_DrawSkyBackground(player);
 
@@ -5977,7 +5972,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	drawsky = splitscreen;
 
 	HWR_ClearSprites();
-
 
 	drawcount = 0;
 
@@ -6002,7 +5996,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	HWR_RenderBSPNode((INT32)numnodes-1);
 
 	PS_STOP_TIMING(ps_bsptime);
-
 
 	if (cv_glbatching.value)
 		HWR_RenderBatches();
@@ -6032,13 +6025,11 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 		HWR_CreateDrawNodes();
 	}
 
-
 	if (HWR_IsWireframeMode())
 		HWD.pfnSetSpecialState(HWD_SET_WIREFRAME, 0);
 
 	HWD.pfnSetTransform(NULL);
 	HWD.pfnUnSetShader();
-
 
 	HWR_DoPostProcessor(player);
 
@@ -6048,6 +6039,8 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	// added by Hurdler for correct splitscreen
 	// moved here by hurdler so it works with the new near clipping plane
 	HWD.pfnGClipRect(0, 0, vid.width, vid.height, NZCLIP_PLANE);
+
+	lastviewrollangle = player->viewrollangle;
 }
 
 // Returns whether palette rendering is "actually enabled."
