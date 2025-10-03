@@ -1302,6 +1302,7 @@ static menuitem_t OP_SoundAdvancedMenu[] =
 	{IT_HEADER, NULL, "Miscellaneous", NULL,  NULL, OPENMPT_MENUOFFSET},
 	{IT_STRING | IT_CVAR,  NULL,  "Play SFX if Unfocused", NULL,  &cv_playsoundsifunfocused,  OPENMPT_MENUOFFSET+10},
 	{IT_STRING | IT_CVAR,  NULL,  "Play Music if Unfocused", NULL,  &cv_playmusicifunfocused, OPENMPT_MENUOFFSET+20},
+	{IT_STRING | IT_CVAR,  NULL,  "Play Title Screen Music", NULL,  &cv_playtitlescreenmusic, OPENMPT_MENUOFFSET+30},
 };
 
 #undef OPENMPT_MENUOFFSET

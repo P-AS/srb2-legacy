@@ -117,6 +117,7 @@ consvar_t cv_musicpref = CVAR_INIT ("musicpref", "Digital", "Preferred type of m
 // Window focus sound sytem toggles
 consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused", "No", "Play music if game window is not focused", CV_SAVE, CV_YesNo, NULL);
 consvar_t cv_playsoundsifunfocused = CVAR_INIT ("playsoundsifunfocused", "No", "Play sound effects if game window is not focused", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_playtitlescreenmusic = CVAR_INIT ("playtitlescreenmusic", "Yes", "Enable/Disable title screen music", CV_SAVE, CV_YesNo, NULL);
 
 #ifdef HAVE_OPENMPT
 openmpt_module *openmpt_mhandle = NULL;
@@ -280,6 +281,7 @@ void S_RegisterSoundStuff(void)
 	CV_RegisterVar(&cv_resetmusic);
 	CV_RegisterVar(&cv_playsoundsifunfocused);
 	CV_RegisterVar(&cv_playmusicifunfocused);
+	CV_RegisterVar(&cv_playtitlescreenmusic);
 	CV_RegisterVar(&cv_gamesounds);
 	CV_RegisterVar(&cv_gamedigimusic);
 	CV_RegisterVar(&cv_gamemidimusic);
@@ -1438,6 +1440,9 @@ static void S_UnloadMusic(void)
 
 static boolean S_PlayMusic(boolean looping, UINT32 fadeinms)
 {
+	if (!cv_playtitlescreenmusic.value && (gamestate == GS_TITLESCREEN))
+		return true;
+
 	if (S_MusicDisabled())
 		return false;
 
