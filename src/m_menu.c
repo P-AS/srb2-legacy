@@ -1322,6 +1322,7 @@ static menuitem_t OP_SoundAdvancedMenu[] =
 	{IT_HEADER, NULL, "Miscellaneous", NULL,  NULL, OPENMPT_MENUOFFSET},
 	{IT_STRING | IT_CVAR,  NULL,  "Play SFX if Unfocused", NULL,  &cv_playsoundsifunfocused,  OPENMPT_MENUOFFSET+10},
 	{IT_STRING | IT_CVAR,  NULL,  "Play Music if Unfocused", NULL,  &cv_playmusicifunfocused, OPENMPT_MENUOFFSET+20},
+	{IT_STRING | IT_CVAR,  NULL,  "Play Title Screen Music", NULL,  &cv_playtitlescreenmusic, OPENMPT_MENUOFFSET+30},
 };
 
 #undef OPENMPT_MENUOFFSET
@@ -2769,12 +2770,17 @@ void M_Drawer(void)
 			}
 			else
 			{
-				char *menucompnote = Z_StrDup(compnote);
-				if(strlen(compnote) > 15) // Don't want it to potentially cross over into the menu, somewhat of a magic number but ehh it works on most resolutions
+				char *menucompnote = Z_Malloc(19, PU_STATIC, NULL);
+				if (strlen(compnote) > 15) // Don't want it to potentially cross over into the menu, somewhat of a magic number but ehh it works on most resolutions
 				{
-				   strncpy(menucompnote, compnote, 15);
-				   menucompnote[15] = '\0';
-				   strcat(menucompnote, "...");
+					strncpy(menucompnote, compnote, 15);
+					menucompnote[15] = '\0';
+					strcat(menucompnote, "...");
+				}
+				else
+				{
+					strncpy(menucompnote, compnote, 18);
+					menucompnote[18] = '\0';
 				}
 #ifdef DEVELOP // Development -- show revision / branch info
 				V_DrawThinString(vid.dupx, vid.height - 17*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);

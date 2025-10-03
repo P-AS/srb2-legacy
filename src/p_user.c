@@ -7733,7 +7733,9 @@ consvar_t cv_cam2_rotspeed = CVAR_INIT ("cam2_rotspeed", "10", NULL, CV_SAVE, ro
 consvar_t cv_cam2_orbit = CVAR_INIT ("cam2_orbit", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_cam2_adjust = CVAR_INIT ("cam2_adjust", "On", NULL, CV_SAVE|CV_SHOWMODIF, CV_OnOff, NULL);
 
-consvar_t cv_viewroll = CVAR_INIT ("viewroll", "Off", "Tilt camera on slopes, in the direction of the slope", CV_SAVE, CV_OnOff, NULL);
+static CV_PossibleValue_t CV_ViewRoll[] = { {0, "Off"}, {1, "On"}, {2, "First-Person"}, {0, NULL} };
+
+consvar_t cv_viewroll = CVAR_INIT ("viewroll", "Off", "Tilt camera on slopes, in the direction of the slope", CV_SAVE, CV_ViewRoll, NULL);
 consvar_t cv_quakeiiiarena = CVAR_INIT ("earthquake", "On", "Roll camera up and down during earthquake", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_quakeiv = CVAR_INIT ("quakeroll", "Off", "Tilt camera when moving side to side, resembling Quake", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_quakelive = CVAR_INIT ("windowquake", "Off", "Shake the game window during earthquakes", CV_SAVE, CV_OnOff, NULL);
@@ -8670,14 +8672,14 @@ Quaketilt (player_t *player)
 	return moma;
 }
 
-
 static void
 DoABarrelRoll (player_t *player)
 {
 	angle_t slope;
 	angle_t delta;
+	bool useviewroll = (cv_viewroll.value == 1 || (cv_viewroll.value == 2 && !cv_chasecam.value));
 
-	if (player->mo->standingslope)
+	if (player->mo->standingslope && useviewroll)
 	{
 		slope = player->mo->standingslope->zangle;
 	}
@@ -8686,8 +8688,7 @@ DoABarrelRoll (player_t *player)
 		slope = 0;
 	}
 
-
-	if (player->mo->standingslope && cv_viewroll.value && (abs((INT32)slope) > ANGLE_11hh))
+	if (player->mo->standingslope && useviewroll && (abs((INT32)slope) > ANGLE_11hh))
 	{
 		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
 		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT), slope));
@@ -8695,7 +8696,7 @@ DoABarrelRoll (player_t *player)
 	else
 		slope = 0;
 
-	if(cv_quakeiv.value && cv_viewroll.value)
+	if (cv_quakeiv.value && useviewroll)
 	{
 		slope -= Quaketilt(player);
 	}
@@ -8707,11 +8708,9 @@ DoABarrelRoll (player_t *player)
 	else
 		player->viewrollangle  = slope;
 
-	if(cv_viewroll.value && cv_quakeiiiarena.value)
+	if (useviewroll && cv_quakeiiiarena.value)
 		player->viewrollangle += quake.roll;
 }
-
-
 
 //
 // P_PlayerThink
@@ -9293,14 +9292,10 @@ void P_PlayerThink(player_t *player)
 
 		I_Error("I'm done!\n");
 	}*/
-	if (cv_viewroll.value)
-	{
+	if (cv_viewroll.value != 0)
 		DoABarrelRoll(player);
-	}
 	else
-	{
 		player->viewrollangle = 0;
-	}
 }
 
 //
