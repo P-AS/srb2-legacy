@@ -2429,7 +2429,7 @@ INT32 I_StartupSystem(void)
 	 SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
-#if SDL_VERSION_ATLEAST(2,0,22)
+#if SDL_VERSION_ATLEAST(2,0,18)
 	SDL_SetHint(SDL_HINT_APP_NAME, "SRB2 Legacy");
 #endif
 	if (SDL_Init(0) < 0)
