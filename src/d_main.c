@@ -1334,7 +1334,6 @@ void D_SRB2Main(void)
 	HU_Init();
 
 	COM_Init();
-	// libogc has a CON_Init function, we must rename SRB2's CON_Init in WII/libogc
 	CON_Init();
 
 	D_RegisterServerCommands();
