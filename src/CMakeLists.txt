@@ -40,8 +40,8 @@ endif()
 
 if(${CMAKE_SYSTEM} MATCHES Emscripten)
 	set(SRB2_CONFIG_HWRENDER OFF)
+	set(SRB2_CONFIG_EXECINFO OFF)
 endif()
-
 
 ### use internal libraries?
 if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
@@ -130,7 +130,7 @@ if(${SRB2_CONFIG_HAVE_PNG} AND ${SRB2_CONFIG_HAVE_ZLIB})
 				set(PNG_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libpng-src/projects -lpng32")
 			endif()
 		elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
-		set(PNG_FOUND ON)
+			set(PNG_FOUND ON)
 		else()
 			find_package(PNG)
 		endif()
@@ -180,7 +180,7 @@ if(${SRB2_CONFIG_HWRENDER} AND ${SRB2_CONFIG_STATIC_OPENGL})
 	endif()
 endif()
 
-if(${SRB2_CONFIG_EXECINFO} AND NOT ${CMAKE_SYSTEM} MATCHES Emscripten)
+if(${SRB2_CONFIG_EXECINFO})
 else()
 	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
 	message(STATUS "You have disabled stack trace dump support")
@@ -231,7 +231,6 @@ if(${CMAKE_SYSTEM} MATCHES Emscripten)
 	add_subdirectory(web)
 endif()
 
-
 if(${CMAKE_SYSTEM} MATCHES Windows)
 	add_subdirectory(win32)
 endif()
@@ -254,4 +253,4 @@ if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
 			COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
 		)
 	endif()
-endif()										
+endif()

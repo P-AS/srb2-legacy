@@ -702,9 +702,7 @@ static void D_RunFrame(void)
 			capbudget = (precise_t) budget;
 		}
 
-
 		I_UpdateTime(cv_timescale.value);
-
 
 		if (lastwipetic)
 		{
@@ -716,7 +714,6 @@ static void D_RunFrame(void)
 		entertic = I_GetTime();
 		realtics = entertic - oldentertics;
 		oldentertics = entertic;
-
 
 		if (demoplayback && gamestate == GS_LEVEL)
 		{
@@ -829,7 +826,6 @@ static void D_RunFrame(void)
 
 		LUA_Step();
 
-
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
 		if (!singletics)
@@ -848,6 +844,14 @@ static void D_RunFrame(void)
 		finishprecise = I_GetPreciseTime();
 		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
 		deltatics = deltasecs * NEWTICRATE;
+
+#ifndef __EMSCRIPTEN__
+		// Only take screenshots after drawing.
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot)
+			M_DoScreenShot();
+#endif
 	}
 	return;
 }

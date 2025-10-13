@@ -319,7 +319,7 @@ const char *I_GetPlatform(void);
 
 /** \brief Mount IndexedDB filesystem for WASM on program start, does nothing elsewhere
 */
-FUNCINLINE static ATTRINLINE void I_MountIDBFS(void) 
+FUNCINLINE static ATTRINLINE void I_MountIDBFS(void)
 {
 #ifdef __EMSCRIPTEN__
 	EM_ASM(
@@ -327,12 +327,12 @@ FUNCINLINE static ATTRINLINE void I_MountIDBFS(void)
 		{
 			if (!FS.analyzePath('/home').exists) FS.mkdir('/home');
 			if (!FS.analyzePath('/home/web_user').exists) FS.mkdir('/home/web_user');
-			FS.mount(IDBFS, {}, '/home/web_user'); // Emscripten home directory		
+			FS.mount(IDBFS, {}, '/home/web_user'); // Emscripten home directory
 			FS.syncfs(true, function (err) {
 			console.log(err);
 			Module.ccall("main_program", 'number', [], [], {async: true});
         	});
-		} 
+		}
 		catch (err)
 		{
 			console.log(err);
@@ -349,12 +349,11 @@ FUNCINLINE static ATTRINLINE void I_SyncIDBFS(void)
 {
 #ifdef __EMSCRIPTEN__
 	EM_ASM(
-		FS.syncfs(function (err) { 
+		FS.syncfs(function (err) {
 		console.log(err); }
 	);
 	);
 #endif
 }
-
 
 #endif

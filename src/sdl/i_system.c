@@ -84,7 +84,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 #if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
 #include <time.h>
-#if defined (__linux__) || defined(__EMSCRIPTEN__) 
+#if defined (__linux__) || defined(__EMSCRIPTEN__)
 #include <sys/vfs.h>
 #else
 #include <sys/param.h>
@@ -940,7 +940,6 @@ void I_OutputMsg(const char *fmt, ...)
 		tty_Hide();
 	}
 #endif
-
 
 #ifdef __EMSCRIPTEN__
 	fprintf(stdout, "%s", txt);
@@ -2284,7 +2283,7 @@ void I_Sleep(UINT32 ms)
 
 void I_SleepDuration(precise_t duration)
 {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__OPENBSD__) || defined(__EMSCRIPTEN__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__OpenBSD__) || defined(__EMSCRIPTEN__)
 	UINT64 precision = I_GetPrecisePrecision();
 	precise_t dest = I_GetPreciseTime() + duration;
 #ifdef __OpenBSD__
@@ -2889,7 +2888,6 @@ const char *I_ClipboardPaste(void)
 	}
 	return (const char *)&clipboard_modified;
 }
-
 
 /**	\brief	The isWadPathOk function
 
