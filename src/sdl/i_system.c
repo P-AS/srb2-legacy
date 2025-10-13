@@ -2444,7 +2444,7 @@ INT32 I_StartupSystem(void)
 	 SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
-#if SDL_VERSION_ATLEAST(2,0,22)
+#if SDL_VERSION_ATLEAST(2,0,18)
 	SDL_SetHint(SDL_HINT_APP_NAME, "SRB2 Legacy");
 #endif
 	if (SDL_Init(0) < 0)
@@ -2561,7 +2561,7 @@ void I_Error(const char *error, ...)
 		if (errorcount > 20)
 		{
 			va_start(argptr, error);
-			vsprintf(buffer, error, argptr);
+			vsnprintf(buffer, 8192, error, argptr);
 			va_end(argptr);
 			// Implement message box with SDL_ShowSimpleMessageBox,
 			// which should fail gracefully if it can't put a message box up
@@ -2580,7 +2580,7 @@ void I_Error(const char *error, ...)
 
 	// Display error message in the console before we start shutting it down
 	va_start(argptr, error);
-	vsprintf(buffer, error, argptr);
+	vsnprintf(buffer, 8192, error, argptr);
 	va_end(argptr);
 	I_OutputMsg("\nI_Error(): %s\n", buffer);
 	// ---
