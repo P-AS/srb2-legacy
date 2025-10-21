@@ -1528,8 +1528,7 @@ static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resoluti
 	{IT_STRING, NULL, "Upstream SRB2 Contributors", NULL, NULL, 142},
 	{IT_STRING, NULL, "SRB2 Classic", NULL, NULL, 152},
 	{IT_STRING, NULL, "SRB2Kart: Saturn", NULL, NULL, 162},
-	{IT_STRING, NULL, "The Gaming Den", NULL, NULL, 172},  // srb2-legacy Co-op server
-	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  182}, // Netgame testing and feature ideas
+	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  172}, // Netgame testing and feature ideas
 };
 
 static void M_LegacyCreditsToolTips(void)
