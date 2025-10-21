@@ -338,6 +338,7 @@ int I_OpenURL(const char *url)
 	return SDL_OpenURL(va("%s", url));
 #else	
 	return -1;
+#endif
 }  
 
 static void I_ReportSignal(int num, int coredumped)
