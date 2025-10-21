@@ -313,5 +313,8 @@ void I_CursedWindowMovement(int xd, int yd);
 */
 const char *I_GetPlatform(void);
 
+/** \brief Open A URL
+*/
+int I_OpenURL(const char *url);
 
 #endif

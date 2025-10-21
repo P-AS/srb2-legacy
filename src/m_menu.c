@@ -286,7 +286,7 @@ static patch_t *addonsp[NUM_EXT+5];
 // Legacy
 menu_t OP_LegacyOptionsDef;
 menu_t OP_LegacyCreditsDef;
-static void M_LegacyReportIssue();
+static void M_LegacyReportIssue(void);
 
 #define numaddonsshown 4
 
@@ -7921,15 +7921,12 @@ static void M_ScreenshotOptions(INT32 choice)
 // LEGACY MENU
 // ===========
 
-static void M_LegacyReportIssue()
+static void M_LegacyReportIssue(void)
 {
-#if defined(HAVE_SDL)
-#if SDL_VERSION_ATLEAST(2,0,14)
-	SDL_OpenURL("https://github.com/P-AS/srb2-legacy/issues");
-#else
-	M_StartMessage(M_GetText("Open the following in your web browser:\ngithub.com/P-AS/srb2-legacy/issues\n\n(Press a key)\n"), NULL, MM_NOTHING);
-#endif
-#endif
+	int url = I_OpenURL("https://github.com/P-AS/srb2-legacy/issues");
+
+	if (url == -1) // SDL_OpenURL unsupported or failed
+		M_StartMessage(M_GetText("Open the following in your web browser:\ngithub.com/P-AS/srb2-legacy/issues\n\n(Press a key)\n"), NULL, MM_NOTHING);
 }
 
 // =============
