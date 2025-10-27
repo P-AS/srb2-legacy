@@ -177,7 +177,7 @@ consvar_t cv_flipcam2 = CVAR_INIT ("flipcam2", "No", "Flip the camera with chang
 consvar_t cv_shadow = CVAR_INIT ("shadow", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_shadowoffs = CVAR_INIT ("offsetshadows", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_skybox = CVAR_INIT ("skybox", "On", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_skydome = CVAR_INIT ("skydome", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_skydome = CVAR_INIT ("skydome", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_ffloorclip =  CVAR_INIT("r_ffloorclip", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_spriteclip = CVAR_INIT ("r_spriteclip", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", NULL, CV_NETVAR, CV_OnOff, NULL);
@@ -1101,7 +1101,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 {
 	camera_t *thiscam;
 	boolean chasecam = R_ViewpointHasChasecam(player);
-	
+
 	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])
 		thiscam = &camera2;
 	else
@@ -1449,7 +1449,7 @@ boolean R_ViewpointHasChasecam(player_t *player)
 		chasecam = true; // force chasecam on
 	else if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off
-		
+
 	if (chasecam && !thiscam->chase)
 	{
 		P_ResetCamera(player, thiscam);
@@ -1460,7 +1460,7 @@ boolean R_ViewpointHasChasecam(player_t *player)
 		P_ResetCamera(player, thiscam);
 		thiscam->chase = false;
 	}
-	
+
 	if (isplayer2)
 	{
 		R_SetViewContext(VIEWCONTEXT_PLAYER2);

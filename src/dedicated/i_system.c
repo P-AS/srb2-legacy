@@ -2029,3 +2029,9 @@ boolean I_InitNetwork(void)
 	// this must exist, but this is actually handled in i_tcp.c
 	return false;
 }
+
+int I_OpenURL(const char *url)
+{
+	(void)url; 
+	return -1;
+}
