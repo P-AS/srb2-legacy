@@ -149,9 +149,10 @@ void I_StartupSound(void)
 {
 	I_Assert(!sound_started);
 
-#ifdef _WIN32
+#if defined(_WIN32) && !SDL_VERSION_ATLEAST(2,26,5)
 	// Force DirectSound instead of WASAPI
 	// SDL 2.0.6+ defaults to the latter and it screws up our sound effects
+	// SDL 2.26.5 brought imrovements to resampling so this just screws up other stuff now
 	SDL_setenv("SDL_AUDIODRIVER", "directsound", 1);
 #endif
 
@@ -183,6 +184,16 @@ void I_StartupSound(void)
 		// call to start audio failed -- we do not have it
 		return;
 	}
+
+	SDL_version SDLmixcompiled;
+	const SDL_version *SDLmixlinked;
+	SDL_MIXER_VERSION(&SDLmixcompiled)
+	SDLmixlinked = Mix_Linked_Version();
+
+	I_OutputMsg("Compiled for SDL_mixer version: %d.%d.%d\n",
+				SDLmixcompiled.major, SDLmixcompiled.minor, SDLmixcompiled.patch);
+	I_OutputMsg("Linked with SDL_mixer version: %d.%d.%d\n",
+				SDLmixlinked->major, SDLmixlinked->minor, SDLmixlinked->patch);
 
 #ifdef HAVE_OPENMPT
 	CONS_Printf("libopenmpt version: %s\n", openmpt_get_string("library_version"));

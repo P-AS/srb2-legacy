@@ -343,59 +343,100 @@ static void write_backtrace(INT32 signal)
 
 #endif // UNIXBACKTRACE
 
+int I_OpenURL(const char *url)
+{
+#if SDL_VERSION_ATLEAST(2,0,14)
+	return SDL_OpenURL(va("%s", url));
+#else	
+	return -1;
+#endif
+}  
+
 static void I_ReportSignal(int num, int coredumped)
 {
 	//static char msg[] = "oh no! back to reality!\r\n";
-	const char *      sigmsg;
-	char msg[128];
+	const char *sigmsg, *signame;
+	char ttl[128];
+	char sigttl[512] = "Process killed by signal: ";
+	const char *reportmsg = "\n\nIf this consistently happens, please report an issue so it can be fixed.\n\nSorry for the inconvenience!";
 
 	switch (num)
 	{
 //	case SIGINT:
-//		sigmsg = "SIGINT - interrupted";
+//		sigttl = "SIGINT"
+//		sigmsg = "SRB2 was interrupted prematurely by the user.";
 //		break;
 	case SIGILL:
-		sigmsg = "SIGILL - illegal instruction - invalid function image";
+		sigmsg = "SRB2 has attempted to execute an illegal instruction and needs to close.";
+		signame = "SIGILL"; // illegal instruction - invalid function image
 		break;
 	case SIGFPE:
-		sigmsg = "SIGFPE - mathematical exception";
+		sigmsg = "SRB2 has encountered a mathematical exception and needs to close.";
+		signame = "SIGFPE"; // mathematical exception
 		break;
 	case SIGSEGV:
-		sigmsg = "SIGSEGV - segment violation";
+		sigmsg = "SRB2 has attempted to access a memory location that it shouldn't and needs to close.";
+		signame = "SIGSEGV"; // segment violation
 		break;
 //	case SIGTERM:
-//		sigmsg = "SIGTERM - Software termination signal from kill";
+//		sigmsg = "SRB2 was terminated by a kill signal.";
+//		sigttl = "SIGTERM"; // Software termination signal from kill
 //		break;
 //	case SIGBREAK:
-//		sigmsg = "SIGBREAK - Ctrl-Break sequence";
+//		sigmsg = "SRB2 was terminated by a Ctrl-Break sequence.";
+//		sigttl = "SIGBREAK" // Ctrl-Break sequence
 //		break;
 	case SIGABRT:
-		sigmsg = "SIGABRT - abnormal termination triggered by abort call";
+		sigmsg = "SRB2 was terminated by an abort signal.";
+		signame = "SIGABRT"; // abnormal termination triggered by abort call
 		break;
 	default:
-		sprintf(msg,"signal number %d", num);
+		sigmsg = "SRB2 was terminated by an unknown signal.";
+
+		sprintf(ttl, "number %d", num);
 		if (coredumped)
-			sigmsg = 0;
+			signame = 0;
 		else
-			sigmsg = msg;
+			signame = ttl;
 	}
 
 	if (coredumped)
 	{
-		if (sigmsg)
-			sprintf(msg, "%s (core dumped)", sigmsg);
+		if (signame)
+			sprintf(ttl, "%s (core dumped)", signame);
 		else
-			strcat(msg, " (core dumped)");
+			strcat(ttl, " (core dumped)");
 
-		sigmsg = msg;
+		signame = ttl;
 	}
 
-	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
+	strcat(sigttl, signame);
+	I_OutputMsg("%s\n", sigttl);
 
-	if (!M_CheckParm("-dedicated"))
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-			"Process killed by signal",
-			sigmsg, NULL);
+	if (M_CheckParm("-dedicated"))
+		return;
+
+	const SDL_MessageBoxButtonData buttons[] = {
+		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0,		"OK" },
+		{ 										0, 1,  "Report an Issue" },
+	};
+
+	const SDL_MessageBoxData messageboxdata = {
+		SDL_MESSAGEBOX_ERROR, /* .flags */
+		NULL, /* .window */
+		sigttl, /* .title */
+		va("%s %s", sigmsg, reportmsg), /* .message */
+		SDL_arraysize(buttons), /* .numbuttons */
+		buttons, /* .buttons */
+		NULL /* .colorScheme */
+	};
+
+	int buttonid;
+
+	SDL_ShowMessageBox(&messageboxdata, &buttonid);
+
+	if (buttonid == 1)
+		I_OpenURL("https://github.com/P-AS/srb2-legacy/issues");
 }
 
 #ifndef NEWSIGNALHANDLER

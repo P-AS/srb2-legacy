@@ -283,8 +283,10 @@ static void M_Addons(INT32 choice);
 static void M_AddonsOptions(INT32 choice);
 static patch_t *addonsp[NUM_EXT+5];
 
+// Legacy
 menu_t OP_LegacyOptionsDef;
 menu_t OP_LegacyCreditsDef;
+static void M_LegacyReportIssue(void);
 
 #define numaddonsshown 4
 
@@ -1500,14 +1502,17 @@ static menuitem_t OP_MonitorToggleMenu[] =
 
 static menuitem_t OP_LegacyOptionsMenu[] =
 {
-	{IT_HEADER|IT_STRING, NULL, "Screen Tilting", NULL,  NULL, 15},
-	{IT_CVAR|IT_STRING, NULL, "Screen Tilting", NULL,  &cv_viewroll, 	  20},
-	{IT_CVAR|IT_STRING, NULL, "Earthquake Screen Shaking", NULL,  &cv_quakeiiiarena,  25},
-	{IT_CVAR|IT_STRING, NULL, "Quake Viewroll", NULL,    &cv_quakeiv, 30},
-	{IT_HEADER|IT_STRING, NULL, "System", NULL,  NULL, 35},
-	{IT_CVAR|IT_STRING, NULL, "Window Shaking", NULL,    &cv_quakelive, 40},
+	{IT_HEADER|IT_STRING, NULL, "Screen Tilting", NULL, NULL, 10},
+	{IT_CVAR|IT_STRING,   NULL, "Screen Tilting", NULL, &cv_viewroll, 20},
+	{IT_CVAR|IT_STRING,   NULL, "Earthquake Screen Shaking", NULL, &cv_quakeiiiarena, 30},
+	{IT_CVAR|IT_STRING,   NULL, "Quake Viewroll", NULL, &cv_quakeiv, 40},
 
-	{IT_SUBMENU|IT_STRING, NULL, 	"Credits",  NULL, 		&OP_LegacyCreditsDef, 50},
+	{IT_HEADER|IT_STRING, NULL, "System", NULL,  NULL, 50},
+	{IT_CVAR|IT_STRING,   NULL, "Window Shaking", NULL, &cv_quakelive, 60},
+
+	{IT_HEADER|IT_STRING,  NULL, "About", NULL, NULL, 70},
+	{IT_SUBMENU|IT_STRING, NULL, "Credits", NULL, &OP_LegacyCreditsDef, 80},
+	{IT_STRING|IT_CALL, NULL, "Report an Issue", "If you found a problem with SRB2 Legacy or have a suggestion, here is where to go.", M_LegacyReportIssue, 90},
 };
 
 static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resolution
@@ -1527,9 +1532,8 @@ static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resoluti
 	{IT_HEADER|IT_STRING, NULL, "Special Thanks:", NULL,  NULL, 132},
 	{IT_STRING, NULL, "Upstream SRB2 Contributors", NULL, NULL, 142},
 	{IT_STRING, NULL, "SRB2 Classic", NULL, NULL, 152},
-	{IT_STRING, NULL, "SRB2Kart: Saturn", NULL, NULL, 162},
-	{IT_STRING, NULL, "The Gaming Den", NULL, NULL, 172},  // srb2-legacy Co-op server
-	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  182}, // Netgame testing and feature ideas
+	{IT_STRING, NULL, "SRB2Kart-Saturn", NULL, NULL, 162},
+	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  172}, // Netgame testing and feature ideas
 };
 
 static void M_LegacyCreditsToolTips(void)
@@ -1893,7 +1897,7 @@ menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE("M_DATA", OP_DataOptionsMenu, &OP_Ma
 menu_t OP_ScreenshotOptionsDef = DEFAULTSCROLLMENUSTYLE("M_DATA", OP_ScreenshotOptionsMenu, &OP_DataOptionsDef, 30, 30);
 menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE("M_ADDONS", OP_AddonsOptionsMenu, &OP_MainDef, 30, 30);
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE("M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
-menu_t OP_LegacyOptionsDef = DEFAULTSCROLLMENUSTYLE(NULL, OP_LegacyOptionsMenu, &OP_MainDef, 30, 30);
+menu_t OP_LegacyOptionsDef = DEFAULTMENUSTYLE(NULL, OP_LegacyOptionsMenu, &OP_MainDef, 30, 30);
 menu_t OP_LegacyCreditsDef = DEFAULTMENUSTYLE(NULL, OP_LegacyCreditsMenu, &OP_LegacyOptionsDef, 30, 0);
 
 // ==========================================================================
@@ -7911,6 +7915,18 @@ static void M_ScreenshotOptions(INT32 choice)
 	Moviemode_mode_Onchange();
 
 	M_SetupNextMenu(&OP_ScreenshotOptionsDef);
+}
+
+// ===========
+// LEGACY MENU
+// ===========
+
+static void M_LegacyReportIssue(void)
+{
+	int url = I_OpenURL("https://github.com/P-AS/srb2-legacy/issues");
+
+	if (url == -1) // SDL_OpenURL unsupported or failed
+		M_StartMessage(M_GetText("Open the following in your web browser:\ngithub.com/P-AS/srb2-legacy/issues\n\n(Press a key)\n"), NULL, MM_NOTHING);
 }
 
 // =============

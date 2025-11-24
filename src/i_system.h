@@ -323,7 +323,7 @@ FUNCINLINE static ATTRINLINE void I_MountIDBFS(void)
 {
 #ifdef __EMSCRIPTEN__
 	EM_ASM(
-       	try
+		try
 		{
 			if (!FS.analyzePath('/home').exists) FS.mkdir('/home');
 			if (!FS.analyzePath('/home/web_user').exists) FS.mkdir('/home/web_user');
@@ -355,5 +355,9 @@ FUNCINLINE static ATTRINLINE void I_SyncIDBFS(void)
 	);
 #endif
 }
+
+/** \brief Open A URL
+*/
+int I_OpenURL(const char *url);
 
 #endif
