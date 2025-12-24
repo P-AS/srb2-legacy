@@ -556,7 +556,6 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 	fseek(handle, LONG(zend.cdiroffset), SEEK_SET);
 	for (i = 0; i < numlumps; i++, lump_p++)
 	{
-		size_t fullnamelen;
 		char* fullname;
 		char* trimname;
 		char* dotpos;
@@ -578,10 +577,8 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 		lump_p->disksize = LONG(zentry.compsize);
 		lump_p->size = LONG(zentry.size);
 
-		fullnamelen = SHORT(zentry.namelen);
-
-		fullname = malloc(fullnamelen + 1);
-		if (fgets(fullname, fullnamelen + 1, handle) != fullname)
+		fullname = malloc(SHORT(zentry.namelen) + 1);
+		if (fgets(fullname, SHORT(zentry.namelen) + 1, handle) != fullname)
 		{
 			CONS_Alert(CONS_ERROR, "Unable to read lumpname (%s)\n", M_FileError(handle));
 			Z_Free(lumpinfo);
@@ -1909,7 +1906,6 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, boolean status)
 	fseek(fp, LONG(zend.cdiroffset), SEEK_SET);
 	for (i = 0; i < numlumps; i++)
 	{
-		size_t fullnamelen;
 		char* fullname;
 		char* trimname;
 		char* dotpos;
@@ -1921,10 +1917,8 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, boolean status)
 
 		if (verified == true)
 		{
-			fullnamelen = SHORT(zentry.namelen);
-
-			fullname = malloc(fullnamelen + 1);
-			if (fgets(fullname, fullnamelen + 1, fp) != fullname)
+			fullname = malloc(SHORT(zentry.namelen) + 1);
+			if (fgets(fullname, SHORT(zentry.namelen) + 1, fp) != fullname)
 			{
 				free(fullname);
 				return true;
