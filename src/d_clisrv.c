@@ -3646,7 +3646,7 @@ FILESTAMP
 				}
 			}
 			break;
-		
+
 		case PT_BASICKEEPALIVE:
 			if (client)
 				break;
@@ -3781,7 +3781,7 @@ FILESTAMP
 			}
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
-			break;	
+			break;
 		case PT_ASKLUAFILE:
 			if (server && luafiletransfers && luafiletransfers->nodestatus[node] == LFTNS_ASKED)
 			{
@@ -4351,7 +4351,7 @@ void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
 // create missed tic
 static void SV_Maketic(void)
 {
-	G_MoveTiccmd(netcmds[maketic % BACKUPTICS], playercmds, MAXPLAYERS);
+	G_CopyTiccmd(netcmds[maketic % BACKUPTICS], playercmds, MAXPLAYERS);
 	// all tic are now proceed make the next
 	maketic++;
 }
