@@ -1158,9 +1158,15 @@ void OP_ObjectplaceMovement(player_t *player)
 	}
 
 	if (cmd->buttons & BT_WEAPONPREV)
+	{
 		OP_CycleThings(-1);
+		player->pflags |= PF_ATTACKDOWN;
+	}
 	else if (cmd->buttons & BT_WEAPONNEXT)
+	{
 		OP_CycleThings(1);
+		player->pflags |= PF_ATTACKDOWN;
+	}
 
 	// Place an object and add it to the maplist
 	if (cmd->buttons & BT_ATTACK)
