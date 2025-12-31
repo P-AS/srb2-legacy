@@ -905,11 +905,15 @@ static void Impl_HandleTouchEvent(SDL_TouchFingerEvent evt)
 
 	INT32 screenx = -1;
 	INT32 screeny = -1;
+	INT32 deltax, deltay;
 
 	if (touchx >= 0.0 && touchx <= 1.0)
 		screenx = touchx * vid.width;
 	if (touchy >= 0.0 && touchy <= 1.0)
 		screeny = touchy * vid.height;
+
+	deltax = evt.dx * vid.width;
+	deltay = -evt.dy * vid.height;
 
 	finger = (INT32)evt.fingerId;
 	if (finger >= NUMTOUCHFINGERS)
@@ -966,6 +970,14 @@ static void Impl_HandleTouchEvent(SDL_TouchFingerEvent evt)
 					event.data1 = screenx;
 					event.data2 = screeny;
 					event.data3 = finger;
+
+					// calculate correct delta
+					{
+						int wwidth, wheight;
+						SDL_GetWindowSize(window, &wwidth, &wheight);
+						event.extradata[0] = (INT32)lround(deltax * ((float)wwidth / (float)realwidth));
+						event.extradata[1] = (INT32)lround(deltay * ((float)wheight / (float)realheight));
+					}
 				}
 				break;
 			default:

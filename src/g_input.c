@@ -43,7 +43,6 @@ INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymo
 // current state of the keys: true if pushed
 UINT8 gamekeydown[NUMINPUTS];
 
-// Lactozilla: Touch input
 #ifdef TOUCHINPUTS
 // Finger data
 touchfinger_t touchfingers[NUMTOUCHFINGERS];
@@ -54,15 +53,20 @@ touchconfig_t touchnavigation[NUMKEYS];
 
 // Input variables
 INT32 touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h;
-INT32 touchnav_dpad_x, touchnav_dpad_y, touchnav_dpad_w, touchnav_dpad_h;
 
 // Touch screen settings
 boolean touch_dpad_tiny;
-boolean touch_dpad_menu;
+boolean touch_camera;
 
 // Console variables for the touch screen
 consvar_t cv_dpadtiny = {"touch_dpad_tiny", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_menudpad = {"touch_dpad_menu", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchcamera = {"touch_camera", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+
+// Touch screen sensitivity
+#define MAXTOUCHSENSITIVITY 100 // sensitivity steps
+static CV_PossibleValue_t touchsens_cons_t[] = {{1, "MIN"}, {MAXTOUCHSENSITIVITY, "MAX"}, {0, NULL}};
+consvar_t cv_touchsens = {"touchsens", "40", CV_SAVE, touchsens_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchysens = {"touchysens", "45", CV_SAVE, mousesens_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 #endif
 
 // two key codes (or virtual key) per game control
@@ -109,7 +113,11 @@ void G_MapEventsToControls(event_t *ev)
 	UINT8 flag;
 
 #ifdef TOUCHINPUTS
+	INT32 x = ev->data1;
+	INT32 y = ev->data2;
+	INT32 finger = ev->data3;
 	INT32 gc;
+	boolean foundbutton = false;
 #endif
 
 	switch (ev->type)
@@ -140,6 +148,10 @@ void G_MapEventsToControls(event_t *ev)
 #ifdef TOUCHINPUTS
 		case ev_touchdown:
 			case ev_touchmotion:
+			// Ignore when the menu, console, or chat window are open
+			if (!G_InGameInput())
+				break;
+
 			// Lactozilla: Find every on-screen button and
 			// check if they are below your finger.
 			// ev->data3 is the finger's ID.
@@ -147,8 +159,6 @@ void G_MapEventsToControls(event_t *ev)
 			for (i = 0; i < num_gamecontrols; i++)
 			{
 				touchconfig_t *butt = &touchcontrols[i];
-				INT32 x = ev->data1;
-				INT32 y = ev->data2;
 
 				// Ignore undefined buttons
 				if (!butt->w)
@@ -157,36 +167,75 @@ void G_MapEventsToControls(event_t *ev)
 				// In a touch motion event, simulate a key up event by clearing gamekeydown.
 				// This is done so that the buttons that are down don't 'stick'
 				// if you move your finger from a button to another.
-				gc = ev->data3; // the finger ID
-				if (ev->type == ev_touchmotion && touchfingers[gc].gamecontrol)
+				gc = finger; // the finger ID
+				if (ev->type == ev_touchmotion && touchfingers[gc].u.gamecontrol)
 				{
 					// Let go of this button.
-					gamekeydown[touchfingers[ev->data3].gamecontrol] = 0;
-					touchfingers[ev->data3].gamecontrol = 0;
+					gamekeydown[touchfingers[finger].u.gamecontrol] = 0;
+					touchfingers[finger].u.gamecontrol = 0;
 				}
 
 				// Check if your finger touches this button.
 				if (G_FingerTouchesButton(x, y, butt))
 				{
+					foundbutton = true;
 					gc = gamecontrol[i][0];
-					touchfingers[ev->data3].x = x;
-					touchfingers[ev->data3].y = y;
-					touchfingers[ev->data3].gamecontrol = gc;
+					touchfingers[finger].x = x;
+					touchfingers[finger].y = y;
+					touchfingers[finger].u.gamecontrol = gc;
 					gamekeydown[gc] = 1;
 					break;
+				}
+			}
+
+			// Check if your finger touches the d-pad area.
+			if (!foundbutton)
+			{
+				touchconfig_t dpad;
+				dpad.x = touch_dpad_x;
+				dpad.y = touch_dpad_y;
+				dpad.w = touch_dpad_w;
+				dpad.h = touch_dpad_h;
+				if (G_FingerTouchesButton(x, y, &dpad))
+					break;
+			}
+
+			// Pretend the finger is moving the camera.
+			if (touch_camera && (!foundbutton))
+			{
+				if (ev->type == ev_touchmotion && touchfingers[finger].type.mouse)
+				{
+					INT32 dx = ev->extradata[0];
+					INT32 dy = ev->extradata[1];
+
+					touchfingers[finger].x = x;
+					touchfingers[finger].y = y;
+
+					mousex = (INT32)(dx*((cv_touchsens.value*cv_touchsens.value)/110.0f + 0.1f));
+					mousey = (INT32)(dy*((cv_touchsens.value*cv_touchsens.value)/110.0f + 0.1f));
+					mlooky = (INT32)(dy*((cv_touchysens.value*cv_touchsens.value)/110.0f + 0.1f));
+				}
+				else
+				{
+					touchfingers[finger].x = x;
+					touchfingers[finger].y = y;
+					touchfingers[finger].type.mouse = 1;
+					touchfingers[finger].u.gamecontrol = -1;
 				}
 			}
 			break;
 
 		case ev_touchup:
 			// Let go of this button.
-			gamekeydown[touchfingers[ev->data3].gamecontrol] = 0;
-			touchfingers[ev->data3].gamecontrol = 0;
+			if (touchfingers[finger].u.gamecontrol >= 0)
+				gamekeydown[touchfingers[finger].u.gamecontrol] = 0;
+			touchfingers[finger].u.gamecontrol = 0;
+			touchfingers[finger].type.mouse = 0;
 			break;
 #endif
 
 		case ev_mouse: // buttons are virtual keys
-			if (menuactive || CON_Ready() || chat_on)
+			if (!G_InGameInput())
 				break;
 			mousex = (INT32)(ev->data2*((cv_mousesens.value*cv_mousesens.value)/110.0f + 0.1f));
 			mousey = (INT32)(ev->data3*((cv_mousesens.value*cv_mousesens.value)/110.0f + 0.1f));
@@ -195,7 +244,7 @@ void G_MapEventsToControls(event_t *ev)
 
 		case ev_joystick: // buttons are virtual keys
 			i = ev->data1;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on)
+			if (i >= JOYAXISSET || !G_InGameInput())
 				break;
 			if (ev->data2 != INT32_MAX) joyxmove[i] = ev->data2;
 			if (ev->data3 != INT32_MAX) joyymove[i] = ev->data3;
@@ -203,14 +252,14 @@ void G_MapEventsToControls(event_t *ev)
 
 		case ev_joystick2: // buttons are virtual keys
 			i = ev->data1;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on)
+			if (i >= JOYAXISSET || !G_InGameInput())
 				break;
 			if (ev->data2 != INT32_MAX) joy2xmove[i] = ev->data2;
 			if (ev->data3 != INT32_MAX) joy2ymove[i] = ev->data3;
 			break;
 
 		case ev_mouse2: // buttons are virtual keys
-			if (menuactive || CON_Ready() || chat_on)
+			if (!G_InGameInput())
 				break;
 			mouse2x = (INT32)(ev->data2*((cv_mousesens2.value*cv_mousesens2.value)/110.0f + 0.1f));
 			mouse2y = (INT32)(ev->data3*((cv_mousesens2.value*cv_mousesens2.value)/110.0f + 0.1f));
@@ -1159,27 +1208,22 @@ INT32 G_KeyStringtoNum(const char *keystr)
 
 #ifdef TOUCHINPUTS
 	CV_RegisterVar(&cv_dpadtiny);
-	CV_RegisterVar(&cv_menudpad);
+	CV_RegisterVar(&cv_touchcamera);
 	G_UpdateTouchControls();
 #endif
 
 // Lactozilla: Touch input
 #ifdef TOUCHINPUTS
-void G_UpdateTouchSettings(void)
-{
-	G_UpdateMenuTouchNavigation();
-}
-
-void G_UpdateMenuTouchNavigation(void)
+void G_SetupTouchSettings(void)
 {
 	touch_dpad_tiny = !!cv_dpadtiny.value;
-	touch_dpad_menu = !!cv_menudpad.value;
+	touch_camera = (cv_usemouse.value ? false : (!!cv_touchcamera.value));
 }
 
 void G_UpdateTouchControls(void)
 {
-	G_UpdateTouchSettings();
-	G_DefineTouchControls();
+	G_SetupTouchSettings();
+	G_DefineTouchButtons();
 }
 
 static void G_DefineTouchGameControls(void)
@@ -1298,45 +1342,9 @@ static void G_DefineTouchGameControls(void)
 static void G_DefineTouchNavigation(void)
 {
 	INT32 left = 4;
-	INT32 rightalign = 0;
-	if (vid.width != BASEVIDWIDTH * vid.dupx)
-		rightalign = (vid.width - (BASEVIDWIDTH * vid.dupx)) / vid.dupx;
-
-	touchnav_dpad_x = (BASEVIDWIDTH - touchnav_dpad_w - 12) + rightalign;
-	touchnav_dpad_y = 12;
-	touchnav_dpad_w = 32;
-	touchnav_dpad_h = 32;
 
 	// clear all
 	memset(touchnavigation, 0x00, sizeof(touchconfig_t) * NUMKEYS);
-
-	// Up
-	touchnavigation[KEY_UPARROW].x = touchnav_dpad_x + 8;
-	touchnavigation[KEY_UPARROW].y = touchnav_dpad_y - 8;
-	touchnavigation[KEY_UPARROW].w = 20;
-	touchnavigation[KEY_UPARROW].h = 16;
-	touchnavigation[KEY_UPARROW].dpad = true;
-
-	// Down
-	touchnavigation[KEY_DOWNARROW].x = touchnav_dpad_x + 8;
-	touchnavigation[KEY_DOWNARROW].y = touchnav_dpad_y + 24;
-	touchnavigation[KEY_DOWNARROW].w = 20;
-	touchnavigation[KEY_DOWNARROW].h = 16;
-	touchnavigation[KEY_DOWNARROW].dpad = true;
-
-	// Left
-	touchnavigation[KEY_LEFTARROW].x = touchnav_dpad_x - 8;
-	touchnavigation[KEY_LEFTARROW].y = touchnav_dpad_y + 8;
-	touchnavigation[KEY_LEFTARROW].w = 16;
-	touchnavigation[KEY_LEFTARROW].h = 14;
-	touchnavigation[KEY_LEFTARROW].dpad = true;
-
-	// Right
-	touchnavigation[KEY_RIGHTARROW].x = touchnav_dpad_x + 24;
-	touchnavigation[KEY_RIGHTARROW].y = touchnav_dpad_y + 8;
-	touchnavigation[KEY_RIGHTARROW].w = 16;
-	touchnavigation[KEY_RIGHTARROW].h = 14;
-	touchnavigation[KEY_RIGHTARROW].dpad = true;
 
 	// Back
 	touchnavigation[KEY_ESCAPE].x = left;
@@ -1347,24 +1355,21 @@ static void G_DefineTouchNavigation(void)
 	// Confirm
 	touchnavigation[KEY_ENTER].w = 24;
 	touchnavigation[KEY_ENTER].h = 24;
-	if (touch_dpad_menu)
-	{
-		touchnavigation[KEY_ENTER].x = (touchnav_dpad_x + (touchnav_dpad_w / 2)) - (touchnavigation[KEY_ENTER].w/2);
-		touchnavigation[KEY_ENTER].y = (touchnav_dpad_y + touchnav_dpad_h + touchnavigation[KEY_ENTER].h);
-	}
-	else
-	{
-		touchnavigation[KEY_ENTER].x = ((vid.width / vid.dupx) - touchnavigation[KEY_ENTER].w - left);
-		touchnavigation[KEY_ENTER].y = touchnavigation[KEY_ESCAPE].y;
-	}
-}
-void G_DefineTouchControls(void)
+	touchnavigation[KEY_ENTER].x = ((vid.width / vid.dupx) - touchnavigation[KEY_ENTER].w - left);
+	touchnavigation[KEY_ENTER].y = touchnavigation[KEY_ESCAPE].y;
+void G_DefineTouchButtons(void)
 {
 	G_DefineTouchGameControls();
 	G_DefineTouchNavigation();
 
 }
 #endif
+
+boolean G_InGameInput(void)
+{
+	return (!(menuactive || CON_Ready() || chat_on));
+}
+
 
 #ifdef DC
 void G_Controldefault(void)

@@ -253,6 +253,11 @@ menu_t OP_AllControls2Def; // for 2P
 menu_t OP_ControlsDef;
 menu_t OP_P1ControlsDef, OP_P2ControlsDef, OP_MouseOptionsDef;
 menu_t OP_Mouse2OptionsDef, OP_Joystick1Def, OP_Joystick2Def;
+
+#ifdef TOUCHINPUTS
+menu_t OP_TouchOptionsDef;
+#endif
+
 static void M_VideoModeMenu(INT32 choice);
 static void M_ResolutionMenu(INT32 choice);
 static void M_Setup1PControlsMenu(INT32 choice);
@@ -967,8 +972,7 @@ static menuitem_t OP_P1ControlsMenu[] =
 
 	{IT_STRING  | IT_CVAR, NULL, "Analog Control", NULL,  &cv_useranalog,  80},
 #ifdef TOUCHINPUTS
-	{IT_STRING  | IT_CVAR, NULL, "Tiny controls", NULL, &cv_dpadtiny, 100},
-	{IT_STRING  | IT_CVAR, NULL, "Use d-pad in menus", NULL, &cv_menudpad, 110},
+	{IT_SUBMENU | IT_STRING, NULL, "Touch Screen Options...", NULL, &OP_TouchOptionsDef, 100},
 #endif
 };
 
@@ -1151,6 +1155,22 @@ static menuitem_t OP_Mouse2OptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
 	                      NULL, "Mouse Y Speed", NULL,    &cv_mouseysens2,      80},
 };
+
+#ifdef TOUCHINPUTS
+static menuitem_t OP_TouchOptionsMenu[] =
+{
+	{IT_STRING | IT_CVAR, NULL, "Tiny controls", NULL,          &cv_dpadtiny,       10},
+	{IT_STRING | IT_CVAR, NULL, "Camera movement", NULL,        &cv_touchcamera,    20},
+
+	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL, &cv_alwaysfreelook, 30},
+	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL, &cv_chasefreelook,  50},
+
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
+	                      NULL, "Touch X Sensitivity", NULL,    &cv_touchsens,      70},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
+	                      NULL, "Touch Y Sensitivity", NULL,    &cv_touchysens,     80},
+};
+#endif
 
 enum
 {
@@ -2480,22 +2500,20 @@ boolean M_Responder(event_t *ev)
 					if (!butt->w)
 						continue;
 
-					// Ignore d-pad if disabled
-					if (!touch_dpad_menu && butt->dpad)
-						continue;
 
 					// Check if your finger touches this button.
 					if (G_FingerTouchesButton(x, y, butt))
 					{
 						ch = i;
 						button = true;
+						butt->pressed = I_GetTime() + (TICRATE/3);
 						break;
 					}
 				}
 			}
 
 			// Handle screen regions
-			if (ev->type == ev_touchdown && (!button) && (!touch_dpad_menu))
+			if (ev->type == ev_touchdown && (!button))
 			{
 				// 1/4 of the screen
 				INT32 sides = (vid.width / 4);
@@ -2504,28 +2522,28 @@ boolean M_Responder(event_t *ev)
 				if (x < sides || x >= (vid.width - sides))
 				{
 					if (x >= (vid.width / 2))
-						touchfingers[finger].input = KEY_RIGHTARROW;
+						touchfingers[finger].u.keyinput = KEY_RIGHTARROW;
 					else
-						touchfingers[finger].input = KEY_LEFTARROW;
+						touchfingers[finger].u.keyinput = KEY_LEFTARROW;
 				}
 				else
 				{
 					// Handle vertical input
 					if (y >= (vid.height / 2))
-						touchfingers[finger].input = KEY_DOWNARROW;
+						touchfingers[finger].u.keyinput = KEY_DOWNARROW;
 					else
-						touchfingers[finger].input = KEY_UPARROW;
+						touchfingers[finger].u.keyinput = KEY_UPARROW;
 				}
 
 				// finger down
-				touchfingers[finger].down = 1;
+				touchfingers[finger].type.menu = true;
 				touchfingers[finger].x = x;
 				touchfingers[finger].y = y;
 			}
 		}
-			if (touchfingers[finger].down)
-				ch = touchfingers[finger].input;
-			touchfingers[finger].down = 0;
+			if (touchfingers[finger].type.menu)
+				ch = touchfingers[finger].u.keyinput;
+			touchfingers[finger].type.menu = false;
 		}
 #endif
 	else if (ev->type == ev_keydown) // Preserve event for other responders
@@ -3035,6 +3053,8 @@ void M_StartControlPanel(void)
 //
 void M_UpdateTouchScreenNavigation(void)
 {
+	memset(touchfingers, 0x00, sizeof(touchfinger_t) * NUMTOUCHFINGERS); // clear all fingers
+	memset(gamekeydown, 0x00, sizeof (gamekeydown)); // clear all keys
 	G_UpdateTouchControls();
 }
 

@@ -142,6 +142,8 @@ extern INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], 
 // current state of the keys: true if pushed
 extern UINT8 gamekeydown[NUMINPUTS];
 
+boolean G_InGameInput(void);
+
 // Lactozilla: Touch input buttons
 #ifdef TOUCHINPUTS
 // Finger structure
@@ -149,8 +151,14 @@ extern UINT8 gamekeydown[NUMINPUTS];
 typedef struct
 {
 	INT32 x, y;
-	INT32 gamecontrol, down;
-	INT32 input;
+	union {
+		INT32 gamecontrol;
+		INT32 keyinput;
+	} u;
+	union {
+		boolean menu;
+		INT32 mouse;
+	} type;
 } touchfinger_t;
 extern touchfinger_t touchfingers[NUMTOUCHFINGERS];
 
@@ -159,7 +167,7 @@ typedef struct
 {
 	INT32 x, y;
 	INT32 w, h;
-	INT32 pressed; // touch navigation
+	tic_t pressed; // touch navigation
 	boolean dpad; // d-pad key
 } touchconfig_t;
 
@@ -169,15 +177,17 @@ extern touchconfig_t touchnavigation[NUMKEYS]; // Menu inputs
 
 // Input variables
 extern INT32 touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h;
-extern INT32 touchnav_dpad_x, touchnav_dpad_y, touchnav_dpad_w, touchnav_dpad_h;
 
 // Touch screen settings
 extern boolean touch_dpad_tiny;
-extern boolean touch_dpad_menu;
+extern boolean touch_camera;
 
 // Console variables for the touch screen
 extern consvar_t cv_dpadtiny;
-extern consvar_t cv_menudpad;
+extern consvar_t cv_touchcamera;
+
+// Touch screen sensitivity
+extern consvar_t cv_touchsens, cv_touchysens;
 #endif
 
 // two key codes (or virtual key) per game control
@@ -205,12 +215,9 @@ void Command_Setcontrol2_f(void);
 void G_Controldefault(void);
 
 #ifdef TOUCHINPUTS
-void G_DefineTouchControls(void);
+void G_SetupTouchSettings(void);
 void G_UpdateTouchControls(void);
-void G_UpdateTouchSettings(void);
-
-// Update menu touch navigation
-void G_UpdateMenuTouchNavigation(void);
+void G_DefineTouchButtons(void);
 
 // Check if the finger (x, y) is touching the specified button (butt)
 boolean G_FingerTouchesButton(INT32 x, INT32 y, touchconfig_t *butt);
