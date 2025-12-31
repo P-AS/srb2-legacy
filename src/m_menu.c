@@ -1552,7 +1552,7 @@ static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resoluti
 	{IT_HEADER|IT_STRING, NULL, "Special Thanks:", NULL,  NULL, 132},
 	{IT_STRING, NULL, "Upstream SRB2 Contributors", NULL, NULL, 142},
 	{IT_STRING, NULL, "SRB2 Classic", NULL, NULL, 152},
-	{IT_STRING, NULL, "SRB2Kart: Saturn", NULL, NULL, 162},
+	{IT_STRING, NULL, "SRB2Kart-Saturn", NULL, NULL, 162},
 	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  172}, // Netgame testing and feature ideas
 };
 

@@ -613,7 +613,7 @@ static void ST_drawScore(void)
 	const INT32 v_splitflag = (splitscreen && stplyr == &players[displayplayer] ? V_SPLITSCREEN : 0);
 	const INT32 v_splitoffset = splitscreen ? (v_splitflag ? 0 : BASEVIDHEIGHT/2) : 0;
 
-	INT32 scoreflags = hudinfo[HUD_SCORE].flags|v_splitflag;
+	INT32 scoreflags = hudinfo[HUD_SCORE].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		scoreflags &= ~(V_SNAPTOTOP);
 
@@ -627,12 +627,12 @@ static void ST_drawScore(void)
 			V_DrawTallNum(hudinfo[HUD_SCORENUM].x, hudinfo[HUD_SCORENUM].y, hudinfo[HUD_SCORENUM].flags, op_displayflags);
 	}
 
-	INT32 scorenumflags = hudinfo[HUD_SCORENUM].flags|v_splitflag;
+	INT32 scorenumflags = hudinfo[HUD_SCORENUM].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		scorenumflags &= ~(V_SNAPTOTOP);
 
 	if (!splitscreen && (cv_scorepos.value == 1))
-		V_DrawTallNum(hudinfo[HUD_SCORENUMMODERN].x, hudinfo[HUD_SCORENUMMODERN].y, hudinfo[HUD_SCORENUMMODERN].flags, stplyr->score);
+		V_DrawTallNum(hudinfo[HUD_SCORENUMMODERN].x, hudinfo[HUD_SCORENUMMODERN].y, scorenumflags, stplyr->score);
 	else
 		V_DrawTallNum(hudinfo[HUD_SCORENUM].x, hudinfo[HUD_SCORENUM].y + v_splitoffset, scorenumflags, stplyr->score);
 }
@@ -645,7 +645,7 @@ static void ST_drawTime(void)
 
 	// TIME:
 	INT32 timepos = splitscreen ? HUD_TIMESPLIT : HUD_TIME;
-	INT32 timeflags = hudinfo[timepos].flags|v_splitflag;
+	INT32 timeflags = hudinfo[timepos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		timeflags &= ~(V_SNAPTOTOP);
 
@@ -670,15 +670,15 @@ static void ST_drawTime(void)
 	INT32 colonspos = splitscreen ? HUD_TIMECOLONSPLIT : HUD_TIMECOLON;
 	INT32 secondspos = splitscreen ? HUD_SECONDSSPLIT : HUD_SECONDS;
 
-	INT32 minutesflags = hudinfo[minutespos].flags|v_splitflag;
+	INT32 minutesflags = hudinfo[minutespos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		minutesflags &= ~(V_SNAPTOTOP);
 
-	INT32 colonflags = hudinfo[colonspos].flags|v_splitflag;
+	INT32 colonflags = hudinfo[colonspos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		colonflags &= ~(V_SNAPTOTOP);
 
-	INT32 secondsflags = hudinfo[secondspos].flags|v_splitflag;
+	INT32 secondsflags = hudinfo[secondspos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		secondsflags &= ~(V_SNAPTOTOP);
 
@@ -692,8 +692,8 @@ static void ST_drawTime(void)
 
 		if (!splitscreen && (cv_timetic.value == 1 || cv_timetic.value == 2 || modeattacking)) // there's not enough room for tics in splitscreen, don't even bother trying!
 		{
-			V_DrawScaledPatch(hudinfo[HUD_TIMETICCOLON].x, hudinfo[HUD_TIMETICCOLON].y, hudinfo[HUD_TIMETICCOLON].flags, sboperiod); // Period
-			V_DrawPaddedTallNum(hudinfo[HUD_TICS].x, hudinfo[HUD_TICS].y, hudinfo[HUD_TICS].flags, centiseconds, 2); // Centiseconds
+			V_DrawScaledPatch(hudinfo[HUD_TIMETICCOLON].x, hudinfo[HUD_TIMETICCOLON].y, colonflags, sboperiod); // Period
+			V_DrawPaddedTallNum(hudinfo[HUD_TICS].x, hudinfo[HUD_TICS].y, secondsflags, centiseconds, 2); // Centiseconds
 		}
 	}
 }
@@ -705,7 +705,7 @@ static inline void ST_drawRings(void)
 	INT32 ringnum = max(stplyr->health-1, 0);
 
 	INT32 ringspos = splitscreen ? HUD_RINGSSPLIT : HUD_RINGS;
-	INT32 ringsflags = hudinfo[ringspos].flags|v_splitflag;
+	INT32 ringsflags = hudinfo[ringspos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		ringsflags &= ~(V_SNAPTOTOP);
 
@@ -723,14 +723,14 @@ static inline void ST_drawRings(void)
 	}
 
 	INT32 ringsnumpos = splitscreen ? HUD_RINGSNUMSPLIT : HUD_RINGSNUM;
-	INT32 ringsnumflags = hudinfo[ringsnumpos].flags|v_splitflag;
+	INT32 ringsnumflags = hudinfo[ringsnumpos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		ringsnumflags &= ~(V_SNAPTOTOP);
 
 	if (cv_timetic.value != 2 || splitscreen)
 		V_DrawTallNum(hudinfo[ringsnumpos].x, hudinfo[ringsnumpos].y + v_splitoffset, ringsnumflags, ringnum);
 	else
-		V_DrawTallNum(hudinfo[HUD_RINGSNUMTICS].x, hudinfo[HUD_RINGSNUMTICS].y, hudinfo[HUD_RINGSNUMTICS].flags, ringnum);
+		V_DrawTallNum(hudinfo[HUD_RINGSNUMTICS].x, hudinfo[HUD_RINGSNUMTICS].y, ringsnumflags, ringnum);
 }
 
 static void ST_drawLives(void)
