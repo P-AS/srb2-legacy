@@ -179,6 +179,10 @@ ifdef NATIVESCREENRES
 opts+=-DNATIVESCREENRES
 endif
 
+ifdef TOUCHINPUTS
+	OPTS+=-DTOUCHINPUTS
+endif
+
 ifdef DEBUGMODE
 makedir:=$(makedir)/debug
 endif

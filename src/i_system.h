@@ -195,6 +195,25 @@ INT32 I_NumJoys(void);
 */
 const char *I_GetJoyName(INT32 joyindex);
 
+/**	\brief to startup the touch screen
+*/
+#ifdef TOUCHINPUTS
+void I_InitTouchScreen(void);
+#endif
+
+/**	\brief show the on-screen keyboard
+*/
+void I_RaiseScreenKeyboard(char *buffer, size_t length);
+
+/**	\brief returns the status of the on-screen keyboard
+*/
+boolean I_KeyboardOnScreen(void);
+
+/**	\brief close the on-screen keyboard
+*/
+void I_CloseScreenKeyboard(void);
+#endif
+
 #ifndef NOMUMBLE
 #include "p_mobj.h" // mobj_t
 #include "s_sound.h" // listener_t
@@ -352,5 +371,3 @@ const char *I_GetPlatform(void);
 /** \brief Open A URL
 */
 int I_OpenURL(const char *url);
-
-#endif

@@ -175,6 +175,12 @@ void M_ClearMenus(boolean callexitmenufunc);
 // Maybe this goes here????? Who knows.
 boolean M_MouseNeeded(void);
 
+// What about this?
+#ifdef TOUCHINPUTS
+void M_UpdateTouchScreenNavigation(void);
+INT32 M_HandleTouchScreenKeyboard(char *buffer, size_t length);
+#endif
+
 extern menu_t *currentMenu;
 
 extern menu_t MainDef;

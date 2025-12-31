@@ -18,6 +18,7 @@
 #include "d_event.h"
 #include "d_player.h"
 #include "r_defs.h"
+#include "g_input.h"
 
 //
 // STATUS BAR
@@ -45,6 +46,19 @@ void ST_LoadGraphics(void);
 void ST_LoadFaceGraphics(char *facestr, char *superstr, INT32 playernum);
 void ST_ReloadSkinFaceGraphics(void);
 void ST_doPaletteStuff(void);
+
+// Touch screen inputs
+#ifdef TOUCHINPUTS
+void ST_drawTouchGameInput(void);
+void ST_drawTouchMenuInput(void);
+void ST_drawTouchDPad(
+	INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh,
+	touchconfig_t *tleft, boolean moveleft,
+	touchconfig_t *tright, boolean moveright,
+	touchconfig_t *tup, boolean moveup,
+	touchconfig_t *tdown, boolean movedown,
+	boolean backing, INT32 flags, INT32 accent);
+#endif
 
 // return if player a is in the same team as player b
 boolean ST_SameTeam(player_t *a, player_t *b);

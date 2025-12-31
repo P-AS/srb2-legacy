@@ -966,6 +966,10 @@ static menuitem_t OP_P1ControlsMenu[] =
 	{IT_STRING  | IT_CVAR, NULL, "Crosshair", NULL,  &cv_crosshair , 60},
 
 	{IT_STRING  | IT_CVAR, NULL, "Analog Control", NULL,  &cv_useranalog,  80},
+#ifdef TOUCHINPUTS
+	{IT_STRING  | IT_CVAR, NULL, "Tiny controls", NULL, &cv_dpadtiny, 100},
+	{IT_STRING  | IT_CVAR, NULL, "Use d-pad in menus", NULL, &cv_menudpad, 110},
+#endif
 };
 
 static menuitem_t OP_P2ControlsMenu[] =
@@ -2239,7 +2243,21 @@ static boolean M_ChangeStringCvar(INT32 choice)
 				CV_Set(cv, buf);
 			}
 			return true;
+#ifdef TOUCHINPUTS
+		case KEY_ENTER:
+			// Handle the on-screen keyboard
+			{
+				INT32 handled = M_HandleTouchScreenKeyboard(cv->zstring, MAXSTRINGLENGTH);
+				if (handled == -1) // closed
+					CV_Set(cv, cv->zstring);
+			}
+			return true;
+#endif
 		default:
+#ifdef TOUCHINPUTS
+			if (I_KeyboardOnScreen())
+				return true;
+#endif
 			if (choice >= 32 && choice <= 127)
 			{
 				len = strlen(cv->string);
@@ -2308,7 +2326,6 @@ static boolean noFurtherInput = false;
 boolean M_Responder(event_t *ev)
 {
 	INT32 ch = -1;
-//	INT32 i;
 	static tic_t joywait = 0, mousewait = 0;
 	static INT32 pjoyx = 0, pjoyy = 0;
 	static INT32 pmousex = 0, pmousey = 0;
@@ -2443,6 +2460,74 @@ boolean M_Responder(event_t *ev)
 			}
 		}
 	}
+#ifdef TOUCHINPUTS
+		else if (ev->type == ev_touchdown || ev->type == ev_touchmotion)
+		{
+			INT32 x = ev->data1;
+			INT32 y = ev->data2;
+			INT32 finger = ev->data3;
+			boolean button = false;
+
+			// Check for any buttons first
+			if (ev->type != ev_touchmotion) // Ignore motion events
+			{
+				INT32 i;
+				for (i = 0; i < NUMKEYS; i++)
+				{
+					touchconfig_t *butt = &touchnavigation[i];
+
+					// Ignore undefined buttons
+					if (!butt->w)
+						continue;
+
+					// Ignore d-pad if disabled
+					if (!touch_dpad_menu && butt->dpad)
+						continue;
+
+					// Check if your finger touches this button.
+					if (G_FingerTouchesButton(x, y, butt))
+					{
+						ch = i;
+						button = true;
+						break;
+					}
+				}
+			}
+
+			// Handle screen regions
+			if (ev->type == ev_touchdown && (!button) && (!touch_dpad_menu))
+			{
+				// 1/4 of the screen
+				INT32 sides = (vid.width / 4);
+
+				// Handle horizontal input
+				if (x < sides || x >= (vid.width - sides))
+				{
+					if (x >= (vid.width / 2))
+						touchfingers[finger].input = KEY_RIGHTARROW;
+					else
+						touchfingers[finger].input = KEY_LEFTARROW;
+				}
+				else
+				{
+					// Handle vertical input
+					if (y >= (vid.height / 2))
+						touchfingers[finger].input = KEY_DOWNARROW;
+					else
+						touchfingers[finger].input = KEY_UPARROW;
+				}
+
+				// finger down
+				touchfingers[finger].down = 1;
+				touchfingers[finger].x = x;
+				touchfingers[finger].y = y;
+			}
+		}
+			if (touchfingers[finger].down)
+				ch = touchfingers[finger].input;
+			touchfingers[finger].down = 0;
+		}
+#endif
 	else if (ev->type == ev_keydown) // Preserve event for other responders
 		ch = ev->data1;
 
@@ -2798,6 +2883,9 @@ void M_Drawer(void)
 				Z_Free(menucompnote);
 			}
 		}
+#ifdef TOUCHINPUTS
+		ST_drawTouchMenuInput();
+#endif
 	}
 
 	// focus lost notification goes on top of everything, even the former everything
@@ -2827,6 +2915,14 @@ void M_StartControlPanel(void)
 	if (menuactive)
 	{
 		CON_ToggleOff(); // move away console
+#ifdef TOUCHINPUTS
+	// update touch screen navigation
+	M_UpdateTouchScreenNavigation();
+
+	// if the keyboard is still open for some reason??
+	if (I_KeyboardOnScreen())
+		I_CloseScreenKeyboard();
+#endif
 		return;
 	}
 
@@ -2933,10 +3029,34 @@ void M_StartControlPanel(void)
 	//CON_ToggleOff(); // move away console
 }
 
-void M_EndModeAttackRun(void)
+#ifdef TOUCHINPUTS
+//
+// M_UpdateTouchScreenNavigation
+//
+void M_UpdateTouchScreenNavigation(void)
 {
-	M_ModeAttackEndGame(0);
+	G_UpdateTouchControls();
 }
+
+
+//
+// M_HandleTouchScreenKeyboard
+//
+INT32 M_HandleTouchScreenKeyboard(char *buffer, size_t length)
+{
+	if (!I_KeyboardOnScreen())
+	{
+		I_RaiseScreenKeyboard(buffer, length);
+		return 1;
+	}
+	else
+	{
+		I_CloseScreenKeyboard();
+		return -1;
+	}
+	return 0;
+}
+#endif
 
 //
 // M_ClearMenus
@@ -2959,6 +3079,16 @@ void M_ClearMenus(boolean callexitmenufunc)
 
 	I_UpdateMouseGrab();
 	I_SetTextInputMode(false);
+#ifdef TOUCHINPUTS
+	// if the keyboard is still open for some reason??
+	if (I_KeyboardOnScreen())
+		I_CloseScreenKeyboard();
+#endif
+}
+
+void M_EndModeAttackRun(void)
+{
+	M_ModeAttackEndGame(0);
 }
 
 //
@@ -2996,6 +3126,14 @@ void M_SetupNextMenu(menu_t *menudef)
 			}
 		}
 	}
+#ifdef TOUCHINPUTS
+	// update touch screen navigation
+	M_UpdateTouchScreenNavigation();
+
+	// if the keyboard is still open for some reason??
+	if (I_KeyboardOnScreen())
+		I_CloseScreenKeyboard();
+#endif
 }
 
 // Guess I'll put this here, idk
@@ -4262,6 +4400,12 @@ static void M_HandleImageDef(INT32 choice)
 
 		case KEY_ESCAPE:
 		case KEY_ENTER:
+#ifdef TOUCHINPUTS
+			// Handle the on-screen keyboard
+			if (itemOn == 0)
+				M_HandleTouchScreenKeyboard(setupm_name, MAXPLAYERNAME);
+			else
+#endif
 			M_ClearMenus(true);
 			break;
 	}
@@ -7459,6 +7603,10 @@ static void M_HandleConnectIP(INT32 choice)
 			/* FALLTHRU */
 
 		default:
+#ifdef TOUCHINPUTS
+			if (I_KeyboardOnScreen())
+				break;
+#endif
 			skullAnimCounter = 4; // For a nice looking cursor
 
 			l = strlen(setupm_ip);
