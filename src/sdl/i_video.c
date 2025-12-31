@@ -61,6 +61,7 @@
 #include "../st_stuff.h"
 #include "../hu_stuff.h"
 #include "../g_game.h"
+#include "../g_input.h"
 #include "../i_video.h"
 #include "../console.h"
 #include "../command.h"
@@ -155,7 +156,11 @@ static INT32 windowedModes[MAXWINMODES][2] =
 	{1280, 720}, // 1.66
 	{1152, 864}, // 1.33,3.60
 	{1024, 768}, // 1.33,3.20
+#if defined(__ANDROID__)
+	{ 800, 450}, // 1.33,2.25
+#else
 	{ 800, 600}, // 1.33,2.50
+#endif
 	{ 640, 480}, // 1.33,2.00
 	{ 640, 400}, // 1.60,2.00
 	{ 320, 240}, // 1.33,1.00
@@ -338,6 +343,9 @@ static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
 		case SDL_SCANCODE_RALT:   return KEY_RALT;
 		case SDL_SCANCODE_LGUI:   return KEY_LEFTWIN;
 		case SDL_SCANCODE_RGUI:   return KEY_RIGHTWIN;
+#if defined(__ANDROID__)
+		case SDL_SCANCODE_AC_BACK:        return KEY_ESCAPE;
+#endif
 		default:                  break;
 	}
 	return 0;
@@ -346,16 +354,20 @@ static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
 
 static void SDLdoGrabMouse(void)
 {
+#if !defined(__ANDROID__)
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_SetWindowGrab(window, SDL_TRUE);
+#endif
 	if (SDL_SetRelativeMouseMode(SDL_TRUE) == 0) // already warps mouse if successful
 		wrapmouseok = SDL_TRUE; // TODO: is wrapmouseok or HalfWarpMouse needed anymore?
 }
 
 static void SDLdoUngrabMouse(void)
 {
+#if !defined(__ANDROID__)
 	SDL_ShowCursor(SDL_ENABLE);
 	SDL_SetWindowGrab(window, SDL_FALSE);
+#endif
 	wrapmouseok = SDL_FALSE;
 	SDL_SetRelativeMouseMode(SDL_FALSE);
 }
@@ -652,7 +664,9 @@ static void Impl_HandleMouseMotionEvent(SDL_MouseMotionEvent evt)
 			{
 				mousemovex +=  evt.xrel;
 				mousemovey += -evt.yrel;
+#if !defined(__ANDROID__)
 				SDL_SetWindowGrab(window, SDL_TRUE);
+#endif
 			}
 			firstmove = false;
 			return;
@@ -879,6 +893,90 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 	if (event.type != ev_console) D_PostEvent(&event);
 }
 
+// Lactozilla: Android touch inputs
+#ifdef TOUCHINPUTS
+static void Impl_HandleTouchEvent(SDL_TouchFingerEvent evt)
+{
+	event_t event;
+	INT32 finger;
+
+	float touchx = evt.x;
+	float touchy = evt.y;
+
+	INT32 screenx = -1;
+	INT32 screeny = -1;
+
+	if (touchx >= 0.0 && touchx <= 1.0)
+		screenx = touchx * vid.width;
+	if (touchy >= 0.0 && touchy <= 1.0)
+		screeny = touchy * vid.height;
+
+	finger = (INT32)evt.fingerId;
+	if (finger >= NUMTOUCHFINGERS)
+	{
+		CONS_Alert(CONS_NOTICE, "More than %d fingers not supported, please only use up to two hands or paws\n", NUMTOUCHFINGERS);
+		return;
+	}
+
+	// outside the screen
+	if (screenx == -1 || screeny == -1)
+		return;
+#if 0
+	else
+	{
+		const char *fingertype = "???";
+
+	if (evt.type == SDL_FINGERMOTION)
+		fingertype = "Finger motion";
+	else if (evt.type == SDL_FINGERUP)
+		fingertype = "Finger up";
+	else if (evt.type == SDL_FINGERDOWN)
+		fingertype = "Finger down";
+		CONS_Printf("%s: x %d y %d fingerid %d touchid %d\n", fingertype, screenx, screeny, finger, (int)evt.touchId);
+	}
+
+#endif
+
+		switch (gamestate)
+		{
+			case GS_LEVEL:
+				if (menuactive || promptactive)
+				{
+					event.type = (evt.type == SDL_FINGERDOWN) ? ev_keydown : ev_keyup;
+					event.data1 = KEY_SPACE;
+				}
+				else
+				{
+				switch (evt.type)
+				{
+					case SDL_FINGERMOTION:
+						event.type = ev_touchmotion;
+						break;
+					case SDL_FINGERDOWN:
+						event.type = ev_touchdown;
+						break;
+					case SDL_FINGERUP:
+						event.type = ev_touchup;
+						break;
+					default:
+						// Don't generate any event.
+						return;
+				}
+
+					event.data1 = screenx;
+					event.data2 = screeny;
+					event.data3 = finger;
+				}
+				break;
+			default:
+				event.type = (evt.type == SDL_FINGERDOWN) ? ev_keydown : ev_keyup;
+				event.data1 = KEY_ENTER;
+				break;
+		}
+		D_PostEvent(&event);
+	}
+#endif
+
 static void Impl_HandleTextEvent(SDL_TextInputEvent evt)
 {
 	event_t event;
@@ -935,6 +1033,13 @@ void I_GetEvent(void)
 			case SDL_JOYAXISMOTION:
 				Impl_HandleJoystickAxisEvent(evt.jaxis);
 				break;
+#ifdef TOUCHINPUTS
+			case SDL_FINGERMOTION:
+			case SDL_FINGERDOWN:
+			case SDL_FINGERUP:
+				Impl_HandleTouchEvent(evt.tfinger);
+				break;
+#endif
 #if 0
 			case SDL_JOYHATMOTION:
 				Impl_HandleJoystickHatEvent(evt.jhat)
@@ -1119,6 +1224,27 @@ void I_StartupMouse(void)
 	else
 		SDLdoUngrabMouse();
 }
+
+#ifdef TOUCHINPUTS
+void I_RaiseScreenKeyboard(char *buffer, size_t length)
+{
+	textinputbuffer = buffer;
+	textbufferlength = length;
+	SDL_StartTextInput();
+}
+
+boolean I_KeyboardOnScreen(void)
+{
+	return ((SDL_IsTextInputActive() == SDL_TRUE) ? true : false);
+}
+
+void I_CloseScreenKeyboard(void)
+{
+	textinputbuffer = NULL;
+	textbufferlength = 0;
+	SDL_StopTextInput();
+}
+#endif
 
 //
 // I_OsPolling
