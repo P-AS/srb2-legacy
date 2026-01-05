@@ -401,6 +401,8 @@ consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", "This does not save, change 
 consvar_t cv_useranalog = CVAR_INIT ("useranalog", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
 consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
 
+static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
+
 typedef enum
 {
 	AXISNONE = 0,
@@ -415,7 +417,6 @@ typedef enum
 	AXISFIRENORMAL,
 } axis_input_e;
 
-
 consvar_t cv_moveaxis = CVAR_INIT ("joyaxis_move", "Y-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "X-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_lookaxis = CVAR_INIT ("joyaxis_look", "X-Rudder-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
@@ -424,7 +425,8 @@ consvar_t cv_jumpaxis = CVAR_INIT ("joyaxis_jump", "None", NULL, CV_SAVE, joyaxi
 consvar_t cv_spinaxis = CVAR_INIT ("joyaxis_spin", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_fireaxis = CVAR_INIT ("joyaxis_fire", "Z-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_firenaxis = CVAR_INIT ("joyaxis_firenormal", "Z-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-
+consvar_t cv_deadzone = CVAR_INIT ("joy_deadzone", "0.125", NULL, CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL);
+consvar_t cv_digitaldeadzone = CVAR_INIT ("joy_digdeadzone", "0.25", NULL, CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL);
 
 consvar_t cv_moveaxis2 = CVAR_INIT ("joyaxis2_move", "Y-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "X-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
@@ -434,7 +436,8 @@ consvar_t cv_jumpaxis2 = CVAR_INIT ("joyaxis2_jump", "None", NULL, CV_SAVE, joya
 consvar_t cv_spinaxis2 = CVAR_INIT ("joyaxis2_spin", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_fireaxis2 = CVAR_INIT ("joyaxis2_fire", "Z-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_firenaxis2 = CVAR_INIT ("joyaxis2_firenormal", "Z-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-
+consvar_t cv_deadzone2 = CVAR_INIT ("joy_deadzone2", "0.125", NULL, CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL);
+consvar_t cv_digitaldeadzone2 = CVAR_INIT ("joy_digdeadzone2", "0.25", NULL, CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL);
 
 #if MAXPLAYERS > 32
 #error "please update player_name table using the new value for MAXPLAYERS"
@@ -850,9 +853,9 @@ static INT32 JoyAxis(axis_input_e axissel)
 		retaxis = -JOYAXISRANGE;
 	if (retaxis > (+JOYAXISRANGE))
 		retaxis = +JOYAXISRANGE;
-	if (!Joystick.bGamepadStyle && axissel < AXISDEAD)
+	if (!Joystick.bGamepadStyle)
 	{
-		const INT32 jdeadzone = JOYAXISRANGE/4;
+		const INT32 jdeadzone = ((JOYAXISRANGE-1) * ((axissel < AXISDEAD) ? cv_deadzone.value : cv_digitaldeadzone.value)) >> FRACBITS;
 		if (-jdeadzone < retaxis && retaxis < jdeadzone)
 			return 0;
 	}
@@ -934,9 +937,9 @@ static INT32 Joy2Axis(axis_input_e axissel)
 		retaxis = -JOYAXISRANGE;
 	if (retaxis > (+JOYAXISRANGE))
 		retaxis = +JOYAXISRANGE;
-	if (!Joystick2.bGamepadStyle && axissel < AXISDEAD)
+	if (!Joystick2.bGamepadStyle)
 	{
-		const INT32 jdeadzone = JOYAXISRANGE/4;
+		const INT32 jdeadzone = ((JOYAXISRANGE-1) * ((axissel < AXISDEAD) ? cv_deadzone2.value : cv_digitaldeadzone2.value)) >> FRACBITS;
 		if (-jdeadzone < retaxis && retaxis < jdeadzone)
 			return 0;
 	}

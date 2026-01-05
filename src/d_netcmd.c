@@ -767,6 +767,10 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_fireaxis2);
 	CV_RegisterVar(&cv_firenaxis);
 	CV_RegisterVar(&cv_firenaxis2);
+	CV_RegisterVar(&cv_deadzone);
+	CV_RegisterVar(&cv_deadzone2);
+	CV_RegisterVar(&cv_digitaldeadzone);
+	CV_RegisterVar(&cv_digitaldeadzone2);
 
 	// filesrch.c
 	CV_RegisterVar(&cv_addons_option);

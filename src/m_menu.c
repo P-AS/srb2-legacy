@@ -1082,6 +1082,8 @@ static menuitem_t OP_Joystick1Menu[] =
 
 	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL,  &cv_alwaysfreelook, 120},
 	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL,  &cv_chasefreelook,  130},
+	{IT_STRING | IT_CVAR | IT_CV_FLOATSLIDER, NULL, "Analog Deadzone", NULL, &cv_deadzone, 140},
+	{IT_STRING | IT_CVAR | IT_CV_FLOATSLIDER, NULL, "Digital Deadzone", NULL, &cv_digitaldeadzone, 150},
 };
 
 static menuitem_t OP_Joystick2Menu[] =
@@ -1098,6 +1100,8 @@ static menuitem_t OP_Joystick2Menu[] =
 
 	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL, &cv_alwaysfreelook2,120},
 	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL, &cv_chasefreelook2, 130},
+	{IT_STRING | IT_CVAR | IT_CV_FLOATSLIDER, NULL, "Analog Deadzone", NULL, &cv_deadzone2,140},
+	{IT_STRING | IT_CVAR | IT_CV_FLOATSLIDER, NULL, "Digital Deadzone", NULL, &cv_digitaldeadzone2,150},
 };
 
 static menuitem_t OP_JoystickSetMenu[] =
@@ -1825,8 +1829,8 @@ menu_t OP_P1ControlsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_P1ControlsMenu, &OP_Co
 menu_t OP_P2ControlsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_P2ControlsMenu, &OP_ControlsDef, 60, 30);
 menu_t OP_MouseOptionsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_MouseOptionsMenu, &OP_P1ControlsDef, 60, 30);
 menu_t OP_Mouse2OptionsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_Mouse2OptionsMenu, &OP_P2ControlsDef, 60, 30);
-menu_t OP_Joystick1Def = DEFAULTMENUSTYLE("M_CONTRO", OP_Joystick1Menu, &OP_P1ControlsDef, 60, 30);
-menu_t OP_Joystick2Def = DEFAULTMENUSTYLE("M_CONTRO", OP_Joystick2Menu, &OP_P2ControlsDef, 60, 30);
+menu_t OP_Joystick1Def = DEFAULTMENUSTYLE("M_CONTRO", OP_Joystick1Menu, &OP_P1ControlsDef, 30, 30);
+menu_t OP_Joystick2Def = DEFAULTMENUSTYLE("M_CONTRO", OP_Joystick2Menu, &OP_P2ControlsDef, 30, 30);
 menu_t OP_JoystickSetDef =
 {
 	"M_CONTRO",
