@@ -1070,15 +1070,15 @@ static menuitem_t OP_AllControls2Menu[] =
 
 static menuitem_t OP_Joystick1Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."       , NULL,  M_Setup1PJoystickMenu,  10},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Moving"         , NULL,  &cv_moveaxis         ,  30},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Strafe"         , NULL,  &cv_sideaxis         ,  40},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Looking"        , NULL,  &cv_lookaxis         ,  50},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Turning"        , NULL,  &cv_turnaxis         ,  60},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Jumping"        , NULL,  &cv_jumpaxis         ,  70},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Spinning"       , NULL,  &cv_spinaxis         ,  80},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Firing"         , NULL,  &cv_fireaxis         ,  90},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Normal Firing"  , NULL,  &cv_firenaxis        , 100},
+	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..." , NULL,  M_Setup1PJoystickMenu,  10},
+	{IT_STRING | IT_CVAR,  NULL, "Move \x17 Axis"    , NULL,  &cv_moveaxis         ,  30},
+	{IT_STRING | IT_CVAR,  NULL, "Move \x18 Axis"    , NULL,  &cv_sideaxis         ,  40},
+	{IT_STRING | IT_CVAR,  NULL, "Camera \x17 Axis"  , NULL,  &cv_lookaxis         ,  50},
+	{IT_STRING | IT_CVAR,  NULL, "Camera \x18 Axis"  , NULL,  &cv_turnaxis         ,  60},
+	{IT_STRING | IT_CVAR,  NULL, "Jump Axis"         , NULL,  &cv_jumpaxis         ,  70},
+	{IT_STRING | IT_CVAR,  NULL, "Spin Axis"         , NULL,  &cv_spinaxis         ,  80},
+	{IT_STRING | IT_CVAR,  NULL, "Fire Axis"         , NULL,  &cv_fireaxis         ,  90},
+	{IT_STRING | IT_CVAR,  NULL, "Fire Normal Axis"  , NULL,  &cv_firenaxis        , 100},
 
 	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL,  &cv_alwaysfreelook, 120},
 	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL,  &cv_chasefreelook,  130},
@@ -1088,15 +1088,15 @@ static menuitem_t OP_Joystick1Menu[] =
 
 static menuitem_t OP_Joystick2Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."       , NULL,  M_Setup2PJoystickMenu,  10},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Moving"         , NULL,  &cv_moveaxis2        ,  30},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Strafe"         , NULL,  &cv_sideaxis2        ,  40},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Looking"        , NULL,  &cv_lookaxis2        ,  50},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Turning"        , NULL,  &cv_turnaxis2        ,  60},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Jumping"        , NULL,  &cv_jumpaxis2        ,  70},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Spinning"       , NULL,  &cv_spinaxis2        ,  80},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Firing"         , NULL,  &cv_fireaxis2        ,  90},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Normal Firing"  , NULL,  &cv_firenaxis2       , 100},
+	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..." , NULL,  M_Setup2PJoystickMenu,  10},
+	{IT_STRING | IT_CVAR,  NULL, "Move \x17 Axis"    , NULL,  &cv_moveaxis2        ,  30},
+	{IT_STRING | IT_CVAR,  NULL, "Move \x18 Axis"    , NULL,  &cv_sideaxis2        ,  40},
+	{IT_STRING | IT_CVAR,  NULL, "Camera \x17 Axis"  , NULL,  &cv_lookaxis2        ,  50},
+	{IT_STRING | IT_CVAR,  NULL, "Camera \x18 Axis"  , NULL,  &cv_turnaxis2        ,  60},
+	{IT_STRING | IT_CVAR,  NULL, "Jump Axis"         , NULL,  &cv_jumpaxis2        ,  70},
+	{IT_STRING | IT_CVAR,  NULL, "Spin Axis"         , NULL,  &cv_spinaxis2        ,  80},
+	{IT_STRING | IT_CVAR,  NULL, "Fire Axis"         , NULL,  &cv_fireaxis2        ,  90},
+	{IT_STRING | IT_CVAR,  NULL, "Fire Normal Axis"  , NULL,  &cv_firenaxis2       , 100},
 
 	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL, &cv_alwaysfreelook2,120},
 	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL, &cv_chasefreelook2, 130},
