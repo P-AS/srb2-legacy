@@ -24,19 +24,23 @@ jobs:
     runs-on: ${{ matrix.arch.runner }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.1
 
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt install -y libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libminiupnpc-dev libopenmpt-dev
+      run: |
+       sudo apt-get update 
+       sudo apt install -y libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libminiupnpc-dev libopenmpt-dev
 
     - name: Build SRB2 Legacy
       run: make -C src/ --keep-going -j$(nproc) LINUX64=1
 
     - name: Package SRB2 Legacy AppImage
-      run: chmod +x srb2-legacy-appimage.sh && ./srb2-legacy-appimage.sh --noassets --skipbuild
+      run: |
+       chmod +x srb2-legacy-appimage.sh 
+       ./srb2-legacy-appimage.sh --noassets --skipbuild
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: srb2legacy-linux-${{ matrix.arch.name }}-${{ github.sha }}
         path: |
@@ -44,7 +48,7 @@ jobs:
           src/comptime.h
 
     - name: Upload Appimage artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: srb2legacy-appimage-${{ matrix.arch.name }}-${{ github.sha }}
         path: |

@@ -953,7 +953,7 @@ static menuitem_t OP_P1ControlsMenu[] =
 {
 	{IT_CALL    | IT_STRING, NULL, "Control Configuration...", NULL,  M_Setup1PControlsMenu,   10},
 	{IT_SUBMENU | IT_STRING, NULL, "Mouse Options...", NULL,  &OP_MouseOptionsDef, 20},
-	{IT_SUBMENU | IT_STRING, NULL, "Joystick Options...", NULL,  &OP_Joystick1Def  ,  30},
+	{IT_SUBMENU | IT_STRING, NULL, "Gamepad Options...", NULL,  &OP_Joystick1Def  ,  30},
 
 	{IT_STRING  | IT_CVAR, NULL, "Camera"  , NULL,  &cv_chasecam  ,  50},
 	{IT_STRING  | IT_CVAR, NULL, "Crosshair", NULL,  &cv_crosshair , 60},
@@ -965,7 +965,7 @@ static menuitem_t OP_P2ControlsMenu[] =
 {
 	{IT_CALL    | IT_STRING, NULL, "Control Configuration...", NULL,  M_Setup2PControlsMenu,   10},
 	{IT_SUBMENU | IT_STRING, NULL, "Second Mouse Options...", NULL,  &OP_Mouse2OptionsDef, 20},
-	{IT_SUBMENU | IT_STRING, NULL, "Second Joystick Options...", NULL,  &OP_Joystick2Def  ,  30},
+	{IT_SUBMENU | IT_STRING, NULL, "Second Gamepad Options...", NULL,  &OP_Joystick2Def  ,  30},
 
 	{IT_CVAR | IT_STRING, NULL, "Camera", NULL, &cv_chasecam2,	50},
 	{IT_STRING  | IT_CVAR, NULL, "Crosshair", NULL, &cv_crosshair2, 60},
@@ -1070,34 +1070,38 @@ static menuitem_t OP_AllControls2Menu[] =
 
 static menuitem_t OP_Joystick1Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Joystick...", NULL,  M_Setup1PJoystickMenu,  10},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Turning"  , NULL,  &cv_turnaxis         ,  30},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Moving"   , NULL,  &cv_moveaxis         ,  40},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Strafe"   , NULL,  &cv_sideaxis         ,  50},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Looking"  , NULL,  &cv_lookaxis         ,  60},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Jumping"  , NULL,  &cv_jumpaxis         ,  70},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Spinning" , NULL,  &cv_spinaxis         ,  80},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Firing"   , NULL,  &cv_fireaxis         ,  90},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For NFiring"  , NULL,  &cv_firenaxis        , 100},
+	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..." , NULL,  M_Setup1PJoystickMenu,  10},
+	{IT_STRING | IT_CVAR,  NULL, "Move \x17 Axis"    , NULL,  &cv_moveaxis         ,  30},
+	{IT_STRING | IT_CVAR,  NULL, "Move \x18 Axis"    , NULL,  &cv_sideaxis         ,  40},
+	{IT_STRING | IT_CVAR,  NULL, "Camera \x17 Axis"  , NULL,  &cv_lookaxis         ,  50},
+	{IT_STRING | IT_CVAR,  NULL, "Camera \x18 Axis"  , NULL,  &cv_turnaxis         ,  60},
+	{IT_STRING | IT_CVAR,  NULL, "Jump Axis"         , NULL,  &cv_jumpaxis         ,  70},
+	{IT_STRING | IT_CVAR,  NULL, "Spin Axis"         , NULL,  &cv_spinaxis         ,  80},
+	{IT_STRING | IT_CVAR,  NULL, "Fire Axis"         , NULL,  &cv_fireaxis         ,  90},
+	{IT_STRING | IT_CVAR,  NULL, "Fire Normal Axis"  , NULL,  &cv_firenaxis        , 100},
 
 	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL,  &cv_alwaysfreelook, 120},
 	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL,  &cv_chasefreelook,  130},
+	{IT_STRING | IT_CVAR | IT_CV_FLOATSLIDER, NULL, "Analog Deadzone", NULL, &cv_deadzone, 140},
+	{IT_STRING | IT_CVAR | IT_CV_FLOATSLIDER, NULL, "Digital Deadzone", NULL, &cv_digitaldeadzone, 150},
 };
 
 static menuitem_t OP_Joystick2Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Joystick...", NULL,  M_Setup2PJoystickMenu,  10},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Turning"  , NULL,  &cv_turnaxis2        ,  30},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Moving"   , NULL,  &cv_moveaxis2        ,  40},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Strafe"   , NULL,  &cv_sideaxis2        ,  50},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Looking"  , NULL,  &cv_lookaxis2        ,  60},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Jumping"  , NULL,  &cv_jumpaxis2        ,  70},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Spinning" , NULL,  &cv_spinaxis2        ,  80},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For Firing"   , NULL,  &cv_fireaxis2        ,  90},
-	{IT_STRING | IT_CVAR,  NULL, "Axis For NFiring"  , NULL,  &cv_firenaxis2       , 100},
+	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..." , NULL,  M_Setup2PJoystickMenu,  10},
+	{IT_STRING | IT_CVAR,  NULL, "Move \x17 Axis"    , NULL,  &cv_moveaxis2        ,  30},
+	{IT_STRING | IT_CVAR,  NULL, "Move \x18 Axis"    , NULL,  &cv_sideaxis2        ,  40},
+	{IT_STRING | IT_CVAR,  NULL, "Camera \x17 Axis"  , NULL,  &cv_lookaxis2        ,  50},
+	{IT_STRING | IT_CVAR,  NULL, "Camera \x18 Axis"  , NULL,  &cv_turnaxis2        ,  60},
+	{IT_STRING | IT_CVAR,  NULL, "Jump Axis"         , NULL,  &cv_jumpaxis2        ,  70},
+	{IT_STRING | IT_CVAR,  NULL, "Spin Axis"         , NULL,  &cv_spinaxis2        ,  80},
+	{IT_STRING | IT_CVAR,  NULL, "Fire Axis"         , NULL,  &cv_fireaxis2        ,  90},
+	{IT_STRING | IT_CVAR,  NULL, "Fire Normal Axis"  , NULL,  &cv_firenaxis2       , 100},
 
 	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL, &cv_alwaysfreelook2,120},
 	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL, &cv_chasefreelook2, 130},
+	{IT_STRING | IT_CVAR | IT_CV_FLOATSLIDER, NULL, "Analog Deadzone", NULL, &cv_deadzone2,140},
+	{IT_STRING | IT_CVAR | IT_CV_FLOATSLIDER, NULL, "Digital Deadzone", NULL, &cv_digitaldeadzone2,150},
 };
 
 static menuitem_t OP_JoystickSetMenu[] =
@@ -1825,8 +1829,8 @@ menu_t OP_P1ControlsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_P1ControlsMenu, &OP_Co
 menu_t OP_P2ControlsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_P2ControlsMenu, &OP_ControlsDef, 60, 30);
 menu_t OP_MouseOptionsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_MouseOptionsMenu, &OP_P1ControlsDef, 60, 30);
 menu_t OP_Mouse2OptionsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_Mouse2OptionsMenu, &OP_P2ControlsDef, 60, 30);
-menu_t OP_Joystick1Def = DEFAULTMENUSTYLE("M_CONTRO", OP_Joystick1Menu, &OP_P1ControlsDef, 60, 30);
-menu_t OP_Joystick2Def = DEFAULTMENUSTYLE("M_CONTRO", OP_Joystick2Menu, &OP_P2ControlsDef, 60, 30);
+menu_t OP_Joystick1Def = DEFAULTMENUSTYLE("M_CONTRO", OP_Joystick1Menu, &OP_P1ControlsDef, 50, 30);
+menu_t OP_Joystick2Def = DEFAULTMENUSTYLE("M_CONTRO", OP_Joystick2Menu, &OP_P2ControlsDef, 50, 30);
 menu_t OP_JoystickSetDef =
 {
 	"M_CONTRO",
