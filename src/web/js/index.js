@@ -5,6 +5,17 @@ import "../style.css";
 const app = Elm.Main.init({ node: document.getElementById("main") });
 const srb2 = new SRB2(app);
 
+const supportsKeyboardLock = ('keyboard' in navigator) && ('lock' in navigator.keyboard);
+if (supportsKeyboardLock) {
+  document.addEventListener('fullscreenchange', async () => {
+    if (document.fullscreenElement) {
+      await navigator.keyboard.lock(['Escape']);        
+      return; 
+    }
+    navigator.keyboard.unlock();
+  });
+}
+
 app.ports.startGame.subscribe(srb2.init);
 app.ports.listWads.subscribe(() => srb2.Command_ListWADS_f());
 app.ports.requestFullScreen.subscribe(() => srb2.requestFullscreen());
