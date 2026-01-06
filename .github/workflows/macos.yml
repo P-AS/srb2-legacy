@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ matrix.arch.runner }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6.0.1
 
     - name: Install dependencies
       run: brew install --formula sdl2 sdl2_mixer game-music-emu miniupnpc libopenmpt
@@ -33,7 +33,7 @@ jobs:
       run: ninja -C build
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: srb2legacy-macOS-${{ matrix.arch.name }}-${{ github.sha }}
         path: build/bin
