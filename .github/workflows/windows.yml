@@ -21,7 +21,7 @@ jobs:
     env:
       PREFIX: ${{ matrix.arch.prefix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.1
 
       - name: Install dependencies
         run: |
@@ -35,7 +35,7 @@ jobs:
           make -C src/ --keep-going  -j$(nproc) MINGW$IS64BIT=1
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: srb2legacy-windows-${{ matrix.arch.name }}-${{ github.sha }}
           path: |
