@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.1
 
 
       - name: Setup Pages
@@ -69,7 +69,7 @@ jobs:
           emmake make -j$(nproc)
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3.0.1
+        uses: actions/upload-pages-artifact@v4.0.0
         with:
           # Upload not entire repository
           path: "build/bin/"
