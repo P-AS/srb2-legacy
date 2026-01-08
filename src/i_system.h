@@ -17,6 +17,10 @@
 #include "d_ticcmd.h"
 #include "d_event.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -312,6 +316,45 @@ void I_CursedWindowMovement(int xd, int yd);
 /** \brief Get the current platform
 */
 const char *I_GetPlatform(void);
+
+/** \brief Mount IndexedDB filesystem for WASM on program start, does nothing elsewhere
+*/
+FUNCINLINE static ATTRINLINE void I_MountIDBFS(void)
+{
+#ifdef __EMSCRIPTEN__
+	EM_ASM(
+		try
+		{
+			if (!FS.analyzePath('/home').exists) FS.mkdir('/home');
+			if (!FS.analyzePath('/home/web_user').exists) FS.mkdir('/home/web_user');
+			FS.mount(IDBFS, {}, '/home/web_user'); // Emscripten home directory
+			FS.syncfs(true, function (err) {
+			console.log(err);
+			Module.ccall("main_program", 'number', [], [], {async: true});
+        	});
+		}
+		catch (err)
+		{
+			console.log(err);
+			Module.ccall("main_program", 'number', [], [], {async: true});
+		}
+    	);
+#endif
+}
+
+/** \brief Sync IndexedDB filesystem with in memory fileystem for WASM, does nothing elsewhere
+ * \todo use autoPersist in FS.mount
+*/
+FUNCINLINE static ATTRINLINE void I_SyncIDBFS(void)
+{
+#ifdef __EMSCRIPTEN__
+	EM_ASM(
+		FS.syncfs(function (err) {
+		console.log(err); }
+	);
+	);
+#endif
+}
 
 /** \brief Open A URL
 */

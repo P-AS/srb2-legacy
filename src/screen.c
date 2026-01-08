@@ -73,7 +73,11 @@ static void SCR_ChangeFullscreen(void);
 
 static CV_PossibleValue_t fullscreen_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Borderless"}, {0, NULL}};
 
+#ifndef __EMSCRIPTEN__
 consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", "If on, the game will take up the full screen rather than just a desktop window", CV_SAVE|CV_CALL, fullscreen_cons_t, SCR_ChangeFullscreen);
+#else
+consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "No", "If on, the game will take up the full screen rather than just a desktop window", CV_SAVE|CV_CALL, fullscreen_cons_t, SCR_ChangeFullscreen);
+#endif
 
 // =========================================================================
 //                           SCREEN VARIABLES
@@ -323,7 +327,7 @@ void SCR_ChangeFullscreen(void)
 {
 #ifdef DIRECTFULLSCREEN
 	I_SetBorderlessWindow();
-	
+
 	// allow_fullscreen is set by VID_PrepareModeList
 	// it is used to prevent switching to fullscreen during startup
 	if (!allow_fullscreen)
@@ -517,7 +521,7 @@ void SCR_DisplayTicRate(void)
 			stringdrawfunc = V_DrawString;
 			stringwidthfunc = V_StringWidth;
 		break;
-		
+
 		case 1: // Thin
 			stringdrawfunc = V_DrawThinString;
 			stringwidthfunc = V_ThinStringWidth;

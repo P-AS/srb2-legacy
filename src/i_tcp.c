@@ -1089,6 +1089,10 @@ static boolean UDP_Socket(void)
 boolean I_InitTcpDriver(void)
 {
 	boolean tcp_was_up = init_tcp_driver;
+#ifdef __EMSCRIPTEN__
+	I_OutputMsg("Compiled without networking support\n");
+	return false;
+#endif
 #ifndef NONET
 	if (!init_tcp_driver)
 	{

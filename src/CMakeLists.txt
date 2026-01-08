@@ -38,6 +38,11 @@ if(${SRB2_CONFIG_DEDICATED})
 	set(SRB2_CONFIG_HWRENDER NO)
 endif()
 
+if(${CMAKE_SYSTEM} MATCHES Emscripten)
+	set(SRB2_CONFIG_HWRENDER OFF)
+	set(SRB2_CONFIG_EXECINFO OFF)
+endif()
+
 ### use internal libraries?
 if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
 	set(SRB2_CONFIG_USE_INTERNAL_LIBRARIES OFF CACHE BOOL
@@ -101,6 +106,8 @@ if(${SRB2_CONFIG_HAVE_ZLIB})
 		else() # 32-bit
 			set(ZLIB_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/zlib/win32 -lz32")
 		endif()
+	elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
+		set(ZLIB_FOUND ON)
 	else()
 		find_package(ZLIB)
 	endif()
@@ -122,6 +129,8 @@ if(${SRB2_CONFIG_HAVE_PNG} AND ${SRB2_CONFIG_HAVE_ZLIB})
 			else() # 32-bit
 				set(PNG_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libpng-src/projects -lpng32")
 			endif()
+		elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
+			set(PNG_FOUND ON)
 		else()
 			find_package(PNG)
 		endif()
@@ -189,7 +198,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -mno-ms-bitfields)
 endif()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT ${CMAKE_SYSTEM} MATCHES "Emscripten")
 	set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -Wno-absolute-value)
 endif()
 
@@ -216,6 +225,10 @@ if(${SRB2_CONFIG_DEDICATED})
 	add_subdirectory(dedicated)
 else()
 	add_subdirectory(sdl)
+endif()
+
+if(${CMAKE_SYSTEM} MATCHES Emscripten)
+	add_subdirectory(web)
 endif()
 
 if(${CMAKE_SYSTEM} MATCHES Windows)

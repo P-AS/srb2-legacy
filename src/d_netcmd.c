@@ -12,6 +12,10 @@
 ///        commands are executed through the command buffer
 ///	       like console commands, other miscellaneous commands (at the end)
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "doomdef.h"
 
 #include "console.h"
@@ -49,6 +53,10 @@
 #include "m_anigif.h"
 #include "md5.h"
 #include "m_perfstats.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -112,7 +120,9 @@ static void Command_Map_f(void);
 static void Command_ResetCamera_f(void);
 
 static void Command_Addfile(void);
+#ifndef __EMSCRIPTEN__
 static void Command_ListWADS_f(void);
+#endif
 static void Command_RunSOC(void);
 static void Command_Pause(void);
 static void Command_Suicide(void);
@@ -3233,7 +3243,11 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 	G_SetGameModified(true);
 }
 
+#ifdef __EMSCRIPTEN__
+void EMSCRIPTEN_KEEPALIVE Command_ListWADS_f(void)
+#else
 static void Command_ListWADS_f(void)
+#endif
 {
 	INT32 i = numwadfiles;
 	char *tempname;
