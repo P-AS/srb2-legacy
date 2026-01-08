@@ -11,3 +11,4 @@ type Msg
     | ShowAddonPicker
     | HideAddonPicker
     | ClickedAddAddon
+    | AddArgument

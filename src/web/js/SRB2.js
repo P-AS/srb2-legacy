@@ -4,8 +4,13 @@ export class SRB2 {
     this.app = app;
 
     this.Module = {
-      preRun: [],
       postRun: [],
+      arguments: [],
+      userarguments: [],
+      preRun: [() => {
+        console.log("user arguments" + this.userarguments);
+        Module['arguments'].push(this.userarguments);
+      }],
       print: (function () {
         return function (t) {
           const text = SRB2.parseEmsText(t);
