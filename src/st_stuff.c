@@ -1126,7 +1126,7 @@ void ST_drawTouchGameInput(void)
 	fixed_t dupx = vid.dupx*FRACUNIT;
 	fixed_t dupy = vid.dupy*FRACUNIT;
 	const INT32 flags = V_NOSCALESTART;
-	const INT32 accent = (stplyr->skincolor ? Color_Index[stplyr->skincolor-1][4] : 0);
+	const INT32 accent = (stplyr->skincolor);
 	const INT32 shadow = vid.dupy;
 	INT32 col, offs;
 	INT32 x, y, w, h;
@@ -1176,7 +1176,7 @@ void ST_drawTouchMenuInput(void)
 	fixed_t dupx = vid.dupx*FRACUNIT;
 	fixed_t dupy = vid.dupy*FRACUNIT;
 	const INT32 flags = V_NOSCALESTART;
-	const INT32 accent = Color_Index[(cv_playercolor.value)-1][4];
+	const INT32 accent = (cv_playercolor.value);
 	const INT32 shadow = vid.dupy;
 	INT32 col, offs;
 	INT32 x, y, w, h;
@@ -1189,7 +1189,7 @@ void ST_drawTouchMenuInput(void)
 
 #define drawbutt(control, symb) \
 	SCALEBUTTONS(control); \
-	if (control->pressed > I_GetTime()) \
+	if (control->pressed) \
 	{ \
 		col = accent; \
 		offs = shadow; \
@@ -2357,7 +2357,7 @@ static void ST_overlayDrawer(void)
 	if (!splitscreen && ((cv_showinput.value && !players[displayplayer].spectator) || modeattacking))
 		ST_drawInput();
 #ifdef TOUCHINPUTS
-		ST_drawTouchInput();
+		ST_drawTouchGameInput();
 #endif
 
 	ST_drawDebugInfo();

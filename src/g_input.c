@@ -59,14 +59,14 @@ boolean touch_dpad_tiny;
 boolean touch_camera;
 
 // Console variables for the touch screen
-consvar_t cv_dpadtiny = {"touch_dpad_tiny", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_touchcamera = {"touch_camera", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_dpadtiny = {"touch_dpad_tiny", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchcamera = {"touch_camera", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
 
 // Touch screen sensitivity
 #define MAXTOUCHSENSITIVITY 100 // sensitivity steps
 static CV_PossibleValue_t touchsens_cons_t[] = {{1, "MIN"}, {MAXTOUCHSENSITIVITY, "MAX"}, {0, NULL}};
-consvar_t cv_touchsens = {"touchsens", "40", CV_SAVE, touchsens_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
-consvar_t cv_touchysens = {"touchysens", "45", CV_SAVE, mousesens_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchsens = {"touchsens", "40", NULL, CV_SAVE, touchsens_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_touchysens = {"touchysens", "45", NULL, CV_SAVE, mousesens_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 #endif
 
 // two key codes (or virtual key) per game control
@@ -1207,9 +1207,9 @@ INT32 G_KeyStringtoNum(const char *keystr)
 }
 
 #ifdef TOUCHINPUTS
-	CV_RegisterVar(&cv_dpadtiny);
-	CV_RegisterVar(&cv_touchcamera);
-	G_UpdateTouchControls();
+	//CV_RegisterVar(&cv_dpadtiny);
+	//CV_RegisterVar(&cv_touchcamera);
+	//G_UpdateTouchControls;
 #endif
 
 // Lactozilla: Touch input
@@ -1357,6 +1357,8 @@ static void G_DefineTouchNavigation(void)
 	touchnavigation[KEY_ENTER].h = 24;
 	touchnavigation[KEY_ENTER].x = ((vid.width / vid.dupx) - touchnavigation[KEY_ENTER].w - left);
 	touchnavigation[KEY_ENTER].y = touchnavigation[KEY_ESCAPE].y;
+}
+
 void G_DefineTouchButtons(void)
 {
 	G_DefineTouchGameControls();

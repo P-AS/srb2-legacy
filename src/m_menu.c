@@ -2263,21 +2263,7 @@ static boolean M_ChangeStringCvar(INT32 choice)
 				CV_Set(cv, buf);
 			}
 			return true;
-#ifdef TOUCHINPUTS
-		case KEY_ENTER:
-			// Handle the on-screen keyboard
-			{
-				INT32 handled = M_HandleTouchScreenKeyboard(cv->zstring, MAXSTRINGLENGTH);
-				if (handled == -1) // closed
-					CV_Set(cv, cv->zstring);
-			}
-			return true;
-#endif
 		default:
-#ifdef TOUCHINPUTS
-			if (I_KeyboardOnScreen())
-				return true;
-#endif
 			if (choice >= 32 && choice <= 127)
 			{
 				len = strlen(cv->string);
@@ -2485,7 +2471,7 @@ boolean M_Responder(event_t *ev)
 		{
 			INT32 x = ev->data1;
 			INT32 y = ev->data2;
-			INT32 finger = ev->data3;
+#define finger ev->data3
 			boolean button = false;
 
 			// Check for any buttons first
@@ -2544,9 +2530,8 @@ boolean M_Responder(event_t *ev)
 			if (touchfingers[finger].type.menu)
 				ch = touchfingers[finger].u.keyinput;
 			touchfingers[finger].type.menu = false;
-		}
 #endif
-	else if (ev->type == ev_keydown) // Preserve event for other responders
+	if (ev->type == ev_keydown) // Preserve event for other responders
 		ch = ev->data1;
 
 	if (ch == -1)
@@ -2938,8 +2923,6 @@ void M_StartControlPanel(void)
 	M_UpdateTouchScreenNavigation();
 
 	// if the keyboard is still open for some reason??
-	if (I_KeyboardOnScreen())
-		I_CloseScreenKeyboard();
 #endif
 		return;
 	}
@@ -3057,25 +3040,6 @@ void M_UpdateTouchScreenNavigation(void)
 	memset(gamekeydown, 0x00, sizeof (gamekeydown)); // clear all keys
 	G_UpdateTouchControls();
 }
-
-
-//
-// M_HandleTouchScreenKeyboard
-//
-INT32 M_HandleTouchScreenKeyboard(char *buffer, size_t length)
-{
-	if (!I_KeyboardOnScreen())
-	{
-		I_RaiseScreenKeyboard(buffer, length);
-		return 1;
-	}
-	else
-	{
-		I_CloseScreenKeyboard();
-		return -1;
-	}
-	return 0;
-}
 #endif
 
 //
@@ -3099,11 +3063,6 @@ void M_ClearMenus(boolean callexitmenufunc)
 
 	I_UpdateMouseGrab();
 	I_SetTextInputMode(false);
-#ifdef TOUCHINPUTS
-	// if the keyboard is still open for some reason??
-	if (I_KeyboardOnScreen())
-		I_CloseScreenKeyboard();
-#endif
 }
 
 void M_EndModeAttackRun(void)
@@ -3149,10 +3108,6 @@ void M_SetupNextMenu(menu_t *menudef)
 #ifdef TOUCHINPUTS
 	// update touch screen navigation
 	M_UpdateTouchScreenNavigation();
-
-	// if the keyboard is still open for some reason??
-	if (I_KeyboardOnScreen())
-		I_CloseScreenKeyboard();
 #endif
 }
 
@@ -4420,12 +4375,6 @@ static void M_HandleImageDef(INT32 choice)
 
 		case KEY_ESCAPE:
 		case KEY_ENTER:
-#ifdef TOUCHINPUTS
-			// Handle the on-screen keyboard
-			if (itemOn == 0)
-				M_HandleTouchScreenKeyboard(setupm_name, MAXPLAYERNAME);
-			else
-#endif
 			M_ClearMenus(true);
 			break;
 	}
@@ -7623,10 +7572,6 @@ static void M_HandleConnectIP(INT32 choice)
 			/* FALLTHRU */
 
 		default:
-#ifdef TOUCHINPUTS
-			if (I_KeyboardOnScreen())
-				break;
-#endif
 			skullAnimCounter = 4; // For a nice looking cursor
 
 			l = strlen(setupm_ip);

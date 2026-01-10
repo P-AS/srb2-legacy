@@ -944,7 +944,7 @@ static void Impl_HandleTouchEvent(SDL_TouchFingerEvent evt)
 		switch (gamestate)
 		{
 			case GS_LEVEL:
-				if (menuactive || promptactive)
+				if (menuactive)
 				{
 					event.type = (evt.type == SDL_FINGERDOWN) ? ev_keydown : ev_keyup;
 					event.data1 = KEY_SPACE;
@@ -1236,27 +1236,6 @@ void I_StartupMouse(void)
 	else
 		SDLdoUngrabMouse();
 }
-
-#ifdef TOUCHINPUTS
-void I_RaiseScreenKeyboard(char *buffer, size_t length)
-{
-	textinputbuffer = buffer;
-	textbufferlength = length;
-	SDL_StartTextInput();
-}
-
-boolean I_KeyboardOnScreen(void)
-{
-	return ((SDL_IsTextInputActive() == SDL_TRUE) ? true : false);
-}
-
-void I_CloseScreenKeyboard(void)
-{
-	textinputbuffer = NULL;
-	textbufferlength = 0;
-	SDL_StopTextInput();
-}
-#endif
 
 //
 // I_OsPolling
