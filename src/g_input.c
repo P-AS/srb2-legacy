@@ -59,7 +59,7 @@ boolean touch_dpad_tiny;
 boolean touch_camera;
 
 // Console variables for the touch screen
-consvar_t cv_dpadtiny = {"touch_dpad_tiny", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_dpadtiny = {"touch_dpad_tiny", "Off", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_touchcamera = {"touch_camera", "On", NULL, CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, G_UpdateTouchControls, 0, NULL, NULL, 0, 0, NULL};
 
 // Touch screen sensitivity
@@ -1206,19 +1206,8 @@ INT32 G_KeyStringtoNum(const char *keystr)
 	return 0;
 }
 
-#ifdef TOUCHINPUTS
-	//CV_RegisterVar(&cv_dpadtiny);
-	//CV_RegisterVar(&cv_touchcamera);
-	//G_UpdateTouchControls;
-#endif
-
 // Lactozilla: Touch input
 #ifdef TOUCHINPUTS
-void G_SetupTouchSettings(void)
-{
-	touch_dpad_tiny = !!cv_dpadtiny.value;
-	touch_camera = (cv_usemouse.value ? false : (!!cv_touchcamera.value));
-}
 
 void G_UpdateTouchControls(void)
 {
@@ -1337,6 +1326,12 @@ static void G_DefineTouchGameControls(void)
 	touchcontrols[gc_backward].dpad = true;
 	touchcontrols[gc_strafeleft].dpad = true;
 	touchcontrols[gc_straferight].dpad = true;
+}
+
+void G_SetupTouchSettings(void)
+{
+	touch_dpad_tiny = !!cv_dpadtiny.value;
+	touch_camera = (cv_usemouse.value ? false : (!!cv_touchcamera.value));
 }
 
 static void G_DefineTouchNavigation(void)

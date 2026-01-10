@@ -1132,7 +1132,7 @@ static void D_AndroidSetupHome(const char *userhome)
         SetupLocation(configfile, CONFIGFILENAME);
 
 #ifdef TOUCHINPUTS
-    SetupLocation(touchlayoutfolder, "touchlayouts");
+    //SetupLocation(touchlayoutfolder, "touchlayouts");
 #endif
 
 

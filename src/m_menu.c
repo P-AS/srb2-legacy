@@ -961,6 +961,22 @@ static menuitem_t OP_ControlsMenu[] =
 	{IT_STRING  | IT_CVAR, NULL, "Controls per key", NULL,  &cv_controlperkey, 40},
 };
 
+#ifdef TOUCHINPUTS
+static menuitem_t OP_TouchOptionsMenu[] =
+{
+	{IT_STRING | IT_CVAR, NULL, "Tiny controls", NULL,          &cv_dpadtiny,       10},
+	{IT_STRING | IT_CVAR, NULL, "Camera movement", NULL,        &cv_touchcamera,    20},
+
+	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL, &cv_alwaysfreelook, 30},
+	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL, &cv_chasefreelook,  50},
+
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
+	                      NULL, "Touch X Sensitivity", NULL,    &cv_touchsens,      70},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
+	                      NULL, "Touch Y Sensitivity", NULL,    &cv_touchysens,     80},
+};
+#endif
+
 static menuitem_t OP_P1ControlsMenu[] =
 {
 	{IT_CALL    | IT_STRING, NULL, "Control Configuration...", NULL,  M_Setup1PControlsMenu,   10},
@@ -1155,22 +1171,6 @@ static menuitem_t OP_Mouse2OptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
 	                      NULL, "Mouse Y Speed", NULL,    &cv_mouseysens2,      80},
 };
-
-#ifdef TOUCHINPUTS
-static menuitem_t OP_TouchOptionsMenu[] =
-{
-	{IT_STRING | IT_CVAR, NULL, "Tiny controls", NULL,          &cv_dpadtiny,       10},
-	{IT_STRING | IT_CVAR, NULL, "Camera movement", NULL,        &cv_touchcamera,    20},
-
-	{IT_STRING | IT_CVAR, NULL, "First-Person Vert-Look", NULL, &cv_alwaysfreelook, 30},
-	{IT_STRING | IT_CVAR, NULL, "Third-Person Vert-Look", NULL, &cv_chasefreelook,  50},
-
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Touch X Sensitivity", NULL,    &cv_touchsens,      70},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Touch Y Sensitivity", NULL,    &cv_touchysens,     80},
-};
-#endif
 
 enum
 {
@@ -2471,7 +2471,7 @@ boolean M_Responder(event_t *ev)
 		{
 			INT32 x = ev->data1;
 			INT32 y = ev->data2;
-#define finger ev->data3
+			INT32 finger = ev->data3;
 			boolean button = false;
 
 			// Check for any buttons first
@@ -2527,9 +2527,9 @@ boolean M_Responder(event_t *ev)
 				touchfingers[finger].y = y;
 			}
 		}
-			if (touchfingers[finger].type.menu)
+			/*if (touchfingers[finger].type.menu)
 				ch = touchfingers[finger].u.keyinput;
-			touchfingers[finger].type.menu = false;
+			touchfingers[finger].type.menu = false;*/ // dont crash srb2 >:(
 #endif
 	if (ev->type == ev_keydown) // Preserve event for other responders
 		ch = ev->data1;
