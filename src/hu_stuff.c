@@ -827,7 +827,24 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			fmt2 = "%s<%s%s>\x80%s %s%s";
 		}
 
-		HU_AddChatText(va(fmt2, prefix, cstart, dispname, cend, textcolor, msg), cv_chatnotifications.value); // add to chat
+// add to chat
+#if defined(__ANDROID__)
+		{
+			// Lactozilla: va() in Android doesn't like color codes
+			size_t length = strlen(prefix) + strlen(cstart) + strlen(dispname) + strlen(cend) + strlen(textcolor) + strlen(msg);
+			char *finalstring = Z_Malloc(length + 5, PU_STATIC, NULL);
+			finalstring[0] = '\0';
+#define cat(x) strcat(finalstring, x)
+			cat(prefix); cat("<"); cat(cstart); cat(dispname); cat(">\x80");
+			cat(cend); cat(" ");
+			cat(textcolor); cat(msg);
+#undef cat
+			HU_AddChatText(finalstring, cv_chatnotifications.value);
+			Z_Free(finalstring);
+		}
+#else
+		HU_AddChatText(va(fmt2, prefix, cstart, dispname, cend, textcolor, msg), cv_chatnotifications.value);
+#endif
 
 		if (tempchar)
 			Z_Free(tempchar);
@@ -846,6 +863,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 //
 static inline boolean HU_keyInChatString(char *s, char ch)
 {
+#if (!(defined(__ANDROID__) && defined(TOUCHINPUTS)))
 	size_t l;
 
 	if ((ch >= HU_FONTSTART && ch <= HU_FONTEND && hu_font[ch-HU_FONTSTART])
@@ -879,7 +897,9 @@ static inline boolean HU_keyInChatString(char *s, char ch)
 		}
 		return false;
 	}
-	else if (ch == KEY_BACKSPACE)
+	else
+#endif
+	if (ch == KEY_BACKSPACE)
 	{
 		size_t i = c_input;
 
@@ -1157,24 +1177,16 @@ boolean HU_Responder(event_t *ev)
 			&& netgame && !OLD_MUTE) // check for old chat mute, still let the players open the chat incase they want to scroll otherwise.
 		{
 			I_SetTextInputMode(true);
-			chat_on = true;
+			HU_OpenChat();
 			chat_on_first_event = false;
-			w_chat[0] = 0;
 			teamtalk = false;
-			chat_scrollmedown = true;
-			typelines = 1;
 			return true;
 		}
 		if ((ev->data1 == gamecontrol[gc_teamkey][0] || ev->data1 == gamecontrol[gc_teamkey][1])
 			&& netgame && !OLD_MUTE)
 		{
 			I_SetTextInputMode(true);
-			chat_on = true;
-			chat_on_first_event = false;
-			w_chat[0] = 0;
-			teamtalk = G_GametypeHasTeams(); // Don't teamtalk if we don't have teams.
-			chat_scrollmedown = true;
-			typelines = 1;
+			HU_OpenChat();
 			return true;
 		}
 	}
@@ -1206,6 +1218,7 @@ boolean HU_Responder(event_t *ev)
 		 || ev->data1 == KEY_LALT || ev->data1 == KEY_RALT)
 			return true;
 
+#if (!(defined(__ANDROID__) && defined(TOUCHINPUTS)))
 		// pasting. pasting is cool. chat is a bit limited, though :(
 		if ((c == 'v' && ctrldown) && !CHAT_MUTE)
 		{
@@ -1250,6 +1263,10 @@ boolean HU_Responder(event_t *ev)
 				return true;
 			}
 		}
+#else
+		// Lactozilla: Force the cursor to always be at the end of the text
+		c_input = strlen(w_chat);
+#endif
 
 		if (ev->type == ev_keydown && (c < 32 || c >= 128))
 		{
@@ -1261,10 +1278,8 @@ boolean HU_Responder(event_t *ev)
 		if (c == KEY_ENTER)
 		{
 			I_SetTextInputMode(false);
-			chat_on = false;
-			c_input = 0; // reset input cursor
+			HU_CloseChat();
 			chat_scrollmedown = true; // you hit enter, so you might wanna autoscroll to see what you just sent. :)
-			I_UpdateMouseGrab();
 		}
 		else if (c == KEY_ESCAPE
 			|| ((c == gamecontrol[gc_talkkey][0] || c == gamecontrol[gc_talkkey][1]
@@ -1272,9 +1287,7 @@ boolean HU_Responder(event_t *ev)
 			&& c >= KEY_MOUSE1)) // If it's not a keyboard key, then the chat button is used as a toggle.
 		{
 			I_SetTextInputMode(false);
-			chat_on = false;
-			c_input = 0; // reset input cursor
-			I_UpdateMouseGrab();
+			HU_CloseChat();
 		}
 		else if ((c == KEY_UPARROW || c == KEY_MOUSEWHEELUP) && chat_scroll > 0 && !OLDCHAT) // CHAT SCROLLING YAYS!
 		{
@@ -1303,6 +1316,35 @@ boolean HU_Responder(event_t *ev)
 //======================================================================
 //                         HEADS UP DRAWING
 //======================================================================
+
+void HU_OpenChat(void)
+{
+#ifndef NONET
+	chat_on = true;
+	w_chat[0] = 0;
+	teamtalk = G_GametypeHasTeams(); // Don't teamtalk if we don't have teams.
+	chat_scrollmedown = true;
+	typelines = 1;
+#endif
+}
+
+void HU_CloseChat(void)
+{
+#ifndef NONET
+	chat_on = false;
+	c_input = 0; // reset input cursor
+	I_UpdateMouseGrab();
+#endif
+}
+
+boolean HU_IsChatOpen(void)
+{
+#ifndef NONET
+	return chat_on;
+#else
+	return false;
+#endif
+}
 
 #ifndef NONET
 

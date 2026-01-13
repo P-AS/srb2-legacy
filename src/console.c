@@ -417,6 +417,12 @@ void CON_Init(void)
 	con_destlines = vid.height;
 	con_curlines = vid.height;
 
+#if defined(__ANDROID__)
+	// Lactozilla: Change the default console height for Android
+	cons_height.defaultvalue = "40";
+#endif
+
+
 
 	if (!dedicated)
 	{
@@ -625,6 +631,11 @@ boolean CON_Ready(void)
 	return consoleready;
 }
 
+void CON_Toggle(void)
+{
+	consoletoggle = true;
+}
+
 // Console ticker: handles console move in/out, cursor blinking
 //
 void CON_Ticker(void)
@@ -635,6 +646,12 @@ void CON_Ticker(void)
 	// cursor blinking
 	con_tick++;
 	con_tick &= 7;
+
+#if (defined(__ANDROID__) && defined(TOUCHINPUTS))
+	// Lactozilla: Close the console, if the screen keyboard is not visible
+	if (consoleready && (!I_KeyboardOnScreen()))
+		consoletoggle = true;
+#endif
 
 	// console key was pushed
 	if (consoletoggle)
@@ -649,7 +666,12 @@ void CON_Ticker(void)
 			I_UpdateMouseGrab();
 		}
 		else
+		{
 			CON_ChangeHeight();
+#if (defined(__ANDROID__) && defined(TOUCHINPUTS))
+			con_scrollup = 0;
+#endif
+		}
 	}
 
 

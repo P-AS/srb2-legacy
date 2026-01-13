@@ -2523,6 +2523,11 @@ void G_DoReborn(INT32 playernum)
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
 
+#ifdef TOUCHINPUTS
+	if (playernum == consoleplayer)
+		G_UpdateTouchControls();
+#endif
+
 	if (player->bot && playernum != consoleplayer)
 	{ // Bots respawn next to their master.
 		mobj_t *oldmo = NULL;
@@ -5729,6 +5734,9 @@ boolean G_CheckDemoStatus(void)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
+#ifdef TOUCHINPUTS
+	G_UpdateTouchControls();
+#endif
 }
 
 /* These functions handle the exitgame flag. Before, when the user

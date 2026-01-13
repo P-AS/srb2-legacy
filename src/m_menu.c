@@ -1867,6 +1867,7 @@ menu_t OP_AllControlsDef = CONTROLMENUSTYLE(OP_AllControlsMenu, &OP_P1ControlsDe
 menu_t OP_AllControls2Def = CONTROLMENUSTYLE(OP_AllControls2Menu, &OP_P2ControlsDef);
 menu_t OP_P1ControlsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_P1ControlsMenu, &OP_ControlsDef, 60, 30);
 menu_t OP_P2ControlsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_P2ControlsMenu, &OP_ControlsDef, 60, 30);
+menu_t OP_TouchOptionsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_TouchOptionsMenu, &OP_TouchOptionsDef, 60, 30);
 menu_t OP_MouseOptionsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_MouseOptionsMenu, &OP_P1ControlsDef, 60, 30);
 menu_t OP_Mouse2OptionsDef = DEFAULTMENUSTYLE("M_CONTRO", OP_Mouse2OptionsMenu, &OP_P2ControlsDef, 60, 30);
 menu_t OP_Joystick1Def = DEFAULTMENUSTYLE("M_CONTRO", OP_Joystick1Menu, &OP_P1ControlsDef, 60, 30);
@@ -2346,6 +2347,8 @@ boolean M_Responder(event_t *ev)
 	if (CON_Ready())
 		return false;
 
+	routine = currentMenu->menuitems[itemOn].itemaction;
+
 	if (noFurtherInput)
 	{
 		// Ignore input after enter/escape/other buttons
@@ -2486,6 +2489,10 @@ boolean M_Responder(event_t *ev)
 					if (!butt->w)
 						continue;
 
+					// Ignore hidden buttons
+					if (butt->hidden)
+						continue;
+
 
 					// Check if your finger touches this button.
 					if (G_FingerTouchesButton(x, y, butt))
@@ -2498,8 +2505,13 @@ boolean M_Responder(event_t *ev)
 				}
 			}
 
-			// Handle screen regions
+			// Finger didn't tap any button
 			if (ev->type == ev_touchdown && (!button))
+			{
+				// Tap anywhere to end the messatge
+				if (routine == M_StopMessage)
+					touchfingers[finger].u.keyinput = KEY_ENTER;
+			else // Handle screen regions
 			{
 				// 1/4 of the screen
 				INT32 sides = (vid.width / 4);
@@ -2520,6 +2532,7 @@ boolean M_Responder(event_t *ev)
 					else
 						touchfingers[finger].u.keyinput = KEY_UPARROW;
 				}
+			}
 
 				// finger down
 				touchfingers[finger].type.menu = true;
@@ -2528,8 +2541,8 @@ boolean M_Responder(event_t *ev)
 			}
 		}
 			/*if (touchfingers[finger].type.menu)
-				ch = touchfingers[finger].u.keyinput;
-			touchfingers[finger].type.menu = false;*/ // dont crash srb2 >:(
+				ch = touchfingers[finger].u.keyinput;*/ // this crashes the game for some reason, ill have to look into it later
+			//touchfingers[finger].type.menu = false; this too
 #endif
 	if (ev->type == ev_keydown) // Preserve event for other responders
 		ch = ev->data1;
@@ -2616,7 +2629,14 @@ boolean M_Responder(event_t *ev)
 		return false;
 	}
 
-	routine = currentMenu->menuitems[itemOn].itemaction;
+#if defined(__ANDROID__)
+	// Lactozilla: Open the console from the menu
+	if (ch == KEY_CONSOLE)
+	{
+		CON_Toggle();
+		return true;
+	}
+#endif
 
 	// Handle menuitems which need a specific key handling
 	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)

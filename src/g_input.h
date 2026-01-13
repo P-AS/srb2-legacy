@@ -143,6 +143,8 @@ extern INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], 
 extern UINT8 gamekeydown[NUMINPUTS];
 
 boolean G_InGameInput(void);
+boolean G_HandlePauseKey(boolean ispausebreak);
+boolean G_HandleSpyMode(void);
 
 // Lactozilla: Touch input buttons
 #ifdef TOUCHINPUTS
@@ -169,6 +171,8 @@ typedef struct
 	INT32 w, h;
 	tic_t pressed; // touch navigation
 	boolean dpad; // d-pad key
+	boolean hidden; // hidden key?
+	const char *name; // key name
 } touchconfig_t;
 
 // Screen buttons
