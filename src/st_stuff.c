@@ -1150,12 +1150,12 @@ void ST_drawTouchGameInput(void)
 		true, flags, accent);
 
 #define DEFAULTKEYCOL 16 // Because of macro expansion, this define needs to be up here.
-#define drawbutton(gctype, butt, str, strxoffs, stryoffs, keycol) { \
+#define drawbutton(gctype, button, str, strxoffs, stryoffs, keycol) { \
 	touchconfig_t *control = &touchcontrols[gctype]; \
 	if (!control->hidden) { \
 		const char *keystr = ((str == NULL) ? control->name : str); \
 		SCALEBUTTON(control); \
-		if ((butt != 0 && (stplyr->cmd.buttons & butt)) \
+		if ((button != 0 && (stplyr->cmd.buttons & button)) \
 		|| control->pressed > I_GetTime()) \
 	{ \
 		col = accent; \
@@ -1174,29 +1174,29 @@ void ST_drawTouchGameInput(void)
 		} \
 	}
 
-#define drawbutt(gctype, butt, keystr) drawbutton(gctype, butt, keystr, 0, 0, 16)
-#define drawcolbutt(gctype, butt, keystr, col) drawbutton(gctype, butt, keystr, 0, 0, col)
-#define drawoffsbutt(gctype, butt, keystr, xoffs, yoffs) drawbutton(gctype, butt, keystr, xoffs, yoffs, 16)
+#define drawbutton(gctype, button, keystr) drawbutton(gctype, button, keystr, 0, 0, 16)
+#define drawcolbutton(gctype, button, keystr, col) drawbutton(gctype, button, keystr, 0, 0, col)
+#define drawoffsbutton(gctype, button, keystr, xoffs, yoffs) drawbutton(gctype, button, keystr, xoffs, yoffs, 16)
 
 	// Jump and spin
-	drawbutt(gc_jump,  BT_JUMP, NULL);
-	drawbutt(gc_use,   BT_USE,  NULL);
+	drawbutton(gc_jump,  BT_JUMP, NULL);
+	drawbutton(gc_use,   BT_USE,  NULL);
 
 	// Control panel
-	drawbutt(gc_systemmenu, 0, "\x018"); // <>
+	drawbutton(gc_systemmenu, 0, "\x018"); // <>
 
 	// Pause
-	drawbutt(gc_pause,      0, (paused ? "\x1D" : "II"));
+	drawbutton(gc_pause,      0, (paused ? "\x1D" : "II"));
 
 	// Switch viewpoint
-	drawbutt(gc_viewpoint, 0, "F12");
+	drawbutton(gc_viewpoint, 0, "F12");
 
 	// Talk key and team talk key
-	drawoffsbutt(gc_talkkey, 0, "...", 1, -1);
-	drawbutton  (gc_teamkey, 0, "...", 1, -1, accent);
+	drawoffsbutton(gc_talkkey, 0, "...", 1, -1);
+	drawbutton(gc_teamkey, 0, "...", 1, -1, accent);
 
-#undef drawoffsbutt
-#undef drawcolbutt
+#undef drawoffsbutton
+#undef drawcolbutton
 #undef drawbutton
 #undef DEFAULTKEYCOL
 
@@ -1213,7 +1213,7 @@ void ST_drawTouchMenuInput(void)
 	INT32 x, y, w, h;
 	patch_t *font;
 
-#define drawbutt(keyname, symb) \
+#define drawbutton(keyname, symb) \
 	control = &touchnavigation[keyname]; \
 	if (!control->hidden) \
 	{ \
@@ -1236,11 +1236,11 @@ void ST_drawTouchMenuInput(void)
 						symb|flags, false); \
 	}
 
-	drawbutt(KEY_ESCAPE, 0x1C); // left arrow
-	drawbutt(KEY_ENTER, 0x1D); // right arrow
-	drawbutt(KEY_CONSOLE, '$');
+	drawbutton(KEY_ESCAPE, 0x1C); // left arrow
+	drawbutton(KEY_ENTER, 0x1D); // right arrow
+	drawbutton(KEY_CONSOLE, '$');
 
-#undef drawbutt
+#undef drawbutton
 }
 
 #undef SCALEBUTTON
