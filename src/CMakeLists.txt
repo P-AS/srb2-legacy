@@ -19,6 +19,8 @@ set(SRB2_CONFIG_HAVE_OPENMPT ON CACHE BOOL
 	"Enable OpenMPT support.")
 set(SRB2_CONFIG_HAVE_THREADS ON CACHE BOOL
 	"Enable multithreading support.")
+set(SRB2_CONFIG_HAVE_TOUCHINPUTS ON CACHE BOOL
+	"Enable touch controls.")
 set(SRB2_CONFIG_HWRENDER OFF CACHE BOOL
 	"Enable hardware rendering through OpenGL.")
 set(SRB2_CONFIG_STATIC_OPENGL OFF CACHE BOOL
@@ -98,6 +100,10 @@ if(${SRB2_CONFIG_HAVE_THREADS})
 	set(SRB2_HAVE_THREADS ON)
 	target_sources(SRB2SDL2 PRIVATE i_threads.c)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
+endif()
+
+if(${SRB2_CONFIG_HAVE_TOUCHINPUTS})
+	target_compile_definitions(SRB2SDL2 PRIVATE -DTOUCHINPUTS)
 endif()
 
 if(${SRB2_CONFIG_HAVE_ZLIB})
