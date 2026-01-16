@@ -11,8 +11,8 @@ android {
 
         minSdkVersion  28
         targetSdkVersion 30
-        versionCode 2129
-        versionName "2.1.29"
+        versionCode 2130
+        versionName "2.1.30"
         ndkVersion "26.1.10909125"
         externalNativeBuild {
             cmake {
@@ -50,8 +50,4 @@ android {
             buildStagingDirectory file("${buildDir}/../.externalNativeBuild/${project.name}")
         }
     }
-}
-
-dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
 }

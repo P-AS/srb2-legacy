@@ -202,7 +202,7 @@ static CV_PossibleValue_t timetic_cons_t[] = {{0, "Normal"}, {1, "Centiseconds"}
 //Using "Normal" instead of 2.2's "Classic" in order to be compatible with people's existing configurations.
 
 consvar_t cv_showinput = CVAR_INIT ("showinput", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_showinputjoy = CVAR_INIT ("showinputjoy", "Off", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_showinputjoy = CVAR_INIT ("showinputjoy", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 static CV_PossibleValue_t  scorepos_cons_t[] = {{0, "Normal"}, {1, "Modern"}, {0, NULL}};
 
 #ifdef NETGAME_DEVMODE
@@ -769,6 +769,10 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_fireaxis2);
 	CV_RegisterVar(&cv_firenaxis);
 	CV_RegisterVar(&cv_firenaxis2);
+	CV_RegisterVar(&cv_deadzone);
+	CV_RegisterVar(&cv_deadzone2);
+	CV_RegisterVar(&cv_digitaldeadzone);
+	CV_RegisterVar(&cv_digitaldeadzone2);
 
 	// filesrch.c
 	CV_RegisterVar(&cv_addons_option);
