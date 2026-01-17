@@ -93,14 +93,14 @@ static dclick_t joy2dclicks[JOYBUTTONS + JOYHATS*4];
 static UINT8 G_CheckDoubleClick(UINT8 state, dclick_t *dt);
 
 #ifdef TOUCHINPUTS
-boolean G_FingerTouchesButton(INT32 x, INT32 y, touchconfig_t *butt)
+boolean G_FingerTouchesButton(INT32 x, INT32 y, touchconfig_t *button)
 {
 	fixed_t dupx = vid.dupx*FRACUNIT;
 	fixed_t dupy = vid.dupy*FRACUNIT;
-	INT32 tx = FixedMul(butt->x * FRACUNIT, dupx) / FRACUNIT;
-	INT32 ty = FixedMul(butt->y * FRACUNIT, dupy) / FRACUNIT;
-	INT32 tw = FixedMul(butt->w * FRACUNIT, dupx) / FRACUNIT;
-	INT32 th = FixedMul(butt->h * FRACUNIT, dupy) / FRACUNIT;
+	INT32 tx = FixedMul(button->x * FRACUNIT, dupx) / FRACUNIT;
+	INT32 ty = FixedMul(button->y * FRACUNIT, dupy) / FRACUNIT;
+	INT32 tw = FixedMul(button->w * FRACUNIT, dupx) / FRACUNIT;
+	INT32 th = FixedMul(button->h * FRACUNIT, dupy) / FRACUNIT;
 	return (x >= tx && x <= tx + tw && y >= ty && y <= ty + th);
 }
 #endif

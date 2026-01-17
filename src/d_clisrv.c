@@ -828,7 +828,7 @@ static inline void CL_DrawConnectionStatus(void)
 		else
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP|V_ALLOWLOWERCASE,
 				M_GetText("Waiting to download files..."));
-	
+
 	}
 
 #ifdef TOUCHINPUTS
@@ -1618,9 +1618,9 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	// Call it only once by tic
 	if (*oldtic != I_GetTime())
 	{
-	#ifndef TOUCHINPUTS
 		INT32 key;
 
+	#ifndef TOUCHINPUTS
 		I_OsPolling();
 		key = I_GetKey();
 	#endif
@@ -1702,16 +1702,21 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 
 
-		if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 #ifdef TOUCHINPUTS
-		INT32 x = -1, y = -1;
+		INT32 x = -1;
+		INT32 y = -1;
 		I_OsPolling();
 		I_GetFinger(&x, &y);
+
 		if ((x != -1 && y != -1) && G_FingerTouchesButton(x, y, &touchnavigation[KEY_ESCAPE]))
+#else
+		if (key == KEY_ESCAPE || key == KEY_JOY1+1)
 #endif
 		{
 			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
-//				M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress ESC\n"), NULL, MM_NOTHING);
+#ifndef TOUCHINPUTS
+			M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress ESC\n"), NULL, MM_NOTHING);
+#endif
 			D_QuitNetGame();
 			CL_Reset();
 			D_StartTitle();

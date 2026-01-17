@@ -223,8 +223,8 @@ void G_SetupTouchSettings(void);
 void G_UpdateTouchControls(void);
 void G_DefineTouchButtons(void);
 
-// Check if the finger (x, y) is touching the specified button (butt)
-boolean G_FingerTouchesButton(INT32 x, INT32 y, touchconfig_t *butt);
+// Check if the finger (x, y) is touching the specified button
+boolean G_FingerTouchesButton(INT32 x, INT32 y, touchconfig_t *button);
 #endif
 
 void G_SaveKeySetting(FILE *f);

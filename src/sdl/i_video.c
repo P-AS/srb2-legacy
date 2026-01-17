@@ -989,6 +989,12 @@ static void Impl_HandleTouchEvent(SDL_TouchFingerEvent evt)
 	}
 #endif
 
+#ifdef VIRTUAL_KEYBOARD
+static char *textinputbuffer = NULL;
+static size_t textbufferlength = 0;
+static void (*textinputcallback)(char *, size_t);
+#endif
+
 static void Impl_HandleTextEvent(SDL_TextInputEvent evt)
 {
 	event_t event;
@@ -1235,6 +1241,47 @@ void I_StartupMouse(void)
 		SDLdoGrabMouse();
 	else
 		SDLdoUngrabMouse();
+}
+
+void I_ShowVirtualKeyboard(char *buffer, size_t length)
+{
+#ifdef VIRTUAL_KEYBOARD
+	textinputbuffer = buffer;
+	textbufferlength = length;
+	textinputcallback = NULL;
+	SDL_StartTextInput();
+#else
+	(void)buffer;
+	(void)length;
+#endif
+}
+
+void I_SetVirtualKeyboardCallback(void (*callback)(char *, size_t))
+{
+#ifdef VIRTUAL_KEYBOARD
+	textinputcallback = callback;
+#else
+	(void)callback;
+#endif
+}
+
+boolean I_KeyboardOnScreen(void)
+{
+#ifdef VIRTUAL_KEYBOARD
+	return SDL_IsTextInputActive() == SDL_TRUE ? true : false;
+#else
+	return false;
+#endif
+}
+
+void I_CloseScreenKeyboard(void)
+{
+#ifdef VIRTUAL_KEYBOARD
+	textinputbuffer = NULL;
+	textbufferlength = 0;
+	textinputcallback = NULL;
+	SDL_StopTextInput();
+#endif
 }
 
 //

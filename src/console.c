@@ -422,8 +422,6 @@ void CON_Init(void)
 	cons_height.defaultvalue = "40";
 #endif
 
-
-
 	if (!dedicated)
 	{
 		con_started = true;

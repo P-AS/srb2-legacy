@@ -118,6 +118,16 @@ extern FILE *logstream;
 extern char logfilename[1024];
 #endif
 
+// Defines that the game is being compiled for a mobile OS
+#if defined(__ANDROID__) || defined(__IPHONEOS__) || defined(__TVOS__)
+#define MOBILE_PLATFORM
+#endif
+
+// TV support
+#if defined(__ANDROID__) || defined(__TVOS__)
+#define TV_PLATFORM
+#endif
+
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
 #define VERSIONSTRING "Development EXE"
@@ -138,6 +148,11 @@ extern char logfilename[1024];
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
 #define USE_PATCH_DTA
+
+// Virtual keyboard
+#if defined(MOBILE_PLATFORM) && defined(TOUCHINPUTS)
+#define VIRTUAL_KEYBOARD
+#endif
 
 // Use .kart extension addons
 //#define USE_KART
