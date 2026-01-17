@@ -195,6 +195,28 @@ INT32 I_NumJoys(void);
 */
 const char *I_GetJoyName(INT32 joyindex);
 
+/**	\brief to startup the touch screen
+*/
+#ifdef TOUCHINPUTS
+void I_InitTouchScreen(void);
+#endif
+
+/**	\brief show the on-screen keyboard
+*/
+void I_ShowVirtualKeyboard(char *buffer, size_t length);
+
+/**	\brief set a callback for text input events
+*/
+void I_SetVirtualKeyboardCallback(void (*callback)(char *, size_t));
+
+/**	\brief returns the status of the on-screen keyboard
+*/
+boolean I_KeyboardOnScreen(void);
+
+/**	\brief close the on-screen keyboard
+*/
+void I_CloseScreenKeyboard(void);
+
 #ifndef NOMUMBLE
 #include "p_mobj.h" // mobj_t
 #include "s_sound.h" // listener_t

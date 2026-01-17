@@ -1025,6 +1025,23 @@ const char *I_GetPlatform(void)
 	return SDL_GetPlatform();
 }
 
+#ifdef TOUCHINPUTS
+void I_GetFinger(INT32 *x, INT32 *y)
+{
+	event_t *ev;
+	for (; eventtail != eventhead; eventtail = (eventtail+1)&(MAXEVENTS-1))
+	{
+		ev = &events[eventtail];
+		if (ev->type == ev_touchdown || ev->type == ev_touchmotion)
+		{
+			*x = ev->data1;
+			*y = ev->data2;
+			continue;
+		}
+	}
+}
+#endif
+
 //
 // I_JoyScale
 //
@@ -1687,6 +1704,21 @@ void I_InitJoystick2(void)
 	if (JoyInfo.dev != newjoy && JoyInfo2.dev != newjoy)
 		SDL_JoystickClose(newjoy);
 }
+
+//
+// I_InitTouchScreen
+//
+#ifdef TOUCHINPUTS
+void I_InitTouchScreen(void)
+{
+	// Lactozilla: The touch screen depends on the joystick system.
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
+	{
+		if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) == -1)
+			CONS_Printf(M_GetText("Couldn't initialize the touch screen: %s\n"), SDL_GetError());
+	}
+}
+#endif
 
 static void I_ShutdownInput(void)
 {

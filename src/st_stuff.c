@@ -15,6 +15,7 @@
 
 #include "doomdef.h"
 #include "g_game.h"
+#include "g_input.h"
 #include "r_local.h"
 #include "p_local.h"
 #include "f_finale.h"
@@ -25,6 +26,7 @@
 #include "hu_stuff.h"
 #include "s_sound.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "m_menu.h"
 #include "m_cheat.h"
 #include "p_setup.h" // NiGHTS grading
@@ -953,6 +955,297 @@ static void ST_drawInput(void)
 	if (!demosynced) // should always be last, so it doesn't push anything else around
 		V_DrawThinString(x, y, inputflags|((leveltime & 4) ? V_YELLOWMAP : V_REDMAP), "BAD DEMO!!");
 }
+
+#ifdef TOUCHINPUTS
+#define SCALEBUTTON(touch) \
+	x = FixedMul(touch->x * FRACUNIT, dupx) / FRACUNIT; \
+	y = FixedMul(touch->y * FRACUNIT, dupy) / FRACUNIT; \
+	w = FixedMul(touch->w * FRACUNIT, dupx) / FRACUNIT; \
+	h = FixedMul(touch->h * FRACUNIT, dupy) / FRACUNIT;
+
+void ST_drawTouchDPad(
+					INT32 dpadx, INT32 dpady, INT32 dpadw, INT32 dpadh,
+					touchconfig_t *tleft, boolean moveleft,
+					touchconfig_t *tright, boolean moveright,
+					touchconfig_t *tup, boolean moveup,
+					touchconfig_t *tdown, boolean movedown,
+					boolean backing, INT32 flags, INT32 accent)
+{
+	INT32 x, y, w, h;
+	fixed_t dupx = vid.dupx*FRACUNIT;
+	fixed_t dupy = vid.dupy*FRACUNIT;
+	const INT32 shadow = vid.dupy;
+	INT32 col, offs;
+	INT32 base, ybase;
+	INT32 xslant, yslant;
+	INT32 udw;
+	INT32 i, j;
+
+#define SCALEPAD(touch) \
+	SCALEBUTTON(touch); \
+	xslant = FixedMul((touch->w/2) * FRACUNIT, dupx) / FRACUNIT; \
+	yslant = FixedMul((touch->h/2) * FRACUNIT, dupy) / FRACUNIT; \
+
+	// O backing
+	if (backing)
+	{
+		x = FixedMul(dpadx * FRACUNIT, dupx) / FRACUNIT;
+		y = FixedMul(dpady * FRACUNIT, dupy) / FRACUNIT;
+		w = FixedMul(dpadw * FRACUNIT, dupx) / FRACUNIT;
+		h = FixedMul(dpadh * FRACUNIT, dupy) / FRACUNIT;
+
+	V_DrawFill(x, y-1, w, h, flags|20);
+	V_DrawFill(x, y+h-1, w, shadow, flags|29);
+	}
+
+	if (vid.dupx == 1)
+		udw = 2;
+	else
+		udw = (vid.dupx * 3);
+
+	// <
+	SCALEPAD(tleft);
+
+	base = (w - xslant);
+	ybase = (y + h) - vid.dupy;
+
+#define drawleftbutton(color, offset) \
+	V_DrawFill(x, y+offset, base+(vid.dupx), h, color|flags); \
+	for (i = 0; i < xslant; i++) \
+		V_DrawFill(x+base+i+(vid.dupx), (y+i)+offset, vid.dupx, h-(i*2), color|flags);
+
+	if (moveleft)
+	{
+		col = accent;
+		offs = shadow;
+	}
+	else
+	{
+		col = 16;
+		offs = 0;
+		drawleftbutton(29, shadow);
+	}
+
+	drawleftbutton(col, offs);
+
+	// ^
+	SCALEPAD(tup);
+
+	yslant /= 2;
+	yslant += (vid.dupy * 2) + 1;
+
+	base = w;
+	ybase = (y + h) - vid.dupy;
+
+#define drawupbutton(color, offset) \
+	for (i = 0; i < yslant; i++) \
+		V_DrawFill(x+i, y+offset, 1, (h-yslant)+i, color|flags); \
+	ybase = (h-yslant)+i; \
+	V_DrawFill(x+i, y+offset, udw, ybase, color|flags); \
+	for (j = 0; j < yslant; j++) \
+		V_DrawFill(x+i+j+udw, y+offset, 1, (ybase-(j+1)), color|flags); \
+
+	if (moveup)
+	{
+		col = accent;
+		offs = shadow;
+	}
+	else
+	{
+		col = 16;
+		offs = 0;
+		drawupbutton(29, shadow);
+	}
+
+	drawupbutton(col, offs);
+
+	// >
+	SCALEPAD(tright);
+
+	base = (w - xslant);
+	ybase = (y + h) - vid.dupy;
+
+#define drawrightbutton(color, offset) \
+	V_DrawFill(x+base-(vid.dupx), y+offset, base+(vid.dupx), h, color|flags); \
+	for (i = 0; i < xslant; i++) \
+		V_DrawFill(x+(base-(vid.dupx))-i-(vid.dupx), (y+i)+offset, vid.dupx, h-(i*2), color|flags);
+
+	if (moveright)
+	{
+		col = accent;
+		offs = shadow;
+	}
+	else
+	{
+		col = 16;
+		offs = 0;
+		drawrightbutton(29, shadow);
+	}
+
+	drawrightbutton(col, offs);
+
+	// v
+	SCALEPAD(tdown);
+
+	yslant /= 2;
+	yslant += (vid.dupy * 2) + 1;
+
+	base = w;
+	ybase = (y + h);
+
+#define drawdownbutton(color, offset) \
+	for (i = 0; i < yslant; i++) \
+		V_DrawFill(x+i, (y+(yslant-i)) + offset, 1, (h-yslant)+i, color|flags); \
+	ybase = (h-yslant)+i; \
+	V_DrawFill(x+i, y+offset, udw, ybase, color|flags); \
+	for (j = 0; j < yslant; j++) \
+		V_DrawFill(x+i+j+udw, ((y+(yslant-i))+j) + 1 + offset, 1, (ybase-(j+1)), color|flags);
+
+	if (movedown)
+	{
+		col = accent;
+		offs = shadow;
+	}
+	else
+	{
+		col = 16;
+		offs = 0;
+		drawdownbutton(29, shadow);
+	}
+
+	drawdownbutton(col, offs);
+
+#undef drawdownbutton
+#undef drawrightbutton
+#undef drawupbutton
+#undef drawleftbutton
+#undef SCALEPAD
+}
+
+void ST_drawTouchGameInput(void)
+{
+	fixed_t dupx = vid.dupx*FRACUNIT;
+	fixed_t dupy = vid.dupy*FRACUNIT;
+	const INT32 flags = V_NOSCALESTART;
+	const INT32 accent = (stplyr->skincolor);
+	const INT32 shadow = vid.dupy;
+	INT32 col, offs;
+	INT32 x, y, w, h;
+
+	touchconfig_t *tleft = &touchcontrols[gc_strafeleft];
+	touchconfig_t *tright = &touchcontrols[gc_straferight];
+	touchconfig_t *tup = &touchcontrols[gc_forward];
+	touchconfig_t *tdown = &touchcontrols[gc_backward];
+
+	if (!G_InGameInput())
+		return;
+
+	ST_drawTouchDPad(
+		touch_dpad_x, touch_dpad_y,
+		touch_dpad_w, touch_dpad_h,
+		tleft, (stplyr->cmd.sidemove < 0),
+		tright, (stplyr->cmd.sidemove > 0),
+		tup, (stplyr->cmd.forwardmove > 0),
+		tdown, (stplyr->cmd.forwardmove < 0),
+		true, flags, accent);
+
+#define DEFAULTKEYCOL 16 // Because of macro expansion, this define needs to be up here.
+#define drawbutton(gctype, button, str, strxoffs, stryoffs, keycol) { \
+	touchconfig_t *control = &touchcontrols[gctype]; \
+	if (!control->hidden) { \
+		const char *keystr = ((str == NULL) ? control->name : str); \
+		SCALEBUTTON(control); \
+		if ((button != 0 && (stplyr->cmd.buttons & button)) \
+		|| control->pressed > I_GetTime()) \
+	{ \
+		col = accent; \
+		offs = shadow; \
+	} \
+	else \
+	{ \
+		col = keycol; \
+		offs = 0; \
+		V_DrawFill(x, y + h, w, shadow, 29|flags); \
+	} \
+	V_DrawFill(x, y + offs, w, h, col|flags); \
+		V_DrawString((x + (w / 2)) - ((V_StringWidth(keystr, flags)*vid.dupx) / 2) + strxoffs, \
+					((y + (h / 2)) - ((8*vid.dupy) / 2) + offs) + stryoffs, \
+					flags, keystr); \
+		} \
+	}
+
+#define drawalignedbutton(gctype, button, keystr) drawbutton(gctype, button, keystr, 0, 0, 16)
+#define drawcolbutton(gctype, button, keystr, col) drawbutton(gctype, button, keystr, 0, 0, col)
+#define drawoffsbutton(gctype, button, keystr, xoffs, yoffs) drawbutton(gctype, button, keystr, xoffs, yoffs, 16)
+
+	// Jump and spin
+	drawalignedbutton(gc_jump,  BT_JUMP, NULL);
+	drawalignedbutton(gc_use,   BT_USE,  NULL);
+
+	// Control panel
+	drawalignedbutton(gc_systemmenu, 0, "\x018"); // <>
+
+	// Pause
+	drawalignedbutton(gc_pause, 0, (paused ? "\x1D" : "II"));
+
+	// Switch viewpoint
+	drawalignedbutton(gc_viewpoint, 0, "F12");
+
+	// Talk key and team talk key
+	drawoffsbutton(gc_talkkey, 0, "...", 1, -1);
+	drawbutton    (gc_teamkey, 0, "...", 1, -1, accent);
+
+#undef drawoffsbutton
+#undef drawcolbutton
+#undef drawalignedbutton
+#undef drawbutton
+#undef DEFAULTKEYCOL
+}
+
+void ST_drawTouchMenuInput(void)
+{
+	fixed_t dupx = vid.dupx*FRACUNIT;
+	fixed_t dupy = vid.dupy*FRACUNIT;
+	const INT32 flags = V_NOSCALESTART;
+	const INT32 accent = (cv_playercolor.value);
+	const INT32 shadow = vid.dupy;
+	touchconfig_t *control;
+	INT32 col, offs;
+	INT32 x, y, w, h;
+	patch_t *font;
+
+#define drawbutton(keyname, symb) \
+	control = &touchnavigation[keyname]; \
+	if (!control->hidden) \
+	{ \
+		SCALEBUTTON(control); \
+	if (control->pressed) \
+	{ \
+		col = accent; \
+		offs = shadow; \
+	} \
+	else \
+	{ \
+		col = 16; \
+		offs = 0; \
+		V_DrawFill(x, y + h, w, shadow, 29|flags); \
+	} \
+	font = hu_font[toupper(symb) - HU_FONTSTART]; \
+	V_DrawFill(x, y + offs, w, h, col|flags); \
+	V_DrawCharacter((x + (w / 2)) - ((SHORT(font->width)*vid.dupx) / 2), \
+					(y + (h / 2)) - ((SHORT(font->height)*vid.dupx) / 2) + offs, \
+						symb|flags, false); \
+	}
+
+	drawbutton(KEY_ESCAPE, 0x1C); // left arrow
+	drawbutton(KEY_ENTER, 0x1D); // right arrow
+	drawbutton(KEY_CONSOLE, '$');
+
+#undef drawbutton
+}
+
+#undef SCALEBUTTON
+#endif
 
 static void ST_drawLevelTitle(void)
 {
@@ -2094,7 +2387,12 @@ static void ST_overlayDrawer(void)
 	}
 
 	if (!splitscreen && ((cv_showinput.value && !players[displayplayer].spectator) || modeattacking))
+	{
 		ST_drawInput();
+#ifdef TOUCHINPUTS
+		ST_drawTouchGameInput();
+#endif
+	}
 
 	ST_drawDebugInfo();
 }

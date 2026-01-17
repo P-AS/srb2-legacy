@@ -974,6 +974,9 @@ void R_ExecuteSetViewSize(void)
 #endif
 
 	am_recalc = true;
+#ifdef TOUCHINPUTS
+	G_UpdateTouchControls();
+#endif
 }
 
 fixed_t R_GetPlayerFov(player_t *player)
@@ -1863,4 +1866,8 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_viewheight);
 	// Uncapped
 	CV_RegisterVar(&cv_fpscap);
+#ifdef HAVE_SDL
+	CV_RegisterVar(&cv_dpadtiny);
+	CV_RegisterVar(&cv_touchcamera);
+#endif
 }
