@@ -2387,10 +2387,12 @@ static void ST_overlayDrawer(void)
 	}
 
 	if (!splitscreen && ((cv_showinput.value && !players[displayplayer].spectator) || modeattacking))
+	{
 		ST_drawInput();
 #ifdef TOUCHINPUTS
 		ST_drawTouchGameInput();
 #endif
+	}
 
 	ST_drawDebugInfo();
 }
