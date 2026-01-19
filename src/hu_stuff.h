@@ -68,6 +68,9 @@ typedef struct
 
 // some functions
 void HU_AddChatText(const char *text, boolean playsound);
+void HU_OpenChat(void);
+void HU_CloseChat(void);
+boolean HU_IsChatOpen(void);
 
 // set true when entering a chat message
 extern boolean chat_on;

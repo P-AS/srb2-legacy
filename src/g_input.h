@@ -142,6 +142,58 @@ extern INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], 
 // current state of the keys: true if pushed
 extern UINT8 gamekeydown[NUMINPUTS];
 
+boolean G_InGameInput(void);
+boolean G_HandlePauseKey(boolean ispausebreak);
+boolean G_HandleSpyMode(void);
+
+// Lactozilla: Touch input buttons
+#ifdef TOUCHINPUTS
+// Finger structure
+#define NUMTOUCHFINGERS 20
+typedef struct
+{
+	INT32 x, y;
+	union {
+		INT32 gamecontrol;
+		INT32 keyinput;
+	} u;
+	union {
+		boolean menu;
+		INT32 mouse;
+	} type;
+} touchfinger_t;
+extern touchfinger_t touchfingers[NUMTOUCHFINGERS];
+
+// Touch screen button structure
+typedef struct
+{
+	INT32 x, y;
+	INT32 w, h;
+	tic_t pressed; // touch navigation
+	boolean dpad; // d-pad key
+	boolean hidden; // hidden key?
+	const char *name; // key name
+} touchconfig_t;
+
+// Screen buttons
+extern touchconfig_t touchcontrols[num_gamecontrols]; // Game inputs
+extern touchconfig_t touchnavigation[NUMKEYS]; // Menu inputs
+
+// Input variables
+extern INT32 touch_dpad_x, touch_dpad_y, touch_dpad_w, touch_dpad_h;
+
+// Touch screen settings
+extern boolean touch_dpad_tiny;
+extern boolean touch_camera;
+
+// Console variables for the touch screen
+extern consvar_t cv_dpadtiny;
+extern consvar_t cv_touchcamera;
+
+// Touch screen sensitivity
+extern consvar_t cv_touchsens, cv_touchysens;
+#endif
+
 // two key codes (or virtual key) per game control
 extern INT32 gamecontrol[num_gamecontrols][2];
 extern INT32 gamecontrolbis[num_gamecontrols][2]; // secondary splitscreen player
@@ -163,7 +215,18 @@ void G_ClearControlKeys(INT32 (*setupcontrols)[2], INT32 control);
 void G_ClearAllControlKeys(void);
 void Command_Setcontrol_f(void);
 void Command_Setcontrol2_f(void);
+
 void G_Controldefault(void);
+
+#ifdef TOUCHINPUTS
+void G_SetupTouchSettings(void);
+void G_UpdateTouchControls(void);
+void G_DefineTouchButtons(void);
+
+// Check if the finger (x, y) is touching the specified button
+boolean G_FingerTouchesButton(INT32 x, INT32 y, touchconfig_t *button);
+#endif
+
 void G_SaveKeySetting(FILE *f);
 INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify);
 

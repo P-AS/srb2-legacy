@@ -3085,6 +3085,10 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 		CV_SetValue(&cv_analog, false);
 	}
 
+#ifdef TOUCHINPUTS
+	G_UpdateTouchControls();
+#endif
+
 	// clear special respawning que
 	iquehead = iquetail = 0;
 

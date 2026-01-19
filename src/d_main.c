@@ -621,6 +621,11 @@ void D_SRB2Loop(void)
 	CONS_Printf("I_StartupMouse()...\n");
 	I_DoStartupMouse();
 #endif
+#ifdef TOUCHINPUTS
+	CONS_Printf("I_InitTouchScreen()...\n");
+	I_InitTouchScreen();
+#endif
+
 
 	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
@@ -1127,7 +1132,7 @@ static void D_AndroidSetupHome(const char *userhome)
         SetupLocation(configfile, CONFIGFILENAME);
 
 #ifdef TOUCHINPUTS
-    SetupLocation(touchlayoutfolder, "touchlayouts");
+    //SetupLocation(touchlayoutfolder, "touchlayouts");
 #endif
 
 

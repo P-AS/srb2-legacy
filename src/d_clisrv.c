@@ -26,6 +26,7 @@
 #include "d_main.h"
 #include "g_game.h"
 #include "hu_stuff.h"
+#include "st_stuff.h"
 #include "keys.h"
 #include "g_input.h" // JOY1
 #include "m_menu.h"
@@ -677,17 +678,25 @@ static inline void CL_DrawConnectionStatus(void)
 
 	// Draw the bottom box.
 	M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
+#ifndef TOUCHINPUTS
 	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP|V_ALLOWLOWERCASE, "Press ESC to abort");
+#endif
 
 	if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_VIEWSERVER)
 	{
+		INT32 top = BASEVIDHEIGHT-24;
+
 		INT32 i, animtime = ((ccstime / 4) & 15) + 16;
 		UINT8 palstart = (cl_mode == CL_SEARCHING) ? 128 : 160;
-		// 15 pal entries total.
 		const char *cltext;
 
+		// 15 pal entries total.
 		for (i = 0; i < 16; ++i)
 			V_DrawFill((BASEVIDWIDTH/2-128) + (i * 16), BASEVIDHEIGHT-24, 16, 8, palstart + ((animtime - i) & 15));
+
+#ifdef TOUCHINPUTS
+		top += 16;
+#endif
 
 		switch (cl_mode)
 		{
@@ -697,9 +706,9 @@ static inline void CL_DrawConnectionStatus(void)
 				{
 					cltext = M_GetText("Downloading game state...");
 					Net_GetNetStat();
-					V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
+					V_DrawString(BASEVIDWIDTH/2-128, top, V_20TRANS|V_MONOSPACE,
 						va(" %4uK",fileneeded[lastfilenum].currentsize>>10));
-					V_DrawRightAlignedString(BASEVIDWIDTH/2+128, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
+					V_DrawRightAlignedString(BASEVIDWIDTH/2+128, top, V_20TRANS|V_MONOSPACE,
 						va("%3.1fK/s ", ((double)getbps)/1024));
 				}
 				else
@@ -717,7 +726,7 @@ static inline void CL_DrawConnectionStatus(void)
 				cltext = M_GetText("Connecting to server...");
 				break;
 		}
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP|V_ALLOWLOWERCASE, cltext);
+		V_DrawCenteredString(BASEVIDWIDTH/2, top-32, V_YELLOWMAP|V_ALLOWLOWERCASE, cltext);
 	}
 	else
 	{
@@ -819,7 +828,19 @@ static inline void CL_DrawConnectionStatus(void)
 		else
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP|V_ALLOWLOWERCASE,
 				M_GetText("Waiting to download files..."));
+
 	}
+
+#ifdef TOUCHINPUTS
+	// Touch input
+	{
+		INT32 i;
+		for (i = 0; i < NUMKEYS; i++)
+			touchnavigation[i].hidden = true;
+		touchnavigation[KEY_ESCAPE].hidden = false;
+		ST_drawTouchMenuInput();
+	}
+#endif
 }
 #endif
 
@@ -1599,8 +1620,10 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		INT32 key;
 
+	#ifndef TOUCHINPUTS
 		I_OsPolling();
 		key = I_GetKey();
+	#endif
 
 		if (cl_mode == CL_VIEWSERVER)
 		{
@@ -1679,10 +1702,21 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 
 
+#ifdef TOUCHINPUTS
+		INT32 x = -1;
+		INT32 y = -1;
+		I_OsPolling();
+		I_GetFinger(&x, &y);
+
+		if ((x != -1 && y != -1) && G_FingerTouchesButton(x, y, &touchnavigation[KEY_ESCAPE]))
+#else
 		if (key == KEY_ESCAPE || key == KEY_JOY1+1)
+#endif
 		{
 			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
-//				M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress ESC\n"), NULL, MM_NOTHING);
+#ifndef TOUCHINPUTS
+			M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress ESC\n"), NULL, MM_NOTHING);
+#endif
 			D_QuitNetGame();
 			CL_Reset();
 			D_StartTitle();
