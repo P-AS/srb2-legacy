@@ -1170,18 +1170,19 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Saturation", NULL,  &cv_globalsaturation, 30},
 	{IT_SUBMENU|IT_STRING, NULL, "Advanced Color Settings...", "Adjust color mapping and per-color brightness",  &OP_ColorOptionsDef, 35},
 
-	{IT_STRING | IT_CVAR,  NULL, "Draw Distance",   NULL,       &cv_drawdist,             45},
-	{IT_STRING | IT_CVAR,  NULL, "NiGHTS Hoop Draw Dist", NULL, &cv_drawdist_nights,      50},
-	{IT_STRING | IT_CVAR,  NULL, "Precip Draw Dist",   NULL,    &cv_drawdist_precip,      55},
-	{IT_STRING | IT_CVAR,  NULL, "Precip Density",    NULL,     &cv_precipdensity,        60},
-	{IT_STRING | IT_CVAR,  NULL, "Show FPS",       NULL,        &cv_ticrate,              65},
-	{IT_STRING | IT_CVAR,  NULL, "Show TPS",        NULL,       &cv_tpscounter,           70},
-	{IT_STRING | IT_CVAR,  NULL, "FPS/TPS Counter Size", NULL,  &cv_fpssize,              75},
-	{IT_STRING | IT_CVAR,  NULL, "Clear Before Redraw",  NULL,  &cv_homremoval,           80},
-	{IT_STRING | IT_CVAR,  NULL, "Vertical Sync",    NULL,      &cv_vidwait,              85},
-	{IT_STRING | IT_CVAR,  NULL, "FPS Cap",         NULL,       &cv_fpscap,               90},
+	{IT_STRING|IT_CVAR|IT_CV_SLIDER,  NULL, "Field of view", NULL,         &cv_fov,                  45},
+	{IT_STRING | IT_CVAR,             NULL, "Draw Distance",   NULL,       &cv_drawdist,             50},
+	{IT_STRING | IT_CVAR,             NULL, "NiGHTS Hoop Draw Dist", NULL, &cv_drawdist_nights,      55},
+	{IT_STRING | IT_CVAR,             NULL, "Precip Draw Dist",   NULL,    &cv_drawdist_precip,      60},
+	{IT_STRING | IT_CVAR,             NULL, "Precip Density",    NULL,     &cv_precipdensity,        65},
+	{IT_STRING | IT_CVAR,             NULL, "Show FPS",       NULL,        &cv_ticrate,              70},
+	{IT_STRING | IT_CVAR,             NULL, "Show TPS",        NULL,       &cv_tpscounter,           75},
+	{IT_STRING | IT_CVAR,             NULL, "FPS/TPS Counter Size", NULL,  &cv_fpssize,              80},
+	{IT_STRING | IT_CVAR,             NULL, "Clear Before Redraw",  NULL,  &cv_homremoval,           85},
+	{IT_STRING | IT_CVAR,             NULL, "Vertical Sync",    NULL,      &cv_vidwait,              90},
+	{IT_STRING | IT_CVAR,             NULL, "FPS Cap",         NULL,       &cv_fpscap,               95},
 #ifdef HWRENDER
-	{IT_CALL | IT_STRING, NULL, "OpenGL Options...",  "Change OpenGL-specific options",        M_OpenGLOptionsMenu, 100},
+	{IT_CALL | IT_STRING, NULL, "OpenGL Options...",  "Change OpenGL-specific options",        M_OpenGLOptionsMenu, 105},
 #endif
 };
 
@@ -1261,11 +1262,10 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 	{IT_STRING|IT_CVAR,         NULL, "Shaders", NULL, 	     &cv_glshaders,        50},
 	{IT_STRING|IT_CVAR,         NULL, "Lack of Perspective", NULL,  &cv_glshearing,   60},
 	{IT_STRING|IT_CVAR,         NULL, "Palette Rendering", NULL,  &cv_glpaletterendering,   70},
-	{IT_STRING|IT_CVAR|IT_CV_SLIDER,  NULL, "Field of view", NULL,   &cv_fov,            90},
-	{IT_STRING|IT_CVAR,         NULL, "Quality",     NULL,     &cv_scr_depth,        100},
-	{IT_STRING|IT_CVAR,         NULL, "Texture Filter", NULL,   &cv_glfiltermode,     110},
-	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",  NULL,    &cv_glanisotropicmode,120},
-	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", NULL,  &cv_glloadingscreen, 130},
+	{IT_STRING|IT_CVAR,         NULL, "Quality",     NULL,     &cv_scr_depth,        90},
+	{IT_STRING|IT_CVAR,         NULL, "Texture Filter", NULL,   &cv_glfiltermode,     100},
+	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",  NULL,    &cv_glanisotropicmode,110},
+	{IT_STRING|IT_CVAR,         NULL, "OpenGL Loading Screen", NULL,  &cv_glloadingscreen, 120},
 };
 
 #endif
