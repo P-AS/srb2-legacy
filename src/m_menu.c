@@ -3175,7 +3175,12 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv)
 	else if (range > 100)
 		range = 100;
 
-	range_default = ((atoi(cv->defaultvalue) - cv->PossibleValue[0].value) * 100 /
+	if (cv->flags & CV_FLOAT)
+		range_default = (INT32)(atof(cv->defaultvalue)*FRACUNIT);
+	else
+		range_default = atoi(cv->defaultvalue);
+
+	range_default = ((range_default - cv->PossibleValue[0].value) * 100 /
 	 (cv->PossibleValue[i].value - cv->PossibleValue[0].value));
 
 	if (range_default < 0)
