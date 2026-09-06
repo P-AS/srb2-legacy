@@ -949,26 +949,36 @@ void HWR_SetMapPalette(void)
 
 // Creates a hardware lighttable from the supplied lighttable.
 // Returns the id of the hw lighttable, usable in FSurfaceInfo.
-UINT32 HWR_CreateLightTable(UINT8 *lighttable)
+UINT32 HWR_CreateLightTable(UINT8 *lighttable, RGBA_t *hw_lighttable)
 {
-	UINT32 i, id;
+	UINT32 i;
 	RGBA_t *palette = HWR_GetTexturePalette();
-	RGBA_t *hw_lighttable = Z_Malloc(256 * 32 * sizeof(RGBA_t), PU_STATIC, NULL);
 
 	// To make the palette index -> RGBA mapping easier for the shader,
 	// the hardware lighttable is composed of RGBA colors instead of palette indices.
 	for (i = 0; i < 256 * 32; i++)
 		hw_lighttable[i] = palette[lighttable[i]];
 
-	id = HWD.pfnCreateLightTable(hw_lighttable);
-	Z_Free(hw_lighttable);
-	return id;
+	return HWD.pfnCreateLightTable(hw_lighttable);
 }
+
+// Updates a hardware lighttable of a given id from the supplied lighttable.
+void HWR_UpdateLightTable(UINT32 id, UINT8 *lighttable, RGBA_t *hw_lighttable)
+{
+	UINT32 i;
+	RGBA_t *palette = HWR_GetTexturePalette();
+
+	for (i = 0; i < 256 * 32; i++)
+		hw_lighttable[i] = palette[lighttable[i]];
+
+	HWD.pfnUpdateLightTable(id, hw_lighttable);
+}
+
 
 // get hwr lighttable id for colormap, create it if it doesn't already exist
 UINT32 HWR_GetLightTableID(extracolormap_t *colormap)
 {
-	boolean default_colormap = false;
+		boolean default_colormap = false;
 	if (!colormap)
 	{
 		colormap = R_GetDefaultColormap(); // a place to store the hw lighttable id
@@ -976,19 +986,33 @@ UINT32 HWR_GetLightTableID(extracolormap_t *colormap)
 		default_colormap = true;
 	}
 
-	// create hw lighttable if there isn't one
-	if (!colormap->gl_lighttable_id)
-	{
-		UINT8 *colormap_pointer;
+	UINT8 *colormap_pointer;
 
-		if (default_colormap)
-			colormap_pointer = colormaps; // don't actually use the data from the "default colormap"
-		else
-			colormap_pointer = colormap->colormap;
-		colormap->gl_lighttable_id = HWR_CreateLightTable(colormap_pointer);
+	if (default_colormap)
+		colormap_pointer = colormaps; // don't actually use the data from the "default colormap"
+	else
+		colormap_pointer = colormap->colormap;
+
+	// create hw lighttable if there isn't one
+	if (colormap->gl_lighttable.data == NULL)
+	{
+		Z_Malloc(256 * 32 * sizeof(RGBA_t), PU_HWRLIGHTTABLEDATA, &colormap->gl_lighttable.data);
 	}
 
-	return colormap->gl_lighttable_id;
+	// Generate the texture for this light table
+	if (!colormap->gl_lighttable.id)
+	{
+		colormap->gl_lighttable.id = HWR_CreateLightTable(colormap_pointer, colormap->gl_lighttable.data);
+	}
+	// Update the texture if it was directly changed by a script
+	else if (colormap->gl_lighttable.needs_update)
+	{
+		HWR_UpdateLightTable(colormap->gl_lighttable.id, colormap_pointer, colormap->gl_lighttable.data);
+	}
+
+	colormap->gl_lighttable.needs_update = false;
+
+	return colormap->gl_lighttable.id;
 }
 
 
@@ -996,7 +1020,10 @@ UINT32 HWR_GetLightTableID(extracolormap_t *colormap)
 // call become invalid and must not be used.
 void HWR_ClearLightTables(void)
 {
-	HWD.pfnClearLightTables();
+	Z_FreeTag(PU_HWRLIGHTTABLEDATA);
+
+	if (vid.glstate == VID_GL_LIBRARY_LOADED)
+		HWD.pfnClearLightTables();
 }
 
 #endif //HWRENDER

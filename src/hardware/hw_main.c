@@ -4099,7 +4099,6 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	if (spr->mobj->frame & FF_FULLBRIGHT)
 		lightlevel = 255;
 
-
 	for (i = 1; i < sector->numlights; i++)
 	{
 		fixed_t h = sector->lightlist[i].slope ? P_GetZAt(sector->lightlist[i].slope, spr->mobj->x, spr->mobj->y)
