@@ -37,7 +37,7 @@ CV_PossibleValue_t gif_maxsize_cons_t[] = {
 consvar_t cv_gif_optimize = CVAR_INIT ("gif_optimize", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_gif_downscale =  CVAR_INIT("gif_downscale", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_gif_maxsize =  CVAR_INIT ("gif_maxsize", "10", "Maximum size a GIF can reach before it is finalized", CV_SAVE, gif_maxsize_cons_t, NULL);
+consvar_t cv_gif_maxsize =  CVAR_INIT ("gif_maxsize", "20", "Maximum size a GIF can reach before it is finalized", CV_SAVE, gif_maxsize_cons_t, NULL);
 consvar_t cv_gif_rolling =  CVAR_INIT ("gif_rolling", "Off", "Record additional GIFs after filesize limit is set", CV_SAVE, CV_OnOff, NULL);
 
 #ifdef HAVE_ANIGIF
