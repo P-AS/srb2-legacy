@@ -104,6 +104,9 @@ void    M_MkdirEachUntil (const char *path, int start, int end, int mode);
 // counting bits, for weapon ammo code, usually
 FUNCMATH UINT8 M_CountBits(UINT32 num, UINT8 size);
 
+// Rounds off floating numbers and checks for 0 - 255 bounds
+int M_RoundUp(double number);
+
 #include "w_wad.h"
 extern char configfile[MAX_WADPATH];
 

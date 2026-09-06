@@ -1372,19 +1372,8 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	if (thing->subsector->sector->numlights)
 	{
-		INT32 lightnum;
-		// R_GetPlaneLight won't work on sloped lights!
-		light = thing->subsector->sector->numlights - 1;
-
-		for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
-			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interp.x, interp.y);
-
-			if (h <= gzt) {
-				light = lightnum - 1;
-				break;
-			}
-		}
-		lightnum = max(*thing->subsector->sector->lightlist[light].lightlevel , cv_secbright.value) >> LIGHTSEGSHIFT;
+		light = P_GetSectorLightAt(thing->subsector->sector, interp.x, interp.y, gzt);
+		INT32 lightnum = max(*thing->subsector->sector->lightlist[light].lightlevel , cv_secbright.value) >> LIGHTSEGSHIFT;
 
 		if (lightnum < 0)
 			spritelights = scalelight[0];

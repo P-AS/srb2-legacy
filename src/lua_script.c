@@ -52,6 +52,7 @@ static lua_CFunction liblist[] = {
 	LUA_PolyObjLib, // polyobj_t
 	LUA_BlockmapLib, // blockmap stuff
 	LUA_HudLib, // HUD stuff
+	LUA_ColorLib,
 	NULL
 };
 
@@ -407,6 +408,7 @@ void LUA_InvalidateLevel(void)
 {
 	thinker_t *th;
 	size_t i;
+	ffloor_t *rover = NULL;
 	if (!gL)
 		return;
 
@@ -418,7 +420,17 @@ void LUA_InvalidateLevel(void)
 	for (i = 0; i < numsubsectors; i++)
 		LUA_InvalidateUserdata(&subsectors[i]);
 	for (i = 0; i < numsectors; i++)
+	{
 		LUA_InvalidateUserdata(&sectors[i]);
+		LUA_InvalidateUserdata(&sectors[i].lines);
+		if (sectors[i].extra_colormap)
+			LUA_InvalidateUserdata(sectors[i].extra_colormap);
+		if (sectors[i].ffloors)
+		{
+			for (rover = sectors[i].ffloors; rover; rover = rover->next)
+				LUA_InvalidateUserdata(rover);
+		}
+	}
 	for (i = 0; i < numlines; i++)
 	{
 		LUA_InvalidateUserdata(&lines[i]);
@@ -434,6 +446,10 @@ void LUA_InvalidateLevel(void)
 		LUA_InvalidateUserdata(&PolyObjects[i].vertices);
 		LUA_InvalidateUserdata(&PolyObjects[i].lines);
 	}
+
+	// We invalidated a lot of userdata objects, a lot of them probably ended up unreachable so they can be
+	// GC'd right away
+	lua_gc(gL, LUA_GCCOLLECT, 0);
 }
 
 void LUA_InvalidateMapthings(void)

@@ -1641,7 +1641,7 @@ const char *I_ClipboardPaste(void)
 	return NULL;
 }
 
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 #ifndef __APPLE__
 // Reference for XDG directories:
 // <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>
@@ -1685,7 +1685,7 @@ static const char *I_GetXDGDataDirs(void)
 //
 const char *I_ConfigDir(void)
 {
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 	static char *base = NULL;
 
 	if (!base)
@@ -1755,7 +1755,7 @@ static boolean isWadPathOk(const char *path)
 	return false;
 }
 
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 static void pathonly(char *s)
 {
 	size_t j;
@@ -1808,7 +1808,7 @@ static const char *searchWad(const char *searchDir)
 static const char *locateWad(void)
 {
 	const char *envstr;
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 	const char *WadPath;
 #endif
 
@@ -1847,7 +1847,7 @@ static const char *locateWad(void)
 	}
 #endif
 
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 	// examine $XDG_DATA_DIRS/games/srb2-legacy and $XDG_DATA_DIRS/srb2-legacy
 	// by default this includes:
 	// - /usr/local/share/games/srb2-legacy

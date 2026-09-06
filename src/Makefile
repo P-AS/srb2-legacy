@@ -77,6 +77,8 @@
 #
 # VALGRIND=1 - Enable Valgrind memory debugging support.
 # PROFILEMODE=1 - Enable performance profiling (gprof).
+# USEASAN=1 - Enable building with Address Sanitizer.
+# USEUBSAN=1 - Enable building with Undefined Behavior Sanitizer.
 #
 # General flags for building:
 #
@@ -250,6 +252,18 @@ ifndef NOLTO
 opts+=-flto=auto
 libs+=-flto=auto
 endif
+endif
+
+ifdef USEASAN
+# compile with asan
+opts+=-O1 -fsanitize=address -fno-omit-frame-pointer -fno-common
+libs+=-fsanitize=address
+endif
+
+ifdef USEUBSAN
+# compile with ubsan
+opts+=-O1 -fsanitize=undefined -fno-omit-frame-pointer
+libs+=-fsanitize=undefined
 endif
 
 # debug_opts also get passed to windres

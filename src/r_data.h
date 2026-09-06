@@ -115,7 +115,7 @@ extracolormap_t *R_GetColormapFromListByValues(INT32 rgba, INT32 fadergba, UINT8
 boolean R_CheckDefaultColormap(extracolormap_t *extra_colormap, boolean checkrgba, boolean checkfadergba, boolean checkparams);
 boolean R_CheckEqualColormaps(extracolormap_t *exc_a, extracolormap_t *exc_b, boolean checkrgba, boolean checkfadergba, boolean checkparams);
 extracolormap_t *R_GetColormapFromList(extracolormap_t *extra_colormap);
-
+void R_GenerateLightTable(extracolormap_t *extra_colormap, boolean uselookup);
 lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap);
 extracolormap_t *R_CreateColormap(char *p1, char *p2, char *p3);
 extracolormap_t *R_AddColormaps(extracolormap_t *exc_augend, extracolormap_t *exc_addend,

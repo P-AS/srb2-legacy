@@ -49,6 +49,9 @@ typedef struct
 // Could even use more than 32 levels.
 typedef UINT8 lighttable_t;
 
+#define NUM_PALETTE_ENTRIES 256
+#define DEFAULT_STARTTRANSCOLOR 160
+
 // ExtraColormap type. Use for extra_colormaps from now on.
 typedef struct extracolormap_s
 {

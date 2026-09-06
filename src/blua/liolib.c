@@ -34,14 +34,28 @@
 #define FMT_FILECALLBACKID "file_callback_%d"
 
 
-static const char *whitelist[] = { // Allow scripters to write files of these types to SRB2's folder
-	".bmp",
-	".cfg",
-	".csv",
+// Allow scripters to write files of these types to SRB2's folder
+static const char *whitelist[] = {
 	".dat",
+	".bin",
+
+	".bmp",
 	".png",
-	".sav2",
+
+	".obj",
+
+	".json",
+	".yaml",
+	".xml",
+	".csv",
+	".soc",
+	".cfg",
+	".ini",
 	".txt",
+	".log",
+	".md",
+
+	".sav2",
 };
 
 
@@ -175,7 +189,7 @@ void MakePathDirs(char *path)
 }
 
 
-static int CheckFileName(lua_State *L, const char *filename)
+static int CheckFileName(lua_State* L, const char* filename, boolean extensioncheck)
 {
 	int length = strlen(filename);
 	boolean pass = false;
@@ -184,15 +198,23 @@ static int CheckFileName(lua_State *L, const char *filename)
 	if (luaL_strchr(filename, '\\'))
 	{
 		luaL_error(L, "access denied to %s: \\ is not allowed, use / instead", filename);
-		return pushresult(L,0,filename);
+		return pushresult(L, 0, filename);
 	}
 
-	for (i = 0; i < (sizeof (whitelist) / sizeof(const char *)); i++)
-		if (!stricmp(&filename[length - strlen(whitelist[i])], whitelist[i]))
-		{
-			pass = true;
-			break;
-		}
+	if (extensioncheck)
+	{
+		for (i = 0; i < (sizeof(whitelist) / sizeof(const char*)); i++)
+			if (!stricmp(&filename[length - strlen(whitelist[i])], whitelist[i]))
+			{
+				pass = true;
+				break;
+			}
+	}
+	else
+	{
+		pass = true;
+	}
+
 	if (strstr(filename, "./")
 		|| strstr(filename, "..") || luaL_strchr(filename, ':')
 		|| filename[0] == '/'
@@ -210,7 +232,7 @@ static int io_opennew (lua_State *L) {
 	const char *mode = luaL_optstring(L, 2, "r");
 	int checkresult;
 
-	checkresult = CheckFileName(L, filename);
+	checkresult = CheckFileName(L, filename, false);
 	if (checkresult)
 		return checkresult;
 
@@ -233,7 +255,10 @@ static int io_openlocal (lua_State *L) {
 	luafiletransfer_t *filetransfer;
 	int checkresult;
 
-	checkresult = CheckFileName(L, filename);
+	// Decision was made for normal reading (binary + text) to have no whitelist restrictions
+	boolean readcheck = (strchr(mode, 'w') != NULL) || (strchr(mode, 'a') != NULL) || (strchr(mode, '+') != NULL);
+
+	checkresult = CheckFileName(L, filename, readcheck);
 	if (checkresult)
 		return checkresult;
 

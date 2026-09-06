@@ -1269,7 +1269,7 @@ static menuitem_t OP_Camera2OptionsMenu[] =
 	{IT_STRING	|	IT_CVAR, NULL, "Downhill Slope Adjustment",  NULL,  &cv_cam2_adjust, 40},
 	{IT_STRING	|	IT_CVAR, NULL, "Precise Camera",  NULL, &cv_cam2_exact, 50},
 	{IT_STRING	|	IT_CVAR, NULL, "Camera Clipping Style",  NULL, &cv_cam2_clipping, 60},
-		
+
 
 	{IT_STRING	|	IT_CVAR | IT_CV_INTEGERSTEP, NULL, "Camera Distance",  NULL,  &cv_cam2_dist, 80},
 	{IT_STRING	| IT_CVAR | IT_CV_INTEGERSTEP, NULL, "Camera Height",  NULL,  &cv_cam2_height, 90},
@@ -1666,27 +1666,25 @@ static menuitem_t OP_LegacyOptionsMenu[] =
 	{IT_STRING|IT_CALL, NULL, "Report an Issue", "If you found a problem with SRB2 Legacy or have a suggestion, here is where to go.", M_LegacyReportIssue, 90},
 };
 
-static menuitem_t OP_LegacyCreditsMenu[] = // This barely fits on green resolution
+static menuitem_t OP_LegacyCreditsMenu[] =
 {
-	{IT_HEADER|IT_STRING, NULL, "Contributors:", NULL,  NULL, 3},
-	{IT_STRING, NULL, "PAS", NULL,  NULL, 11}, 
-	{IT_STRING, NULL, "chromaticpipe", NULL,  NULL, 16},
-	{IT_STRING, NULL, "Hanicef", NULL,  NULL, 21},
-	{IT_STRING, NULL, "Lugent",  NULL, NULL, 26},
-	{IT_STRING, NULL, "tempowad", NULL,  NULL, 31},
-	{IT_STRING, NULL, "tatokis", NULL,  NULL, 36},
-	{IT_STRING, NULL, "luigi budd", NULL,  NULL, 41}, // Enhanced server info screen
-	{IT_STRING, NULL, "Lamibe", NULL,  NULL, 46},
-	{IT_STRING, NULL, "UnitickDelta", NULL,  NULL, 51}, // Software sky barreling
-	{IT_STRING, NULL, "Bewer", NULL,  NULL, 56}, // SRB2Kart text colormaps
-	{IT_STRING, NULL, "alufolie91", NULL,  NULL, 61},
-	{IT_STRING, NULL, "xdf", NULL,  NULL, 66}, // Marathon mode
-	{IT_STRING, NULL, "A-Star100", NULL,  NULL, 71}, // PR #183 on Github
-	{IT_HEADER|IT_STRING, NULL, "Special Thanks:", NULL,  NULL, 76},
-	{IT_STRING, NULL, "Upstream SRB2 Contributors", NULL, NULL, 81},
-	{IT_STRING, NULL, "SRB2 Classic", NULL, NULL, 86},
-	{IT_STRING, NULL, "SRB2Kart-Saturn", NULL, NULL, 91},
-	{IT_STRING, NULL, "SRB2EventZ", NULL, NULL,  96}, // Netgame testing and feature ideas
+	{IT_HEADER|IT_STRING, NULL, "Contributors:",              NULL, NULL, 0},
+	{IT_STRING, NULL,           "PAS",                        NULL, NULL, 10},
+	{IT_STRING, NULL,           "chromaticpipe",              NULL, NULL, 20},
+	{IT_STRING, NULL,           "xdf",                        NULL, NULL, 30}, // Marathon mode
+	{IT_STRING, NULL,           "Hanicef",                    NULL, NULL, 40},
+	{IT_STRING, NULL,           "Lugent",                     NULL, NULL, 50},
+	{IT_STRING, NULL,           "tempowad",                   NULL, NULL, 60},
+	{IT_STRING, NULL,           "tatokis",                    NULL, NULL, 70},
+	{IT_STRING, NULL,           "Lamibe",                     NULL, NULL, 80},
+	{IT_STRING, NULL,           "UnitickDelta",               NULL, NULL, 90}, // Software sky barreling
+	{IT_STRING, NULL,           "Bewer",                      NULL, NULL, 100}, // SRB2Kart text colormaps
+	{IT_STRING, NULL,           "alufolie91",                 NULL, NULL, 110},
+	{IT_HEADER|IT_STRING, NULL, "Special Thanks:",            NULL, NULL, 120},
+	{IT_STRING, NULL,           "Upstream SRB2 Contributors", NULL, NULL, 130},
+	{IT_STRING, NULL,           "SRB2 Classic",               NULL, NULL, 140},
+	{IT_STRING, NULL,           "SRB2Kart-Saturn",            NULL, NULL, 150},
+	{IT_STRING, NULL,           "SRB2EventZ",                 NULL, NULL, 160}, // Netgame testing and feature ideas
 };
 
 static void M_LegacyCreditsToolTips(void)
@@ -2155,7 +2153,7 @@ menu_t OP_ScreenshotOptionsDef = DEFAULTSCROLLMENUSTYLE("M_DATA", OP_ScreenshotO
 menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE("M_ADDONS", OP_AddonsOptionsMenu, &OP_MainDef, 30, 30);
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE("M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
 menu_t OP_LegacyOptionsDef = DEFAULTMENUSTYLE(NULL, OP_LegacyOptionsMenu, &OP_MainDef, 30, 30);
-menu_t OP_LegacyCreditsDef = DEFAULTSCROLLMENUSTYLE(NULL, OP_LegacyCreditsMenu, &OP_LegacyOptionsDef, 30, 0);
+menu_t OP_LegacyCreditsDef = DEFAULTMENUSTYLE(NULL, OP_LegacyCreditsMenu, &OP_LegacyOptionsDef, 30, 15);
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -4341,7 +4339,7 @@ static void M_CacheLevelPlatter(void)
 		levselp[1][1] = W_CachePatchName("SLCT2LVW", PU_STATIC);
 		levselp[1][2] = W_CachePatchName("BLANKLVW", PU_STATIC);
 	}
-	else 
+	else
 	{
 		levselp[1][0] = levselp[0][0];
 		levselp[1][1] = levselp[0][1];
@@ -4372,7 +4370,7 @@ static boolean M_PrepareLevelPlatter(INT32 gt, boolean nextmappick)
 	levelselect.rows = Z_Realloc(levelselect.rows, numrows*sizeof(levelselectrow_t), PU_STATIC, NULL);
 	if (!levelselect.rows)
 		I_Error("Insufficient memory to prepare level platter");
-	
+
 	// done here so lsrow and lscol can be set if cv_nextmap is on the platter
 	lsrow = lscol = lstic = lshli = lsoffs[0] = lsoffs[1] = 0;
 
@@ -4740,7 +4738,7 @@ static void M_DrawLevelPlatterWideMap(UINT8 row, UINT8 col, INT32 x, INT32 y, bo
 		V_DrawFill(x, y+50, 282, 8,
 			((mapheaderinfo[map-1]->unlockrequired < 0)
 			? 239 : 95)); // Darkest shade of orange, should be close enough
-	
+
 
 	V_DrawString(x, y+50, (highlight ? V_YELLOWMAP : 0), levelselect.rows[row].mapnames[col]);
 }
@@ -5171,7 +5169,7 @@ static void M_HandleImageDef(INT32 choice)
 			S_StartSound(NULL, sfx_menu1);
 			if (itemOn >= (INT16)(currentMenu->numitems-1))
 				itemOn = 0;
-            else 
+            else
 				itemOn++;
 			M_UpdateItemOn();
 			break;
@@ -7302,7 +7300,7 @@ void M_DrawTimeAttackMenu(void)
 		}
 
 		V_DrawString(104 - 72, 32+lsheadingheight/2, 0, "* LEVEL RECORDS *");
-		
+
 		if (!mainrecords[cv_nextmap.value-1] || !mainrecords[cv_nextmap.value-1]->score)
 			sprintf(beststr, "(none)");
 		else

@@ -42,7 +42,8 @@ enum sector_e {
 	sector_lines,
 	sector_ffloors,
 	sector_fslope,
-	sector_cslope
+	sector_cslope,
+	sector_extracolormap,
 };
 
 static const char *const sector_opt[] = {
@@ -61,6 +62,7 @@ static const char *const sector_opt[] = {
 	"ffloors",
 	"f_slope",
 	"c_slope",
+	"extracolormap",
 	NULL};
 
 static int sector_fields_ref = LUA_NOREF;
@@ -583,6 +585,9 @@ static int sector_get(lua_State *L)
 		return 1;
 	case sector_cslope: // c_slope
 		LUA_PushUserdata(L, sector->c_slope, META_SLOPE);
+		return 1;
+	case sector_extracolormap: // extra_colormap
+		LUA_PushUserdata(L, sector->extra_colormap, META_EXTRACOLORMAP);
 		return 1;
 	}
 	return 0;

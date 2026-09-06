@@ -1052,7 +1052,7 @@ static void IdentifyVersion(void)
 	D_AddFile(va(pandf,srb2waddir,"patch.dta"));
 #endif
 
-	if (FIL_ReadFileOK(va(pandf,srb2waddir,"legacy.pk3"))) 
+	if (FIL_ReadFileOK(va(pandf,srb2waddir,"legacy.pk3")))
 	{
 		D_AddFile(va(pandf,srb2waddir,"legacy.pk3"));
 		legacypk3_loaded = true;
@@ -1201,7 +1201,7 @@ void D_SRB2Main(void)
 			if (M_CheckParm("-workdir") && M_IsNextParm())
 				snprintf(srb2home, sizeof srb2home, "%s", M_GetNextParm());
 			else
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 				snprintf(srb2home, sizeof srb2home, "%s", I_ConfigDir());
 #else
 				snprintf(srb2home, sizeof srb2home, "%s", userhome);
@@ -1246,7 +1246,7 @@ void D_SRB2Main(void)
 	}
 	if (FS.analyzePath('/home/web_user/.srb2_21/addons').exists) force_rmdir('/home/web_user/.srb2_21/addons');
 	);
-#endif 
+#endif
 	I_mkdir(addonsdir, 0755);
 
 	// seed M_Random because it is necessary; seed P_Random for scripts that
@@ -1355,7 +1355,7 @@ void D_SRB2Main(void)
 #endif
 	if(legacypk3_loaded)
 		W_VerifyFileMD5(mainwads++, ASSET_HASH_LEGACY_PK3); // legacy.pk3
-	
+
 	// don't check music.dta because peowple like to modify it, and it doesn't matter if they do
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 	//mainwads++; // music.dta does not increment mainwads (see <= 2.1.21)
@@ -1376,7 +1376,7 @@ void D_SRB2Main(void)
 #endif //ifndef DEVELOP
 
 
-	cht_Init(); 
+	cht_Init();
 
 	//---------------------------------------------------- READY SCREEN
 	// we need to check for dedicated before initialization of some subsystems

@@ -277,6 +277,7 @@ const char *I_ConfigDir(void);
 */
 const char *I_LocateWad(void);
 
+#if defined(__ANDROID__)
 /**	\brief Location of the application's storage.
 		\return path to app-specific files
 */
@@ -291,6 +292,7 @@ const char *I_SharedStorageLocation(void);
 		\return path to removable storage
 */
 const char *I_RemovableStorageLocation(void);
+#endif
 
 /**	\brief First Joystick's events
 */
@@ -320,6 +322,7 @@ char *I_GetEnv(const char *name);
 
 INT32 I_PutEnv(char *variable);
 
+#if defined(__ANDROID__)
 /**	\brief Checks if the app has been granted a specific permission.
 		\return 1 if the permission was granted, 0 if not.
 */
@@ -339,7 +342,7 @@ INT32 I_StoragePermission(void);
 		\return 1 if it was, 0 if not.
 */
 INT32 I_SystemStoragePermission(void);
-
+#endif
 
 /** \brief Put data in system clipboard
 */

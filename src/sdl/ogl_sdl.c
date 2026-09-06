@@ -102,7 +102,7 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	INT32 cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
 	static int majorGL = 0, minorGL = 0;
 	static boolean first_init = false;
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 	const char *homedir = NULL;
 	const char *gllogdir = NULL;
 #endif
@@ -110,7 +110,7 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	if (!gllogstream)
 	{
 #ifdef DEBUG_TO_FILE
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 		homedir = D_Home();
 
 		if (homedir)

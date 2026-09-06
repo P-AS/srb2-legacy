@@ -74,7 +74,7 @@ typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
 static void InitLogging(void)
 {
 	const char *homedir = NULL;
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 	const char *logdir = NULL;
 #endif
 	time_t my_time;
@@ -120,7 +120,7 @@ static void InitLogging(void)
 					"%s"PATHSEP, reldir);
 		}
 		else
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 		if (homedir)
 		{
 			logdir = I_ConfigDir();
@@ -128,7 +128,7 @@ static void InitLogging(void)
 					"%s"PATHSEP"%s"PATHSEP, logdir, reldir);
 		}
 		else
-#endif/*NATIVEDIR*/
+#endif/*DEFAULTDIR*/
 		{
 			left = snprintf(logfilename, sizeof logfilename,
 					"."PATHSEP"%s"PATHSEP, reldir);
@@ -144,11 +144,11 @@ static void InitLogging(void)
 
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 	logstream = fopen(logfilename, "w");
-#ifdef NATIVEDIR
+#ifdef DEFAULTDIR
 	if (homedir)
 		link = va("%s/latest-log.txt", logdir);
 	else
-#endif/*NATIVEDIR*/
+#endif/*DEFAULTDIR*/
 		link = "latest-log.txt";
 	unlink(link);
 	if (symlink(logfilename, link) == -1)
@@ -175,7 +175,7 @@ static void InitLogging(void)
 
 #if defined(__EMSCRIPTEN__)
 int main_program(void)
-{ 
+{
 #else
 #ifdef FORCESDLMAIN
 int SDL_main(int argc, char **argv)
@@ -244,7 +244,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-#if defined (__EMSCRIPTEN__) 
+#if defined (__EMSCRIPTEN__)
 int main(int argc, char **argv)
 {
     myargc = argc;
