@@ -97,6 +97,7 @@ set (SRB2_MAIN_SOURCES
     lua_blockmaplib.c
     lua_hudlib.c
     lua_hudlib_drawlist.c
+    lua_colorlib.c
 
     comptime.c
     md5.c
