@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion = 35
+    compileSdkVersion = 36
     namespace = 'org.stjr.srb2legacy'
     lintOptions {
         abortOnError = false
@@ -10,10 +10,10 @@ android {
         applicationId = "org.stjr.srb2legacy"
 
         minSdkVersion = 21
-        targetSdkVersion = 26
+        targetSdkVersion = 28
         versionCode = 2130
         versionName = "2.1.30"
-        ndkVersion = "26.1.10909125"
+        ndkVersion = "29.0.14206865"
         externalNativeBuild {
             cmake {
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
