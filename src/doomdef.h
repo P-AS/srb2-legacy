@@ -316,7 +316,7 @@ enum {
 // The XDG Base Directory Specification (*nix) or Application Support (macOS) directory is preferred
 #if (defined (__unix__) || defined (UNIXCOMMON)) && !defined (__CYGWIN__) && !defined (__APPLE__) && !defined(__ANDROID__)
 #define DEFAULTDIR ".srb2_21"
-#else
+#elif defined (__APPLE__)
 #define DEFAULTDIR "srb2_21"
 #endif
 
