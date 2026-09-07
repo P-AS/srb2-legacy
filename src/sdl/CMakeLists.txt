@@ -15,10 +15,7 @@ if(${SRB2_CONFIG_SDL2_USEMIXER})
 			endif()
 		elseif(${CMAKE_SYSTEM} MATCHES "Android")
 			set(SDL2_MIXER_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/include/)
-			set(SDL2_MIXER_LIBRARIES
-				"${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/libs/${CMAKE_ANDROID_ARCH_ABI}/libSDL2_mixer.so"
-				"${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/libs/${CMAKE_ANDROID_ARCH_ABI}/libmpg123.so"
-			)
+			set(SDL2_MIXER_LIBRARIES "${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/libs/${CMAKE_ANDROID_ARCH_ABI}/libSDL2_mixer.so")
 		endif()
 	elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
 		set(SDL2_MIXER_FOUND  ON)

@@ -23,7 +23,7 @@ Based off [bitten2up/Kart-Public/android](https://github.com/bitten2up/Kart-Publ
 - [x] Addon support
 - [x] Native Resolutions
 - [x] Full digital music support (libopenmpt, libgme)
-- [x] MIDI music support
+- [ ] MIDI music support
 - [x] Correct app icon
 - [x] Non-hardcoded CMake
      - Paths to libraries are hardcoded on Android, but non-Android builds are untouched.
@@ -31,3 +31,4 @@ Based off [bitten2up/Kart-Public/android](https://github.com/bitten2up/Kart-Publ
 - [ ] Prepackaged assets
 - [x] Distributable build
 - [x] Merge into next
+- [x] 16 KB page size support
