@@ -543,6 +543,11 @@ const char *I_ClipboardPaste(void)
 	return NULL;
 }
 
+const char *I_ConfigDir(void)
+{
+	return "";
+}
+
 size_t I_GetRandomBytes(char *destination, size_t amount)
 {
 	return 0;
