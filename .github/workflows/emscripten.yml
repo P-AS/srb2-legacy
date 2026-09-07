@@ -32,8 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.1
-
+        uses: actions/checkout@v7.0.1
 
       - name: Setup Pages
         uses: actions/configure-pages@v6.0.0
@@ -42,7 +41,7 @@ jobs:
         uses: emscripten-core/setup-emsdk@v16
         with:
           # Make sure to set a version number!
-          version: 5.0.7
+          version: 6.0.9
           # This is the name of the cache folder.
           # The cache folder will be placed in the build directory,
           # so make sure it doesn't conflict with anything!
@@ -77,4 +76,4 @@ jobs:
           path: "build/bin/"
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5.0.0
+        uses: actions/deploy-pages@v5.0.1

@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.arch.runner }}
 
     steps:
-    - uses: actions/checkout@v6.0.1
+    - uses: actions/checkout@v7.0.1
 
     - name: Install dependencies
       run: |
@@ -47,7 +47,7 @@ jobs:
        fi
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v6.0.0
+      uses: actions/upload-artifact@v7.0.1
       with:
         name: srb2legacy-linux-${{ matrix.arch.name }}-${{ github.sha }}
         path: |
@@ -55,7 +55,7 @@ jobs:
           src/comptime.h
 
     - name: Upload Appimage artifact
-      uses: actions/upload-artifact@v6.0.0
+      uses: actions/upload-artifact@v7.0.1
       with:
         name: srb2legacy-appimage-${{ matrix.arch.name }}-${{ github.sha }}
         path: |
