@@ -2756,6 +2756,11 @@ boolean P_SetupLevel(boolean skipprecip, boolean reloadinggamestate)
 	// Clear pointers that would be left dangling by the purge
 	R_FlushTranslationColormapCache();
 
+#ifdef HWRENDER
+	// Delete light table textures
+	HWR_ClearLightTables();
+#endif
+
 	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
 
 #if defined (WALLSPLATS) || defined (FLOORSPLATS)
