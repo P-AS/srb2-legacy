@@ -1,6 +1,6 @@
 app-id: io.github.PAS.srb2-legacy
 runtime: org.freedesktop.Platform
-runtime-version: '25.08'
+runtime-version: '26.08'
 sdk: org.freedesktop.Sdk
 command: srb2legacy
 finish-args:
@@ -16,6 +16,7 @@ cleanup:
   - /include
   - /lib/*.so
   - /lib/*.la
+  - /lib/cmake
   - /lib/pkgconfig
   - /share/doc
 
@@ -42,19 +43,35 @@ modules:
       - --without-portaudiocpp
     sources:
       - type: archive
-        url: https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.8.7+release.autotools.tar.gz
-        sha256: 275c29ef47be9992f62a35fcc96f7ca05c06d2fd05c9298b8dee9f743f75b089
+        url: https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.8.9+release.autotools.tar.gz
+        sha256: d7ce84fd05d686c4bcf66af40eae857afa371442db60eeda3f874bd6cf6fc318
         x-checker-data:
           type: anitya
           project-id: 141468
           stable-only: true
           url-template: https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-$version+release.autotools.tar.gz
 
+  - name: sdl2-mixer
+    config-opts:
+      - -DSDL2MIXER_MOD=OFF
+      - -DSDL2MIXER_MIDI=OFF
+    buildsystem: cmake-ninja
+    builddir: true
+    sources:
+      - type: archive
+        url: https://github.com/libsdl-org/SDL_mixer/releases/download/release-2.8.2/SDL2_mixer-2.8.2.tar.gz
+        sha256: 938dff531d00ace2296557a6599abe6f34599e2f34f0a4a08a397e2ccac8b8f7
+        x-checker-data:
+          type: anitya
+          project-id: 389478
+          stable-only: true
+          url-template: https://github.com/libsdl-org/SDL_mixer/releases/download/release-$version/SDL2_mixer-$version.tar.gz
+
   - name: srb2legacy
     buildsystem: simple
     build-commands:
-      - make clean
-      - make LINUX64=1 -j $FLATPAK_BUILDER_N_JOBS
+      - make distclean
+      - export CFLAGS="$CFLAGS -I/app/include/SDL2" && make LINUX64=1 -j $FLATPAK_BUILDER_N_JOBS
       - install -D -m 755 -t $FLATPAK_DEST/bin bin/lsdl2srb2legacy
       - install -D -m 644 srb2.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
       - install -D -m 755 srb2legacy.sh $FLATPAK_DEST/bin/srb2legacy
@@ -77,6 +94,8 @@ modules:
       - cp --recursive --target-directory=$FLATPAK_DEST/assets *
     sources:
       - type: git
-        url: https://git.do.srb2.org/STJr/srb2assets-public.git/
-        branch: SRB2_2.1
-        commit: 5c9cab509dcc3389cf9bddf55dd168840e62e315
+        url: https://codeberg.org/srb2-preservation/assets.git/
+        branch: legacy
+        commit: 1af2863f5755481c672b7a3a35ccd2133cc80b89
+
+# vim: ts=2:sw=2:expandtab
