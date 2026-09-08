@@ -19,6 +19,7 @@
 #include "../w_wad.h"
 #include "../z_zone.h"
 #include "../byteptr.h"
+#include "../m_argv.h"
 
 #include "SDL.h"
 #include "SDL_mixer.h"
@@ -1389,6 +1390,17 @@ void I_StopFadingSong(void)
 
 boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void))
 {
+	if (M_CheckParm("-nomusicfades"))
+	{
+		I_StopFadingSong();
+
+		I_SetInternalMusicVolume(target_volume);
+		if (callback)
+			(*callback)();
+
+		return true;
+	}
+
 	INT16 volume_delta;
 
 	source_volume = min(source_volume, 100);
