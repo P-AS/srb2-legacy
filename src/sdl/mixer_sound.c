@@ -1390,17 +1390,6 @@ void I_StopFadingSong(void)
 
 boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void))
 {
-	if (M_CheckParm("-nomusicfades"))
-	{
-		I_StopFadingSong();
-
-		I_SetInternalMusicVolume(target_volume);
-		if (callback)
-			(*callback)();
-
-		return true;
-	}
-
 	INT16 volume_delta;
 
 	source_volume = min(source_volume, 100);
@@ -1408,13 +1397,12 @@ boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms
 
 	I_StopFadingSong();
 
-	if (!ms && volume_delta)
+	if ((!ms && volume_delta) || M_CheckParm("-nomusicfades"))
 	{
 		I_SetInternalMusicVolume(target_volume);
 		if (callback)
 			(*callback)();
 		return true;
-
 	}
 	else if (!volume_delta)
 	{
