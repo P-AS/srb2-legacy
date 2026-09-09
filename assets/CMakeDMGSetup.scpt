@@ -65,7 +65,7 @@ on run argv
         set statusbar visible to false
         set toolbar visible to false
         set the bounds to {300, 150, 940, 610}
-        set position of item "Sonic Robo Blast 2 Legacy.app" to { 100, 100 }
+        set position of item "SRB2 Legacy.app" to { 100, 100 }
         set position of item "Applications" to { 500, 330 }
       end tell
       update without registering applications
