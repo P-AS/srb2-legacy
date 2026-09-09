@@ -5,13 +5,22 @@ set(SRB2_CONFIG_SDL2_USEMIXER ON CACHE BOOL "Use SDL2_mixer or regular sdl sound
 if(${SRB2_CONFIG_SDL2_USEMIXER})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 		set(SDL2_MIXER_FOUND ON)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(SDL2_MIXER_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/x86_64-w64-mingw32/include/SDL2)
-			set(SDL2_MIXER_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/x86_64-w64-mingw32/lib -lSDL2_mixer")
-		else() # 32-bit
-			set(SDL2_MIXER_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/i686-w64-mingw32/include/SDL2)
-			set(SDL2_MIXER_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/i686-w64-mingw32/lib -lSDL2_mixer")
+		if(${CMAKE_SYSTEM} MATCHES "Windows")
+			if(${SRB2_SYSTEM_BITS} EQUAL 64)
+				set(SDL2_MIXER_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/x86_64-w64-mingw32/include/SDL2)
+				set(SDL2_MIXER_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/x86_64-w64-mingw32/lib -lSDL2_mixer")
+			else() # 32-bit
+				set(SDL2_MIXER_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/i686-w64-mingw32/include/SDL2)
+				set(SDL2_MIXER_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/i686-w64-mingw32/lib -lSDL2_mixer")
+			endif()
+		elseif(${CMAKE_SYSTEM} MATCHES "Android")
+			set(SDL2_MIXER_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/include/)
+			set(SDL2_MIXER_LIBRARIES "${CMAKE_SOURCE_DIR}/thirdparty/SDL2_mixer/libs/${CMAKE_ANDROID_ARCH_ABI}/libSDL2_mixer.so")
 		endif()
+	elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
+		set(SDL2_MIXER_FOUND  ON)
+		set(SDL2_MIXER_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/include)
+		set(SDL2_MIXER_LIBRARIES "${CMAKE_SOURCE_DIR}/libs/SDL2_mixer/emscripten/libSDL2_mixer.a")
 	else()
 		find_package(SDL2_mixer)
 	endif()
@@ -28,18 +37,29 @@ endif()
 
 target_sourcefile(c)
 
+if(${CMAKE_SYSTEM} MATCHES "Android")
+	target_sources(SRB2SDL2 PRIVATE SDL_main/SDL_android_main.c)
+endif()
+
 target_sources(SRB2SDL2 PRIVATE ogl_sdl.c)
 
 # Dependency
 if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 	set(SDL2_FOUND ON)
-	if(${SRB2_SYSTEM_BITS} EQUAL 64)
-		set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/include/SDL2)
-		set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/lib -lSDL2")
-	else() # 32-bit
-		set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/include/SDL2)
-		set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib -lSDL2")
+	if(${CMAKE_SYSTEM} MATCHES "Windows")
+		if(${SRB2_SYSTEM_BITS} EQUAL 64)
+			set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/include/SDL2)
+			set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/lib -lSDL2")
+		else() # 32-bit
+			set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/include/SDL2)
+			set(SDL2_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib -lSDL2")
+		endif()
+	elseif(${CMAKE_SYSTEM} MATCHES "Android")
+		set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/SDL2/include)
+		set(SDL2_LIBRARIES "${CMAKE_SOURCE_DIR}/thirdparty/SDL2/libs/${CMAKE_ANDROID_ARCH_ABI}/libSDL2.so")
 	endif()
+elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
+	set(SDL2_FOUND ON)
 else()
 	find_package(SDL2 CONFIG REQUIRED)
 	find_package(SDL2 REQUIRED)
@@ -62,12 +82,18 @@ if(${SDL2_FOUND})
 		)
 	endif()
 
-	if(${CMAKE_SYSTEM} MATCHES Windows)
+	if(${CMAKE_SYSTEM} MATCHES "Windows")
 		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacywin)
-	elseif(${CMAKE_SYSTEM} MATCHES Linux)
+	elseif(${CMAKE_SYSTEM} MATCHES "Linux")
 		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME lsdl2srb2legacy)
+	elseif(${CMAKE_SYSTEM} MATCHES "Android")
+		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME main)
 	else()
 		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacy)
+	endif()
+
+	if(${CMAKE_SYSTEM} MATCHES Emscripten)
+		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2legacy SUFFIX ".js")
 	endif()
 
 	if(${CMAKE_SYSTEM} MATCHES Darwin)
@@ -81,7 +107,7 @@ if(${SDL2_FOUND})
 		target_sources(SRB2SDL2 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/macosx/Srb2mac.icns")
 		set_target_properties(SRB2SDL2 PROPERTIES
 			MACOSX_BUNDLE_ICON_FILE "Srb2mac"
-			MACOSX_BUNDLE_BUNDLE_NAME "Sonic Robo Blast 2 Legacy"
+			MACOSX_BUNDLE_BUNDLE_NAME "SRB2 Legacy"
 			MACOSX_BUNDLE_BUNDLE_VERSION ${SRB2_VERSION}
 
 			RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/macosx/Srb2mac.icns"

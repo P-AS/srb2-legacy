@@ -32,6 +32,7 @@ extern consvar_t stereoreverse;
 extern consvar_t cv_soundvolume, cv_digmusicvolume, cv_midimusicvolume;
 extern consvar_t cv_numChannels;
 extern consvar_t cv_resetmusic;
+extern consvar_t cv_1upsound;
 extern consvar_t cv_gamedigimusic;
 extern consvar_t cv_gamemidimusic;
 extern consvar_t cv_gamesounds;
@@ -39,6 +40,7 @@ extern consvar_t cv_musicpref;
 
 extern consvar_t cv_playmusicifunfocused;
 extern consvar_t cv_playsoundsifunfocused;
+extern consvar_t cv_playtitlescreenmusic;
 
 #ifdef HAVE_OPENMPT
 extern consvar_t cv_modfilter;
@@ -166,6 +168,35 @@ boolean S_SetMusicPosition(UINT32 position);
 
 // Get Position of Music
 UINT32 S_GetMusicPosition(void);
+
+//
+// Music Stacking (Jingles)
+//
+
+typedef struct musicstack_s
+{
+	char musname[7];
+	UINT16 musflags;
+	boolean looping;
+	UINT32 position;
+	tic_t tic;
+	UINT16 status;
+	lumpnum_t mlumpnum;
+	boolean noposition; // force music stack resuming from zero (like music_stack_noposition)
+
+    struct musicstack_s *prev;
+    struct musicstack_s *next;
+} musicstack_t;
+
+extern char music_stack_nextmusname[7];
+extern boolean music_stack_noposition;
+extern UINT32 music_stack_fadeout;
+extern UINT32 music_stack_fadein;
+
+void S_SetStackAdjustmentStart(void);
+void S_AdjustMusicStackTics(void);
+void S_RetainMusic(const char *mname, UINT16 mflags, boolean looping, UINT32 position, UINT16 status);
+boolean S_RecallMusic(UINT16 status, boolean fromfirst);
 
 //
 // Music Playback

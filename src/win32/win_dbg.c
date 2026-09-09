@@ -181,7 +181,7 @@ static VOID FPrintf(HANDLE fileHandle, LPCSTR lpFmt, ...)
 	DWORD   bytesWritten;
 
 	va_start(arglist, lpFmt);
-	vsprintf(str, lpFmt, arglist);
+	vsnprintf(str, 1999, lpFmt, arglist);
 	va_end(arglist);
 
 	WriteFile(fileHandle, str, (DWORD)strlen(str), &bytesWritten, NULL);
@@ -602,24 +602,10 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 #ifdef _X86_
 #ifdef __GNUC__
 		__asm__("movl %%fs : 4, %%eax": "=a"(pStackTop));
-#elif defined (_MSC_VER)
-		__asm
-		{
-			mov eax, fs:[4]
-			mov pStackTop, eax
-		}
 #endif
 #elif defined (_AMD64_)
 #ifdef __GNUC__
 		__asm__("mov %%gs : 4, %%rax": "=a"(pStackTop));
-#elif defined (_MSC_VER)
-/*
-		__asm
-		{
-			mov rax, fs:[4]
-			mov pStackTop, rax
-		}
-*/
 #endif
 #endif
 		if (pStackTop == NULL)

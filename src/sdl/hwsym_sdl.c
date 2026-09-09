@@ -25,17 +25,9 @@
 #include "hwsym_sdl.h"
 #include "../doomdef.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
-
 #ifdef HAVE_SDL
 
 #include "SDL.h"
-
-#ifdef _MSC_VER
-#pragma warning(default : 4214 4244)
-#endif
 
 #ifndef NOLOADSO
 #include "SDL_loadso.h"
@@ -108,6 +100,7 @@ void *hwSym(const char *funcName,void *handle)
 	GETFUNC(SetShaderInfo);
 	GETFUNC(SetPaletteLookup);
 	GETFUNC(CreateLightTable);
+	GETFUNC(UpdateLightTable);
 	GETFUNC(ClearLightTables);
 	GETFUNC(SetScreenPalette);
 #else //HWRENDER

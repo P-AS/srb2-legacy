@@ -38,15 +38,11 @@ extern consvar_t cv_apng_delay;
 void M_StartMovie(void);
 void M_SaveFrame(void);
 void M_StopMovie(void);
+INT32 M_RecordedFrames(void);
+float M_SavedSize(void);
 
 // the file where game vars and settings are saved
-#ifdef DC
-#define CONFIGFILENAME "srb2dc.cfg"
-#elif defined (PSP)
-#define CONFIGFILENAME "srb2psp.cfg"
-#else
 #define CONFIGFILENAME "config.cfg"
-#endif
 
 INT32 M_MapNumber(char first, char second);
 
@@ -107,6 +103,9 @@ void    M_MkdirEachUntil (const char *path, int start, int end, int mode);
 
 // counting bits, for weapon ammo code, usually
 FUNCMATH UINT8 M_CountBits(UINT32 num, UINT8 size);
+
+// Rounds off floating numbers and checks for 0 - 255 bounds
+int M_RoundUp(double number);
 
 #include "w_wad.h"
 extern char configfile[MAX_WADPATH];

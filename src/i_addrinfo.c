@@ -20,16 +20,12 @@
 #else
 #include <winsock.h>
 #endif
-#elif !defined (__DJGPP__) && !defined(_WII)
+#else
 #include <sys/socket.h>
 #ifndef _NDS
 #include <arpa/inet.h>
 #endif
-#ifdef _PS3
-#include <net/netdb.h>
-#elif ! defined (_arch_dreamcast)
 #include <netdb.h>
-#endif
 #endif
 
 #include "i_addrinfo.h"
@@ -49,11 +45,7 @@
 
 #ifndef I_getaddrinfo
 
-#if !defined (_MSC_VER) || (_MSC_VER >= 1800) // MSVC 2013 and forward
 #include <stdbool.h>
-#else
-typedef char bool;
-#endif
 
 #ifdef _WIN32
 // it seems windows doesn't define that... maybe some other OS? OS/2
@@ -262,9 +254,6 @@ int I_getaddrinfo(const char *node, const char *service,
 	for (i = 0, j = 0; i < ailen; i++, j++)
 	{
 		ai = *res+i;
-#ifdef _PS3
-		addr[i].sin_len = famsize;
-#endif
 		addr[i].sin_port = htons((UINT16)sockport);
 		if (nodename)
 		{

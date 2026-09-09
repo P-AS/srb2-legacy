@@ -124,7 +124,6 @@ UINT32 nflatxshift, nflatyshift, nflatshiftup, nflatmask;
 //                   TRANSLATION COLORMAP CODE
 // =========================================================================
 
-#define DEFAULT_STARTTRANSCOLOR 160
 
 enum
 {
@@ -135,8 +134,6 @@ enum
 
 	TT_CACHE_SIZE,
 };
-
-#define NUM_PALETTE_ENTRIES 256
 
 boolean skincolor_modified[MAXSKINCOLORS];
 static UINT8** translationtablecache[MAXSKINS + 4] = {NULL};

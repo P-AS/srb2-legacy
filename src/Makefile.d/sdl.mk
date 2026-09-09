@@ -13,15 +13,9 @@ makedir:=$(makedir)/SDL
 sources+=$(call List,sdl/Sourcefile)
 opts+=-DDIRECTFULLSCREEN -DHAVE_SDL
 
-# FIXME: UNTESTED
-#ifdef PANDORA
-#include sdl/SRB2Pandora/Makefile.cfg
-#endif #ifdef PANDORA
-
-# FIXME: UNTESTED
-#ifdef CYGWIN32
-#include sdl/MakeCYG.cfg
-#endif #ifdef CYGWIN32
+ifdef MACOS
+sources+=$(call List,sdl/macosx/Sourcefile)
+endif
 
 ifndef NOHW
 sources+=sdl/ogl_sdl.c

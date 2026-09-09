@@ -41,14 +41,18 @@ typedef DWORD (WINAPI *p_timeGetTime) (void);
 typedef UINT (WINAPI *p_timeEndPeriod) (UINT);
 typedef HANDLE (WINAPI *p_OpenFileMappingA) (DWORD, BOOL, LPCSTR);
 typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
+
+// This is for RtlGenRandom.
+#define SystemFunction036 NTAPI SystemFunction036
+#include <ntsecapi.h>
+#undef SystemFunction036
+
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef __GNUC__
 #include <unistd.h>
-#elif defined (_MSC_VER)
-#include <direct.h>
 #endif
 #if defined (__unix__) || defined (UNIXCOMMON)
 #include <poll.h>
@@ -58,10 +62,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <stdio.h>
 #ifdef _WIN32
 #include <conio.h>
-#endif
-
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
 #endif
 
 #if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
@@ -116,22 +116,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 #ifndef errno
 #include <errno.h>
-#endif
-
-// Locations for searching the srb2.srb
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2legacy"
-#define DEFAULTWADLOCATION2 "/usr/local/games/SRB2legacy"
-#define DEFAULTWADLOCATION3 "/usr/share/games/SRB2legacy"
-#define DEFAULTWADLOCATION4 "/usr/games/SRB2legacy"
-#define DEFAULTSEARCHPATH1 "/usr/local/games"
-#define DEFAULTSEARCHPATH2 "/usr/games"
-#define DEFAULTSEARCHPATH3 "/usr/local"
-#elif defined (_WIN32)
-#define DEFAULTWADLOCATION1 "c:\\games\\srb2legacy"
-#define DEFAULTWADLOCATION2 "\\games\\srb2legacy"
-#define DEFAULTSEARCHPATH1 "c:\\games"
-#define DEFAULTSEARCHPATH2 "\\games"
 #endif
 
 /**	\brief WAD file to look for
@@ -434,7 +418,8 @@ void I_GetConsoleEvents(void)
 			ev.data1 = tty_con.buffer[tty_con.cursor] = key;
 			tty_con.cursor++;
 			// print the current line (this is differential)
-			write(STDOUT_FILENO, &key, 1);
+			ssize_t written = write(STDOUT_FILENO, &key, 1);
+			(void)written;
 		}
 		if (ev.data1) D_PostEvent(&ev);
 		//tty_FlushIn();
@@ -607,7 +592,7 @@ void I_StartupKeyboard (void)
 void I_OutputMsg(const char *fmt, ...)
 {
 	size_t len;
-	XBOXSTATIC char txt[8192];
+	char txt[8192];
 	va_list  argptr;
 
 	va_start(argptr,fmt);
@@ -617,10 +602,6 @@ void I_OutputMsg(const char *fmt, ...)
 #ifdef HAVE_TTF
 	if (TTF_WasInit()) I_TTFDrawText(currentfont, solid, DEFAULTFONTFGR, DEFAULTFONTFGG, DEFAULTFONTFGB,  DEFAULTFONTFGA,
 	DEFAULTFONTBGR, DEFAULTFONTBGG, DEFAULTFONTBGB, DEFAULTFONTBGA, txt);
-#endif
-
-#if defined (_WIN32) && defined (_MSC_VER)
-	OutputDebugStringA(txt);
 #endif
 
 	len = strlen(txt);
@@ -1594,7 +1575,7 @@ char *I_GetUserName(void)
 INT32 I_mkdir(const char *dirname, INT32 unixright)
 {
 //[segabor]
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__) || defined (__OS2__)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__)
 	return mkdir(dirname, unixright);
 #elif defined (_WIN32)
 	UNREFERENCED_PARAMETER(unixright); /// \todo should implement ntright under nt...
@@ -1616,6 +1597,38 @@ INT32 I_PutEnv(char *variable)
 	return putenv(variable);
 }
 
+size_t I_GetRandomBytes(char *destination, size_t count)
+{
+#if defined (__unix__) || defined (UNIXCOMMON) || defined(__APPLE__)
+	FILE *rndsource;
+	size_t actual_bytes;
+
+	if (!(rndsource = fopen("/dev/urandom", "r")))
+		if (!(rndsource = fopen("/dev/random", "r")))
+			actual_bytes = 0;
+
+	if (rndsource)
+	{
+		actual_bytes = fread(destination, 1, count, rndsource);
+		fclose(rndsource);
+	}
+
+	if (actual_bytes == 0)
+		I_OutputMsg("I_GetRandomBytes(): couldn't get any random bytes");
+
+	return actual_bytes;
+#elif defined (_WIN32)
+	if (RtlGenRandom(destination, count))
+		return count;
+
+	I_OutputMsg("I_GetRandomBytes(): couldn't get any random bytes");
+	return 0;
+#else
+	#warning SDL I_GetRandomBytes is not implemented on this platform.
+	return 0;
+#endif
+}
+
 INT32 I_ClipboardCopy(const char *data, size_t size)
 {
 	(void)data;
@@ -1626,6 +1639,85 @@ INT32 I_ClipboardCopy(const char *data, size_t size)
 const char *I_ClipboardPaste(void)
 {
 	return NULL;
+}
+
+#ifdef DEFAULTDIR
+#ifndef __APPLE__
+// Reference for XDG directories:
+// <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>
+// from dsda-doom
+const char *I_GetXDGDataHome(const char *userhome)
+{
+	static char *datahome = 0;
+
+	if (!datahome)
+	{
+		const char *xdgdatahome = I_GetEnv("XDG_DATA_HOME");
+
+		if (!xdgdatahome || !*xdgdatahome)
+		{
+			size_t datahomesize = strlen(userhome) + strlen("/.local/share") + 1;
+			datahome = malloc(datahomesize);
+			snprintf(datahome, datahomesize, "%s%s%s", userhome, userhome[strlen(userhome)-1] != '/' ? "/" : "", ".local/share");
+		}
+		else
+		{
+			datahome = strdup(xdgdatahome);
+		}
+	}
+	return datahome;
+}
+#endif
+
+static const char *I_GetXDGDataDirs(void)
+{
+	const char *datadirs = I_GetEnv("XDG_DATA_DIRS");
+
+	if (!datadirs || !*datadirs)
+		return "/usr/local/share/:/usr/share/";
+	return datadirs;
+}
+#endif
+
+//
+// I_ConfigDir
+// from dsda-doom
+//
+const char *I_ConfigDir(void)
+{
+#ifdef DEFAULTDIR
+	static char *base = NULL;
+
+	if (!base)
+	{
+		const char *home = D_Home();
+
+		// First, try legacy directory.
+		size_t basesize = strlen(home) + 1 + strlen(DEFAULTDIR) + 1;
+		base = malloc(basesize);
+		snprintf(base, basesize, "%s/" DEFAULTDIR, home);
+		if (FIL_FileExists(base) == 0)
+		{
+			// Legacy directory is not accessible. Use XDG directory.
+			free(base);
+
+#ifdef __APPLE__
+			basesize = strlen(home) + strlen("/Library/Application Support/srb2-legacy") + 1;
+			base = malloc(basesize);
+			snprintf(base, basesize, "%s/Library/Application Support/srb2-legacy", home);
+#else
+			const char *xdgdatahome = I_GetXDGDataHome(home);
+			basesize = strlen(xdgdatahome) + strlen("/srb2-legacy") + 1;
+			base = malloc(basesize);
+			snprintf(base, basesize, "%s/srb2-legacy", xdgdatahome);
+#endif
+		}
+	}
+
+	return base;
+#else
+	return NULL;
+#endif
 }
 
 /**	\brief	The isWadPathOk function
@@ -1663,6 +1755,7 @@ static boolean isWadPathOk(const char *path)
 	return false;
 }
 
+#ifdef DEFAULTDIR
 static void pathonly(char *s)
 {
 	size_t j;
@@ -1706,6 +1799,7 @@ static const char *searchWad(const char *searchDir)
 	}
 	return NULL;
 }
+#endif
 
 /**	\brief go through all possible paths and look for srb2.srb
 
@@ -1714,7 +1808,9 @@ static const char *searchWad(const char *searchDir)
 static const char *locateWad(void)
 {
 	const char *envstr;
+#ifdef DEFAULTDIR
 	const char *WadPath;
+#endif
 
 	// SRB2WADDIR environment variable has been renamed to SRB2LEGACYWADDIR to prevent conflicts with 2.2+.
 	I_OutputMsg("SRB2LEGACYWADDIR");
@@ -1751,85 +1847,53 @@ static const char *locateWad(void)
 	}
 #endif
 
-	// examine default dirs
-#ifdef DEFAULTWADLOCATION1
-	I_OutputMsg(","DEFAULTWADLOCATION1);
-	strcpy(returnWadPath, DEFAULTWADLOCATION1);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION2
-	I_OutputMsg(","DEFAULTWADLOCATION2);
-	strcpy(returnWadPath, DEFAULTWADLOCATION2);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION3
-	I_OutputMsg(","DEFAULTWADLOCATION3);
-	strcpy(returnWadPath, DEFAULTWADLOCATION3);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION4
-	I_OutputMsg(","DEFAULTWADLOCATION4);
-	strcpy(returnWadPath, DEFAULTWADLOCATION4);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION5
-	I_OutputMsg(","DEFAULTWADLOCATION5);
-	strcpy(returnWadPath, DEFAULTWADLOCATION5);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION6
-	I_OutputMsg(","DEFAULTWADLOCATION6);
-	strcpy(returnWadPath, DEFAULTWADLOCATION6);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION7
-	I_OutputMsg(","DEFAULTWADLOCATION7);
-	strcpy(returnWadPath, DEFAULTWADLOCATION7);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifndef NOHOME
-	// find in $HOME
-	I_OutputMsg(",HOME/" DEFAULTDIR);
-	if ((envstr = I_GetEnv("HOME")) != NULL)
+#ifdef DEFAULTDIR
+	// examine $XDG_DATA_DIRS/games/srb2-legacy and $XDG_DATA_DIRS/srb2-legacy
+	// by default this includes:
+	// - /usr/local/share/games/srb2-legacy
+	// - /usr/share/games/srb2-legacy
+	// - /usr/local/share/srb2-legacy
+	// - /usr/share/srb2-legacy
+	char *ptr, *slash, *datadirs = strdup(I_GetXDGDataDirs());
+
+	ptr = strtok(datadirs, ":");
+	while (ptr)
 	{
-		char *tmp = malloc(strlen(envstr) + 1 + sizeof(DEFAULTDIR));
-		strcpy(tmp, envstr);
-		strcat(tmp, "/");
-		strcat(tmp, DEFAULTDIR);
-		WadPath = searchWad(tmp);
-		free(tmp);
+		slash = ptr[strlen(ptr)-1] != '/' ? "/" : "";
+
+		I_OutputMsg(",%s%sgames/srb2-legacy", ptr, slash);
+		snprintf(returnWadPath, sizeof(returnWadPath), "%s%sgames/srb2-legacy", ptr, slash);
+		if (isWadPathOk(returnWadPath))
+		{
+			free(datadirs);
+			return returnWadPath;
+		}
+
+		I_OutputMsg(",%s%ssrb2-legacy", ptr, slash);
+		snprintf(returnWadPath, sizeof(returnWadPath), "%s%ssrb2-legacy", ptr, slash);
+		if (isWadPathOk(returnWadPath))
+		{
+			free(datadirs);
+			return returnWadPath;
+		}
+
+		ptr = strtok(NULL, ":");
+	}
+	free(datadirs);
+
+#ifndef NOHOME
+	// find in config dir
+	envstr = I_ConfigDir();
+	I_OutputMsg(",%s", envstr);
+	if (envstr != NULL)
+	{
+		WadPath = searchWad(envstr);
 		if (WadPath)
 			return WadPath;
 	}
 #endif
-#ifdef DEFAULTSEARCHPATH1
-	// find in /usr/local
-	I_OutputMsg(", in:"DEFAULTSEARCHPATH1);
-	WadPath = searchWad(DEFAULTSEARCHPATH1);
-	if (WadPath)
-		return WadPath;
 #endif
-#ifdef DEFAULTSEARCHPATH2
-	// find in /usr/games
-	I_OutputMsg(", in:"DEFAULTSEARCHPATH2);
-	WadPath = searchWad(DEFAULTSEARCHPATH2);
-	if (WadPath)
-		return WadPath;
-#endif
-#ifdef DEFAULTSEARCHPATH3
-	// find in ???
-	I_OutputMsg(", in:"DEFAULTSEARCHPATH3);
-	WadPath = searchWad(DEFAULTSEARCHPATH3);
-	if (WadPath)
-		return WadPath;
-#endif
+
 	// if nothing was found
 	return NULL;
 }
@@ -1869,7 +1933,7 @@ const char *I_LocateWad(void)
 static long get_entry(const char* name, const char* buf)
 {
 	long val;
-	char* hit = strstr(buf, name);
+	gconst char* hit = strstr(buf, name);
 	if (hit == NULL) {
 		return -1;
 	}
@@ -1911,16 +1975,6 @@ size_t I_GetFreeMem(size_t *total)
 	if (total)
 		*total = (size_t)info.dwTotalPhys;
 	return (size_t)info.dwAvailPhys;
-#elif defined (__OS2__)
-	UINT32 pr_arena;
-
-	if (total)
-		DosQuerySysInfo( QSV_TOTPHYSMEM, QSV_TOTPHYSMEM,
-							(PVOID) total, sizeof (UINT32));
-	DosQuerySysInfo( QSV_MAXPRMEM, QSV_MAXPRMEM,
-				(PVOID) &pr_arena, sizeof (UINT32));
-
-	return pr_arena;
 #elif defined (__linux__)
 	/* Linux */
 	char buf[1024];
@@ -2000,4 +2054,10 @@ boolean I_InitNetwork(void)
 {
 	// this must exist, but this is actually handled in i_tcp.c
 	return false;
+}
+
+int I_OpenURL(const char *url)
+{
+	(void)url;
+	return -1;
 }

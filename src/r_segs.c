@@ -13,6 +13,7 @@
 
 #include "doomdef.h"
 #include "r_local.h"
+#include "r_main.h"
 #include "r_sky.h"
 
 #include "r_splats.h"
@@ -395,15 +396,15 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 				//rlight->height -= (x1 - ds->x1)*rlight->heightstep;
 			rlight->startheight = rlight->height; // keep starting value here to reset for each repeat
 			rlight->lightlevel = *light->lightlevel;
-			rlight->extra_colormap = light->extra_colormap;
+			rlight->extra_colormap = *light->extra_colormap;
 			rlight->flags = light->flags;
 
 			if (rlight->flags & FF_FOG || (rlight->extra_colormap && rlight->extra_colormap->fog))
-				lightnum = (rlight->lightlevel >> LIGHTSEGSHIFT);
+				lightnum = max(rlight->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT;
 			else if (colfunc == fuzzcolfunc)
 				lightnum = LIGHTLEVELS - 1;
 			else
-				lightnum = (rlight->lightlevel >> LIGHTSEGSHIFT);
+				lightnum = max(rlight->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT;
 
 			if (rlight->extra_colormap && rlight->extra_colormap->fog)
 				;
@@ -425,7 +426,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 				lightnum = LIGHTLEVELS - 1;
 		}
 		else
-			lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
+			lightnum = max(frontsector->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT;
 
 		if (colfunc == R_DrawFogColumn_8
 			|| (frontsector->extra_colormap && frontsector->extra_colormap->fog))
@@ -826,13 +827,13 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			}
 
 			rlight->lightlevel = *light->lightlevel;
-			rlight->extra_colormap = light->extra_colormap;
+			rlight->extra_colormap = *light->extra_colormap;
 
 			// Check if the current light effects the colormap/lightlevel
 			if (pfloor->flags & FF_FOG)
-				rlight->lightnum = (pfloor->master->frontsector->lightlevel >> LIGHTSEGSHIFT);
+				rlight->lightnum = max(pfloor->master->frontsector->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT;
 			else
-				rlight->lightnum = (rlight->lightlevel >> LIGHTSEGSHIFT);
+				rlight->lightnum = max(rlight->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT;
 
 			if (pfloor->flags & FF_FOG || rlight->flags & FF_FOG || (rlight->extra_colormap && rlight->extra_colormap->fog))
 				;
@@ -850,14 +851,14 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	{
 		// Get correct light level!
 		if ((frontsector->extra_colormap && frontsector->extra_colormap->fog))
-			lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
+			lightnum = max(frontsector->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT;
 		else if (pfloor->flags & FF_FOG)
-			lightnum = (pfloor->master->frontsector->lightlevel >> LIGHTSEGSHIFT);
+			lightnum = max(pfloor->master->frontsector->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT;
 		else if (colfunc == fuzzcolfunc)
 			lightnum = LIGHTLEVELS-1;
 		else
-			lightnum = R_FakeFlat(frontsector, &tempsec, &templight, &templight, false)
-				->lightlevel >> LIGHTSEGSHIFT;
+			lightnum = max(R_FakeFlat(frontsector, &tempsec, &templight, &templight, false)
+				->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT;
 
 		if (pfloor->flags & FF_FOG || (frontsector->extra_colormap && frontsector->extra_colormap->fog));
 			else if (curline->v1->y == curline->v2->y)
@@ -1385,7 +1386,7 @@ static void R_RenderSegLoop (void)
 		//SoM: Calculate offsets for Thick fake floors.
 		// calculate texture offset
 		angle = (rw_centerangle + xtoviewangle[rw_x])>>ANGLETOFINESHIFT;
-		texturecolumn = rw_offset-FixedMul(FINETANGENT(angle),rw_distance);
+		texturecolumn = rw_offset-FixedMul(FINETANGENT(angle & 4095),rw_distance);
 
 
 		if (oldtexturecolumn != -1) {
@@ -1421,7 +1422,7 @@ static void R_RenderSegLoop (void)
 			for (i = 0; i < dc_numlights; i++)
 			{
 				INT32 lightnum;
-				lightnum = (dc_lightlist[i].lightlevel >> LIGHTSEGSHIFT);
+				lightnum = max(dc_lightlist[i].lightlevel, cv_secbright.value)  >> LIGHTSEGSHIFT;
 
 				if (dc_lightlist[i].extra_colormap)
 					;
@@ -2450,7 +2451,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		//  use different light tables
 		//  for horizontal / vertical / diagonal
 		// OPTIMIZE: get rid of LIGHTSEGSHIFT globally
-		lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
+		lightnum = max(frontsector->lightlevel, cv_secbright.value)  >> LIGHTSEGSHIFT;
 
 		if (curline->v1->y == curline->v2->y)
 			lightnum--;
@@ -2589,7 +2590,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			}
 
 			rlight->lightlevel = *light->lightlevel;
-			rlight->extra_colormap = light->extra_colormap;
+			rlight->extra_colormap = *light->extra_colormap;
 			p++;
 		}
 

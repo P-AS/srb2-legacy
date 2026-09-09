@@ -15,6 +15,7 @@
 #include "console.h"
 #include "g_game.h"
 #include "r_local.h"
+#include "r_main.h"
 #include "st_stuff.h"
 #include "w_wad.h"
 #include "z_zone.h"
@@ -32,12 +33,6 @@
 #include "hardware/hw_md2.h"
 #endif
 #include "r_fps.h"
-
-#ifdef PC_DOS
-#include <stdio.h> // for snprintf
-int	snprintf(char *str, size_t n, const char *fmt, ...);
-//int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
-#endif
 
 static void R_InitSkins(void);
 
@@ -982,7 +977,7 @@ static void R_SplitSprite(vissprite_t *sprite, mobj_t *thing)
 		newsprite->cut |= SC_TOP;
 		if (!(sector->lightlist[i].caster->flags & FF_NOSHADE))
 		{
-			lightnum = (*sector->lightlist[i].lightlevel >> LIGHTSEGSHIFT);
+			lightnum = max(*sector->lightlist[i].lightlevel , cv_secbright.value)  >> LIGHTSEGSHIFT;
 
 			if (lightnum < 0)
 				spritelights = scalelight[0];
@@ -991,7 +986,7 @@ static void R_SplitSprite(vissprite_t *sprite, mobj_t *thing)
 			else
 				spritelights = scalelight[lightnum];
 
-			newsprite->extra_colormap = sector->lightlist[i].extra_colormap;
+			newsprite->extra_colormap = *sector->lightlist[i].extra_colormap;
 
 /*
 			if (thing->frame & FF_TRANSMASK)
@@ -1377,19 +1372,8 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	if (thing->subsector->sector->numlights)
 	{
-		INT32 lightnum;
-		// R_GetPlaneLight won't work on sloped lights!
-		light = thing->subsector->sector->numlights - 1;
-
-		for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
-			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interp.x, interp.y);
-
-			if (h <= gzt) {
-				light = lightnum - 1;
-				break;
-			}
-		}
-		lightnum = (*thing->subsector->sector->lightlist[light].lightlevel >> LIGHTSEGSHIFT);
+		light = P_GetSectorLightAt(thing->subsector->sector, interp.x, interp.y, gzt);
+		INT32 lightnum = max(*thing->subsector->sector->lightlist[light].lightlevel , cv_secbright.value) >> LIGHTSEGSHIFT;
 
 		if (lightnum < 0)
 			spritelights = scalelight[0];
@@ -1447,7 +1431,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->sz = (INT16)((centeryfrac - FixedMul(vis->gz - viewz, sortscale))>>FRACBITS);
 	vis->cut = SC_NONE;
 	if (thing->subsector->sector->numlights)
-		vis->extra_colormap = thing->subsector->sector->lightlist[light].extra_colormap;
+		vis->extra_colormap = *thing->subsector->sector->lightlist[light].extra_colormap;
 	else
 		vis->extra_colormap = thing->subsector->sector->extra_colormap;
 
@@ -1734,7 +1718,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	{
 		if (sec->heightsec == -1) lightlevel = sec->lightlevel;
 
-		lightnum = (lightlevel >> LIGHTSEGSHIFT);
+		lightnum = max(lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT;
 
 		if (lightnum < 0)
 			spritelights = scalelight[0];

@@ -49,23 +49,36 @@ typedef struct
 // Could even use more than 32 levels.
 typedef UINT8 lighttable_t;
 
-// ExtraColormap type. Use for extra_colormaps from now on.
-typedef struct
-{
-	UINT16 maskcolor, fadecolor;
-	double maskamt;
-	UINT16 fadestart, fadeend;
-	INT32 fog;
+#define NUM_PALETTE_ENTRIES 256
+#define DEFAULT_STARTTRANSCOLOR 160
 
-	// rgba is used in hw mode for colored sector lighting
+// ExtraColormap type. Use for extra_colormaps from now on.
+typedef struct extracolormap_s
+{
+	UINT8 fadestart, fadeend;
+	UINT8 fog; // categorical value, not boolean
+
+	// store rgba values in combined bitwise
+	// also used in OpenGL instead lighttables
 	INT32 rgba; // similar to maskcolor in sw mode
 	INT32 fadergba; // The colour the colourmaps fade to
 
 	lighttable_t *colormap;
 
+#ifdef EXTRACOLORMAPLUMPS
+	lumpnum_t lump; // for colormap lump matching, init to LUMPERROR
+	char lumpname[9]; // for netsyncing
+#endif
+
+	struct extracolormap_s *next;
+	struct extracolormap_s *prev;
+
 #ifdef HWRENDER
-	// The id of the hardware lighttable. Zero means it does not exist yet.
-	UINT32 gl_lighttable_id;
+	struct {
+		UINT32 id; // The id of the hardware lighttable. Zero means it does not exist yet.
+		RGBA_t *data; // The texture data of the hardware lighttable.
+		boolean needs_update; // If the colormap changed recently or not.
+	} gl_lighttable;
 #endif
 
 } extracolormap_t;
@@ -192,7 +205,7 @@ typedef struct lightlist_s
 {
 	fixed_t height;
 	INT16 *lightlevel;
-	extracolormap_t *extra_colormap;
+	extracolormap_t **extra_colormap; // pointer-to-a-pointer, so we can react to colormap changes
 	INT32 flags;
 	ffloor_t *caster;
 	struct pslope_s *slope; // FF_DOUBLESHADOW makes me have to store this pointer here. Bluh bluh.
@@ -296,6 +309,7 @@ typedef struct sector_s
 	void *floordata; // floor move thinker
 	void *ceilingdata; // ceiling move thinker
 	void *lightingdata; // lighting change thinker
+	void *fadecolormapdata; // fade colormap thinker
 
 	// floor and ceiling texture offsets
 	fixed_t floor_xoffs, floor_yoffs;
@@ -310,8 +324,6 @@ typedef struct sector_s
 
 	INT32 floorlightsec, ceilinglightsec;
 	INT32 crumblestate; // used for crumbling and bobbing
-
-	INT32 bottommap, midmap, topmap; // dynamic colormaps
 
 	// list of mobjs that are at least partially in the sector
 	// thinglist is a subset of touching_thinglist
@@ -370,6 +382,9 @@ typedef struct sector_s
 	// flag angles sector spawned with (via linedef type 7)
 	angle_t spawn_flrpic_angle;
 	angle_t spawn_ceilpic_angle;
+
+	// colormap structure
+	extracolormap_t *spawn_extra_colormap;
 } sector_t;
 
 //
@@ -443,6 +458,8 @@ typedef struct
 	INT16 repeatcnt; // # of times to repeat midtexture
 
 	char *text; // a concatination of all top, bottom, and mid texture names, for linedef specials that require a string.
+
+	extracolormap_t *colormap_data; // storage for colormaps; not applied to sectors.
 } side_t;
 
 //
@@ -579,20 +596,12 @@ typedef struct
 	UINT16 children[2];
 } node_t;
 
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
-
 // posts are runs of non masked source pixels
 typedef struct
 {
 	UINT8 topdelta; // -1 is the last post in a column
 	UINT8 length;   // length data bytes follows
 } post_t;
-
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
 
 // column_t is a list of 0 or more post_t, (UINT8)-1 terminated
 typedef post_t column_t;
@@ -653,10 +662,6 @@ typedef enum
 	RGBA32          = 4,  // 32 bit rgba
 } pic_mode_t;
 
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
-
 // Patches.
 // A patch holds one or more columns.
 // Patches are used for sprites and all masked pictures, and we compose
@@ -673,10 +678,6 @@ typedef struct
 	// the [0] is &columnofs[width]
 } patch_t;
 
-#ifdef _MSC_VER
-#pragma warning(disable :  4200)
-#endif
-
 // a pic is an unmasked block of pixels, stored in horizontal way
 typedef struct
 {
@@ -688,14 +689,6 @@ typedef struct
 	INT16 reserved1; // set to 0
 	UINT8 data[0];
 } pic_t;
-
-#ifdef _MSC_VER
-#pragma warning(default : 4200)
-#endif
-
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
 
 typedef enum
 {

@@ -38,11 +38,6 @@ typedef enum {
 */
 extern UINT8 sound_started;
 
-/**	\brief info of samplerate
-*/
-extern consvar_t cv_samplerate;
-//extern consvar_t cv_rndsoundpitch;
-
 /**	\brief	The I_GetSfx function
 
 	\param	sfx	sfx to setup

@@ -69,7 +69,7 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 // Called by linux_x/i_video_xshm.c
 void M_QuitResponse(INT32 ch);
 
-// Determines whether to show a level in the list
+// Determines whether to show a level in the list (platter version does not need to be exposed)
 boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
 
 // flags for items in the menu
@@ -108,6 +108,8 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt);
 #define IT_CV_NOPRINT     1536
 #define IT_CV_NOMOD       2048
 #define IT_CV_INVISSLIDER 2560
+#define IT_CV_INTEGERSTEP 4096      // if IT_CV_NORMAL and cvar is CV_FLOAT, modify it by 1 instead of 0.0625
+#define IT_CV_FLOATSLIDER 4608      // IT_CV_SLIDER, value modified by 0.0625 instead of 1 (for CV_FLOAT cvars)
 
 //call/submenu specific
 // There used to be a lot more here but ...
@@ -192,6 +194,30 @@ typedef struct
 	char skinname[SKINNAMESIZE*2+2]; // skin&skin\0
 } description_t;
 
+// level select platter
+typedef struct
+{
+	char header[22+5]; // mapheader_t lvltttl max length + " ZONE"
+	INT32 maplist[3];
+	char mapnames[3][17+1];
+	boolean mapavailable[4]; // mapavailable[3] == wide or not
+} levelselectrow_t;
+
+typedef struct
+{
+	UINT8 numrows;
+	levelselectrow_t *rows;
+} levelselect_t;
+// experimental level select end
+
+// descriptions for gametype select screen
+typedef struct
+{
+	UINT8 col[2];
+	char notes[441];
+} gtdesc_t;
+
+
 // mode descriptions for video mode menu
 typedef struct
 {
@@ -219,7 +245,7 @@ typedef struct
 
 extern description_t description[MAXSKINS];
 
-extern consvar_t cv_showfocuslost; 
+extern consvar_t cv_showfocuslost;
 extern consvar_t cv_newgametype, cv_nextmap, cv_chooseskin, cv_serversort;
 extern CV_PossibleValue_t gametype_cons_t[];
 
@@ -232,6 +258,9 @@ extern INT32 ultimate_selectable;
 void M_ForceSaveSlotSelected(INT32 sslot);
 
 void M_CheatActivationResponder(INT32 ch);
+
+// Level select updating
+void Nextmap_OnChange(void);
 
 // Screenshot menu updating
 void Moviemode_mode_Onchange(void);

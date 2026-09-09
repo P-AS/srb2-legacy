@@ -41,7 +41,7 @@ static void HWR_DrawPatchInCache(GLMipmap_t *mipmap,
 	INT32 pblockwidth, INT32 pblockheight, INT32 blockmodulo,
 	INT32 ptexturewidth, INT32 ptextureheight,
 	INT32 originx, INT32 originy, // where to draw patch in surface block
-	const patch_t *realpatch, INT32 bpp, RGBA_t *palette)	
+	const patch_t *realpatch, INT32 bpp, RGBA_t *palette)
 {
 	INT32 x, x1, x2;
 	INT32 col, ncols;
@@ -304,7 +304,7 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 
 // patch may be NULL if grMipmap has been initialised already and makebitmap is false
 void HWR_MakePatch (patch_t *patch, GLPatch_t *grPatch, GLMipmap_t *grMipmap, boolean makebitmap)
-{ 
+{
 	RGBA_t *palette = HWR_GetTexturePalette();
 	// don't do it twice (like a cache)
 	if (grMipmap->width == 0)
@@ -461,7 +461,7 @@ GLMapTexture_t *HWR_GetTexture(INT32 tex)
 	if ((unsigned)tex >= gl_numtextures)
 		I_Error("HWR_GetTexture: tex >= numtextures\n");
 #endif
-	// Jimita
+	// Lactozilla: Renderer switching
 	if (needpatchrecache && (!gl_textures))
 		HWR_LoadTextures(gl_numtextures);
 
@@ -949,46 +949,70 @@ void HWR_SetMapPalette(void)
 
 // Creates a hardware lighttable from the supplied lighttable.
 // Returns the id of the hw lighttable, usable in FSurfaceInfo.
-UINT32 HWR_CreateLightTable(UINT8 *lighttable)
+UINT32 HWR_CreateLightTable(UINT8 *lighttable, RGBA_t *hw_lighttable)
 {
-	UINT32 i, id;
+	UINT32 i;
 	RGBA_t *palette = HWR_GetTexturePalette();
-	RGBA_t *hw_lighttable = Z_Malloc(256 * 32 * sizeof(RGBA_t), PU_STATIC, NULL);
 
 	// To make the palette index -> RGBA mapping easier for the shader,
 	// the hardware lighttable is composed of RGBA colors instead of palette indices.
 	for (i = 0; i < 256 * 32; i++)
 		hw_lighttable[i] = palette[lighttable[i]];
 
-	id = HWD.pfnCreateLightTable(hw_lighttable);
-	Z_Free(hw_lighttable);
-	return id;
+	return HWD.pfnCreateLightTable(hw_lighttable);
 }
+
+// Updates a hardware lighttable of a given id from the supplied lighttable.
+void HWR_UpdateLightTable(UINT32 id, UINT8 *lighttable, RGBA_t *hw_lighttable)
+{
+	UINT32 i;
+	RGBA_t *palette = HWR_GetTexturePalette();
+
+	for (i = 0; i < 256 * 32; i++)
+		hw_lighttable[i] = palette[lighttable[i]];
+
+	HWD.pfnUpdateLightTable(id, hw_lighttable);
+}
+
 
 // get hwr lighttable id for colormap, create it if it doesn't already exist
 UINT32 HWR_GetLightTableID(extracolormap_t *colormap)
 {
-	boolean default_colormap = false;
+		boolean default_colormap = false;
 	if (!colormap)
 	{
-		colormap = &extra_colormaps[num_extra_colormaps]; // a place to store the hw lighttable id
+		colormap = R_GetDefaultColormap(); // a place to store the hw lighttable id
 		// alternatively could just store the id in a global variable if there are issues
 		default_colormap = true;
 	}
 
-	// create hw lighttable if there isn't one
-	if (!colormap->gl_lighttable_id)
-	{
-		UINT8 *colormap_pointer;
+	UINT8 *colormap_pointer;
 
-		if (default_colormap)
-			colormap_pointer = colormaps; // don't actually use the data from the "default colormap"
-		else
-			colormap_pointer = colormap->colormap;
-		colormap->gl_lighttable_id = HWR_CreateLightTable(colormap_pointer);
+	if (default_colormap)
+		colormap_pointer = colormaps; // don't actually use the data from the "default colormap"
+	else
+		colormap_pointer = colormap->colormap;
+
+	// create hw lighttable if there isn't one
+	if (colormap->gl_lighttable.data == NULL)
+	{
+		Z_Malloc(256 * 32 * sizeof(RGBA_t), PU_HWRLIGHTTABLEDATA, &colormap->gl_lighttable.data);
 	}
 
-	return colormap->gl_lighttable_id;
+	// Generate the texture for this light table
+	if (!colormap->gl_lighttable.id)
+	{
+		colormap->gl_lighttable.id = HWR_CreateLightTable(colormap_pointer, colormap->gl_lighttable.data);
+	}
+	// Update the texture if it was directly changed by a script
+	else if (colormap->gl_lighttable.needs_update)
+	{
+		HWR_UpdateLightTable(colormap->gl_lighttable.id, colormap_pointer, colormap->gl_lighttable.data);
+	}
+
+	colormap->gl_lighttable.needs_update = false;
+
+	return colormap->gl_lighttable.id;
 }
 
 
@@ -996,7 +1020,10 @@ UINT32 HWR_GetLightTableID(extracolormap_t *colormap)
 // call become invalid and must not be used.
 void HWR_ClearLightTables(void)
 {
-	HWD.pfnClearLightTables();
+	Z_FreeTag(PU_HWRLIGHTTABLEDATA);
+
+	if (vid.glstate == VID_GL_LIBRARY_LOADED)
+		HWD.pfnClearLightTables();
 }
 
 #endif //HWRENDER

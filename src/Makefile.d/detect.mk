@@ -8,7 +8,6 @@
 	DUMMY\
 	DJGPPDOS\
 	SOLARIS\
-	MACOSX\
 
 all_systems:=\
 	LINUX64\
@@ -16,6 +15,7 @@ all_systems:=\
 	MINGW\
 	UNIX\
 	LINUX\
+	MACOS\
 	FREEBSD\
 	OPENBSD\
 	SDL\
@@ -62,15 +62,21 @@ endif
 
 # This must have high to low order.
 gcc_versions:=\
-	102 101\
-	93 92 91\
-	84 83 82 81\
-	75 74 73 72 71\
-	64 63 62 61\
-	55 54 53 52 51\
+	161 160 16\
+	152 151 150 15\
+	142 141 140 14\
+	133 132 131 130 13\
+	123 122 121 120 12\
+	114 113 112 111 110 11\
+	105 104 103 102 101 100 10\
+	95 94 93 92 91 90\
+	85 84 83 82 81 80\
+	75 74 73 72 71 70\
+	64 63 62 61 60\
+	55 54 53 52 51 50\
 	49 48 47 46 45 44 43 42 41 40
 
-latest_gcc_version:=10.2
+latest_gcc_version:=16.1
 
 # Automatically set version flag, but not if one was
 # manually set. And don't bother if this is a clean only

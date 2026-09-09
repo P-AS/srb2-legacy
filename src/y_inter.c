@@ -173,7 +173,7 @@ void Y_IntermissionDrawer(void)
 	if (intertype == int_none || rendermode == render_none)
 		return;
 
-	// Jimita
+	// Lactozilla: Renderer switching
 	if (needpatchrecache)
 	{
 		Y_CleanupData();
@@ -706,7 +706,7 @@ void Y_Ticker(void)
 	{
 		INT32 i;
 		UINT32 oldscore = data.coop.score;
-		boolean skip = false;
+		boolean skip = (marathonmode) ? true : false;
 		boolean anybonuses = false;
 
 		if (!intertic) // first time only
@@ -778,7 +778,7 @@ void Y_Ticker(void)
 	{
 		INT32 i;
 		UINT32 oldscore = data.spec.score;
-		boolean skip = false;
+		boolean skip = (marathonmode) ? true : false;
 		static INT32 tallydonetic = 0;
 
 		if (!intertic) // first time only
@@ -953,8 +953,7 @@ static void Y_UpdateRecordReplays(void)
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
 	// Update timeattack menu's replay availability.
-	CV_AddValue(&cv_nextmap, 1);
-	CV_AddValue(&cv_nextmap, -1);
+	Nextmap_OnChange();
 }
 
 //

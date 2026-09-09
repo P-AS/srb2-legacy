@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion = 36
+    namespace = 'org.stjr.srb2legacy'
+    lintOptions {
+        abortOnError = false
+    }
+    defaultConfig {
+        applicationId = "org.stjr.srb2legacy"
+
+        minSdkVersion = 21
+        targetSdkVersion = 28
+        versionCode = 2130
+        versionName = "2.1.30"
+        ndkVersion = "29.0.14206865"
+        externalNativeBuild {
+            cmake {
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+        ext {
+            useBuildDate = false
+        }
+
+        // This generates the APK filename
+        def srb2PackageName = "srb2legacy-android"
+
+        // Game version string
+        srb2PackageName += "-v" + (defaultConfig.versionName).replace(".", "")
+
+        // Build date
+        if (defaultConfig.ext.useBuildDate)
+            srb2PackageName += "-" + (new Date()).format('yyyyMMdd')
+
+        base {
+        	archivesName = srb2PackageName
+        }
+    }
+    sourceSets.main {
+        jniLibs.srcDir 'libs'
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = "../../CMakeLists.txt"
+
+            // Using one top level build dir for all build related files to reduce clutter.
+            buildStagingDirectory = file("${buildDir}/../.externalNativeBuild/${project.name}")
+        }
+    }
+}

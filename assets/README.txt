@@ -19,7 +19,7 @@ You may obtain the source code for SRB2 Legacy, including the source code for
 specific version releases, at the following web sites:
 
 GitHub:
-https://github.com/P-AS/srb2-legacy
+https://github.com/srb2-preservation/srb2-legacy
 
 STJr GitLab Mirror:
 https://git.do.srb2.org/PAS/srb2-legacy

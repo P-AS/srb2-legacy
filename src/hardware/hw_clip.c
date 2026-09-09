@@ -314,7 +314,7 @@ void gld_clipper_Clear(void)
 
 #define RMUL (1.6f/1.333333f)
 
-angle_t gld_FrustumAngle(angle_t tiltangle)
+angle_t gld_FrustumAngle(angle_t tiltangle, void *player)
 {
 	angle_t a1;
 	double clipfov;

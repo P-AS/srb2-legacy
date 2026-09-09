@@ -95,11 +95,15 @@ static int patch_fields_ref = LUA_NOREF;
 
 enum hudhook {
 	hudhook_game = 0,
-	hudhook_scores
+	hudhook_scores,
+	hudhook_title,
+	hudhook_titlecard
 };
 static const char *const hudhook_opt[] = {
 	"game",
 	"scores",
+	"title",
+	"titlecard",
 	NULL};
 
 // alignment types for v.drawString
@@ -859,6 +863,46 @@ static int libd_getColormap(lua_State *L)
 	return 1;
 }
 
+
+static int libd_getSectorColormap(lua_State *L)
+{
+	boolean has_sector = false;
+	sector_t *sector = NULL;
+	if (!lua_isnoneornil(L, 1))
+	{
+		has_sector = true;
+		sector = *((sector_t **)luaL_checkudata(L, 1, META_SECTOR));
+	}
+	fixed_t x = luaL_checkfixed(L, 2);
+	fixed_t y = luaL_checkfixed(L, 3);
+	fixed_t z = luaL_checkfixed(L, 4);
+	int lightlevel = luaL_optinteger(L, 5, 255);
+	UINT8 *colormap = NULL;
+	extracolormap_t *exc = NULL;
+
+	INLEVEL
+	HUDONLY
+
+	if (has_sector && !sector)
+		return LUA_ErrInvalid(L, "sector_t");
+
+	if (sector)
+		exc = P_GetColormapFromSectorAt(sector, x, y, z);
+	else
+		exc = P_GetSectorColormapAt(x, y, z);
+
+	if (exc)
+		colormap = exc->colormap;
+	else
+		colormap = colormaps;
+
+	lightlevel = 255 - min(max(lightlevel, 0), 255);
+	lightlevel >>= 3;
+
+	LUA_PushUserdata(L, colormap + (lightlevel * 256), META_COLORMAP);
+	return 1;
+}
+
 static int libd_fadeScreen(lua_State *L)
 {
 	huddrawlist_h list;
@@ -955,6 +999,7 @@ static luaL_Reg lib_draw[] = {
 	{"drawString", libd_drawString},
 	{"stringWidth", libd_stringWidth},
 	{"getColormap", libd_getColormap},
+	{"getSectorColormap", libd_getSectorColormap},
 	{"fadeScreen", libd_fadeScreen},
 	{"width", libd_width},
 	{"height", libd_height},
@@ -1050,6 +1095,12 @@ int LUA_HudLib(lua_State *L)
 
 		lua_newtable(L);
 		lua_rawseti(L, -2, 3); // HUD[2] = scores rendering functions array
+
+		lua_newtable(L);
+		lua_rawseti(L, -2, 4); // HUD[3] = title rendering functions array
+
+		lua_newtable(L);
+		lua_rawseti(L, -2, 5); // HUD[4] = title card rendering functions array
 	lua_setfield(L, LUA_REGISTRYINDEX, "HUD");
 
 	luaL_newmetatable(L, META_HUDINFO);
@@ -1158,6 +1209,56 @@ void LUAh_ScoresHUD(huddrawlist_h list)
 	lua_getfield(gL, LUA_REGISTRYINDEX, "HUD");
 	I_Assert(lua_istable(gL, -1));
 	lua_rawgeti(gL, -1, 3); // HUD[3] = rendering funcs
+	I_Assert(lua_istable(gL, -1));
+
+	lua_rawgeti(gL, -2, 1); // HUD[1] = lib_draw
+	I_Assert(lua_istable(gL, -1));
+	lua_remove(gL, -3); // pop HUD
+	lua_pushnil(gL);
+	while (lua_next(gL, -3) != 0) {
+		lua_pushvalue(gL, -3); // graphics library (HUD[1])
+		LUA_Call(gL, 1);
+	}
+	lua_pop(gL, -1);
+	hud_running = false;
+}
+
+void LUAh_TitleHUD(void)
+{
+	if (!gL || !(hudAvailable & (1<<hudhook_title)))
+		return;
+
+	hud_running = true;
+	lua_pop(gL, -1);
+
+	lua_getfield(gL, LUA_REGISTRYINDEX, "HUD");
+	I_Assert(lua_istable(gL, -1));
+	lua_rawgeti(gL, -1, 2+hudhook_title); // HUD[5] = rendering funcs
+	I_Assert(lua_istable(gL, -1));
+
+	lua_rawgeti(gL, -2, 1); // HUD[1] = lib_draw
+	I_Assert(lua_istable(gL, -1));
+	lua_remove(gL, -3); // pop HUD
+	lua_pushnil(gL);
+	while (lua_next(gL, -3) != 0) {
+		lua_pushvalue(gL, -3); // graphics library (HUD[1])
+		LUA_Call(gL, 1);
+	}
+	lua_pop(gL, -1);
+	hud_running = false;
+}
+
+void LUAh_TitleCardHUD(void)
+{
+	if (!gL || !(hudAvailable & (1<<hudhook_titlecard)))
+		return;
+
+	hud_running = true;
+	lua_pop(gL, -1);
+
+	lua_getfield(gL, LUA_REGISTRYINDEX, "HUD");
+	I_Assert(lua_istable(gL, -1));
+	lua_rawgeti(gL, -1, 2+hudhook_titlecard); // HUD[5] = rendering funcs
 	I_Assert(lua_istable(gL, -1));
 
 	lua_rawgeti(gL, -2, 1); // HUD[1] = lib_draw

@@ -18,11 +18,7 @@
 #define ZWAD
 
 #ifdef ZWAD
-#ifdef _WIN32_WCE
-#define AVOID_ERRNO
-#else
 #include <errno.h>
-#endif
 #include "lzf.h"
 #endif
 
@@ -46,6 +42,7 @@
 #include "i_system.h"
 #include "md5.h"
 #include "lua_script.h"
+#include "lua_hook.h"
 #ifdef SCANTHINGS
 #include "p_setup.h" // P_ScanThings
 #endif
@@ -62,10 +59,8 @@
 #endif
 
 #ifdef HAVE_ZLIB
-#ifndef _MSC_VER
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
 #endif
 
 #ifndef _LFS64_LARGEFILE
@@ -472,9 +467,6 @@ static boolean ResFindSignature (FILE* handle, char endPat[], UINT32 startpos)
 	return false;
 }
 
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
 typedef struct zend_s
 {
 	char signature[4];
@@ -522,9 +514,6 @@ typedef struct zlentry_s
 	UINT16 namelen;
 	UINT16 xtralen;
 } ATTRPACK zlentry_t;
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
 
 /** Create a lumpinfo_t array for a PKZip file.
  */
@@ -690,7 +679,6 @@ UINT16 W_InitFile(const char *filename)
 	restype_t type;
 	UINT16 numlumps = 0;
 	size_t i;
-	size_t packetsize;
 	UINT8 md5sum[16];
 	boolean important;
 
@@ -722,24 +710,7 @@ UINT16 W_InitFile(const char *filename)
 	if ((handle = W_OpenWadFile(&filename, true)) == NULL)
 		return INT16_MAX;
 
-	// Check if wad files will overflow fileneededbuffer. Only the filename part
-	// is send in the packet; cf.
-	// see PutFileNeeded in d_netfil.c
-	if ((important = !W_VerifyNMUSlumps(filename)))
-	{
-		packetsize = packetsizetally + nameonlylength(filename) + 22;
-
-		if (packetsize > MAXFILENEEDED*sizeof(UINT8))
-		{
-			CONS_Alert(CONS_ERROR, M_GetText("Maximum wad files reached\n"));
-			refreshdirmenu |= REFRESHDIR_MAX;
-			if (handle)
-				fclose(handle);
-			return INT16_MAX;
-		}
-
-		packetsizetally = packetsize;
-	}
+	important = !W_VerifyNMUSlumps(filename);
 
 #ifndef NOMD5
 	//
@@ -840,6 +811,8 @@ UINT16 W_InitFile(const char *filename)
 	default:
 		break;
 	}
+
+	LUAh_AddonLoaded();
 
 	W_InvalidateLumpnumCache();
 	return wadfile->numlumps;
@@ -1782,12 +1755,12 @@ void W_VerifyFileMD5(UINT16 wadfilenum, const char *matchmd5)
 	{
 		char actualmd5text[2*MD5_LEN+1];
 		PrintMD5String(wadfiles[wadfilenum]->md5sum, actualmd5text);
-/*#ifdef _DEBUG
+#ifdef _DEBUG
 		CONS_Printf
 #else
 		I_Error
 #endif
-			(M_GetText("File is corrupt or has been modified: %s (found md5: %s, wanted: %s)\n"), wadfiles[wadfilenum]->filename, actualmd5text, matchmd5);*/
+			(M_GetText("File is corrupt or has been modified: %s (found md5: %s, wanted: %s)\n"), wadfiles[wadfilenum]->filename, actualmd5text, matchmd5);
 	}
 #endif
 }

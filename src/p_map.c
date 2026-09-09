@@ -1605,6 +1605,23 @@ void P_CheckHoopPosition(mobj_t *hoopthing, fixed_t x, fixed_t y, fixed_t z, fix
 	return;
 }
 
+// romoney5: noclip camera
+boolean P_IsCameraNoclip(camera_t *thiscam)
+{
+	if (thiscam == &camera)
+	{
+		if (cv_cam_clipping.value != 1)
+			return true;
+	}
+	else // Camera 2
+	{
+		if (cv_cam2_clipping.value != 1)
+			return true;
+	}
+
+	return false;
+}
+
 //
 // P_CheckCameraPosition
 //
@@ -1802,7 +1819,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 		|| (thiscam == &camera2 && players[secondarydisplayplayer].mo && (players[secondarydisplayplayer].mo->flags2 & MF2_TWOD)))
 		itsatwodlevel = true;
 
-	if (!itsatwodlevel && players[displayplayer].mo)
+	if (!itsatwodlevel && players[displayplayer].mo && !P_IsCameraNoclip(thiscam))
 	{
 		fixed_t tryx = thiscam->x;
 		fixed_t tryy = thiscam->y;
@@ -4169,4 +4186,36 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 	}
 
 	return floorz;
+}
+
+INT32 P_GetSectorLightAt(sector_t *sector, fixed_t x, fixed_t y, fixed_t z)
+{
+	if (!sector->numlights)
+		return -1;
+
+	INT32 light = sector->numlights - 1;
+
+	// R_GetPlaneLight won't work on sloped lights!
+	for (INT32 lightnum = 1; lightnum < sector->numlights; lightnum++) {
+		fixed_t h = P_GetLightZAt(&sector->lightlist[lightnum], x, y);
+		if (h <= z) {
+			light = lightnum - 1;
+			break;
+		}
+	}
+
+	return light;
+}
+
+extracolormap_t *P_GetColormapFromSectorAt(sector_t *sector, fixed_t x, fixed_t y, fixed_t z)
+{
+	if (sector->numlights)
+		return *sector->lightlist[P_GetSectorLightAt(sector, x, y, z)].extra_colormap;
+	else
+		return sector->extra_colormap;
+}
+
+extracolormap_t *P_GetSectorColormapAt(fixed_t x, fixed_t y, fixed_t z)
+{
+	return P_GetColormapFromSectorAt(R_PointInSubsector(x, y)->sector, x, y, z);
 }

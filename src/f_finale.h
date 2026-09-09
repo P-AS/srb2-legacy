@@ -64,6 +64,7 @@ void F_StartWaitingPlayers(void);
 void F_WaitingPlayersTicker(void);
 void F_WaitingPlayersDrawer(void);
 
+extern boolean hidetitlepics;
 extern INT32 titlescrollspeed;
 
 //

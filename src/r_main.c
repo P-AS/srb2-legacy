@@ -124,8 +124,7 @@ lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 
 
 // Hack to support extra boom colormaps.
-size_t num_extra_colormaps;
-extracolormap_t extra_colormaps[MAXCOLORMAPS];
+extracolormap_t *extra_colormaps = NULL;
 
 // Render stats
 precise_t ps_prevframetime = 0;
@@ -157,6 +156,8 @@ static CV_PossibleValue_t translucenthud_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0
 static CV_PossibleValue_t maxportals_cons_t[] = {{0, "MIN"}, {12, "MAX"}, {0, NULL}}; // lmao rendering 32 portals, you're a card
 static CV_PossibleValue_t homremoval_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Flash"}, {0, NULL}};
 static CV_PossibleValue_t fov_cons_t[] = {{MINFOV*FRACUNIT, "MIN"}, {MAXFOV*FRACUNIT, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t secbright_cons_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
+
 
 static void R_SetFov(fixed_t playerfov);
 
@@ -177,14 +178,13 @@ consvar_t cv_flipcam2 = CVAR_INIT ("flipcam2", "No", "Flip the camera with chang
 consvar_t cv_shadow = CVAR_INIT ("shadow", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_shadowoffs = CVAR_INIT ("offsetshadows", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_skybox = CVAR_INIT ("skybox", "On", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_skydome = CVAR_INIT ("skydome", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_skydome = CVAR_INIT ("skydome", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_ffloorclip =  CVAR_INIT("r_ffloorclip", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_spriteclip = CVAR_INIT ("r_spriteclip", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", NULL, CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_allowmlook = CVAR_INIT ("allowmlook", "Yes", NULL, CV_NETVAR, CV_YesNo, NULL);
 consvar_t cv_showhud = CVAR_INIT ("showhud", "Yes", "Whether or not to show the Heads-Up Display", CV_CALL,  CV_YesNo, R_SetViewSize);
 consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", "How opaque the HUD is, lower values make the HUD more transparent", CV_SAVE, translucenthud_cons_t, NULL);
-consvar_t cv_uncappedhud = CVAR_INIT ("uncappedhud", "Yes", NULL, CV_SAVE, CV_YesNo, NULL);
 consvar_t cv_modernpause = CVAR_INIT ("modernpause", "On", "Use a blue textbox or a graphic when the game is paused", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_translucency = CVAR_INIT ("translucency", "On", NULL, CV_SAVE, CV_OnOff, NULL);
@@ -200,6 +200,10 @@ consvar_t cv_fov = CVAR_INIT ("fov", "90", "Change the camera's field of view, g
 consvar_t cv_fovchange = CVAR_INIT ("fovchange", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_maxportals = CVAR_INIT ("maxportals", "2",  NULL, CV_SAVE, maxportals_cons_t, NULL);
+
+consvar_t cv_secbright = CVAR_INIT("r_secbright", "0", "Sets minimum sector brightness (0-255), useful for dark areas", CV_SAVE, secbright_cons_t, NULL);
+
+consvar_t cv_moviemodeinfo = CVAR_INIT ("moviemodeinfo", "Yes", "Show info about movie being recorded on the heads-up display", CV_SAVE, CV_YesNo, NULL);
 
 
 void SplitScreen_OnChange(void)
@@ -389,11 +393,6 @@ angle_t R_PointToAngleEx(INT32 x2, INT32 y2, INT32 x1, INT32 y1)
 		(x1 = -x1) > (y1 = -y1) ? ANGLE_180+tantoangle[SlopeDivEx(y1,x1)] :    // octant 4
 		ANGLE_270-tantoangle[SlopeDivEx(x1,y1)] :                              // octant 5
 		0;
-}
-
-INT32 R_GetHudUncap(boolean menu)
-{
-	return cv_uncappedhud.value ? ((menu) ? (rendertimefrac_unpaused & FRACMASK) : (rendertimefrac & FRACMASK) ) : 0; // Ternary operators are FUN -chromaticpipe
 }
 
 //
@@ -975,6 +974,7 @@ void R_ExecuteSetViewSize(void)
 
 	am_recalc = true;
 }
+
 fixed_t R_GetPlayerFov(player_t *player)
 {
 	fixed_t fov = cv_fov.value + player->fovadd;
@@ -987,6 +987,17 @@ static void R_SetFov(fixed_t playerfov)
 	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
 	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 		fovtan = 17*fovtan/10;
+		
+		
+#ifdef NATIVESCREENRES
+	if (cv_nativeres.value && cv_nativeresfov.value)
+	{
+		fixed_t resmul = FixedDiv(vid.width * FRACUNIT, vid.height * FRACUNIT);
+		if (resmul > FRACUNIT)
+			fovtan = FixedMul(fovtan, (7*resmul/10));
+	}
+#endif
+
 
 	// this is only used for planes rendering in software mode
 	INT32 j = viewheight*16;
@@ -1089,7 +1100,7 @@ void R_SetupFrame(player_t *player, boolean skybox)
 {
 	camera_t *thiscam;
 	boolean chasecam = R_ViewpointHasChasecam(player);
-	
+
 	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])
 		thiscam = &camera2;
 	else
@@ -1437,7 +1448,7 @@ boolean R_ViewpointHasChasecam(player_t *player)
 		chasecam = true; // force chasecam on
 	else if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off
-		
+
 	if (chasecam && !thiscam->chase)
 	{
 		P_ResetCamera(player, thiscam);
@@ -1448,7 +1459,7 @@ boolean R_ViewpointHasChasecam(player_t *player)
 		P_ResetCamera(player, thiscam);
 		thiscam->chase = false;
 	}
-	
+
 	if (isplayer2)
 	{
 		R_SetViewContext(VIEWCONTEXT_PLAYER2);
@@ -1761,7 +1772,7 @@ void R_RenderPlayerView(player_t *player)
 		skyVisible1 = skyVisible;
 }
 
-// Jimita
+// Lactozilla: Renderer switching
 #ifdef HWRENDER
 void R_InitHardwareMode(void)
 {
@@ -1815,6 +1826,7 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_skybox);
 	CV_RegisterVar(&cv_ffloorclip);
 	CV_RegisterVar(&cv_spriteclip);
+	CV_RegisterVar(&cv_secbright);
 
 	CV_RegisterVar(&cv_cam_dist);
 	CV_RegisterVar(&cv_cam_still);
@@ -1822,6 +1834,7 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_cam_speed);
 	CV_RegisterVar(&cv_cam_rotate);
 	CV_RegisterVar(&cv_cam_rotspeed);
+	CV_RegisterVar(&cv_cam_turnmultiplier);
 	CV_RegisterVar(&cv_cam_orbit);
 	CV_RegisterVar(&cv_cam_adjust);
 
@@ -1831,8 +1844,15 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_cam2_speed);
 	CV_RegisterVar(&cv_cam2_rotate);
 	CV_RegisterVar(&cv_cam2_rotspeed);
+	CV_RegisterVar(&cv_cam2_turnmultiplier);
 	CV_RegisterVar(&cv_cam2_orbit);
 	CV_RegisterVar(&cv_cam2_adjust);
+
+	CV_RegisterVar(&cv_cam_clipping);
+	CV_RegisterVar(&cv_cam2_clipping);
+
+	CV_RegisterVar(&cv_cam_exact);
+	CV_RegisterVar(&cv_cam2_exact);
 
 	CV_RegisterVar(&cv_viewroll);
 	CV_RegisterVar(&cv_quakeiiiarena);
@@ -1841,8 +1861,8 @@ void R_RegisterEngineStuff(void)
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);
-	CV_RegisterVar(&cv_uncappedhud);
 	CV_RegisterVar(&cv_modernpause);
+	CV_RegisterVar(&cv_moviemodeinfo);
 
 	CV_RegisterVar(&cv_maxportals);
 

@@ -1,6 +1,10 @@
 # SRB2 Core
 
-add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32)
+if(${CMAKE_SYSTEM} MATCHES "Android")
+	add_library(SRB2SDL2 SHARED)
+else()
+	add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32)
+endif()
 
 # Core sources
 target_sourcefile(c)
@@ -31,6 +35,8 @@ set(SRB2_CONFIG_EXECINFO ON CACHE BOOL
 	"Enable stack trace dump support.")
 set(SRB2_CONFIG_LTO ON CACHE BOOL
 	"Enable link time optimizations, improves performance at the cost of longer link times.")
+set(SRB2_CONFIG_NATIVESCREENRES OFF CACHE BOOL
+	"Additional resolution options menu from the Android port.")
 
 if(${SRB2_CONFIG_DEDICATED})
 	set(SRB2_CONFIG_HAVE_GME NO)
@@ -38,10 +44,22 @@ if(${SRB2_CONFIG_DEDICATED})
 	set(SRB2_CONFIG_HWRENDER NO)
 endif()
 
+if(${CMAKE_SYSTEM} MATCHES Emscripten)
+	set(SRB2_CONFIG_HWRENDER OFF)
+	set(SRB2_CONFIG_EXECINFO OFF)
+endif()
+
 ### use internal libraries?
-if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
+if(${CMAKE_SYSTEM} MATCHES "Windows" OR "Android") ### set on Windows and Android only
 	set(SRB2_CONFIG_USE_INTERNAL_LIBRARIES OFF CACHE BOOL
-	"Use SRB2's internal copies of required dependencies (SDL2, PNG, zlib, GME, OpenMPT).")
+		"Use SRB2's internal copies of required dependencies (SDL2, PNG, zlib, GME, OpenMPT).")
+endif()
+
+if(${CMAKE_SYSTEM} MATCHES "Android")
+	set(SRB2_CONFIG_USE_INTERNAL_LIBRARIES ON)
+	set(SRB2_CONFIG_HWRENDER OFF)
+	set(SRB2_CONFIG_LTO OFF)
+	set(SRB2_CONFIG_NATIVESCREENRES ON)
 endif()
 
 add_subdirectory(blua)
@@ -49,12 +67,21 @@ add_subdirectory(blua)
 if(${SRB2_CONFIG_HAVE_GME})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 		set(GME_FOUND ON)
-		set(GME_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/gme/include)
-        if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(GME_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/gme/win64 -lgme")
-		else() # 32-bit
-			set(GME_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/gme/win32 -lgme")
+		if(${CMAKE_SYSTEM} MATCHES "Windows")
+			set(GME_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/gme/include)
+			if(${SRB2_SYSTEM_BITS} EQUAL 64)
+				set(GME_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/gme/win64 -lgme")
+			else() # 32-bit
+				set(GME_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/gme/win32 -lgme")
+			endif()
+		elseif(${CMAKE_SYSTEM} MATCHES "Android")
+			set(GME_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/libgme/include)
+			set(GME_LIBRARIES "${CMAKE_SOURCE_DIR}/thirdparty/libgme/libs/${CMAKE_ANDROID_ARCH_ABI}/libgme.so")
 		endif()
+	elseif(${CMAKE_SYSTEM} MATCHES "Emscripten")
+		set(GME_FOUND ON)
+		set(GME_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/gme/include)
+		set(GME_LIBRARIES "${CMAKE_SOURCE_DIR}/libs/gme/emscripten/libgme.a")
 	else()
 		find_package(GME)
 	endif()
@@ -69,12 +96,21 @@ endif()
 if(${SRB2_CONFIG_HAVE_OPENMPT})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 		set(OPENMPT_FOUND ON)
-		set(OPENMPT_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libopenmpt/inc)
-        if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(OPENMPT_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libopenmpt/lib/x86_64/mingw -lopenmpt")
-		else() # 32-bit
-			set(OPENMPT_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libopenmpt/lib/x86/mingw -lopenmpt")
+		if(${CMAKE_SYSTEM} MATCHES "Windows")
+			set(OPENMPT_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libopenmpt/inc)
+			if(${SRB2_SYSTEM_BITS} EQUAL 64)
+				set(OPENMPT_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libopenmpt/lib/x86_64/mingw -lopenmpt")
+			else() # 32-bit
+				set(OPENMPT_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libopenmpt/lib/x86/mingw -lopenmpt")
+			endif()
+		elseif(${CMAKE_SYSTEM} MATCHES "Android")
+			set(OPENMPT_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/thirdparty/libopenmpt/include)
+			set(OPENMPT_LIBRARIES "${CMAKE_SOURCE_DIR}/thirdparty/libopenmpt/libs/${CMAKE_ANDROID_ARCH_ABI}/libopenmpt.so")
 		endif()
+	elseif(${CMAKE_SYSTEM} MATCHES "Emscripten")
+		set(OPENMPT_FOUND ON)
+		set(OPENMPT_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libopenmpt/inc)
+		set(OPENMPT_LIBRARIES "${CMAKE_SOURCE_DIR}/libs/libopenmpt/emscripten/libopenmpt.a")
 	else()
 		find_package(OPENMPT)
 	endif()
@@ -95,12 +131,18 @@ endif()
 if(${SRB2_CONFIG_HAVE_ZLIB})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 		set(ZLIB_FOUND ON)
-		set(ZLIB_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/zlib)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(ZLIB_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/zlib/win32 -lz64")
-		else() # 32-bit
-			set(ZLIB_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/zlib/win32 -lz32")
+		if(${CMAKE_SYSTEM} MATCHES "Windows")
+			set(ZLIB_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/zlib)
+			if(${SRB2_SYSTEM_BITS} EQUAL 64)
+				set(ZLIB_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/zlib/win32 -lz64")
+			else() # 32-bit
+				set(ZLIB_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/zlib/win32 -lz32")
+			endif()
+		elseif(${CMAKE_SYSTEM} MATCHES "Android")
+			set(ZLIB_LIBRARIES "-lz")
 		endif()
+	elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
+		set(ZLIB_FOUND ON)
 	else()
 		find_package(ZLIB)
 	endif()
@@ -116,12 +158,18 @@ if(${SRB2_CONFIG_HAVE_PNG} AND ${SRB2_CONFIG_HAVE_ZLIB})
 	if (${ZLIB_FOUND})
 		if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 			set(PNG_FOUND ON)
-			set(PNG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libpng-src)
-			if(${SRB2_SYSTEM_BITS} EQUAL 64)
-				set(PNG_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libpng-src/projects -lpng64")
-			else() # 32-bit
-				set(PNG_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libpng-src/projects -lpng32")
+			if(${CMAKE_SYSTEM} MATCHES "Windows")
+				set(PNG_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libpng-src)
+				if(${SRB2_SYSTEM_BITS} EQUAL 64)
+					set(PNG_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libpng-src/projects -lpng64")
+				else() # 32-bit
+					set(PNG_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libpng-src/projects -lpng32")
+				endif()
+			elseif(${CMAKE_SYSTEM} MATCHES "Android")
+				set(PNG_LIBRARIES libpng::libpng)
 			endif()
+		elseif(${CMAKE_SYSTEM} MATCHES Emscripten)
+			set(PNG_FOUND ON)
 		else()
 			find_package(PNG)
 		endif()
@@ -139,11 +187,13 @@ endif()
 if(${SRB2_CONFIG_HAVE_CURL})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 		set(CURL_FOUND ON)
-		set(CURL_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/curl/include)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(CURL_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/curl/lib64 -lcurl")
-		else() # 32-bit
-			set(CURL_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/curl/lib32 -lcurl")
+		if(${CMAKE_SYSTEM} MATCHES "Windows")
+			set(CURL_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/curl/include)
+			if(${SRB2_SYSTEM_BITS} EQUAL 64)
+				set(CURL_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/curl/lib64 -lcurl")
+			else() # 32-bit
+				set(CURL_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/curl/lib32 -lcurl")
+			endif()
 		endif()
 	else()
 		find_package(CURL)
@@ -181,6 +231,10 @@ if(SRB2_CONFIG_LTO AND NOT SRB2_CONFIG_DEBUGMODE)
 	set_property(TARGET SRB2SDL2 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
+if(${SRB2_CONFIG_NATIVESCREENRES})
+	target_compile_definitions(SRB2SDL2 PRIVATE -DNATIVESCREENRES)
+endif()
+
 # Targets
 
 # Compatibility flag with later versions of GCC
@@ -189,7 +243,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -mno-ms-bitfields)
 endif()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT ${CMAKE_SYSTEM} MATCHES "Emscripten")
 	set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -Wno-absolute-value)
 endif()
 
@@ -199,6 +253,15 @@ if(${SRB2_CONFIG_DEBUGMODE})
 	target_compile_definitions(SRB2SDL2 PRIVATE -D_DEBUG -DPARANOIA -DRANGECHECK)
 else()
 	target_compile_definitions(SRB2SDL2 PRIVATE -DNDEBUG)
+endif()
+
+if(${CMAKE_SYSTEM} MATCHES "Android")
+	# Support 16 KB page sizes on Android
+	target_link_options(SRB2SDL2 PRIVATE
+		"-Wl,-z,max-page-size=16384"
+		"-Wl,-z,common-page-size=16384"
+	)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DNOMUMBLE -DSTDC_HEADERS)
 endif()
 
 #add_library(SRB2Core STATIC
@@ -218,8 +281,16 @@ else()
 	add_subdirectory(sdl)
 endif()
 
-if(${CMAKE_SYSTEM} MATCHES Windows)
+if(${CMAKE_SYSTEM} MATCHES Emscripten)
+	add_subdirectory(web)
+endif()
+
+if(${CMAKE_SYSTEM} MATCHES "Windows") 
 	add_subdirectory(win32)
+endif()
+
+if(${CMAKE_SYSTEM} MATCHES "Android")
+	add_subdirectory(android-jni)
 endif()
 
 if(NOT ${SRB2_SDL2_AVAILABLE} AND NOT ${SRB2_WIN32_AVAILABLE})

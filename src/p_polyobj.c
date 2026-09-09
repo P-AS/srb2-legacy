@@ -1146,7 +1146,7 @@ static INT32 Polyobj_clipThings(polyobj_t *po, line_t *line)
 //
 // Moves a polyobject on the x-y plane.
 //
-static boolean Polyobj_moveXY(polyobj_t *po, fixed_t x, fixed_t y)
+boolean Polyobj_moveXY(polyobj_t *po, fixed_t x, fixed_t y)
 {
 	size_t i;
 	vertex_t vec;
@@ -1354,7 +1354,7 @@ static void Polyobj_rotateThings(polyobj_t *po, vertex_t origin, angle_t delta, 
 //
 // Rotates a polyobject around its start point.
 //
-static boolean Polyobj_rotate(polyobj_t *po, angle_t delta, UINT8 turnthings)
+boolean Polyobj_rotate(polyobj_t *po, angle_t delta, UINT8 turnthings)
 {
 	size_t i;
 	angle_t angle;
@@ -1459,7 +1459,7 @@ static polyobj_t *Polyobj_GetParent(polyobj_t *po)
 // Iteratively retrieves the children POs of a parent,
 // sorta like P_FindSectorSpecialFromTag.
 //
-static polyobj_t *Polyobj_GetChild(polyobj_t *po, INT32 *start)
+polyobj_t *Polyobj_GetChild(polyobj_t *po, INT32 *start)
 {
 	for (; *start < numPolyObjects; (*start)++)
 	{

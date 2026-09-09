@@ -599,13 +599,20 @@ void P_Ticker(boolean run)
 			P_MoveChaseCamera(&players[0], &camera, false);
 			R_UpdateViewInterpolation();
 			P_MapEnd();
+			S_SetStackAdjustmentStart();
 			return;
 		}
 	}
 
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())
+	{
+		S_SetStackAdjustmentStart();
 		return;
+	}
+
+	if (!S_MusicPaused())
+		S_AdjustMusicStackTics();
 
 	postimgtype = postimgtype2 = postimg_none;
 
@@ -716,7 +723,7 @@ void P_Ticker(boolean run)
 			quake.x = M_RandomRange(-ir,ir);
 			quake.y = M_RandomRange(-ir,ir);
 			quake.z = M_RandomRange(-ir,ir);
-			if(cv_quakelive.value && !cv_fullscreen.value)
+			if(cv_quakelive.value && !(cv_fullscreen.value == 1))
 				I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
 			ir >>= 2;
 			ir = M_RandomRange(-ir,ir);
@@ -796,6 +803,9 @@ void P_PreTicker(INT32 frames)
 
 	postimgtype = postimgtype2 = postimg_none;
 
+	if (marathonmode & MA_INGAME)
+		marathonmode |= MA_INIT;
+
 	for (framecnt = 0; framecnt < frames; ++framecnt)
 	{
 		P_MapStart();
@@ -839,9 +849,12 @@ void P_PreTicker(INT32 frames)
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();
 		R_ResetViewInterpolation(0);
-		
+
 		LUAh_PostThinkFrame();
-		
+
 		P_MapEnd();
 	}
+
+	if (marathonmode & MA_INGAME)
+		marathonmode &= ~MA_INIT;
 }

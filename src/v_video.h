@@ -18,6 +18,30 @@
 #include "doomtype.h"
 #include "r_defs.h"
 
+#if defined(__SSE__) && !defined(__ANDROID__)
+#if defined(__APPLE__)
+#include <Availability.h>
+// 'aligned_alloc' is only available on macOS 10.15 or newer
+#if defined(TARGET_OS_OSX) && (__MAC_OS_X_VERSION_MIN_REQUIRED >= 101500)
+#define USE_SSE_ALIGNED
+#endif
+#else
+#define USE_SSE_ALIGNED
+#endif
+#endif
+
+#ifdef USE_SSE_ALIGNED
+#ifdef _WIN32
+#include <malloc.h>
+#define aligned_alloc(align, size) _aligned_malloc(size, align)
+#define aligned_free(ptr) _aligned_free(ptr)
+#else
+#define aligned_free(ptr) free(ptr)
+#endif
+
+#include <immintrin.h>
+#endif
+
 //
 // VIDEO
 //
@@ -36,17 +60,19 @@ cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, 
 // Allocates buffer screens, call before R_Init.
 void V_Init(void);
 
-// Taken from my videos-in-SRB2 project
-// Generates a color look-up table
-// which has up to 64 colors at each channel
+// Color look-up table
+#define CLUTINDEX(r, g, b) (((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3)
 
-#define COLORBITS 6
-#define SHIFTCOLORBITS (8-COLORBITS)
-#define CLUTSIZE (1<<COLORBITS)
+typedef struct
+{
+	boolean init;
+	RGBA_t palette[256];
+	UINT16 table[0xFFFF];
+} colorlookup_t;
 
-extern UINT8 colorlookup[CLUTSIZE][CLUTSIZE][CLUTSIZE];
-
-void InitColorLUT(RGBA_t *palette);
+void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, boolean makecolors);
+UINT8 GetColorLUT(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
+UINT8 GetColorLUTDirect(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
 
 // Set the current RGB palette lookup to use for palettized graphics
 void V_SetPalette(INT32 palettenum);

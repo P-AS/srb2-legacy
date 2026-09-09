@@ -28,7 +28,7 @@ void HWR_Shutdown(void);
 
 void HWR_drawAMline(const fline_t *fl, INT32 color);
 void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength);
-void HWR_DrawConsoleBack(UINT32 color, INT32 height);
+void HWR_DrawConsoleBack(UINT32 color, INT32 height, UINT8 alpha);
 void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player);
 void HWR_RenderPlayerView(INT32 viewnumber, player_t *player);
 void HWR_ClearSkyDome(void);
@@ -45,10 +45,12 @@ void HWR_CreatePlanePolygons(INT32 bspnum);
 void HWR_CreateStaticLightmaps(INT32 bspnum);
 void HWR_LoadTextures(size_t pnumtextures);
 void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color);
-void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, UINT32 color, INT32 options);	// Lat: separate flags from color since color needs to be an uint to work right.
+void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, UINT32 color, INT32 options, UINT8 alpha);	// Lat: separate flags from color since color needs to be an uint to work right.
 
 UINT8 *HWR_GetScreenshot(void);
 boolean HWR_Screenshot(const char *pathname);
+
+float HWR_GetPlayerFov(player_t *player);
 
 void HWR_AddCommands(void);
 void HWR_AddSessionCommands(void);
@@ -67,7 +69,6 @@ void HWR_DrawScreenFinalTexture(int width, int height);
 boolean HWR_UseShader(void);
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
-
 
 extern CV_PossibleValue_t glanisotropicmode_cons_t[];
 
@@ -88,7 +89,7 @@ extern consvar_t cv_glbatching;
 extern consvar_t cv_glwireframe;
 extern consvar_t cv_glpaletterendering;
 extern consvar_t cv_glpalettedepth;
-extern consvar_t cv_glcurveshader; 
+extern consvar_t cv_glcurveshader;
 extern consvar_t cv_gllightdither;
 
 extern float gl_viewwidth, gl_viewheight, gl_baseviewwindowy;

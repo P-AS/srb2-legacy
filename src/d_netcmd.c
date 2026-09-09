@@ -12,6 +12,10 @@
 ///        commands are executed through the command buffer
 ///	       like console commands, other miscellaneous commands (at the end)
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "doomdef.h"
 
 #include "console.h"
@@ -49,6 +53,10 @@
 #include "m_anigif.h"
 #include "md5.h"
 #include "m_perfstats.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -112,7 +120,9 @@ static void Command_Map_f(void);
 static void Command_ResetCamera_f(void);
 
 static void Command_Addfile(void);
+#ifndef __EMSCRIPTEN__
 static void Command_ListWADS_f(void);
+#endif
 static void Command_RunSOC(void);
 static void Command_Pause(void);
 static void Command_Suicide(void);
@@ -165,7 +175,7 @@ void SendWeaponPref(void);
 void SendWeaponPref2(void);
 
 static CV_PossibleValue_t usemouse_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
-#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 static CV_PossibleValue_t mouse2port_cons_t[] = {{0, "/dev/gpmdata"}, {1, "/dev/ttyS0"},
 	{2, "/dev/ttyS1"}, {3, "/dev/ttyS2"}, {4, "/dev/ttyS3"}, {0, NULL}};
 #else
@@ -200,7 +210,7 @@ static CV_PossibleValue_t timetic_cons_t[] = {{0, "Normal"}, {1, "Centiseconds"}
 //Using "Normal" instead of 2.2's "Classic" in order to be compatible with people's existing configurations.
 
 consvar_t cv_showinput = CVAR_INIT ("showinput", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_showinputjoy = CVAR_INIT ("showinputjoy", "Off", NULL, 0, CV_OnOff, NULL);
+consvar_t cv_showinputjoy = CVAR_INIT ("showinputjoy", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 static CV_PossibleValue_t  scorepos_cons_t[] = {{0, "Normal"}, {1, "Modern"}, {0, NULL}};
 
 #ifdef NETGAME_DEVMODE
@@ -248,22 +258,10 @@ INT32 cv_debug;
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "On", "Use the mouse", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 consvar_t cv_usemouse2 = CVAR_INIT ("use_mouse2", "Off", "Use the mouse", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse2);
 
-#if defined (DC) || defined (_XBOX) || defined (WMINPUT) || defined (_WII) || defined(HAVE_SDL) || defined(_WINDOWS) //joystick 1 and 2
 consvar_t cv_usejoystick = CVAR_INIT ("use_joystick", "1", NULL, CV_SAVE|CV_CALL, usejoystick_cons_t,
 	I_InitJoystick);
 consvar_t cv_usejoystick2 = CVAR_INIT ("use_joystick2", "2", NULL, CV_SAVE|CV_CALL, usejoystick_cons_t,
 	I_InitJoystick2);
-#elif defined (PSP) || defined (GP2X) || defined (_NDS) //only one joystick
-consvar_t cv_usejoystick = CVAR_INIT ("use_joystick", "1", NULL, CV_SAVE|CV_CALL, usejoystick_cons_t,
-	I_InitJoystick);
-consvar_t cv_usejoystick2 = CVAR_INIT ("use_joystick2", "0", NULL, CV_SAVE|CV_CALL, usejoystick_cons_t,
-	I_InitJoystick2);
-#else //all esle, no joystick
-consvar_t cv_usejoystick = CVAR_INIT ("use_joystick", "0", NULL, CV_SAVE|CV_CALL, usejoystick_cons_t,
-	I_InitJoystick);
-consvar_t cv_usejoystick2 = CVAR_INIT ("use_joystick2", "0", NULL, CV_SAVE|CV_CALL, usejoystick_cons_t,
-	I_InitJoystick2);
-#endif
 #if (defined (LJOYSTICK) || defined (HAVE_SDL))
 #ifdef LJOYSTICK
 consvar_t cv_joyport = CVAR_INIT ("joyport", "/dev/js0", NULL, CV_SAVE, joyport_cons_t, NULL);
@@ -275,7 +273,7 @@ consvar_t cv_joyscale2 = CVAR_INIT ("joyscale2", "1", NULL, CV_SAVE|CV_CALL, NUL
 consvar_t cv_joyscale = CVAR_INIT ("joyscale", "1", NULL, CV_SAVE|CV_HIDEN, NULL, NULL); //Alam: Dummy for save
 consvar_t cv_joyscale2 = CVAR_INIT ("joyscale2", "1", NULL, CV_SAVE|CV_HIDEN, NULL, NULL); //Alam: Dummy for save
 #endif
-#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 consvar_t cv_mouse2port = CVAR_INIT ("mouse2port", "/dev/gpmdata", NULL, CV_SAVE, mouse2port_cons_t, NULL);
 consvar_t cv_mouse2opt = CVAR_INIT ("mouse2opt", "0", NULL, CV_SAVE, NULL, NULL);
 #else
@@ -315,7 +313,7 @@ consvar_t cv_teamscramble = CVAR_INIT ("teamscramble", "Off", "Reassign player t
 consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", "If enabled, reassign player teams between maps", CV_NETVAR, teamscramble_cons_t, NULL);
 
 consvar_t cv_friendlyfire = CVAR_INIT ("friendlyfire", "Off", "Allow players to hit each other, regardless of their team", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", "Enables the Emblem Radar, notifying you when there in an emblem nearby", CV_CALL, CV_OnOff, ItemFinder_OnChange);
+consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", "Enables the Emblem Radar, notifying you when there is an emblem nearby", CV_CALL, CV_OnOff, ItemFinder_OnChange);
 
 // Scoring type options
 consvar_t cv_match_scoring = CVAR_INIT ("matchscoring", "Normal", NULL, CV_NETVAR|CV_CHEAT, match_scoring_cons_t, NULL);
@@ -662,6 +660,8 @@ void D_RegisterClientCommands(void)
 	// GIF variables
 	CV_RegisterVar(&cv_gif_optimize);
 	CV_RegisterVar(&cv_gif_downscale);
+	CV_RegisterVar(&cv_gif_maxsize);
+	CV_RegisterVar(&cv_gif_rolling);
 
 #ifdef WALLSPLATS
 	CV_RegisterVar(&cv_splats);
@@ -767,6 +767,10 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_fireaxis2);
 	CV_RegisterVar(&cv_firenaxis);
 	CV_RegisterVar(&cv_firenaxis2);
+	CV_RegisterVar(&cv_deadzone);
+	CV_RegisterVar(&cv_deadzone2);
+	CV_RegisterVar(&cv_digitaldeadzone);
+	CV_RegisterVar(&cv_digitaldeadzone2);
 
 	// filesrch.c
 	CV_RegisterVar(&cv_addons_option);
@@ -779,7 +783,7 @@ void D_RegisterClientCommands(void)
 	// WARNING: the order is important when initialising mouse2
 	// we need the mouse2port
 	CV_RegisterVar(&cv_mouse2port);
-#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 	CV_RegisterVar(&cv_mouse2opt);
 #endif
 	CV_RegisterVar(&cv_controlperkey);
@@ -825,6 +829,13 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_height);
 	CV_RegisterVar(&cv_scr_width_w);
 	CV_RegisterVar(&cv_scr_height_w);
+
+#ifdef NATIVESCREENRES
+	CV_RegisterVar(&cv_nativeres);
+	CV_RegisterVar(&cv_nativeresdiv);
+	CV_RegisterVar(&cv_nativeresfov);
+	CV_RegisterVar(&cv_nativerescompare);
+#endif
 
 	CV_RegisterVar(&cv_soundtest);
 
@@ -1157,7 +1168,7 @@ static INT32 snacpending = 0, snac2pending = 0, chmappending = 0;
 //
 static void SendNameAndColor(void)
 {
-	XBOXSTATIC char buf[MAXPLAYERNAME+2];
+	char buf[MAXPLAYERNAME+2];
 	char *p;
 
 	p = buf;
@@ -1445,7 +1456,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 
 void SendWeaponPref(void)
 {
-	XBOXSTATIC UINT8 buf[1];
+	UINT8 buf[1];
 
 	buf[0] = 0;
 	if (cv_flipcam.value)
@@ -1457,7 +1468,7 @@ void SendWeaponPref(void)
 
 void SendWeaponPref2(void)
 {
-	XBOXSTATIC UINT8 buf[1];
+	UINT8 buf[1];
 
 	buf[0] = 0;
 	if (cv_flipcam2.value)
@@ -1615,6 +1626,9 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pultmode, boolean rese
 
 	// The supplied data are assumed to be good.
 	I_Assert(delay >= 0 && delay <= 2);
+
+	if (mapnum != -1)
+		CV_SetValue(&cv_nextmap, mapnum);
 
 	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d ultmode=%d resetplayers=%d delay=%d skipprecutscene=%d\n",
 	           mapnum, newgametype, pultmode, resetplayers, delay, skipprecutscene);
@@ -1904,7 +1918,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 
 static void Command_Pause(void)
 {
-	XBOXSTATIC UINT8 buf[2];
+	UINT8 buf[2];
 	UINT8 *cp = buf;
 
 	if (COM_Argc() > 1)
@@ -1919,7 +1933,7 @@ static void Command_Pause(void)
 
 	if (cv_pause.value || server || (IsPlayerAdmin(consoleplayer)))
 	{
-		if (modeattacking || !(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_WAITINGPLAYERS))
+		if (modeattacking || !(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_WAITINGPLAYERS) || (marathonmode && gamestate == GS_INTERMISSION))
 		{
 			CONS_Printf(M_GetText("You can't pause here.\n"));
 			return;
@@ -1979,7 +1993,7 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 // Command for stuck characters in netgames, griefing, etc.
 static void Command_Suicide(void)
 {
-	XBOXSTATIC UINT8 buf[4];
+	UINT8 buf[4];
 	UINT8 *cp = buf;
 
 	WRITEINT32(cp, consoleplayer);
@@ -2764,7 +2778,7 @@ void RemoveAdminPlayer(INT32 playernum)
 
 static void Command_Verify_f(void)
 {
-	XBOXSTATIC char buf[8]; // Should be plenty
+	char buf[8]; // Should be plenty
 	char *temp;
 	INT32 playernum;
 
@@ -2820,7 +2834,7 @@ static void Got_Verification(UINT8 **cp, INT32 playernum)
 
 static void Command_RemoveAdmin_f(void)
 {
-	XBOXSTATIC char buf[8]; // Should be plenty
+	char buf[8]; // Should be plenty
 	char *temp;
 	INT32 playernum;
 
@@ -2946,7 +2960,7 @@ static void Got_MotD_f(UINT8 **cp, INT32 playernum)
 static void Command_RunSOC(void)
 {
 	const char *fn;
-	XBOXSTATIC char buf[255];
+	char buf[255];
 	size_t length = 0;
 
 	if (COM_Argc() != 2)
@@ -2981,7 +2995,7 @@ static void Command_RunSOC(void)
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 {
 	char filename[256];
-	filestatus_t ncs = FS_NOTFOUND;
+	filestatus_t ncs = FS_NOTCHECKED;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -3025,7 +3039,7 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 static void Command_Addfile(void)
 {
 	const char *fn, *p;
-	XBOXSTATIC char buf[256];
+	char buf[256];
 	char *buf_p = buf;
 	INT32 i;
 	int musiconly; // W_VerifyNMUSlumps isn't boolean
@@ -3068,14 +3082,6 @@ static void Command_Addfile(void)
 		if (*p == '\\' || *p == '/' || *p == ':')
 			break;
 	++p;
-	// check total packet size and no of files currently loaded
-	// See W_LoadWadFile in w_wad.c
-	if ((numwadfiles >= MAX_WADFILES)
-	|| ((packetsizetally + nameonlylength(fn) + 22) > MAXFILENEEDED*sizeof(UINT8)))
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
-		return;
-	}
 
 	WRITESTRINGN(buf_p,p,240);
 
@@ -3119,7 +3125,7 @@ static void Command_Addfile(void)
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 {
 	char filename[241];
-	filestatus_t ncs = FS_NOTFOUND;
+	filestatus_t ncs = FS_NOTCHECKED;
 	UINT8 md5sum[16];
 	boolean kick = false;
 	boolean toomany = false;
@@ -3149,8 +3155,7 @@ static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 	}
 
 	// See W_LoadWadFile in w_wad.c
-	if ((numwadfiles >= MAX_WADFILES)
-	|| ((packetsizetally + nameonlylength(filename) + 22) > MAXFILENEEDED*sizeof(UINT8)))
+	if (numwadfiles >= MAX_WADFILES)
 		toomany = true;
 	else
 		ncs = findfile(filename,md5sum,true);
@@ -3184,7 +3189,7 @@ static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 {
 	char filename[241];
-	filestatus_t ncs = FS_NOTFOUND;
+	filestatus_t ncs = FS_NOTCHECKED;
 	UINT8 md5sum[16];
 
 	READSTRINGN(*cp, filename, 240);
@@ -3198,7 +3203,7 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	ncs = findfile(filename,md5sum,true);
+	ncs = findfile(filename, md5sum, true);
 
 	if (ncs != FS_FOUND || !P_AddWadFile(filename))
 	{
@@ -3229,7 +3234,11 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 	G_SetGameModified(true);
 }
 
+#ifdef __EMSCRIPTEN__
+void EMSCRIPTEN_KEEPALIVE Command_ListWADS_f(void)
+#else
 static void Command_ListWADS_f(void)
+#endif
 {
 	INT32 i = numwadfiles;
 	char *tempname;

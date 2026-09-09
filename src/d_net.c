@@ -866,7 +866,7 @@ static void DebugPrintpacket(const char *header)
 				(UINT32)ExpandTics(netbuffer->u.clientpak.client_tic, doomcom->remotenode),
 				(UINT32)ExpandTics (netbuffer->u.clientpak.resendfrom, doomcom->remotenode));
 			break;
-		
+
 		case PT_BASICKEEPALIVE:
 			fprintf(debugfile, "    wipetime\n");
 			break;
@@ -1343,11 +1343,6 @@ boolean D_CheckNetGame(void)
 	netbuffer = (doomdata_t *)(void *)&doomcom->data;
 
 #ifdef DEBUGFILE
-#ifdef _arch_dreamcast
-	//debugfile = stderr;
-	if (debugfile)
-			CONS_Printf(M_GetText("debug output to: %s\n"), "STDERR");
-#else
 	if (M_CheckParm("-debugfile"))
 	{
 		char filename[21];
@@ -1365,7 +1360,6 @@ boolean D_CheckNetGame(void)
 		else
 			CONS_Alert(CONS_WARNING, M_GetText("cannot debug output to file %s!\n"), va("%s" PATHSEP "%s", srb2home, filename));
 	}
-#endif
 #endif
 
 	D_ClientServerInit();

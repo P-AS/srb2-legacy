@@ -591,10 +591,8 @@ static void loading_status(void)
 	y = BASEVIDHEIGHT/2;
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
 	if (cv_glloadingscreen.value == 2)
-	{
-	V_DrawPatchFill(W_CachePatchName("SRB2BACK",PU_CACHE)); // SRB2 background, ehhh too bright. 
+		V_DrawPatchFill(W_CachePatchName("SRB2BACK",PU_PATCH)); // SRB2 background, ehhh too bright. 
 															// Who gives a shit about brightness
-	}
 	M_DrawTextBox(x-58, y-8, 13, 1);
 	V_DrawString(x-50, y, V_YELLOWMAP, "Loading...");
 	V_DrawRightAlignedString(x+50, y, V_YELLOWMAP, s);

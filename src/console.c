@@ -12,9 +12,6 @@
 
 #ifdef __GNUC__
 #include <unistd.h>
-#ifdef _XBOX
-#include <openxdk/debug.h>
-#endif
 #endif
 
 #include "doomdef.h"
@@ -137,7 +134,8 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{9, "Gold"},		{10,"Yellow"},		{11,"Emerald"},
 												{12,"Green"},		{13,"Cyan"},		{14,"Steel"},
 												{15,"Periwinkle"},	{16,"Blue"},		{17,"Purple"},
-												{18,"Lavender"}, {19,"Gray"},
+												{18,"Lavender"}, {19,"Gray"}, 
+												{19, "Grey"}, // Fancy some tea, sir?
 												{0, NULL}};
 
 consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Green", "Color of the console background",  CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change);
@@ -380,12 +378,7 @@ static void CON_SetupColormaps(void)
 
 // Setup the console text buffer
 //
-// for WII, libogc already has a CON_Init function, we must rename it here
-#ifdef _WII
-void CON_InitWii(void)
-#else
 void CON_Init(void)
-#endif
 {
 	INT32 i;
 
@@ -565,6 +558,7 @@ static void CON_MoveConsole(void)
 {
 	static fixed_t fracmovement = 0;
 
+
 	// instant
 	if (!cons_speed.value)
 	{
@@ -573,7 +567,7 @@ static void CON_MoveConsole(void)
 	}
 
 	// Not instant - Increment fracmovement fractionally
-	fracmovement += FixedMul(cons_speed.value*vid.fdupy, (cv_uncappedhud.value ? renderdeltatics : FRACUNIT));
+	fracmovement += FixedMul(cons_speed.value*vid.fdupy, renderdeltatics);
 
 	if (con_curlines < con_destlines) // Move the console downwards
 	{
@@ -785,7 +779,7 @@ boolean CON_Responder(event_t *ev)
 	// check for console toggle key
 	if (ev->type == ev_keydown)
 	{
-		if (modeattacking || metalrecording)
+		if (modeattacking || metalrecording || marathonmode)
 			return false;
 
 		if ((key == gamecontrol[gc_console][0] || key == gamecontrol[gc_console][1]) && !shiftdown)
@@ -1096,10 +1090,10 @@ boolean CON_Responder(event_t *ev)
 	// allow people to use keypad in console (good for typing IP addresses) - Calum
 	if (key >= KEY_KEYPAD7 && key <= KEY_KPADDEL)
 	{
-		XBOXSTATIC char keypad_translation[] = {'7','8','9','-',
-		                                        '4','5','6','+',
-		                                        '1','2','3',
-		                                        '0','.'};
+		char keypad_translation[] = {'7','8','9','-',
+		                             '4','5','6','+',
+		                             '1','2','3',
+		                             '0','.'};
 
 		key = keypad_translation[key - KEY_KEYPAD7];
 	}
@@ -1235,7 +1229,7 @@ static void CON_Print(char *msg)
 
 void CON_LogMessage(const char *msg)
 {
-	XBOXSTATIC char txt[8192], *t;
+	char txt[8192], *t;
 	const char *p = msg, *e = txt+sizeof (txt)-2;
 
 	for (t = txt; *p != '\0'; p++)
@@ -1267,13 +1261,11 @@ void CONS_Printf(const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	M_vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
 	// echo console prints to log file
-#ifndef _arch_dreamcast
 	DEBFILE(txt);
-#endif
 
 	// write message in con text buffer
 	if (con_started)
@@ -1287,19 +1279,9 @@ void CONS_Printf(const char *fmt, ...)
 	// if not in display loop, force screen update
 	if (con_startup && (!setrenderneeded))
 	{
-#if (defined (_WINDOWS)) || (defined (__OS2__) && !defined (HAVE_SDL))
-		patch_t *con_backpic = W_CachePatchName("CONSBACK", PU_PATCH);
-
-		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
-		V_DrawScaledPatch(0, 0, 0, con_backpic);
-
-		W_UnlockCachedPatch(con_backpic);
-		I_LoadingScreen(txt);				// Win32/OS2 only
-#else
 		// here we display the console text
 		CON_Drawer();
 		I_FinishUpdate(); // page flip or blit buffer
-#endif
 	}
 }
 
@@ -1312,7 +1294,7 @@ void CONS_Alert(alerttype_t level, const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	M_vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
 	switch (level)
@@ -1348,7 +1330,7 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	M_vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
 	// Again I am lazy, oh well
@@ -1613,6 +1595,7 @@ void CON_Drawer(void)
 	if (con_recalc)
 	{
 		CON_RecalcSize();
+
 		if (con_curlines <= 0)
 			CON_ClearHUD();
 	}

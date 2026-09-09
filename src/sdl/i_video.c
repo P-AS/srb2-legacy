@@ -23,18 +23,9 @@
 
 #include <signal.h>
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
-
 #ifdef HAVE_SDL
 #define _MATH_DEFINES_DEFINED
 #include "SDL.h"
-
-#ifdef _MSC_VER
-#include <windows.h>
-#pragma warning(default : 4214 4244)
-#endif
 
 #ifdef HAVE_TTF
 #include "i_ttf.h"
@@ -65,7 +56,6 @@
 #include "../m_menu.h"
 #include "../d_main.h"
 #include "../s_sound.h"
-#include "../i_sound.h"  // midi pause/unpause
 #include "../i_joy.h"
 #include "../st_stuff.h"
 #include "../hu_stuff.h"
@@ -112,7 +102,7 @@ UINT8 graphics_started = 0; // Is used in console.c and screen.c
 // To disable fullscreen at startup; is set in VID_PrepareModeList
 boolean allow_fullscreen = false;
 static SDL_bool disable_fullscreen = SDL_FALSE;
-#define USE_FULLSCREEN (disable_fullscreen||!allow_fullscreen)?0:cv_fullscreen.value
+#define USE_FULLSCREEN (disable_fullscreen||!allow_fullscreen)? 0: (cv_fullscreen.value == 1)
 static SDL_bool disable_mouse = SDL_FALSE;
 #define USE_MOUSEINPUT (!disable_mouse && cv_usemouse.value && havefocus)
 #define IGNORE_MOUSE(condition) (!cv_alwaysgrabmouse.value && ((menuactive && !M_MouseNeeded()) || paused || con_destlines || chat_on || condition))
@@ -129,13 +119,8 @@ static      INT32        mousemovex = 0, mousemovey = 0;
 
 // SDL vars
 static      SDL_Surface *vidSurface = NULL;
-static      SDL_Surface *bufSurface = NULL;
 static      SDL_Surface *icoSurface = NULL;
-static      SDL_Color    localPalette[256];
-#if 0
-static      SDL_Rect   **modeList = NULL;
-static       Uint8       BitsPerPixel = 16;
-#endif
+static      UINT32       localPalette[256];
 Uint16      realwidth = BASEVIDWIDTH;
 Uint16      realheight = BASEVIDHEIGHT;
 static       SDL_bool    mousegrabok = SDL_TRUE;
@@ -176,7 +161,7 @@ static INT32 windowedModes[MAXWINMODES][2] =
 	{ 320, 200}, // 1.60,1.00
 };
 
-static void Impl_VideoSetupSDLBuffer(void);
+
 static void Impl_VideoSetupBuffer(void);
 static SDL_bool Impl_CreateWindow(SDL_bool fullscreen);
 //static void Impl_SetWindowName(const char *title);
@@ -189,7 +174,7 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 	Uint32 gmask;
 	Uint32 bmask;
 	Uint32 amask;
-	int bpp = 16;
+	int bpp;
 	int sw_texture_format = SDL_PIXELFORMAT_ABGR8888;
 
 	realwidth = vid.width;
@@ -201,6 +186,7 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 		{
 			wasfullscreen = SDL_TRUE;
 			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+			I_SetBorderlessWindow();
 		}
 		else // windowed mode
 		{
@@ -208,6 +194,7 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 			{
 				wasfullscreen = SDL_FALSE;
 				SDL_SetWindowFullscreen(window, 0);
+				I_SetBorderlessWindow();
 			}
 			// Reposition window only in windowed mode
 			SDL_SetWindowSize(window, width, height);
@@ -229,6 +216,7 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 		if (fullscreen)
 		{
 			SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+			I_SetBorderlessWindow();
 		}
 	}
 
@@ -249,16 +237,6 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 		if (texture != NULL)
 		{
 			SDL_DestroyTexture(texture);
-		}
-
-		if (!usesdl2soft)
-		{
-			sw_texture_format = SDL_PIXELFORMAT_RGB565;
-		}
-		else
-		{
-			bpp = 32;
-			sw_texture_format = SDL_PIXELFORMAT_RGBA8888;
 		}
 
 		texture = SDL_CreateTexture(renderer, sw_texture_format, SDL_TEXTUREACCESS_STREAMING, width, height);
@@ -471,7 +449,6 @@ static void VID_Command_Info_f (void)
 #else
 	if (!M_CheckParm("-noblit")) videoblitok = SDL_TRUE;
 #endif
-	SurfaceInfo(bufSurface, M_GetText("Current Engine Mode"));
 	SurfaceInfo(vidSurface, M_GetText("Current Video Mode"));
 #endif
 }
@@ -505,7 +482,12 @@ static void VID_Command_Mode_f (void)
 	if (modenum >= VID_NumModes())
 		CONS_Printf(M_GetText("Video mode not present\n"));
 	else
+	{
+#ifdef NATIVESCREENRES
+		CV_StealthSetValue(&cv_nativeres, false);
+#endif
 		setmodeneeded = modenum+1; // request vid mode change
+	}
 }
 
 static inline void SDLJoyRemap(event_t *event)
@@ -597,7 +579,7 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		// Tell game we got focus back, resume music if necessary
 		window_notinfocus = false;
 		if (!paused)
-			I_ResumeSong(); //resume it
+			S_ResumeAudio(); //resume it
 
 		if (!firsttimeonmouse)
 		{
@@ -772,6 +754,20 @@ static void Impl_HandleMouseWheelEvent(SDL_MouseWheelEvent evt)
 	}
 }
 
+#if defined(__ANDROID__)
+static boolean IsJoystickAccelerometer(SDL_Joystick *joy)
+{
+	return (!strcmp(SDL_JoystickName(joy), "Android Accelerometer"));
+}
+
+static boolean CanUseAccelerometer(SDL_Joystick *joy)
+{
+	if (IsJoystickAccelerometer(joy))
+		return (!(menuactive || paused || con_destlines || chat_on || gamestate != GS_LEVEL));
+	return true;
+}
+#endif
+
 static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 {
 	event_t event;
@@ -787,16 +783,26 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 	if (evt.which == joyid[0])
 	{
 		event.type = ev_joystick;
+#if defined(__ANDROID__)
+		if (!CanUseAccelerometer(JoyInfo.dev))
+			return;
+#endif
 	}
 	else if (evt.which == joyid[1])
 	{
 		event.type = ev_joystick2;
+#if defined(__ANDROID__)
+		if (!CanUseAccelerometer(JoyInfo2.dev))
+			return;
+#endif
 	}
-	else return;
+	else
+		return;
+
 	//axis
 	if (evt.axis > JOYAXISSET*2)
 		return;
-	//vaule
+	//value
 	if (evt.axis%2)
 	{
 		event.data1 = evt.axis / 2;
@@ -1123,8 +1129,10 @@ void I_OsPolling(void)
 {
 	SDL_Keymod mod;
 
+#ifndef __EMSCRIPTEN__
 	if (consolevent)
 		I_GetConsoleEvents();
+#endif
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
 	{
 		SDL_JoystickUpdate();
@@ -1142,8 +1150,13 @@ void I_OsPolling(void)
 	capslock = false;
 	if (mod & KMOD_LSHIFT) shiftdown |= 1;
 	if (mod & KMOD_RSHIFT) shiftdown |= 2;
+#ifdef __APPLE__
+	if (mod & KMOD_LGUI)    ctrldown |= 1;
+	if (mod & KMOD_RGUI)    ctrldown |= 2;
+#else
 	if (mod & KMOD_LCTRL)   ctrldown |= 1;
 	if (mod & KMOD_RCTRL)   ctrldown |= 2;
+#endif
 	if (mod & KMOD_LALT)     altdown |= 1;
 	if (mod & KMOD_RALT)     altdown |= 2;
 	if (mod & KMOD_CAPS) capslock = true;
@@ -1226,23 +1239,26 @@ void I_FinishUpdate(void)
 	if (cv_showping.value && netgame && consoleplayer != serverplayer)
 		SCR_DisplayLocalPing();
 
+	if (marathonmode)
+		SCR_DisplayMarathonInfo();
+
+	ST_MovieInfoDrawer();
+
 	if (rendermode == render_soft && screens[0])
 	{
+		SDL_LockSurface(vidSurface);
+		// copy pixels ourselves to the video surface (prevents a crash in libsdl)
+		UINT32 *restrict dst = vidSurface->pixels;
+		const UINT8 *restrict src = screens[0];
+		const INT32 count = vid.width * vid.height;
+		for (INT32 i = 0; i < count; i++)
+			*dst++ = localPalette[*src++];
+		SDL_UnlockSurface(vidSurface);
+		// Fury -- there's no way around UpdateTexture, the GL backend uses it anyway
+		SDL_LockSurface(vidSurface);
+		SDL_UpdateTexture(texture, &src_rect, vidSurface->pixels, vidSurface->pitch);
+		SDL_UnlockSurface(vidSurface);
 
-
-		if (!bufSurface) //Double-Check
-		{
-			Impl_VideoSetupSDLBuffer();
-		}
-		if (bufSurface)
-		{
-
-			SDL_BlitSurface(bufSurface, &src_rect, vidSurface, &src_rect);
-			// Fury -- there's no way around UpdateTexture, the GL backend uses it anyway
-			SDL_LockSurface(vidSurface);
-			SDL_UpdateTexture(texture, &src_rect, vidSurface->pixels, vidSurface->pitch);
-			SDL_UnlockSurface(vidSurface);
-		}
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, texture, &src_rect, NULL);
 		SDL_RenderPresent(renderer);
@@ -1294,15 +1310,13 @@ void I_ReadScreen(UINT8 *scr)
 void I_SetPalette(RGBA_t *palette)
 {
 	size_t i;
-	for (i=0; i<256; i++)
+	for (i = 0; i < 256; i++)
 	{
-		localPalette[i].r = palette[i].s.red;
-		localPalette[i].g = palette[i].s.green;
-		localPalette[i].b = palette[i].s.blue;
+		localPalette[i] = 0xff000000;
+		localPalette[i] |= palette[i].s.red << 0;
+		localPalette[i] |= palette[i].s.green << 8;
+		localPalette[i] |= palette[i].s.blue << 16;
 	}
-	//if (vidSurface) SDL_SetPaletteColors(vidSurface->format->palette, localPalette, 0, 256);
-	// Fury -- SDL2 vidSurface is a 32-bit surface buffer copied to the texture. It's not palletized, like bufSurface.
-	if (bufSurface) SDL_SetPaletteColors(bufSurface->format->palette, localPalette, 0, 256);
 }
 
 // return number of fullscreen + X11 modes
@@ -1515,7 +1529,6 @@ static SDL_bool Impl_CreateContext(void)
 	return SDL_TRUE;
 }
 
-
 void VID_CheckGLLoaded(rendermode_t oldrender)
 {
 #ifdef HWRENDER
@@ -1533,6 +1546,25 @@ void VID_CheckGLLoaded(rendermode_t oldrender)
 #endif
 }
 
+#ifdef HWRENDER
+static void Impl_DestroyWindow(void)
+{
+	// Destroy the current window, if it exists.
+	if (window)
+	{
+		SDL_DestroyWindow(window);
+		window = NULL;
+	}
+
+	// Destroy the current window rendering context, if that also exists.
+	if (renderer)
+	{
+		SDL_DestroyRenderer(renderer);
+		renderer = NULL;
+	}
+}
+#endif
+
 void VID_CheckRenderer(void)
 {
 	boolean rendererchanged = false;
@@ -1547,6 +1579,11 @@ void VID_CheckRenderer(void)
 		rendermode = setrenderneeded;
 		rendererchanged = true;
 
+#if defined(__APPLE__) && defined(HWRENDER)
+		// macOS needs the window and rendering context to be remade on every renderer switch, or else the video will freeze.
+		Impl_DestroyWindow();
+#endif
+
 #ifdef HWRENDER
 		if (rendermode == render_opengl)
 		{
@@ -1560,34 +1597,28 @@ void VID_CheckRenderer(void)
 				// Loaded successfully!
 				if (vid.glstate == VID_GL_LIBRARY_LOADED)
 				{
-					// Destroy the current window, if it exists.
-					if (window)
-					{
-						SDL_DestroyWindow(window);
-						window = NULL;
-					}
-
-					// Destroy the current window rendering context, if that also exists.
-					if (renderer)
-					{
-						SDL_DestroyRenderer(renderer);
-						renderer = NULL;
-					}
+#ifndef __APPLE__
+					Impl_DestroyWindow();
 
 					// Create a new window.
 					Impl_CreateWindow(USE_FULLSCREEN);
 
 					// From there, the OpenGL context was already created.
 					contextcreated = true;
+#endif // __APPLE__
 				}
 			}
 			else if (vid.glstate == VID_GL_LIBRARY_ERROR)
 				rendererchanged = false;
 		}
-#endif
+#endif // HWRENDER
 
 		if (!contextcreated)
+		{
+			// Create a new window.
+			Impl_CreateWindow(USE_FULLSCREEN);
 			Impl_CreateContext();
+		}
 
 		setrenderneeded = 0;
 	}
@@ -1597,11 +1628,6 @@ void VID_CheckRenderer(void)
 
 	if (rendermode == render_soft)
 	{
-		if (bufSurface)
-		{
-			SDL_FreeSurface(bufSurface);
-			bufSurface = NULL;
-		}
 
 		if (rendererchanged)
 		{
@@ -1626,7 +1652,6 @@ void VID_CheckRenderer(void)
 #endif
 }
 
-
 INT32 VID_SetMode(INT32 modeNum)
 {
 	SDLdoUngrabMouse();
@@ -1634,14 +1659,48 @@ INT32 VID_SetMode(INT32 modeNum)
 	vid.recalc = 1;
 	vid.bpp = 1;
 
-	if (modeNum < 0)
-		modeNum = 0;
-	if (modeNum >= MAXWINMODES)
-		modeNum = MAXWINMODES-1;
+#ifdef NATIVESCREENRES
+	if (cv_nativeres.value)
+	{
+		int i;
+		SDL_DisplayMode resolution;
 
-	vid.width = windowedModes[modeNum][0];
-	vid.height = windowedModes[modeNum][1];
-	vid.modenum = modeNum;
+		for (i = 0; i < SDL_GetNumVideoDisplays(); i++)
+		{
+			int nodisplay = SDL_GetCurrentDisplayMode(i, &resolution);
+			if (!nodisplay)
+			{
+				vid.width = (INT32)(resolution.w) / (cv_nativeresdiv.value);
+				vid.height = (INT32)(resolution.h) / (cv_nativeresdiv.value);
+
+				if (vid.width > MAXVIDWIDTH)
+					vid.width = MAXVIDWIDTH;
+				else if (vid.width < BASEVIDWIDTH)
+					vid.width = BASEVIDWIDTH;
+
+				if (vid.height > MAXVIDHEIGHT)
+					vid.height = MAXVIDHEIGHT;
+				else if (vid.height < BASEVIDHEIGHT)
+					vid.height = BASEVIDHEIGHT;
+
+				break;
+			}
+		}
+
+		vid.modenum = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value);
+	}
+	else
+#endif
+	{
+		if (modeNum < 0)
+			modeNum = 0;
+		if (modeNum >= MAXWINMODES)
+			modeNum = MAXWINMODES-1;
+
+		vid.width = windowedModes[modeNum][0];
+		vid.height = windowedModes[modeNum][1];
+		vid.modenum = modeNum;
+	}
 
 	//Impl_SetWindowName("SRB2 "VERSIONSTRING);
 	src_rect.w = vid.width;
@@ -1692,6 +1751,8 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 		return SDL_FALSE;
 	}
 
+	I_SetBorderlessWindow();
+
 	return Impl_CreateContext();
 }
 
@@ -1716,44 +1777,16 @@ static void Impl_SetWindowIcon(void)
 	SDL_SetWindowIcon(window, icoSurface);
 }
 
-static void Impl_VideoSetupSDLBuffer(void)
-{
-	if (bufSurface != NULL)
-	{
-		SDL_FreeSurface(bufSurface);
-		bufSurface = NULL;
-	}
-	// Set up the SDL palletized buffer (copied to vidbuffer before being rendered to texture)
-	if (vid.bpp == 1)
-	{
-		bufSurface = SDL_CreateRGBSurfaceFrom(screens[0],vid.width,vid.height,8,
-			(int)vid.rowbytes,0x00000000,0x00000000,0x00000000,0x00000000); // 256 mode
-	}
-	else if (vid.bpp == 2) // Fury -- don't think this is used at all anymore
-	{
-		bufSurface = SDL_CreateRGBSurfaceFrom(screens[0],vid.width,vid.height,15,
-			(int)vid.rowbytes,0x00007C00,0x000003E0,0x0000001F,0x00000000); // 555 mode
-	}
-	if (bufSurface)
-	{
-		SDL_SetPaletteColors(bufSurface->format->palette, localPalette, 0, 256);
-	}
-	else
-	{
-		I_Error("%s", M_GetText("No system memory for SDL buffer surface\n"));
-	}
-}
-
 static void Impl_VideoSetupBuffer(void)
 {
+	size_t size;
 	// Set up game's software render buffer
 	//if (rendermode == render_soft)
 	{
 		vid.rowbytes = vid.width * vid.bpp;
 		vid.direct = NULL;
-		if (vid.buffer)
-			free(vid.buffer);
-		vid.buffer = calloc(vid.rowbytes*vid.height, NUMSCREENS);
+		size = vid.rowbytes*vid.height * NUMSCREENS;
+		vid.buffer = calloc(size, NUMSCREENS);
 		if (!vid.buffer)
 		{
 			I_Error("%s", M_GetText("Not enough memory for video buffer\n"));
@@ -1845,7 +1878,11 @@ void I_StartupGraphics(void)
 #endif
 	Impl_SetWindowIcon();
 
+#ifdef __EMSCRIPTEN__
+	VID_SetMode(VID_GetModeForSize(BASEVIDWIDTH*2, BASEVIDHEIGHT*2));
+#else
 	VID_SetMode(VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT));
+#endif
 
 	if (M_CheckParm("-nomousegrab"))
 		mousegrabok = SDL_FALSE;
@@ -1913,6 +1950,7 @@ void VID_StartupOpenGL(void)
 		HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
 		HWD.pfnSetPaletteLookup = hwSym("SetPaletteLookup",NULL);
 		HWD.pfnCreateLightTable = hwSym("CreateLightTable",NULL);
+		HWD.pfnUpdateLightTable = hwSym("UpdateLightTable",NULL);
 		HWD.pfnClearLightTables = hwSym("ClearLightTables",NULL);
 		HWD.pfnSetScreenPalette = hwSym("SetScreenPalette",NULL);
 
@@ -1941,8 +1979,6 @@ void I_ShutdownGraphics(void)
 		vidSurface = NULL;
 		if (vid.buffer) free(vid.buffer);
 		vid.buffer = NULL;
-		if (bufSurface) SDL_FreeSurface(bufSurface);
-		bufSurface = NULL;
 	}
 
 	I_OutputMsg("I_ShutdownGraphics(): ");
@@ -1982,6 +2018,12 @@ static void Impl_SetVsync(void)
 	if (renderer)
 		SDL_RenderSetVSync(renderer, cv_vidwait.value);
 #endif
+}
+
+void I_SetBorderlessWindow(void)
+{
+	SDL_bool bordered = (cv_fullscreen.value == 2) ? SDL_FALSE : SDL_TRUE;
+	SDL_SetWindowBordered(window, bordered);
 }
 
 #endif

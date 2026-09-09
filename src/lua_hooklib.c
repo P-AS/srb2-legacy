@@ -61,6 +61,7 @@ const char *const hookNames[hook_MAX+1] = {
 	"IntermissionThinker",
 	"PlayerThink",
 	"GameQuit",
+	"AddonLoaded",
 	NULL
 };
 
@@ -1310,3 +1311,27 @@ void LUAh_GameQuit(void)
 		}
 	}
 }
+
+// Hook for Addon Loading
+void LUAh_AddonLoaded(void)
+{
+	hook_p hookp;
+	if (!gL || !(hooksAvailable[hook_AddonLoaded/8] & (1<<(hook_AddonLoaded%8))))
+		return;
+
+	for (hookp = roothook; hookp; hookp = hookp->next)
+	{
+		if (hookp->type != hook_AddonLoaded)
+			continue;
+
+		lua_pushfstring(gL, FMT_HOOKID, hookp->id);
+		lua_gettable(gL, LUA_REGISTRYINDEX);
+		if (lua_pcall(gL, 0, 0, 0)) {
+			if (!hookp->error || cv_debug & DBG_LUA)
+				CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL, -1));
+			lua_pop(gL, 1);
+			hookp->error = true;
+		}
+	}
+}
+

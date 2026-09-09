@@ -20,7 +20,8 @@ if (${SRB2_CONFIG_EXTERNAL_ASSETS})
 player.dta;\
 rings.dta;\
 zones.dta;\
-patch.dta"
+patch.dta;\
+legacy.pk3"
 		CACHE STRING "Asset filenames to apply MD5 checks. No spaces between entries!"
 	)
 endif()

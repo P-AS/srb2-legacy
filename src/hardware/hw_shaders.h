@@ -71,7 +71,6 @@
 #define GLSL_CURVE_VERTEX_SHADER \
 	"vec4 position = gl_ModelViewMatrix * gl_Vertex;\n" \
 	"float distance2D = position.x * position.x + position.z * position.z;\n" \
-	"distance2D *= sin(leveltime * speed) * amplitude;\n" \
 	"position.y -= distance2D / 5000.0;\n" \
 	"gl_Position = gl_ProjectionMatrix * position;\n" \
 	"gl_FrontColor = gl_Color;\n" \

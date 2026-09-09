@@ -410,7 +410,7 @@ void V_SetPalette(INT32 palettenum)
 #ifdef HWRENDER
 	if (rendermode != render_soft && rendermode != render_none)
 		HWR_SetPalette(&pLocalPalette[palettenum*256]);
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+#if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	else
 #endif
 #endif
@@ -424,7 +424,7 @@ void V_SetPaletteLump(const char *pal)
 #ifdef HWRENDER
 	if (rendermode != render_soft && rendermode != render_none)
 		HWR_SetPalette(pLocalPalette);
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+#if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	else
 #endif
 #endif
@@ -452,7 +452,20 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 	size_t destrowbytes)
 {
 	if (srcrowbytes == destrowbytes)
-		M_Memcpy(destptr, srcptr, srcrowbytes * height);
+	{
+		size_t i = srcrowbytes * height;
+#ifdef USE_SSE_ALIGNED
+		while (i >= 16)
+		{
+			// TODO: find where the buffer is misaligned at times and align it
+			_mm_storeu_ps((float *)destptr, _mm_loadu_ps((const float *)srcptr));
+			srcptr += 16;
+			destptr += 16;
+			i -= 16;
+		}
+#endif
+		M_Memcpy(destptr, srcptr, i);
+	}
 	else
 	{
 		while (height--)
@@ -712,6 +725,9 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 // Draws a patch cropped and scaled to arbitrary size.
 void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
 {
+	UINT8 (*patchdrawfunc)(const UINT8*, const UINT8*, fixed_t);
+	UINT32 alphalevel = 0;
+	// boolean flip = false;
 	fixed_t col, ofs, colfrac, rowfrac, fdup;
 	INT32 dupx, dupy;
 	const column_t *column;
@@ -729,6 +745,29 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 		return;
 	}
 #endif
+
+	patchdrawfunc = standardpdraw;
+
+	v_translevel = NULL;
+	if ((alphalevel = ((scrn & V_ALPHAMASK) >> V_ALPHASHIFT)))
+	{
+		if (alphalevel == 13)
+			alphalevel = hudminusalpha[cv_translucenthud.value];
+		else if (alphalevel == 14)
+			alphalevel = 10 - cv_translucenthud.value;
+		else if (alphalevel == 15)
+			alphalevel = hudplusalpha[cv_translucenthud.value];
+
+		if (alphalevel >= 10)
+			return; // invis
+
+		if (alphalevel)
+		{
+			v_translevel = transtables + ((alphalevel-1)<<FF_TRANSSHIFT);
+			patchdrawfunc = translucentpdraw;
+		}
+	}
+
 
 	// only use one dup, to avoid stretching (har har)
 	dupx = dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
@@ -790,7 +829,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 		desttop += (y*vid.width) + x;
 	}
 
-	for (col = sx<<FRACBITS; (col>>FRACBITS) < SHORT(patch->width) && (col>>FRACBITS) < w; col += colfrac, ++x, desttop++)
+	for (col = sx<<FRACBITS; (col>>FRACBITS) < SHORT(patch->width) && ((col>>FRACBITS) - sx) < w; col += colfrac, ++x, desttop++)
 	{
 		INT32 topdelta, prevdelta = -1;
 		if (x < 0) // don't draw off the left of the screen (WRAP PREVENTION)
@@ -809,10 +848,10 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 			dest = desttop;
 			dest += FixedInt(FixedMul(topdelta<<FRACBITS,fdup))*vid.width;
 
-			for (ofs = sy<<FRACBITS; dest < deststop && (ofs>>FRACBITS) < column->length && (ofs>>FRACBITS) < h; ofs += rowfrac)
+			for (ofs = sy<<FRACBITS; dest < deststop && (ofs>>FRACBITS) < column->length && (((ofs>>FRACBITS) - sy) + topdelta) < h; ofs += rowfrac)
 			{
 				if (dest >= screens[scrn&V_PARAMMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
-					*dest = source[ofs>>FRACBITS];
+					*dest = patchdrawfunc(dest, source, ofs);
 				dest += vid.width;
 			}
 			column = (const column_t *)((const UINT8 *)column + column->length + 4);
@@ -879,7 +918,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	if (rendermode == render_none)
 		return;
 
-	
+
 	v_translevel = NULL;
 	if (alphalevel)
 	{
@@ -1034,7 +1073,8 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	if (rendermode != render_soft && rendermode != render_none)
 	{
 		UINT32 hwcolor = V_GetHWConsBackColor();
-		HWR_DrawConsoleFill(x, y, w, h, hwcolor, c);	// we still use the regular color stuff but only for flags. actual draw color is "hwcolor" for this.
+		UINT8 alpha = (cons_backcolor.value == 1) ? 0xC0 : 0x80; // A hack to make black darker like in software
+		HWR_DrawConsoleFill(x, y, w, h, hwcolor, c, alpha);	// we still use the regular color stuff but only for flags. actual draw color is "hwcolor" for this.
 		return;
 	}
 #endif
@@ -1283,7 +1323,8 @@ void V_DrawFadeConsBack(INT32 plines)
 	if (rendermode != render_soft && rendermode != render_none)
 	{
 		UINT32 hwcolor = V_GetHWConsBackColor();
-		HWR_DrawConsoleBack(hwcolor, plines);
+		UINT8 alpha = (cons_backcolor.value == 1) ? 0xC0 : 0x80; // A hack to make black darker like in software
+		HWR_DrawConsoleBack(hwcolor, plines, alpha);
 		return;
 	}
 #endif
@@ -2799,27 +2840,49 @@ Unoptimized version
 #endif
 }
 
-// Taken from my videos-in-SRB2 project
-// Generates a color look-up table
-// which has up to 64 colors at each channel
-// (see the defines in v_video.h)
-
-UINT8 colorlookup[CLUTSIZE][CLUTSIZE][CLUTSIZE];
-
-void InitColorLUT(RGBA_t *palette)
+// Generates a RGB565 color look-up table
+void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, boolean makecolors)
 {
-	UINT8 r, g, b;
-	static boolean clutinit = false;
-	static RGBA_t *lastpalette = NULL;
-	if ((!clutinit) || (lastpalette != palette))
+	size_t palsize = (sizeof(RGBA_t) * 256);
+
+	if (!lut->init || memcmp(lut->palette, palette, palsize))
 	{
-		for (r = 0; r < CLUTSIZE; r++)
-			for (g = 0; g < CLUTSIZE; g++)
-				for (b = 0; b < CLUTSIZE; b++)
-					colorlookup[r][g][b] = NearestPaletteColor(r << SHIFTCOLORBITS, g << SHIFTCOLORBITS, b << SHIFTCOLORBITS, palette);
-		clutinit = true;
-		lastpalette = palette;
+		INT32 i;
+
+		lut->init = true;
+		memcpy(lut->palette, palette, palsize);
+
+		for (i = 0; i < 0xFFFF; i++)
+			lut->table[i] = 0xFFFF;
+
+		if (makecolors)
+		{
+			UINT8 r, g, b;
+
+			for (r = 0; r < 0xFF; r++)
+			for (g = 0; g < 0xFF; g++)
+			for (b = 0; b < 0xFF; b++)
+			{
+				i = CLUTINDEX(r, g, b);
+				if (lut->table[i] == 0xFFFF)
+					lut->table[i] = NearestPaletteColor(r, g, b, palette);
+			}
+		}
 	}
+}
+
+UINT8 GetColorLUT(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b)
+{
+	INT32 i = CLUTINDEX(r, g, b);
+	if (lut->table[i] == 0xFFFF)
+		lut->table[i] = NearestPaletteColor(r, g, b, lut->palette);
+	return lut->table[i];
+}
+
+UINT8 GetColorLUTDirect(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b)
+{
+	INT32 i = CLUTINDEX(r, g, b);
+	return lut->table[i];
 }
 
 // V_Init
@@ -2829,20 +2892,36 @@ void InitColorLUT(RGBA_t *palette)
 void V_Init(void)
 {
 	INT32 i;
-	UINT8 *base = vid.buffer;
-	const INT32 screensize = vid.rowbytes * vid.height;
+	INT32 screensize = vid.rowbytes * vid.height;
 
 	LoadMapPalette();
 	for (i = 0; i < NUMSCREENS; i++)
-		screens[i] = NULL;
-
-	// start address of NUMSCREENS * width*height vidbuffers
-	if (base)
 	{
-		for (i = 0; i < NUMSCREENS; i++)
-			screens[i] = base + i*screensize;
+#ifdef USE_SSE_ALIGNED
+		aligned_free(screens[i]);
+#else
+		free(screens[i]);
+#endif
+		screens[i] = NULL;
 	}
 
+	// start address of NUMSCREENS * width*height vidbuffers
+	if (screensize > 0)
+	{
+		for (i = 0; i < NUMSCREENS; i++)
+		{
+			// we need to allocate these relative to their cpu restrictions to not trigger segfaults
+			// TODO: add support for sve and neon
+#ifdef USE_SSE_ALIGNED
+			while (screensize & 15)
+				screensize++;
+			screens[i] = aligned_alloc(16, screensize);
+#else
+			screens[i] = malloc(screensize);
+#endif
+			memset(screens[i], 0, screensize);
+		}
+	}
 	if (vid.direct)
 		screens[0] = vid.direct;
 

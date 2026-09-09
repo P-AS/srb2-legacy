@@ -29,6 +29,10 @@
 #include "../config.h.in"
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <signal.h>
 
 #ifdef _WIN32
@@ -41,14 +45,21 @@ typedef DWORD (WINAPI *p_timeGetTime) (void);
 typedef UINT (WINAPI *p_timeEndPeriod) (UINT);
 typedef HANDLE (WINAPI *p_OpenFileMappingA) (DWORD, BOOL, LPCSTR);
 typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
+
+// This is for RtlGenRandom.
+#define SystemFunction036 NTAPI SystemFunction036
+#include <ntsecapi.h>
+#undef SystemFunction036
+
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef __GNUC__
 #include <unistd.h>
-#elif defined (_MSC_VER)
-#include <direct.h>
+#endif
+#ifdef __EMSCRIPTEN__
+#undef HAVE_TERMIOS // do not read on /dev/tty, JavaScript alert() are blocking
 #endif
 #if defined (__unix__) || defined (UNIXCOMMON)
 #include <poll.h>
@@ -60,10 +71,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <conio.h>
 #endif
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
-
 #ifdef HAVE_SDL
 #define _MATH_DEFINES_DEFINED
 #include "SDL.h"
@@ -72,16 +79,12 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include "i_ttf.h"
 #endif
 
-#ifdef _MSC_VER
-#pragma warning(default : 4214 4244)
-#endif
-
 #include "SDL_cpuinfo.h"
 #define HAVE_SDLCPUINFO
 
 #if defined (__unix__) || defined(__APPLE__) || (defined (UNIXCOMMON) && !defined (__HAIKU__))
 #include <time.h>
-#if defined (__linux__)
+#if defined (__linux__) || defined(__EMSCRIPTEN__)
 #include <sys/vfs.h>
 #else
 #include <sys/param.h>
@@ -91,8 +94,10 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #ifdef FREEBSD
 #include <kvm.h>
 #endif
+#ifndef EMSCRIPTEN
 #include <nlist.h>
 #include <sys/sysctl.h>
+#endif
 #endif
 #endif
 
@@ -104,11 +109,13 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 #endif
 
-#if (defined (__unix__) && !defined (_MSDOS)) || (defined (UNIXCOMMON) && !defined(__APPLE__))
+#if (defined (__unix__) || (defined (UNIXCOMMON) && !defined(__APPLE__))) && !defined(__ANDROID__)
 #include <errno.h>
 #include <sys/wait.h>
 #ifndef __HAIKU__ // haiku's crash dialog is just objectively better
+#ifndef __EMSCRIPTEN__ // WASM does not support fork()
 #define NEWSIGNALHANDLER
+#endif
 #endif
 #endif
 
@@ -129,6 +136,11 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 #endif // NOMUMBLE
 
+#if defined(__ANDROID__)
+#include "../android-jni/jni_android.h" // includes jni.h
+#include "../android-jni/ndk_crash_handler.h"
+#endif
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
@@ -141,28 +153,12 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <errno.h>
 #endif
 
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if (defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)) && !defined(__ANDROID__)
 #ifndef NOEXECINFO
 #include <execinfo.h>
 #endif
 #include <time.h>
 #define UNIXBACKTRACE
-#endif
-
-// Locations for searching the srb2.srb
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2legacy"
-#define DEFAULTWADLOCATION2 "/usr/local/games/SRB2legacy"
-#define DEFAULTWADLOCATION3 "/usr/share/games/SRB2legacy"
-#define DEFAULTWADLOCATION4 "/usr/games/SRB2legacy"
-#define DEFAULTSEARCHPATH1 "/usr/local/games"
-#define DEFAULTSEARCHPATH2 "/usr/games"
-#define DEFAULTSEARCHPATH3 "/usr/local"
-#elif defined (_WIN32)
-#define DEFAULTWADLOCATION1 "c:\\games\\srb2legacy"
-#define DEFAULTWADLOCATION2 "\\games\\srb2legacy"
-#define DEFAULTSEARCHPATH1 "c:\\games"
-#define DEFAULTSEARCHPATH2 "\\games"
 #endif
 
 /**	\brief WAD file to look for
@@ -336,59 +332,104 @@ static void write_backtrace(INT32 signal)
 
 #endif // UNIXBACKTRACE
 
+int I_OpenURL(const char *url)
+{
+#if SDL_VERSION_ATLEAST(2,0,14)
+	return SDL_OpenURL(va("%s", url));
+#else
+	return -1;
+#endif
+}
+
 static void I_ReportSignal(int num, int coredumped)
 {
 	//static char msg[] = "oh no! back to reality!\r\n";
-	const char *      sigmsg;
-	char msg[128];
+	const char *sigmsg, *signame;
+	char ttl[128];
+	char sigttl[512] = "Process killed by signal: ";
+	const char *reportmsg = "\n\nIf this consistently happens, please report an issue so it can be fixed.\n\nSorry for the inconvenience!";
+
+	// stop the movie on crash
+	if (moviemode)
+		M_StopMovie();
 
 	switch (num)
 	{
 //	case SIGINT:
-//		sigmsg = "SIGINT - interrupted";
+//		sigttl = "SIGINT"
+//		sigmsg = "SRB2 was interrupted prematurely by the user.";
 //		break;
 	case SIGILL:
-		sigmsg = "SIGILL - illegal instruction - invalid function image";
+		sigmsg = "SRB2 has attempted to execute an illegal instruction and needs to close.";
+		signame = "SIGILL"; // illegal instruction - invalid function image
 		break;
 	case SIGFPE:
-		sigmsg = "SIGFPE - mathematical exception";
+		sigmsg = "SRB2 has encountered a mathematical exception and needs to close.";
+		signame = "SIGFPE"; // mathematical exception
 		break;
 	case SIGSEGV:
-		sigmsg = "SIGSEGV - segment violation";
+		sigmsg = "SRB2 has attempted to access a memory location that it shouldn't and needs to close.";
+		signame = "SIGSEGV"; // segment violation
 		break;
 //	case SIGTERM:
-//		sigmsg = "SIGTERM - Software termination signal from kill";
+//		sigmsg = "SRB2 was terminated by a kill signal.";
+//		sigttl = "SIGTERM"; // Software termination signal from kill
 //		break;
 //	case SIGBREAK:
-//		sigmsg = "SIGBREAK - Ctrl-Break sequence";
+//		sigmsg = "SRB2 was terminated by a Ctrl-Break sequence.";
+//		sigttl = "SIGBREAK" // Ctrl-Break sequence
 //		break;
 	case SIGABRT:
-		sigmsg = "SIGABRT - abnormal termination triggered by abort call";
+		sigmsg = "SRB2 was terminated by an abort signal.";
+		signame = "SIGABRT"; // abnormal termination triggered by abort call
 		break;
 	default:
-		sprintf(msg,"signal number %d", num);
+		sigmsg = "SRB2 was terminated by an unknown signal.";
+
+		sprintf(ttl, "number %d", num);
 		if (coredumped)
-			sigmsg = 0;
+			signame = 0;
 		else
-			sigmsg = msg;
+			signame = ttl;
 	}
 
 	if (coredumped)
 	{
-		if (sigmsg)
-			sprintf(msg, "%s (core dumped)", sigmsg);
+		if (signame)
+			sprintf(ttl, "%s (core dumped)", signame);
 		else
-			strcat(msg, " (core dumped)");
+			strcat(ttl, " (core dumped)");
 
-		sigmsg = msg;
+		signame = ttl;
 	}
 
-	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
+	strcat(sigttl, signame);
+	I_OutputMsg("%s\n", sigttl);
 
-	if (!M_CheckParm("-dedicated"))
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-			"Process killed by signal",
-			sigmsg, NULL);
+	if (M_CheckParm("-dedicated"))
+		return;
+
+	const SDL_MessageBoxButtonData buttons[] = {
+		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0,		"OK" },
+		{ 										0, 1,  "Report an Issue" },
+	};
+
+	const SDL_MessageBoxData messageboxdata = {
+		SDL_MESSAGEBOX_ERROR, /* .flags */
+		NULL, /* .window */
+		sigttl, /* .title */
+		va("%s %s", sigmsg, reportmsg), /* .message */
+		SDL_arraysize(buttons), /* .numbuttons */
+		buttons, /* .buttons */
+		NULL /* .colorScheme */
+	};
+
+	int buttonid;
+
+	SDL_ShowMessageBox(&messageboxdata, &buttonid);
+
+	if (buttonid == 1)
+		I_OpenURL(ISSUES);
 }
 
 #ifndef NEWSIGNALHANDLER
@@ -841,7 +882,7 @@ static void I_RegisterChildSignals(void)
 void I_OutputMsg(const char *fmt, ...)
 {
 	size_t len;
-	XBOXSTATIC char txt[8192];
+	char txt[8192];
 	va_list  argptr;
 
 	va_start(argptr,fmt);
@@ -851,10 +892,6 @@ void I_OutputMsg(const char *fmt, ...)
 #ifdef HAVE_TTF
 	if (TTF_WasInit()) I_TTFDrawText(currentfont, solid, DEFAULTFONTFGR, DEFAULTFONTFGG, DEFAULTFONTFGB,  DEFAULTFONTFGA,
 	DEFAULTFONTBGR, DEFAULTFONTBGG, DEFAULTFONTBGB, DEFAULTFONTBGA, txt);
-#endif
-
-#if defined (_WIN32) && defined (_MSC_VER)
-	OutputDebugStringA(txt);
 #endif
 
 	len = strlen(txt);
@@ -938,8 +975,12 @@ void I_OutputMsg(const char *fmt, ...)
 	}
 #endif
 
+#ifdef __EMSCRIPTEN__
+	fprintf(stdout, "%s", txt);
+#else
 	if (!framebuffer)
 		fprintf(stderr, "%s", txt);
+#endif
 #ifdef HAVE_TERMIOS
 	if (consolevent)
 	{
@@ -1571,6 +1612,18 @@ void I_InitJoystick(void)
 	//I_ShutdownJoystick();
 	if (M_CheckParm("-nojoy"))
 		return;
+
+	{
+		char dbpath[1024];
+		sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb.txt", srb2path);
+		SDL_GameControllerAddMappingsFromFile(dbpath);
+	}
+
+	{
+		char dbpath[1024];
+		sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb_user.txt", srb2home);
+		SDL_GameControllerAddMappingsFromFile(dbpath);
+	}
 
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == 0)
 	{
@@ -2276,7 +2329,7 @@ void I_Sleep(UINT32 ms)
 
 void I_SleepDuration(precise_t duration)
 {
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__OpenBSD__) || defined(__EMSCRIPTEN__)
 	UINT64 precision = I_GetPrecisePrecision();
 	precise_t dest = I_GetPreciseTime() + duration;
 #ifdef __OpenBSD__
@@ -2437,7 +2490,7 @@ INT32 I_StartupSystem(void)
 	 SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
-#if SDL_VERSION_ATLEAST(2,0,22)
+#if SDL_VERSION_ATLEAST(2,0,18)
 	SDL_SetHint(SDL_HINT_APP_NAME, "SRB2 Legacy");
 #endif
 	if (SDL_Init(0) < 0)
@@ -2471,6 +2524,8 @@ void I_Quit(void)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording();
+	if (moviemode)
+		M_StopMovie();
 
 	D_QuitNetGame();
 	I_ShutdownMusic();
@@ -2490,6 +2545,13 @@ void I_Quit(void)
 		free(myargv); // Deallocate allocated memory
 death:
 	W_Shutdown();
+#ifdef __EMSCRIPTEN__
+	emscripten_cancel_main_loop();
+	EM_ASM({
+		noExitRuntime = false;
+		window.location.reload();
+	});
+#endif
 	exit(0);
 }
 
@@ -2550,7 +2612,7 @@ void I_Error(const char *error, ...)
 		if (errorcount > 20)
 		{
 			va_start(argptr, error);
-			vsprintf(buffer, error, argptr);
+			vsnprintf(buffer, 8192, error, argptr);
 			va_end(argptr);
 			// Implement message box with SDL_ShowSimpleMessageBox,
 			// which should fail gracefully if it can't put a message box up
@@ -2569,7 +2631,7 @@ void I_Error(const char *error, ...)
 
 	// Display error message in the console before we start shutting it down
 	va_start(argptr, error);
-	vsprintf(buffer, error, argptr);
+	vsnprintf(buffer, 8192, error, argptr);
 	va_end(argptr);
 	I_OutputMsg("\nI_Error(): %s\n", buffer);
 	// ---
@@ -2585,6 +2647,8 @@ void I_Error(const char *error, ...)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording();
+	if (moviemode)
+		M_StopMovie();
 
 	D_QuitNetGame();
 	I_ShutdownMusic();
@@ -2673,7 +2737,7 @@ void I_ShutdownSystem(void)
 {
 	INT32 c;
 
-#ifndef NEWSIGNALHANDLER
+#ifdef NEWSIGNALHANDLER
 	if (M_CheckParm("-nofork"))
 #endif
 		I_ShutdownConsole();
@@ -2696,12 +2760,12 @@ void I_ShutdownSystem(void)
 void I_GetDiskFreeSpace(INT64 *freespace)
 {
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#if defined (SOLARIS) || defined (__HAIKU__)
+#if defined (SOLARIS) || defined (__HAIKU__) || defined (__EMSCRIPTEN__)
 	*freespace = INT32_MAX;
 	return;
 #else // Both Linux and BSD have this, apparently.
 	struct statfs stfs;
-	if (statfs(".", &stfs) == -1)
+	if (statfs(srb2home, &stfs) == -1)
 	{
 		*freespace = INT32_MAX;
 		return;
@@ -2720,7 +2784,7 @@ void I_GetDiskFreeSpace(INT64 *freespace)
 	}
 	if (pfnGetDiskFreeSpaceEx)
 	{
-		if (pfnGetDiskFreeSpaceEx(NULL, &lfreespace, &usedbytes, NULL))
+		if (pfnGetDiskFreeSpaceEx(srb2home, &lfreespace, &usedbytes, NULL))
 			*freespace = lfreespace.QuadPart;
 		else
 			*freespace = INT32_MAX;
@@ -2776,7 +2840,7 @@ char *I_GetUserName(void)
 INT32 I_mkdir(const char *dirname, INT32 unixright)
 {
 //[segabor]
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__) || defined (__OS2__)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (__CYGWIN__)
 	return mkdir(dirname, unixright);
 #elif defined (_WIN32)
 	UNREFERENCED_PARAMETER(unixright); /// \todo should implement ntright under nt...
@@ -2803,6 +2867,38 @@ INT32 I_PutEnv(char *variable)
 	return SDL_putenv(variable);
 #else
 	return putenv(variable);
+#endif
+}
+
+size_t I_GetRandomBytes(char *destination, size_t count)
+{
+#if defined (__unix__) || defined (UNIXCOMMON) || defined(__APPLE__)
+	FILE *rndsource;
+	size_t actual_bytes;
+
+	if (!(rndsource = fopen("/dev/urandom", "r")))
+		if (!(rndsource = fopen("/dev/random", "r")))
+			actual_bytes = 0;
+
+	if (rndsource)
+	{
+		actual_bytes = fread(destination, 1, count, rndsource);
+		fclose(rndsource);
+	}
+
+	if (actual_bytes == 0)
+		I_OutputMsg("I_GetRandomBytes(): couldn't get any random bytes");
+
+	return actual_bytes;
+#elif defined (_WIN32)
+	if (RtlGenRandom(destination, count))
+		return count;
+
+	I_OutputMsg("I_GetRandomBytes(): couldn't get any random bytes");
+	return 0;
+#else
+	#warning SDL I_GetRandomBytes is not implemented on this platform.
+	return 0;
 #endif
 }
 
@@ -2846,6 +2942,88 @@ const char *I_ClipboardPaste(void)
 	return (const char *)&clipboard_modified;
 }
 
+#ifdef DEFAULTDIR
+#ifndef __APPLE__
+// Reference for XDG directories:
+// <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>
+// from dsda-doom
+const char *I_GetXDGDataHome(const char *userhome)
+{
+	static char *datahome = 0;
+
+	if (!datahome)
+	{
+		const char *xdgdatahome = I_GetEnv("XDG_DATA_HOME");
+
+		if (!xdgdatahome || !*xdgdatahome)
+		{
+			size_t datahomesize = strlen(userhome) + strlen("/.local/share") + 1;
+			datahome = malloc(datahomesize);
+			snprintf(datahome, datahomesize, "%s%s%s", userhome, userhome[strlen(userhome)-1] != '/' ? "/" : "", ".local/share");
+		}
+		else
+		{
+			datahome = strdup(xdgdatahome);
+		}
+	}
+	return datahome;
+}
+#endif
+
+static const char *I_GetXDGDataDirs(void)
+{
+	const char *datadirs = I_GetEnv("XDG_DATA_DIRS");
+
+	if (!datadirs || !*datadirs)
+		return "/usr/local/share/:/usr/share/";
+	return datadirs;
+}
+#endif
+
+//
+// I_ConfigDir
+// from dsda-doom
+//
+const char *I_ConfigDir(void)
+{
+#ifdef DEFAULTDIR
+	static char *base = NULL;
+
+	if (!base)
+	{
+		const char *home = D_Home();
+
+		// First, try legacy directory.
+		size_t basesize = strlen(home) + 1 + strlen(DEFAULTDIR) + 1;
+		base = malloc(basesize);
+		snprintf(base, basesize, "%s/" DEFAULTDIR, home);
+
+#ifndef __EMSCRIPTEN__
+		if (FIL_FileExists(base) == 0)
+		{
+			// Legacy directory is not accessible. Use XDG directory.
+			free(base);
+
+#ifdef __APPLE__
+			basesize = strlen(home) + strlen("/Library/Application Support/srb2-legacy") + 1;
+			base = malloc(basesize);
+			snprintf(base, basesize, "%s/Library/Application Support/srb2-legacy", home);
+#else
+			const char *xdgdatahome = I_GetXDGDataHome(home);
+			basesize = strlen(xdgdatahome) + strlen("/srb2-legacy") + 1;
+			base = malloc(basesize);
+			snprintf(base, basesize, "%s/srb2-legacy", xdgdatahome);
+#endif
+		}
+#endif
+	}
+
+	return base;
+#else
+	return NULL;
+#endif
+}
+
 /**	\brief	The isWadPathOk function
 
 	\param	path	string path to check
@@ -2881,6 +3059,7 @@ static boolean isWadPathOk(const char *path)
 	return false;
 }
 
+#ifdef DEFAULTDIR
 static void pathonly(char *s)
 {
 	size_t j;
@@ -2924,6 +3103,7 @@ static const char *searchWad(const char *searchDir)
 	}
 	return NULL;
 }
+#endif
 
 /**	\brief go through all possible paths and look for srb2.srb
 
@@ -2932,7 +3112,9 @@ static const char *searchWad(const char *searchDir)
 static const char *locateWad(void)
 {
 	const char *envstr;
+#if defined(DEFAULTDIR) || defined(__ANDROID__)
 	const char *WadPath;
+#endif
 
 	// SRB2WADDIR environment variable has been renamed to SRB2LEGACYWADDIR to prevent conflicts with 2.2+.
 	I_OutputMsg("SRB2LEGACYWADDIR");
@@ -2947,7 +3129,6 @@ static const char *locateWad(void)
 	if (isWadPathOk(returnWadPath))
 		return NULL;
 #endif
-
 
 #ifdef CMAKECONFIG
 #ifndef NDEBUG
@@ -2969,85 +3150,84 @@ static const char *locateWad(void)
 	}
 #endif
 
-	// examine default dirs
-#ifdef DEFAULTWADLOCATION1
-	I_OutputMsg(","DEFAULTWADLOCATION1);
-	strcpy(returnWadPath, DEFAULTWADLOCATION1);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION2
-	I_OutputMsg(","DEFAULTWADLOCATION2);
-	strcpy(returnWadPath, DEFAULTWADLOCATION2);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION3
-	I_OutputMsg(","DEFAULTWADLOCATION3);
-	strcpy(returnWadPath, DEFAULTWADLOCATION3);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION4
-	I_OutputMsg(","DEFAULTWADLOCATION4);
-	strcpy(returnWadPath, DEFAULTWADLOCATION4);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION5
-	I_OutputMsg(","DEFAULTWADLOCATION5);
-	strcpy(returnWadPath, DEFAULTWADLOCATION5);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION6
-	I_OutputMsg(","DEFAULTWADLOCATION6);
-	strcpy(returnWadPath, DEFAULTWADLOCATION6);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifdef DEFAULTWADLOCATION7
-	I_OutputMsg(","DEFAULTWADLOCATION7);
-	strcpy(returnWadPath, DEFAULTWADLOCATION7);
-	if (isWadPathOk(returnWadPath))
-		return returnWadPath;
-#endif
-#ifndef NOHOME
-	// find in $HOME
-	I_OutputMsg(",HOME/" DEFAULTDIR);
-	if ((envstr = I_GetEnv("HOME")) != NULL)
+#if defined(__ANDROID__)
+	// Access the shared storage location
+	WadPath = I_SharedStorageLocation();
+	if (WadPath)
 	{
-		char *tmp = malloc(strlen(envstr) + 1 + sizeof(DEFAULTDIR));
-		strcpy(tmp, envstr);
-		strcat(tmp, "/");
-		strcat(tmp, DEFAULTDIR);
-		WadPath = searchWad(tmp);
-		free(tmp);
+		I_OutputMsg("Shared storage: %s", WadPath);
+		strcpy(returnWadPath, WadPath);
+		if (isWadPathOk(returnWadPath))
+			return returnWadPath;
+	}
+
+	// Access removable storage
+	WadPath = JNI_RemovableStoragePath();
+	if (WadPath)
+	{
+		I_OutputMsg("Removable storage: %s", WadPath);
+		strcpy(returnWadPath, WadPath);
+		if (isWadPathOk(returnWadPath))
+			return returnWadPath;
+	}
+
+	// Access app-specific storage last
+	// This will always return the path, even if isWadPathOk would fail.
+	WadPath = I_AppStorageLocation();
+	if (WadPath)
+	{
+		I_OutputMsg("App-specific storage: %s", WadPath);
+		return WadPath;
+	}
+#endif
+
+#ifdef DEFAULTDIR
+	// examine $XDG_DATA_DIRS/games/srb2-legacy and $XDG_DATA_DIRS/srb2-legacy
+	// by default this includes:
+	// - /usr/local/share/games/srb2-legacy
+	// - /usr/share/games/srb2-legacy
+	// - /usr/local/share/srb2-legacy
+	// - /usr/share/srb2-legacy
+	char *ptr, *slash, *datadirs = strdup(I_GetXDGDataDirs());
+
+	ptr = strtok(datadirs, ":");
+	while (ptr)
+	{
+		slash = ptr[strlen(ptr)-1] != '/' ? "/" : "";
+
+		I_OutputMsg(",%s%sgames/srb2-legacy", ptr, slash);
+		snprintf(returnWadPath, sizeof(returnWadPath), "%s%sgames/srb2-legacy", ptr, slash);
+		if (isWadPathOk(returnWadPath))
+		{
+			free(datadirs);
+			return returnWadPath;
+		}
+
+		I_OutputMsg(",%s%ssrb2-legacy", ptr, slash);
+		snprintf(returnWadPath, sizeof(returnWadPath), "%s%ssrb2-legacy", ptr, slash);
+		if (isWadPathOk(returnWadPath))
+		{
+			free(datadirs);
+			return returnWadPath;
+		}
+
+		ptr = strtok(NULL, ":");
+	}
+	free(datadirs);
+
+#ifndef NOHOME
+	// find in config dir
+	envstr = I_ConfigDir();
+	I_OutputMsg(",%s", envstr);
+	if (envstr != NULL)
+	{
+		WadPath = searchWad(envstr);
 		if (WadPath)
 			return WadPath;
 	}
 #endif
-#ifdef DEFAULTSEARCHPATH1
-	// find in /usr/local
-	I_OutputMsg(", in:"DEFAULTSEARCHPATH1);
-	WadPath = searchWad(DEFAULTSEARCHPATH1);
-	if (WadPath)
-		return WadPath;
 #endif
-#ifdef DEFAULTSEARCHPATH2
-	// find in /usr/games
-	I_OutputMsg(", in:"DEFAULTSEARCHPATH2);
-	WadPath = searchWad(DEFAULTSEARCHPATH2);
-	if (WadPath)
-		return WadPath;
-#endif
-#ifdef DEFAULTSEARCHPATH3
-	// find in ???
-	I_OutputMsg(", in:"DEFAULTSEARCHPATH3);
-	WadPath = searchWad(DEFAULTSEARCHPATH3);
-	if (WadPath)
-		return WadPath;
-#endif
+
 	// if nothing was found
 	return NULL;
 }
@@ -3073,6 +3253,39 @@ const char *I_LocateWad(void)
 	return waddir;
 }
 
+#if defined(__ANDROID__)
+const char *I_AppStorageLocation(void)
+{
+	return SDL_AndroidGetExternalStoragePath();
+}
+
+#define SHAREDSTORAGEFOLDER "SRB2 Legacy"
+
+const char *I_SharedStorageLocation(void)
+{
+	static char *sharedStorage = NULL;
+
+	if (sharedStorage == NULL)
+	{
+		char *dir = JNI_GetStorageDirectory();
+		if (dir)
+		{
+			char *gamePath = SHAREDSTORAGEFOLDER;
+			size_t size = strlen(dir) + strlen(PATHSEP) + strlen(gamePath) + 1;
+			sharedStorage = (char*)malloc(size);
+			snprintf(sharedStorage, size, "%s" PATHSEP "%s", dir, gamePath);
+		}
+	}
+
+	return sharedStorage;
+}
+
+const char *I_RemovableStorageLocation(void)
+{
+	return JNI_RemovableStoragePath();
+}
+#endif /* __ANDROID__ */
+
 #ifdef __linux__
 #define MEMINFO_FILE "/proc/meminfo"
 #define MEMTOTAL "MemTotal:"
@@ -3087,7 +3300,7 @@ const char *I_LocateWad(void)
 static long get_entry(const char* name, const char* buf)
 {
 	long val;
-	char* hit = strstr(buf, name);
+	gconst char* hit = strstr(buf, name);
 	if (hit == NULL) {
 		return -1;
 	}
@@ -3129,16 +3342,6 @@ size_t I_GetFreeMem(size_t *total)
 	if (total)
 		*total = (size_t)info.dwTotalPhys;
 	return (size_t)info.dwAvailPhys;
-#elif defined (__OS2__)
-	UINT32 pr_arena;
-
-	if (total)
-		DosQuerySysInfo( QSV_TOTPHYSMEM, QSV_TOTPHYSMEM,
-							(PVOID) total, sizeof (UINT32));
-	DosQuerySysInfo( QSV_MAXPRMEM, QSV_MAXPRMEM,
-				(PVOID) &pr_arena, sizeof (UINT32));
-
-	return pr_arena;
 #elif defined (__linux__)
 	/* Linux */
 	char buf[1024];
@@ -3210,6 +3413,40 @@ size_t I_GetFreeMem(size_t *total)
 	return 48<<20;
 #endif
 }
+
+#if defined(__ANDROID__)
+INT32 I_CheckSystemPermission(const char *permission)
+{
+	if (JNI_CheckPermission(permission))
+		return 1;
+
+	return 0;
+}
+
+INT32 I_RequestSystemPermission(const char *permission)
+{
+	if (SDL_AndroidRequestPermission(permission))
+		return 1;
+
+	return 0;
+}
+
+INT32 I_StoragePermission(void)
+{
+	if (JNI_StoragePermissionGranted())
+		return 1;
+	else
+		return 0;
+}
+
+INT32 I_SystemStoragePermission(void)
+{
+	if (JNI_CheckStoragePermission())
+		return 1;
+	else
+		return 0;
+}
+#endif /* __ANDROID__ */
 
 // note CPUAFFINITY code used to reside here
 void I_RegisterSysCommands(void) {}

@@ -50,6 +50,8 @@
 #include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
 
+#include "s_sound.h"
+
 // coords are scaled
 #define HU_INPUTX 0
 #define HU_INPUTY 0
@@ -434,7 +436,7 @@ void HU_AddChatText(const char *text, boolean playsound)
 
 static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 {
-	XBOXSTATIC char buf[254];
+	char buf[254];
 	size_t numwords, ix;
 	char *msg = &buf[2];
 	const size_t msgspace = sizeof buf - 2;
@@ -2230,7 +2232,7 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 ping, UINT32 pl, boolean notext, INT32
 		{
 			float lag = ((float)ping * (1.0f / TICRATE));
 			V_DrawSmallString(dx, y+4, V_ALLOWLOWERCASE|flags, va("%.1fd", lag));
-		}	
+		}
 	}
 
 	//if (pl < UINT32_MAX && (!notext || vid.width >= 640))

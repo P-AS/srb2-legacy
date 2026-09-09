@@ -19,18 +19,13 @@
 #endif
 
 #include <string.h>
-#ifndef _WIN32_WCE
 #include <sys/types.h>
-#endif
-#ifdef _MSC_VER
-#pragma warning(disable :  4127)
-#endif
 
 #if defined (STDC_HEADERS) || defined (_LIBC)
  #include <stdlib.h>
 #else
  #ifndef HAVE_MEMCPY
-  #if !((defined (_WIN32) || defined (_WIN32_WCE)) && !defined (__CYGWIN__)) && !defined (__APPLE__)
+  #if !(defined (_WIN32) && !defined (__CYGWIN__)) && !defined (__APPLE__)
    #define memcpy(d, s, n) bcopy ((s), (d), (n))
   #endif
  #endif

@@ -10,9 +10,7 @@
 /// \file  d_clisrv.c
 /// \brief SRB2 Network game communication and protocol, all OS independent parts.
 
-#if !defined (UNDER_CE)
 #include <time.h>
-#endif
 #ifdef __GNUC__
 #include <unistd.h> //for unlink
 #endif
@@ -23,6 +21,7 @@
 #include "i_video.h"
 #include "d_clisrv.h"
 #include "d_net.h"
+#include "d_netfil.h" // fileneedednum
 #include "d_main.h"
 #include "g_game.h"
 #include "hu_stuff.h"
@@ -49,6 +48,7 @@
 #include "md5.h"
 #include "r_fps.h"
 #include "m_perfstats.h"
+#include "s_sound.h"
 
 #ifdef CLIENT_LOADINGSCREEN
 // cl loading screen
@@ -534,19 +534,33 @@ typedef enum
 	CL_CHECKFILES,
 	CL_DOWNLOADFILES,
 	CL_ASKJOIN,
+	CL_LOADFILES,
 	CL_WAITJOINRESPONSE,
 #ifdef JOININGAME
 	CL_DOWNLOADSAVEGAME,
 #endif
 	CL_CONNECTED,
 	CL_ABORTED,
+	CL_ASKFULLFILELIST,
 	CL_VIEWSERVER
 } cl_mode_t;
 
 static void GetPackets(void);
 
 static cl_mode_t cl_mode = CL_SEARCHING;
+static UINT16 cl_lastcheckedfilecount = 0;
 
+// simply checks for any of the main wads
+static boolean CL_CheckMainWads(const char *file_name)
+{
+	if ((strcmp(file_name, "srb2.srb") && strcmp(file_name, "srb2.wad") && strcmp(file_name, "zones.dta")
+			&& strcmp(file_name, "player.dta") && strcmp(file_name, "rings.dta") && strcmp(file_name, "patch.dta")
+			&& strcmp(file_name, "music.dta") && strcmp(file_name, "legacy.pk3")
+		))
+		return false;
+	else
+		return true;
+}
 
 static void CL_DrawPlayerList(void)
 {
@@ -604,6 +618,7 @@ static void CL_DrawAddonList(void)
 #define maxcharlen (30 + 3)
 #define charsonside 15
 
+	INT32 index = addonlist_scroll;
 	for (i = addonlist_scroll; i < fileneedednum; i++)
 	{
 		if (i & 1)
@@ -612,10 +627,13 @@ static void CL_DrawAddonList(void)
 		fileneeded_t addon_file = fileneeded[i];
 		strncpy(file_name, addon_file.filename, MAX_WADPATH);
 
+		if (CL_CheckMainWads(file_name))
+			continue;
+
 		if ((UINT8)(strlen(file_name) + 1) > maxcharlen)
-			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80 %.*s...%s", i + 1, charsonside, file_name, file_name + strlen(file_name) - ((charsonside + 1))) );
+			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80 %.*s...%s", index + 1, charsonside, file_name, file_name + strlen(file_name) - ((charsonside + 1))) );
 		else
-			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80 %s", i + 1, file_name));
+			V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("\x82%d\x80 %s", index + 1, file_name));
 
 		const char *filesize_str;
 		if (addon_file.totalsize >= 1024*1024)
@@ -628,6 +646,7 @@ static void CL_DrawAddonList(void)
 
 		y += 9;
 		count++;
+		index++;
 
 		if (count == filenumcount)
 			break;
@@ -635,7 +654,15 @@ static void CL_DrawAddonList(void)
 
 	UINT32 totalsize = 0;
 	for (INT32 j = 0; j < fileneedednum; j++)
+	{
+		fileneeded_t addon_file = fileneeded[j];
+		strncpy(file_name, addon_file.filename, MAX_WADPATH);
+
+		if (CL_CheckMainWads(file_name))
+			continue;
+
 		totalsize += fileneeded[j].totalsize;
+	}
 
 	const char *totalsize_str;
 	if (totalsize >= 1024*1024)
@@ -647,12 +674,21 @@ static void CL_DrawAddonList(void)
 	V_DrawRightAlignedString(BASEVIDWIDTH - 12, 74, V_YELLOWMAP|V_ALLOWLOWERCASE, totalsize_str);
 
 
-	if (fileneedednum >= filenumcount)
+	INT32 realfileneedednum = fileneedednum;
+	for (INT32 i = 0; i < fileneedednum; i++) {
+		fileneeded_t addon_file = fileneeded[i];
+		strncpy(file_name, addon_file.filename, MAX_WADPATH);
+
+		if (CL_CheckMainWads(file_name))
+			realfileneedednum--;
+	}
+
+	if (realfileneedednum >= filenumcount)
 	{
 		INT32 ccstime = I_GetTime();
 		if (addonlist_scroll)
 			V_DrawRightAlignedThinString(BASEVIDWIDTH - 8, 84 - ((ccstime % 9) / 5), V_YELLOWMAP, "\x1A");
-		if (addonlist_scroll != (fileneedednum - filenumcount))
+		if (addonlist_scroll != (realfileneedednum - filenumcount))
 			V_DrawRightAlignedThinString(BASEVIDWIDTH - 8, (84 + 90) + ((ccstime % 9) / 5), V_YELLOWMAP, "\x1B");
 	}
 #undef filenumcount
@@ -708,6 +744,12 @@ static inline void CL_DrawConnectionStatus(void)
 			case CL_CHECKFILES:
 				cltext = M_GetText("Checking server files...");
 				break;
+			case CL_ASKFULLFILELIST:
+				cltext = M_GetText("Checking server addon list ...");
+				break;
+			case CL_LOADFILES:
+				cltext = M_GetText("Loading server addons...");
+				break;
 			case CL_ASKJOIN:
 			case CL_WAITJOINRESPONSE:
 				cltext = M_GetText("Requesting to join...");
@@ -741,9 +783,19 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawThinString(12 + 80, 38, V_ALLOWLOWERCASE, va("%s", serverlist[joinnode].info.maptitle));
 			V_DrawThinString(12 + 80, 48, V_ALLOWLOWERCASE, va("%s", Gametype_Names[serverlist[joinnode].info.gametype]));
 
-			if (fileneedednum > 0)
+			char file_name[MAX_WADPATH+1];
+			INT32 realfileneedednum = fileneedednum;
+			for (INT32 i = 0; i < fileneedednum; i++) {
+				fileneeded_t addon_file = fileneeded[i];
+				strncpy(file_name, addon_file.filename, MAX_WADPATH);
+
+				if (CL_CheckMainWads(file_name))
+					realfileneedednum--;
+			}
+
+			if (realfileneedednum > 0)
 			{
-				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i Addons", fileneedednum));
+				V_DrawThinString(12 + 80, 58, V_ALLOWLOWERCASE|V_YELLOWMAP, va("%i Addon%s", realfileneedednum, (realfileneedednum == 1) ? "" : "s"));
 			}
 			else
 			{
@@ -751,14 +803,14 @@ static inline void CL_DrawConnectionStatus(void)
 			}
 
 
-			if (serverlist[joinnode].info.isdedicated)
+			if (serverlist[joinnode].info.flags & SV_DEDICATED)
 				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 58, V_ALLOWLOWERCASE|V_ORANGEMAP, "Dedicated");
 			else
 				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 58, V_ALLOWLOWERCASE|V_GREENMAP, "Listen");
 
 			if (serverlist[joinnode].info.cheatsenabled)
 			{
-				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 58, V_ALLOWLOWERCASE|V_GREENMAP, "Cheats");
+				V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, 48, V_ALLOWLOWERCASE|V_GREENMAP, "Cheats");
 			}
 
 			V_DrawFill(8, 72, BASEVIDWIDTH - 16, 112, 239);
@@ -773,7 +825,7 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawThinString(16, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sESC/B%s] = Abort", "\x82", "\x80"));
 
 
-			if (fileneedednum > 0)
+			if (realfileneedednum > 0)
 				V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT - 11, V_ALLOWLOWERCASE, va("[""\x82""SPACE/X""\x80""] = %s",
 					(addonlist_show ? "Players" : "Addons")));
 			V_DrawRightAlignedThinString(BASEVIDWIDTH - 12, BASEVIDHEIGHT - 12, V_ALLOWLOWERCASE, va("[%sENTER/A%s] = Join", "\x82", "\x80"));
@@ -822,6 +874,14 @@ static inline void CL_DrawConnectionStatus(void)
 }
 #endif
 
+static boolean CL_AskFileList(INT32 firstfile)
+{
+	netbuffer->packettype = PT_TELLFILESNEEDED;
+	netbuffer->u.filesneedednum = firstfile;
+
+	return HSendPacket(servernode, true, 0, sizeof (INT32));
+}
+
 /** Sends a special packet to declare how many players in local
   * Used only in arbitratrenetstart()
   * Sends a PT_CLIENTJOIN packet to the server
@@ -864,7 +924,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.gametype = (UINT8)gametype;
 	netbuffer->u.serverinfo.modifiedgame = (UINT8)modifiedgame;
 	netbuffer->u.serverinfo.cheatsenabled = CV_CheatsEnabled();
-	netbuffer->u.serverinfo.isdedicated = (UINT8)dedicated;
+	netbuffer->u.serverinfo.flags = (dedicated ? SV_DEDICATED : 0);
 	strncpy(netbuffer->u.serverinfo.servername, cv_servername.string,
 		sizeof(netbuffer->u.serverinfo.servername)-1);
 	strncpy(netbuffer->u.serverinfo.mapname, G_BuildMapName(gamemap), 7);
@@ -885,7 +945,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 
 	netbuffer->u.serverinfo.actnum = mapheaderinfo[gamemap-1]->actnum;
 
-	p = PutFileNeeded();
+	p = PutFileNeeded(0);
 
 	HSendPacket(node, false, 0, p - ((UINT8 *)&netbuffer->u));
 }
@@ -1091,7 +1151,7 @@ static void SV_SavedGame(void)
 {
 	size_t length;
 	UINT8 *savebuffer;
-	XBOXSTATIC char tmpsave[256];
+	char tmpsave[256];
 
 	if (!cv_dumpconsistency.value)
 		return;
@@ -1133,7 +1193,7 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 {
 	UINT8 *savebuffer = NULL;
 	size_t length, decompressedlen;
-	XBOXSTATIC char *tmpsave = Z_Malloc(512, PU_STATIC, NULL);
+	char *tmpsave = Z_Malloc(512, PU_STATIC, NULL);
 
 	snprintf(tmpsave, 512, "%s" PATHSEP TMPSAVENAME, srb2home);
 
@@ -1382,9 +1442,14 @@ static boolean CL_ServerConnectionCheckFiles(void)
 {
 	INT32 i;
 
-	CONS_Printf(M_GetText("Checking files...\n"));
+	//CONS_Printf(M_GetText("Checking files...\n"));
 	i = CL_CheckFiles();
-	if (i == 3) // too many files
+
+	if (i == 4) // still checking ...
+	{
+		return true;
+	}
+	else if (i == 3) // too many files
 	{
 		D_QuitNetGame();
 		CL_Reset();
@@ -1413,7 +1478,7 @@ static boolean CL_ServerConnectionCheckFiles(void)
 		return false;
 	}
 	else if (i == 1)
-		cl_mode = CL_ASKJOIN;
+		cl_mode = CL_LOADFILES;
 	else
 	{
 		// must download something
@@ -1482,8 +1547,13 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 
 		if (client)
 		{
-			D_ParseFileneeded(serverlist[i].info.fileneedednum,
-				serverlist[i].info.fileneeded);
+			D_ParseFileneeded(serverlist[i].info.fileneedednum, serverlist[i].info.fileneeded, 0);
+			if(serverlist[i].info.flags & SV_LOTSOFADDONS)
+			{
+				cl_mode = CL_ASKFULLFILELIST;
+				cl_lastcheckedfilecount = 0;
+				return true;
+			}
 			cl_mode = CL_VIEWSERVER;
 		}
 		else
@@ -1538,6 +1608,20 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				return false;
 			break;
 
+		case CL_ASKFULLFILELIST:
+			if (cl_lastcheckedfilecount == UINT16_MAX) // All files retrieved
+				cl_mode = CL_VIEWSERVER;
+			else if (fileneedednum != cl_lastcheckedfilecount || *asksent + NEWTICRATE < I_GetTime())
+			{
+				if (CL_AskFileList(fileneedednum))
+				{
+					cl_lastcheckedfilecount = fileneedednum;
+					*asksent = I_GetTime();
+				}
+			}
+			break;
+
+
 		case CL_DOWNLOADFILES:
 			waitmore = false;
 			for (i = 0; i < fileneedednum; i++)
@@ -1550,11 +1634,15 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			if (waitmore)
 				break; // exit the case
 
-			cl_mode = CL_ASKJOIN; // don't break case continue to cljoin request now
-			/* FALLTHRU */
+			cl_mode = CL_LOADFILES; // don't break case continue to cljoin request now
+			break;
 
+		case CL_LOADFILES:
+			if (!CL_LoadServerFiles())
+				break;
+
+			/* FALLTHRU */
 		case CL_ASKJOIN:
-			CL_LoadServerFiles();
 #ifdef JOININGAME
 			// prepare structures to save the file
 			// WARNING: this can be useless in case of server not in GS_LEVEL
@@ -1731,7 +1819,7 @@ static void CL_ConnectToServer(void)
 	tic_t asksent;
 #endif
 #ifdef JOININGAME
-	XBOXSTATIC char *tmpsave = Z_Malloc(512, PU_STATIC, NULL);
+	char *tmpsave = Z_Malloc(512, PU_STATIC, NULL);
 
 	snprintf(tmpsave, 512, "%s" PATHSEP TMPSAVENAME, srb2home);
 #endif
@@ -1937,7 +2025,7 @@ static void Command_ClearBans(void)
 static void Ban_Load_File(boolean warning)
 {
 	FILE *f;
-	size_t i;
+	//size_t i;
 	const char *address, *mask;
 	char buffer[MAX_WADPATH];
 
@@ -1958,7 +2046,7 @@ static void Ban_Load_File(boolean warning)
 		return;
 	}
 
-	for (i=0; fgets(buffer, (int)sizeof(buffer), f); i++)
+	for (/*i=0*/ ; fgets(buffer, (int)sizeof(buffer), f); /*i++*/)
 	{
 		address = strtok(buffer, " \t\r\n");
 		mask = strtok(NULL, " \t\r\n");
@@ -2290,7 +2378,7 @@ static void Command_Ban(void)
 
 	if (server || IsPlayerAdmin(consoleplayer))
 	{
-		XBOXSTATIC UINT8 buf[3 + MAX_REASONLENGTH];
+		UINT8 buf[3 + MAX_REASONLENGTH];
 		UINT8 *p = buf;
 		const SINT8 pn = nametonum(COM_Argv(1));
 		const INT32 node = playernode[(INT32)pn];
@@ -2395,7 +2483,7 @@ static void Command_Kick(void)
 
 	if (server || IsPlayerAdmin(consoleplayer))
 	{
-		XBOXSTATIC UINT8 buf[3 + MAX_REASONLENGTH];
+		UINT8 buf[3 + MAX_REASONLENGTH];
 		UINT8 *p = buf;
 		const SINT8 pn = nametonum(COM_Argv(1));
 
@@ -2447,7 +2535,7 @@ static void Command_Kick(void)
 static void Got_KickCmd(UINT8 **p, INT32 playernum)
 {
 	INT32 pnum, msg;
-	XBOXSTATIC char buf[3 + MAX_REASONLENGTH];
+	char buf[3 + MAX_REASONLENGTH];
 	char *reason = buf;
 	kickreason_t kickreason = KR_KICK;
 
@@ -2939,7 +3027,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 static boolean SV_AddWaitingPlayers(void)
 {
 	INT32 node, n, newplayer = false;
-	XBOXSTATIC UINT8 buf[2];
+	UINT8 buf[2];
 	UINT8 newplayernum = 0;
 
 	// What is the reason for this? Why can't newplayernum always be 0?
@@ -3382,6 +3470,40 @@ static void HandlePacketFromAwayNode(SINT8 node)
 #endif
 			break;
 
+		case PT_TELLFILESNEEDED:
+			if (server && serverrunning)
+			{
+				UINT8 *p;
+				INT32 firstfile = netbuffer->u.filesneedednum;
+
+				netbuffer->packettype = PT_MOREFILESNEEDED;
+				netbuffer->u.filesneededcfg.first = firstfile;
+				netbuffer->u.filesneededcfg.more = 0;
+
+				p = PutFileNeeded(firstfile);
+
+				HSendPacket(node, false, 0, p - ((UINT8 *)&netbuffer->u));
+			}
+			else // Shouldn't get this if you aren't the server...?
+				Net_CloseConnection(node);
+			break;
+
+		case PT_MOREFILESNEEDED:
+			if (server && serverrunning)
+			{ // But wait I thought I'm the server?
+				Net_CloseConnection(node);
+				break;
+			}
+			SERVERONLY
+			if (cl_mode == CL_ASKFULLFILELIST && netbuffer->u.filesneededcfg.first == fileneedednum)
+			{
+				D_ParseFileneeded(netbuffer->u.filesneededcfg.num, netbuffer->u.filesneededcfg.files, netbuffer->u.filesneededcfg.first);
+				if (!netbuffer->u.filesneededcfg.more)
+					cl_lastcheckedfilecount = UINT16_MAX; // Got the whole file list
+			}
+			break;
+
+
 		case PT_ASKINFO:
 			if (server && serverrunning)
 			{
@@ -3525,12 +3647,12 @@ static void HandlePacketFromAwayNode(SINT8 node)
   *
   */
 static void HandlePacketFromPlayer(SINT8 node)
-{FILESTAMP
-	XBOXSTATIC INT32 netconsole;
-	XBOXSTATIC tic_t realend, realstart;
-	XBOXSTATIC UINT8 *pak, *txtpak, numtxtpak;
-	XBOXSTATIC UINT8 finalmd5[16];/* Well, it's the cool thing to do? */
-FILESTAMP
+{
+	INT32 netconsole;
+	tic_t realend, realstart;
+	UINT8 *pak, *txtpak, numtxtpak;
+	UINT8 finalmd5[16];/* Well, it's the cool thing to do? */
+
 
 	txtpak = NULL;
 
@@ -3646,7 +3768,7 @@ FILESTAMP
 				}
 			}
 			break;
-		
+
 		case PT_BASICKEEPALIVE:
 			if (client)
 				break;
@@ -3781,7 +3903,7 @@ FILESTAMP
 			}
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
-			break;	
+			break;
 		case PT_ASKLUAFILE:
 			if (server && luafiletransfers && luafiletransfers->nodestatus[node] == LFTNS_ASKED)
 			{
@@ -3930,9 +4052,9 @@ FILESTAMP
   *
   */
 static void GetPackets(void)
-{FILESTAMP
-	XBOXSTATIC SINT8 node; // The packet sender
-FILESTAMP
+{
+	SINT8 node; // The packet sender
+
 
 	player_joining = false;
 
@@ -4351,7 +4473,7 @@ void SV_SpawnPlayer(INT32 playernum, INT32 x, INT32 y, angle_t angle)
 // create missed tic
 static void SV_Maketic(void)
 {
-	G_MoveTiccmd(netcmds[maketic % BACKUPTICS], playercmds, MAXPLAYERS);
+	G_CopyTiccmd(netcmds[maketic % BACKUPTICS], playercmds, MAXPLAYERS);
 	// all tic are now proceed make the next
 	maketic++;
 }
@@ -4723,9 +4845,9 @@ void NetUpdate(void)
 
 	if (server)
 		CL_SendClientCmd(); // send it
-FILESTAMP
+
 	GetPackets(); // get packet from client or from server
-FILESTAMP
+
 	// client send the command after a receive of the server
 	// the server send before because in single player is beter
 
@@ -4815,7 +4937,7 @@ void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *
 	(void)salt;
 	memset(dest, 0, 16);
 #else
-	XBOXSTATIC char tmpbuf[256];
+	char tmpbuf[256];
 	const size_t sl = strlen(salt);
 
 	if (len > 256-sl)

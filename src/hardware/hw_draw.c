@@ -36,11 +36,6 @@
 #define O_BINARY 0
 #endif
 
-
-
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
 typedef struct
 {
 	UINT8 id_field_length ; // 1
@@ -54,9 +49,6 @@ typedef struct
 	UINT8 image_pix_size  ; //17
 	UINT8 image_descriptor; //18
 } ATTRPACK TGAHeader; // sizeof is 18
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
 
 
 static UINT8 softwaretranstogl[11]    = {  0, 25, 51, 76,102,127,153,178,204,229,255};
@@ -391,12 +383,6 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 	fwidth = w;
 	fheight = h;
 
-	if (fwidth > w - sx)
-		fwidth = w - sx;
-
-	if (fheight > h - sy)
-		fheight = h - sy;
-
 	if (fwidth > SHORT(gpatch->width))
 		fwidth = SHORT(gpatch->width);
 
@@ -431,10 +417,18 @@ void HWR_DrawCroppedPatch(GLPatch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscal
 
 	v[0].z = v[1].z = v[2].z = v[3].z = 1.0f;
 
-	v[0].s = v[3].s = ((sx)/(float)SHORT(gpatch->width) )*gpatch->max_s;
-	v[2].s = v[1].s = ((w )/(float)SHORT(gpatch->width) )*gpatch->max_s;
-	v[0].t = v[1].t = ((sy)/(float)SHORT(gpatch->height))*gpatch->max_t;
-	v[2].t = v[3].t = ((h )/(float)SHORT(gpatch->height))*gpatch->max_t;
+	v[0].s = v[3].s = ((sx  )/(float)SHORT(gpatch->width) )*gpatch->max_s;
+	if (sx + w > SHORT(gpatch->width))
+		v[2].s = v[1].s = gpatch->max_s - ((sx+w)/(float)(gpatch->width))*gpatch->max_s;
+	else
+		v[2].s = v[1].s = ((sx+w)/(float)SHORT(gpatch->width) )*gpatch->max_s;
+
+	v[0].t = v[1].t = ((sy  )/(float)SHORT(gpatch->height))*gpatch->max_t;
+	if (sy + h > SHORT(gpatch->height))
+		v[2].t = v[3].t = gpatch->max_t - ((sy+h)/(float)(gpatch->height))*gpatch->max_t;
+	else
+		v[2].t = v[3].t = ((sy+h)/(float)SHORT(gpatch->height))*gpatch->max_t;
+
 
 	flags = PF_Translucent|PF_NoDepthTest;
 
@@ -586,7 +580,7 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 	{
 		RGBA_t *palette = HWR_GetTexturePalette();
 		Surf.PolyColor.rgba = palette[color&0xFF].rgba;
-		
+
         if (HWR_ShouldUsePaletteRendering())
 			Surf.PolyColor.s.alpha = softwaretranstogl[strength];
 		else
@@ -597,7 +591,7 @@ void HWR_FadeScreenMenuBack(UINT16 color, UINT8 strength)
 }
 
 // Draw the console background with translucency support
-void HWR_DrawConsoleBack(UINT32 color, INT32 height)
+void HWR_DrawConsoleBack(UINT32 color, INT32 height, UINT8 alpha)
 {
 	FOutVector  v[4];
 	FSurfaceInfo Surf;
@@ -618,7 +612,7 @@ void HWR_DrawConsoleBack(UINT32 color, INT32 height)
 	v[2].t = v[3].t = 0.0f;
 
 	Surf.PolyColor.rgba = UINT2RGBA(color);
-	Surf.PolyColor.s.alpha = 0x80;
+	Surf.PolyColor.s.alpha = alpha;
 
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
 }
@@ -781,7 +775,7 @@ void HWR_drawAMline(const fline_t *fl, INT32 color)
 // -------------------+
 // HWR_DrawConsoleFill     : draw flat coloured transparent rectangle because that's cool, and hw sucks less than sw for that.
 // -------------------+
-void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, UINT32 color, INT32 options)
+void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, UINT32 color, INT32 options, UINT8 alpha)
 {
 	FOutVector v[4];
 	FSurfaceInfo Surf;
@@ -877,7 +871,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, UINT32 color, INT32
 	v[2].t = v[3].t = 1.0f;
 
 	Surf.PolyColor.rgba = UINT2RGBA(color);
-	Surf.PolyColor.s.alpha = 0x80;
+	Surf.PolyColor.s.alpha = alpha;
 
 	HWD.pfnDrawPolygon(&Surf, v, 4, PF_NoTexture|PF_Modulated|PF_Translucent|PF_NoDepthTest);
 }
@@ -998,10 +992,8 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 
 #ifdef HAVE_PNG
 
-#ifndef _MSC_VER
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
 #endif
 
 #ifndef _LFS64_LARGEFILE

@@ -21,6 +21,7 @@
 #include "p_local.h"
 #include "p_setup.h"
 #include "p_saveg.h"
+#include "r_data.h"
 #include "r_things.h"
 #include "r_state.h"
 #include "w_wad.h"
@@ -454,6 +455,243 @@ static void P_NetUnArchivePlayers(void)
 	}
 }
 
+///
+/// Colormaps
+///
+
+static extracolormap_t *net_colormaps = NULL;
+static UINT32 num_net_colormaps = 0;
+static UINT32 num_ffloors = 0; // for loading
+
+// Copypasta from r_data.c AddColormapToList
+// But also check for equality and return the matching index
+static UINT32 CheckAddNetColormapToList(extracolormap_t *extra_colormap)
+{
+	extracolormap_t *exc, *exc_prev;
+	UINT32 i = 0;
+
+	if (!net_colormaps)
+	{
+		net_colormaps = R_CopyColormap(extra_colormap, false);
+		net_colormaps->next = 0;
+		net_colormaps->prev = 0;
+		num_net_colormaps = i+1;
+		return i;
+	}
+
+	for (exc = net_colormaps; exc; exc_prev = exc, exc = exc->next)
+	{
+		if (R_CheckEqualColormaps(exc, extra_colormap, true, true, true))
+			return i;
+		i++;
+	}
+
+	exc_prev->next = R_CopyColormap(extra_colormap, false);
+	extra_colormap->prev = exc_prev;
+	extra_colormap->next = 0;
+
+	num_net_colormaps = i+1;
+	return i;
+}
+
+static extracolormap_t *GetNetColormapFromList(UINT32 index)
+{
+	// For loading, we have to be tricky:
+	// We load the sectors BEFORE knowing the colormap values
+	// So if an index doesn't exist, fill our list with dummy colormaps
+	// until we get the index we want
+	// Then when we load the color data, we set up the dummy colormaps
+
+	extracolormap_t *exc, *last_exc = NULL;
+	UINT32 i = 0;
+
+	if (!net_colormaps) // initialize our list
+		net_colormaps = R_CreateDefaultColormap(false);
+
+	for (exc = net_colormaps; exc; last_exc = exc, exc = exc->next)
+	{
+		if (i++ == index)
+			return exc;
+	}
+
+
+	// LET'S HOPE that index is a sane value, because we create up to [index]
+	// entries in net_colormaps. At this point, we don't know
+	// what the total colormap count is
+	if (index >= numsectors*3 + num_ffloors)
+		// if every sector had a unique colormap change AND a fade color thinker which has two colormap entries
+		// AND every ffloor had a fade FOF thinker with one colormap entry
+		I_Error("Colormap %d from server is too high for sectors %d", index, (UINT32)numsectors);
+
+	// our index doesn't exist, so just make the entry
+	for (; i <= index; i++)
+	{
+		exc = R_CreateDefaultColormap(false);
+		if (last_exc)
+			last_exc->next = exc;
+		exc->prev = last_exc;
+		exc->next = NULL;
+		last_exc = exc;
+	}
+	return exc;
+}
+
+static void ClearNetColormaps(void)
+{
+	// We're actually Z_Freeing each entry here,
+	// so don't call this in P_NetUnArchiveColormaps (where entries will be used in-game)
+	extracolormap_t *exc, *exc_next;
+
+	for (exc = net_colormaps; exc; exc = exc_next)
+	{
+		exc_next = exc->next;
+		Z_Free(exc);
+	}
+	num_net_colormaps = 0;
+	num_ffloors = 0;
+	net_colormaps = NULL;
+}
+
+static void P_NetArchiveColormaps(void)
+{
+	// We save and then we clean up our colormap mess
+	extracolormap_t *exc, *exc_next;
+	UINT32 i = 0;
+	WRITEUINT32(save_p, num_net_colormaps); // save for safety
+
+	for (exc = net_colormaps; i < num_net_colormaps; i++, exc = exc_next)
+	{
+		// We must save num_net_colormaps worth of data
+		// So fill non-existent entries with default.
+		if (!exc)
+			exc = R_CreateDefaultColormap(false);
+
+		WRITEUINT8(save_p, exc->fadestart);
+		WRITEUINT8(save_p, exc->fadeend);
+		WRITEUINT8(save_p, exc->fog);
+
+		WRITEINT32(save_p, exc->rgba);
+		WRITEINT32(save_p, exc->fadergba);
+
+#ifdef EXTRACOLORMAPLUMPS
+		WRITESTRINGN(save_p, exc->lumpname, 9);
+#endif
+
+		exc_next = exc->next;
+		Z_Free(exc); // don't need anymore
+	}
+
+	num_net_colormaps = 0;
+	num_ffloors = 0;
+	net_colormaps = NULL;
+}
+
+static void P_NetUnArchiveColormaps(void)
+{
+	// When we reach this point, we already populated our list with
+	// dummy colormaps. Now that we are loading the color data,
+	// set up the dummies.
+	extracolormap_t *exc, *existing_exc, *exc_next = NULL;
+	UINT32 i = 0;
+
+	num_net_colormaps = READUINT32(save_p);
+
+	for (exc = net_colormaps; i < num_net_colormaps; i++, exc = exc_next)
+	{
+		UINT8 fadestart, fadeend, fog;
+		INT32 rgba, fadergba;
+#ifdef EXTRACOLORMAPLUMPS
+		char lumpname[9];
+#endif
+
+		fadestart = READUINT8(save_p);
+		fadeend = READUINT8(save_p);
+		fog = READUINT8(save_p);
+
+		rgba = READINT32(save_p);
+		fadergba = READINT32(save_p);
+
+#ifdef EXTRACOLORMAPLUMPS
+		READSTRINGN(save_p, lumpname, 9);
+
+		if (lumpname[0])
+		{
+			if (!exc)
+				// no point making a new entry since nothing points to it,
+				// but we needed to read the data so now continue
+				continue;
+
+			exc_next = exc->next; // this gets overwritten during our operations here, so get it now
+			existing_exc = R_ColormapForName(lumpname);
+			*exc = *existing_exc;
+			R_AddColormapToList(exc); // see HACK note below on why we're adding duplicates
+			continue;
+		}
+#endif
+
+		if (!exc)
+			// no point making a new entry since nothing points to it,
+			// but we needed to read the data so now continue
+			continue;
+
+		exc_next = exc->next; // this gets overwritten during our operations here, so get it now
+
+		exc->fadestart = fadestart;
+		exc->fadeend = fadeend;
+		exc->fog = fog;
+
+		exc->rgba = rgba;
+		exc->fadergba = fadergba;
+
+#ifdef EXTRACOLORMAPLUMPS
+		exc->lump = LUMPERROR;
+		exc->lumpname[0] = 0;
+#endif
+
+		existing_exc = R_GetColormapFromListByValues(rgba, fadergba, fadestart, fadeend, fog);
+
+		if (existing_exc)
+			exc->colormap = existing_exc->colormap;
+		else
+			// CONS_Debug(DBG_RENDER, "Creating Colormap: rgba(%d,%d,%d,%d) fadergba(%d,%d,%d,%d)\n",
+			// 	R_GetRgbaR(rgba), R_GetRgbaG(rgba), R_GetRgbaB(rgba), R_GetRgbaA(rgba),
+			//	R_GetRgbaR(fadergba), R_GetRgbaG(fadergba), R_GetRgbaB(fadergba), R_GetRgbaA(fadergba));
+			exc->colormap = R_CreateLightTable(exc);
+
+		// HACK: If this dummy is a duplicate, we're going to add it
+		// to the extra_colormaps list anyway. I think this is faster
+		// than going through every loaded sector and correcting their
+		// colormap address to the pre-existing one, PER net_colormap entry
+		R_AddColormapToList(exc);
+
+		if (i < num_net_colormaps-1 && !exc_next)
+			exc_next = R_CreateDefaultColormap(false);
+	}
+
+	// if we still have a valid net_colormap after iterating up to num_net_colormaps,
+	// some sector had a colormap index higher than num_net_colormaps. We done goofed or $$$ was corrupted.
+	// In any case, add them to the colormap list too so that at least the sectors' colormap
+	// addresses are valid and accounted properly
+	if (exc_next)
+	{
+		existing_exc = R_GetDefaultColormap();
+		for (exc = exc_next; exc; exc = exc->next)
+		{
+			exc->colormap = existing_exc->colormap; // all our dummies are default values
+			R_AddColormapToList(exc);
+		}
+	}
+
+	// Don't need these anymore
+	num_net_colormaps = 0;
+	num_ffloors = 0;
+	net_colormaps = NULL;
+}
+
+///
+/// World Archiving
+///
+
 #define SD_FLOORHT  0x01
 #define SD_CEILHT   0x02
 #define SD_FLOORPIC 0x04
@@ -468,10 +706,14 @@ static void P_NetUnArchivePlayers(void)
 #define SD_FYOFFS    0x02
 #define SD_CXOFFS    0x04
 #define SD_CYOFFS    0x08
-#define SD_TAG       0x10
-#define SD_FLOORANG  0x20
-#define SD_CEILANG   0x40
-#define SD_TAGLIST   0x80
+#define SD_FLOORANG  0x10
+#define SD_CEILANG   0x20
+#define SD_TAG       0x40
+#define SD_DIFF3     0x80
+
+// diff3 flags
+#define SD_TAGLIST   0x01
+#define SD_COLORMAP  0x02
 
 #define LD_FLAG     0x01
 #define LD_SPECIAL  0x02
@@ -494,7 +736,7 @@ static void P_NetUnArchivePlayers(void)
 static void P_NetArchiveWorld(void)
 {
 	size_t i;
-	INT32 statsec = 0, statline = 0;
+	//INT32 statsec = 0, statline = 0;
 	const line_t *li = lines;
 	const side_t *si;
 	UINT8 *put;
@@ -504,7 +746,10 @@ static void P_NetArchiveWorld(void)
 	mapsidedef_t *msd;
 	maplinedef_t *mld;
 	const sector_t *ss = sectors;
-	UINT8 diff, diff2;
+	UINT8 diff, diff2, diff3;
+
+	// initialize colormap vars because paranoia
+	ClearNetColormaps();
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_WORLD);
 	put = save_p;
@@ -531,7 +776,7 @@ static void P_NetArchiveWorld(void)
 
 	for (i = 0; i < numsectors; i++, ss++, ms++)
 	{
-		diff = diff2 = 0;
+		diff = diff2 = diff3 = 0;
 		if (ss->floorheight != SHORT(ms->floorheight)<<FRACBITS)
 			diff |= SD_FLOORHT;
 		if (ss->ceilingheight != SHORT(ms->ceilingheight)<<FRACBITS)
@@ -565,7 +810,9 @@ static void P_NetArchiveWorld(void)
 		if (ss->tag != SHORT(ms->tag))
 			diff2 |= SD_TAG;
 		if (ss->nexttag != ss->spawn_nexttag || ss->firsttag != ss->spawn_firsttag)
-			diff2 |= SD_TAGLIST;
+			diff3 |= SD_TAGLIST;
+		if (ss->extra_colormap != ss->spawn_extra_colormap)
+			diff3 |= SD_COLORMAP;
 
 		// Check if any of the sector's FOFs differ from how they spawned
 		if (ss->ffloors)
@@ -582,17 +829,22 @@ static void P_NetArchiveWorld(void)
 			}
 		}
 
+		if (diff3)
+			diff2 |= SD_DIFF3;
+
 		if (diff2)
 			diff |= SD_DIFF2;
 
 		if (diff)
 		{
-			statsec++;
+			//statsec++;
 
 			WRITEUINT16(put, i);
 			WRITEUINT8(put, diff);
 			if (diff & SD_DIFF2)
 				WRITEUINT8(put, diff2);
+			if (diff2 & SD_DIFF3)
+				WRITEUINT8(put, diff3);
 			if (diff & SD_FLOORHT)
 				WRITEFIXED(put, ss->floorheight);
 			if (diff & SD_CEILHT)
@@ -613,17 +865,21 @@ static void P_NetArchiveWorld(void)
 				WRITEFIXED(put, ss->ceiling_xoffs);
 			if (diff2 & SD_CYOFFS)
 				WRITEFIXED(put, ss->ceiling_yoffs);
-			if (diff2 & SD_TAG) // save only the tag
-				WRITEINT16(put, ss->tag);
 			if (diff2 & SD_FLOORANG)
 				WRITEANGLE(put, ss->floorpic_angle);
 			if (diff2 & SD_CEILANG)
 				WRITEANGLE(put, ss->ceilingpic_angle);
-			if (diff2 & SD_TAGLIST) // save both firsttag and nexttag
+			if (diff2 & SD_TAG) // save only the tag
+				WRITEINT16(put, ss->tag);
+			if (diff3 & SD_TAGLIST) // save both firsttag and nexttag
 			{ // either of these could be changed even if tag isn't
 				WRITEINT32(put, ss->firsttag);
 				WRITEINT32(put, ss->nexttag);
 			}
+
+			if (diff3 & SD_COLORMAP)
+				WRITEUINT32(put, CheckAddNetColormapToList(ss->extra_colormap));
+					// returns existing index if already added, or appends to net_colormaps and returns new index
 
 			// Special case: save the stats of all modified ffloors along with their ffloor "number"s
 			// we don't bother with ffloors that haven't changed, that would just add to savegame even more than is really needed
@@ -661,7 +917,7 @@ static void P_NetArchiveWorld(void)
 	// do lines
 	for (i = 0; i < numlines; i++, mld++, li++)
 	{
-		diff = diff2 = 0;
+		diff = diff2 = diff3 = 0;
 
 		if (li->special != SHORT(mld->special))
 			diff |= LD_SPECIAL;
@@ -705,7 +961,7 @@ static void P_NetArchiveWorld(void)
 
 		if (diff)
 		{
-			statline++;
+			//statline++;
 			WRITEINT16(put, i);
 			WRITEUINT8(put, diff);
 			if (diff & LD_DIFF2)
@@ -753,10 +1009,21 @@ static void P_NetUnArchiveWorld(void)
 	line_t *li;
 	side_t *si;
 	UINT8 *get;
-	UINT8 diff, diff2;
+	UINT8 diff, diff2, diff3;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_WORLD)
 		I_Error("Bad $$$.sav at archive block World");
+
+	// initialize colormap vars because paranoia
+	ClearNetColormaps();
+
+	// count the level's ffloors so that colormap loading can have an upper limit
+	for (i = 0; i < numsectors; i++)
+	{
+		ffloor_t *rover;
+		for (rover = sectors[i].ffloors; rover; rover = rover->next)
+			num_ffloors++;
+	}
 
 	get = save_p;
 
@@ -775,6 +1042,10 @@ static void P_NetUnArchiveWorld(void)
 			diff2 = READUINT8(get);
 		else
 			diff2 = 0;
+		if (diff2 & SD_DIFF3)
+			diff3 = READUINT8(get);
+		else
+			diff3 = 0;
 
 		if (diff & SD_FLOORHT)
 			sectors[i].floorheight = READFIXED(get);
@@ -803,17 +1074,20 @@ static void P_NetUnArchiveWorld(void)
 			sectors[i].ceiling_xoffs = READFIXED(get);
 		if (diff2 & SD_CYOFFS)
 			sectors[i].ceiling_yoffs = READFIXED(get);
-		if (diff2 & SD_TAG)
-			sectors[i].tag = READINT16(get); // DON'T use P_ChangeSectorTag
-		if (diff2 & SD_TAGLIST)
-		{
-			sectors[i].firsttag = READINT32(get);
-			sectors[i].nexttag = READINT32(get);
-		}
 		if (diff2 & SD_FLOORANG)
 			sectors[i].floorpic_angle  = READANGLE(get);
 		if (diff2 & SD_CEILANG)
 			sectors[i].ceilingpic_angle = READANGLE(get);
+		if (diff2 & SD_TAG)
+			sectors[i].tag = READINT16(get); // DON'T use P_ChangeSectorTag
+		if (diff3 & SD_TAGLIST)
+		{
+			sectors[i].firsttag = READINT32(get);
+			sectors[i].nexttag = READINT32(get);
+		}
+
+		if (diff3 & SD_COLORMAP)
+			sectors[i].extra_colormap = GetNetColormapFromList(READUINT32(get));
 
 		if (diff & SD_FFLOORS)
 		{
@@ -872,6 +1146,9 @@ static void P_NetUnArchiveWorld(void)
 			diff2 = READUINT8(get);
 		else
 			diff2 = 0;
+
+		diff3 = 0;
+
 		if (diff & LD_FLAG)
 			li->flags = READINT16(get);
 		if (diff & LD_SPECIAL)
@@ -988,6 +1265,7 @@ typedef enum
 	tc_noenemies,
 	tc_eachtime,
 	tc_disappear,
+	tc_fadecolormap,
 	tc_polyrotate, // haleyjd 03/26/06: polyobjects
 	tc_polymove,
 	tc_polywaypoint,
@@ -1543,7 +1821,22 @@ static void SaveDisappearThinker(const thinker_t *th, const UINT8 type)
 	WRITEINT32(save_p, ht->exists);
 }
 
-
+//
+// SaveFadeColormapThinker
+//
+// Saves a fadecolormap_t thinker
+//
+static void SaveFadeColormapThinker(const thinker_t *th, const UINT8 type)
+{
+	const fadecolormap_t *ht = (const void *)th;
+	WRITEUINT8(save_p, type);
+	WRITEUINT32(save_p, SaveSector(ht->sector));
+	WRITEUINT32(save_p, CheckAddNetColormapToList(ht->source_exc));
+	WRITEUINT32(save_p, CheckAddNetColormapToList(ht->dest_exc));
+	WRITEUINT8(save_p, (UINT8)ht->ticbased);
+	WRITEINT32(save_p, ht->duration);
+	WRITEINT32(save_p, ht->timer);
+}
 
 //
 // SavePolyrotateThinker
@@ -1831,6 +2124,11 @@ static void P_NetArchiveThinkers(void)
 		else if (th->function == (actionf_p1)T_Disappear)
 		{
 			SaveDisappearThinker(th, tc_disappear);
+			continue;
+		}
+		else if (th->function == (actionf_p1)T_FadeColormap)
+		{
+			SaveFadeColormapThinker(th, tc_fadecolormap);
 			continue;
 		}
 		else if (th->function == (actionf_p1)T_PolyObjRotate)
@@ -2224,6 +2522,10 @@ static void LoadCeilingThinker(actionf_p1 thinker)
 	if (ht->sector)
 		ht->sector->ceilingdata = ht;
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	if(ht->sector)
+		R_CreateInterpolator_SectorPlane(&ht->thinker, ht->sector, true);
 }
 
 //
@@ -2248,6 +2550,9 @@ static void LoadFloormoveThinker(actionf_p1 thinker)
 	if (ht->sector)
 		ht->sector->floordata = ht;
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&ht->thinker, ht->sector, false);
 }
 
 //
@@ -2359,6 +2664,10 @@ static void LoadElevatorThinker(actionf_p1 thinker, UINT8 floorOrCeiling)
 	}
 
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&ht->thinker, ht->sector, false);
+	R_CreateInterpolator_SectorPlane(&ht->thinker, ht->sector, true);
 }
 
 //
@@ -2381,6 +2690,22 @@ static void LoadScrollThinker(actionf_p1 thinker)
 	ht->exclusive = READINT32(save_p);
 	ht->type = READUINT8(save_p);
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	switch (ht->type)
+	{
+		case sc_side:
+			R_CreateInterpolator_SideScroll(&ht->thinker, &sides[ht->affectee]);
+			break;
+		case sc_floor:
+			R_CreateInterpolator_SectorScroll(&ht->thinker, &sectors[ht->affectee], false);
+			break;
+		case sc_ceiling:
+			R_CreateInterpolator_SectorScroll(&ht->thinker, &sectors[ht->affectee], true);
+			break;
+		default:
+			break;
+	}
 }
 
 //
@@ -2498,6 +2823,25 @@ static inline void LoadDisappearThinker(actionf_p1 thinker)
 	P_AddThinker(&ht->thinker);
 }
 
+//
+// LoadFadeColormapThinker
+//
+// Loads a fadecolormap_t from a save game
+//
+static inline void LoadFadeColormapThinker(actionf_p1 thinker)
+{
+	fadecolormap_t *ht = Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
+	ht->thinker.function = thinker;
+	ht->sector = LoadSector(READUINT32(save_p));
+	ht->source_exc = GetNetColormapFromList(READUINT32(save_p));
+	ht->dest_exc = GetNetColormapFromList(READUINT32(save_p));
+	ht->ticbased = (boolean)READUINT8(save_p);
+	ht->duration = READINT32(save_p);
+	ht->timer = READINT32(save_p);
+	if (ht->sector)
+		ht->sector->fadecolormapdata = ht;
+	P_AddThinker(&ht->thinker);
+}
 
 
 //
@@ -2513,6 +2857,17 @@ static inline void LoadPolyrotatetThinker(actionf_p1 thinker)
 	ht->speed = READINT32(save_p);
 	ht->distance = READINT32(save_p);
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	polyobj_t *po;
+
+	if (!(po = Polyobj_GetForNum(ht->polyObjNum)))
+	{
+		CONS_Debug(DBG_POLYOBJ, "EV_DoPolyObjRotate: bad polyobj %d\n", ht->polyObjNum);
+		return;
+	}
+
+	R_CreateInterpolator_Polyobj(&ht->thinker, po);
 }
 
 //
@@ -2531,6 +2886,17 @@ static void LoadPolymoveThinker(actionf_p1 thinker)
 	ht->distance = READINT32(save_p);
 	ht->angle = READANGLE(save_p);
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	polyobj_t *po;
+
+	if (!(po = Polyobj_GetForNum(ht->polyObjNum)))
+	{
+		CONS_Debug(DBG_POLYOBJ, "EV_DoPolyObjRotate: bad polyobj %d\n", ht->polyObjNum);
+		return;
+	}
+
+	R_CreateInterpolator_Polyobj(&ht->thinker, po);
 }
 
 //
@@ -2555,6 +2921,36 @@ static inline void LoadPolywaypointThinker(actionf_p1 thinker)
 	ht->diffy = READFIXED(save_p);
 	ht->diffz = READFIXED(save_p);
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	polyobj_t *po;
+	polyobj_t *oldpo;
+	INT32 start;
+
+	if (!(po = Polyobj_GetForNum(ht->polyObjNum)))
+	{
+		CONS_Debug(DBG_POLYOBJ, "EV_DoPolyObjRotate: bad polyobj %d\n", ht->polyObjNum);
+		return;
+	}
+
+	R_CreateInterpolator_Polyobj(&ht->thinker, po);
+	// T_PolyObjWaypoint is the only polyobject movement
+	// that can adjust z, so we add these ones too.
+	R_CreateInterpolator_SectorPlane(&ht->thinker, po->lines[0]->backsector, false);
+	R_CreateInterpolator_SectorPlane(&ht->thinker, po->lines[0]->backsector, true);
+
+	// Most other polyobject functions handle children by recursively
+	// giving each child another thinker. T_PolyObjWaypoint handles
+	// it manually though, which means we need to manually give them
+	// interpolation here instead.
+	start = 0;
+	oldpo = po;
+	while ((po = Polyobj_GetChild(oldpo, &start)))
+	{
+		R_CreateInterpolator_Polyobj(&ht->thinker, po);
+		R_CreateInterpolator_SectorPlane(&ht->thinker, po->lines[0]->backsector, false);
+		R_CreateInterpolator_SectorPlane(&ht->thinker, po->lines[0]->backsector, true);
+	}
 }
 
 //
@@ -2580,6 +2976,17 @@ static inline void LoadPolyslidedoorThinker(actionf_p1 thinker)
 	ht->momy = READFIXED(save_p);
 	ht->closing = READUINT8(save_p);
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	polyobj_t *po;
+
+	if (!(po = Polyobj_GetForNum(ht->polyObjNum)))
+	{
+		CONS_Debug(DBG_POLYOBJ, "EV_DoPolyObjRotate: bad polyobj %d\n", ht->polyObjNum);
+		return;
+	}
+
+	R_CreateInterpolator_Polyobj(&ht->thinker, po);
 }
 
 //
@@ -2600,6 +3007,17 @@ static inline void LoadPolyswingdoorThinker(actionf_p1 thinker)
 	ht->distance = READINT32(save_p);
 	ht->closing = READUINT8(save_p);
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	polyobj_t *po;
+
+	if (!(po = Polyobj_GetForNum(ht->polyObjNum)))
+	{
+		CONS_Debug(DBG_POLYOBJ, "EV_DoPolyObjRotate: bad polyobj %d\n", ht->polyObjNum);
+		return;
+	}
+
+	R_CreateInterpolator_Polyobj(&ht->thinker, po);
 }
 
 //
@@ -2617,6 +3035,17 @@ static inline void LoadPolydisplaceThinker(actionf_p1 thinker)
 	ht->dy = READFIXED(save_p);
 	ht->oldHeights = READFIXED(save_p);
 	P_AddThinker(&ht->thinker);
+
+	// interpolation
+	polyobj_t *po;
+
+		if (!(po = Polyobj_GetForNum(ht->polyObjNum)))
+	{
+		CONS_Debug(DBG_POLYOBJ, "EV_DoPolyObjRotate: bad polyobj %d\n", ht->polyObjNum);
+		return;
+	}
+
+	R_CreateInterpolator_Polyobj(&ht->thinker, po);
 }
 
 /*
@@ -2671,7 +3100,7 @@ static void P_NetUnArchiveThinkers(void)
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
 	{
-		sectors[i].floordata = sectors[i].ceilingdata = sectors[i].lightingdata = NULL;
+		sectors[i].floordata = sectors[i].ceilingdata = sectors[i].lightingdata = sectors[i].fadecolormapdata = NULL;
 	}
 
 	// read in saved thinkers
@@ -2791,6 +3220,11 @@ static void P_NetUnArchiveThinkers(void)
 			case tc_disappear:
 				LoadDisappearThinker((actionf_p1)T_Disappear);
 				break;
+
+			case tc_fadecolormap:
+				LoadFadeColormapThinker((actionf_p1)T_FadeColormap);
+				break;
+
 			case tc_polyrotate:
 				LoadPolyrotatetThinker((actionf_p1)T_PolyObjRotate);
 				break;
@@ -3153,10 +3587,10 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 	if (mapoverride != 0)
 	{
 		gamemap = mapoverride;
-		gamecomplete = true;
+		gamecomplete = 1;
 	}
 	else
-		gamecomplete = false;
+		gamecomplete = 0;
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
@@ -3370,6 +3804,7 @@ void P_SaveNetGame(boolean resending)
 		P_ArchivePolyObjects();
 		P_NetArchiveThinkers();
 		P_NetArchiveSpecials();
+		P_NetArchiveColormaps();
 	}
 	LUA_Archive();
 
@@ -3408,6 +3843,7 @@ boolean P_LoadNetGame(boolean reloading)
 		P_UnArchivePolyObjects();
 		P_NetUnArchiveThinkers();
 		P_NetUnArchiveSpecials();
+		P_NetUnArchiveColormaps();
 		P_RelinkPointers();
 		P_FinishMobjs();
 	}

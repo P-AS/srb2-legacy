@@ -376,6 +376,10 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 			M_Drawer(); // menu is drawn even on top of wipes
 
 		I_FinishUpdate(); // page flip or blit buffer
+
+		if (moviemode)
+			M_SaveFrame();
+
 		NetKeepAlive(); // Update the network so we don't cause timeouts
 	}
 	WipeInAction = false;

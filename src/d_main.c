@@ -15,7 +15,7 @@
 ///        plus functions to parse command line parameters, configure game
 ///        parameters, and call the startup functions.
 
-#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif
@@ -24,21 +24,15 @@
 #include <unistd.h> // for getcwd
 #endif
 
-#ifdef PC_DOS
-#include <stdio.h> // for snprintf
-int	snprintf(char *str, size_t n, const char *fmt, ...);
-//int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
-#endif
-
 #ifdef _WIN32
 #include <direct.h>
 #include <malloc.h>
 #endif
 
-#if !defined (UNDER_CE)
 #include <time.h>
-#elif defined (_XBOX)
-#define NO_TIME
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h> // emscripten_set_main_loop()
 #endif
 
 #include "doomdef.h"
@@ -76,9 +70,10 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
 #include "keys.h"
-#include "filesrch.h" // refreshdirmenu, mainwadstally
+#include "filesrch.h" // refreshdirmenu
 #include "r_fps.h"
 #include "m_perfstats.h"
+#include "m_random.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -133,14 +128,9 @@ INT32 postimgparam2;
 // These variables are only true if
 // whether the respective sound system is disabled
 // or they're init'ed, but the player just toggled them
-#ifdef _XBOX
-boolean midi_disabled = true, sound_disabled = true;
-boolean digital_disabled = true;
-#else
 boolean midi_disabled = false;
 boolean sound_disabled = false;
 boolean digital_disabled = false;
-#endif
 
 boolean advancedemo;
 #ifdef DEBUGFILE
@@ -149,13 +139,8 @@ INT32 debugload = 0;
 
 char savegamename[256];
 
-#ifdef _arch_dreamcast
-char srb2home[256] = "/cd";
-char srb2path[256] = "/cd";
-#else
 char srb2home[256] = ".";
 char srb2path[256] = ".";
-#endif
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
@@ -245,7 +230,7 @@ static void D_Display(void)
 	if (nodrawers)
 		return; // for comparative timing/profiling
 
-	// Jimita: Switching renderers works by checking
+	// Lactozilla: Switching renderers works by checking
 	// if the game has to do it right when the frame
 	// needs to render. If so, five things will happen:
 	// 1. Interface functions will be called so
@@ -290,7 +275,7 @@ static void D_Display(void)
 		forcerefresh = true; // force background redraw
 	}
 
-	// Jimita
+	// Lactozilla: Renderer switching
 	D_CheckRendererState();
 
 	// draw buffered stuff to screen
@@ -580,7 +565,7 @@ static void D_Display(void)
 	needpatchrecache = false;
 }
 
-// Jimita: Check the renderer's state
+// Lactozilla: Check the renderer's state
 // after a possible renderer switch.
 void D_CheckRendererState(void)
 {
@@ -602,15 +587,17 @@ void D_CheckRendererState(void)
 
 tic_t rendergametic;
 
+static void D_RunFrame(void);
+static tic_t oldentertics = 0;
+static tic_t entertic = 0, realtics = 0, rendertimeout = INFTICS;
+static double deltatics = 0.0;
+static double deltasecs = 0.0;
+
+static boolean interp = false;
+static boolean doDisplay = false;
+
 void D_SRB2Loop(void)
 {
-	tic_t entertic = 0, oldentertics = 0, realtics = 0, rendertimeout = INFTICS;
-	double deltatics = 0.0;
-	double deltasecs = 0.0;
-
-	boolean interp = false;
-	boolean doDisplay = false;
-
 	if (dedicated)
 		server = true;
 
@@ -624,14 +611,12 @@ void D_SRB2Loop(void)
 	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
-
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
 	con_startup = false;
 
 	// make sure to do a d_display to init mode _before_ load a level
 	SCR_SetMode(); // change video mode
 	SCR_Recalc();
-
 
 	// Check and print which version is executed.
 	// Use this as the border between setup and the main game loop being entered.
@@ -654,7 +639,37 @@ void D_SRB2Loop(void)
 	if (gamestate != GS_TITLESCREEN)
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(W_GetNumForName("CONSBACK"), PU_CACHE));
 
+#if defined(__EMSCRIPTEN__)
+	emscripten_set_main_loop(D_RunFrame, 0, 1);
+#else
 	for (;;)
+	{
+		D_RunFrame();
+	}
+#endif
+}
+
+static boolean D_LockFrame = false;
+
+#ifdef __EMSCRIPTEN__
+int EMSCRIPTEN_KEEPALIVE pause_loop(void)
+{
+	D_LockFrame = true;
+	emscripten_pause_main_loop();
+	return 0;
+}
+
+int EMSCRIPTEN_KEEPALIVE resume_loop(void)
+{
+	D_LockFrame = false;
+	emscripten_resume_main_loop();
+	return 0;
+}
+#endif
+
+static void D_RunFrame(void)
+{
+	if (!D_LockFrame)
 	{
 		// capbudget is the minimum precise_t duration of a single loop iteration
 		precise_t capbudget;
@@ -667,9 +682,7 @@ void D_SRB2Loop(void)
 			capbudget = (precise_t) budget;
 		}
 
-
 		I_UpdateTime(cv_timescale.value);
-
 
 		if (lastwipetic)
 		{
@@ -681,7 +694,6 @@ void D_SRB2Loop(void)
 		entertic = I_GetTime();
 		realtics = entertic - oldentertics;
 		oldentertics = entertic;
-
 
 		if (demoplayback && gamestate == GS_LEVEL)
 		{
@@ -794,7 +806,6 @@ void D_SRB2Loop(void)
 
 		LUA_Step();
 
-
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
 		if (!singletics)
@@ -814,12 +825,15 @@ void D_SRB2Loop(void)
 		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
 		deltatics = deltasecs * NEWTICRATE;
 
+#ifndef __EMSCRIPTEN__
 		// Only take screenshots after drawing.
 		if (moviemode)
 			M_SaveFrame();
 		if (takescreenshot)
 			M_DoScreenShot();
+#endif
 	}
+	return;
 }
 
 //
@@ -899,6 +913,7 @@ void D_StartTitle(void)
 	// In case someone exits out at the same time they start a time attack run,
 	// reset modeattacking
 	modeattacking = ATTACKING_NONE;
+	marathonmode = 0;
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
@@ -960,12 +975,15 @@ static inline void D_CleanFile(void)
 // Identify the SRB2 version, and IWAD file to use.
 // ==========================================================================
 
+boolean legacypk3_loaded;
+
 static void IdentifyVersion(void)
 {
 	char *srb2wad1, *srb2wad2;
 	const char *srb2waddir = NULL;
+	legacypk3_loaded = false;
 
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+#if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	// change to the directory where 'srb2.srb' is found
 	srb2waddir = I_LocateWad();
 #endif
@@ -977,17 +995,11 @@ static void IdentifyVersion(void)
 	}
 	else
 	{
-#if !defined(_WIN32_WCE) && !defined(_PS3)
 		if (getcwd(srb2path, 256) != NULL)
 			srb2waddir = srb2path;
 		else
-#endif
 		{
-#ifdef _arch_dreamcast
-			srb2waddir = "/cd";
-#else
 			srb2waddir = ".";
-#endif
 		}
 	}
 
@@ -1040,6 +1052,12 @@ static void IdentifyVersion(void)
 	D_AddFile(va(pandf,srb2waddir,"patch.dta"));
 #endif
 
+	if (FIL_ReadFileOK(va(pandf,srb2waddir,"legacy.pk3")))
+	{
+		D_AddFile(va(pandf,srb2waddir,"legacy.pk3"));
+		legacypk3_loaded = true;
+	}
+
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 	{
 #define MUSICTEST(str) \
@@ -1052,15 +1070,37 @@ static void IdentifyVersion(void)
 				I_Error("File "str" has been modified with non-music/sound lumps"); \
 		}
 
-#if defined (DC) && 0
-		MUSICTEST("music_dc.dta")
-#else
 		MUSICTEST("music.dta")
-#endif
 	}
 #endif
 }
 
+//
+// Center the title string, then add the date and time of compilation.
+//
+static inline void D_MakeTitleString(char *s)
+{
+	char temp[82];
+	char *t;
+	const char *u;
+	INT32 i;
+
+	for (i = 0, t = temp; i < 82; i++)
+		*t++=' ';
+
+	for (t = temp + (80-strlen(s))/2, u = s; *u != '\0' ;)
+		*t++ = *u++;
+
+	u = compdate;
+	for (t = temp + 1, i = 11; i-- ;)
+		*t++ = *u++;
+	u = comptime;
+	for (t = temp + 71, i = 8; i-- ;)
+		*t++ = *u++;
+
+	temp[80] = '\0';
+	strcpy(s, temp);
+}
 
 //
 // D_SRB2Main
@@ -1117,11 +1157,11 @@ void D_SRB2Main(void)
 	// identify the main IWAD file to use
 	IdentifyVersion();
 
-#if !defined (_WIN32_WCE) && !defined(NOTERMIOS)
+#if !defined(NOTERMIOS)
 	setbuf(stdout, NULL); // non-buffered output
 #endif
 
-#if defined (_WIN32_WCE) //|| defined (_DEBUG) || defined (GP2X)
+#if 0 //defined (_DEBUG)
 	devparm = M_CheckParm("-nodebug") == 0;
 #else
 	devparm = M_CheckParm("-debug") != 0;
@@ -1132,7 +1172,6 @@ void D_SRB2Main(void)
 	dedicated = M_CheckParm("-dedicated") != 0;
 #endif
 
-
 	if (devparm)
 		CONS_Printf(M_GetText("Development mode ON.\n"));
 
@@ -1141,16 +1180,14 @@ void D_SRB2Main(void)
 
 	{
 		const char *userhome = D_Home(); //Alam: path to home
+#if defined(__ANDROID__)
+		strlcpy(srb2path, I_SharedStorageLocation(), sizeof(srb2path));
+#endif
 
 		if (!userhome)
 		{
-#if ((defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)) && !defined (__CYGWIN__) && !defined (DC) && !defined (PSP) && !defined(GP2X)
+#if (defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)
 			I_Error("Please set $HOME to your home directory\n");
-#elif defined (_WIN32_WCE) && 0
-			if (dedicated)
-				snprintf(configfile, sizeof configfile, "/Storage Card/SRB2DEMO/d"CONFIGFILENAME);
-			else
-				snprintf(configfile, sizeof configfile, "/Storage Card/SRB2DEMO/"CONFIGFILENAME);
 #else
 			if (dedicated)
 				snprintf(configfile, sizeof configfile, "d"CONFIGFILENAME);
@@ -1161,8 +1198,14 @@ void D_SRB2Main(void)
 		else
 		{
 			// use user specific config file
+			if (M_CheckParm("-workdir") && M_IsNextParm())
+				snprintf(srb2home, sizeof srb2home, "%s", M_GetNextParm());
+			else
 #ifdef DEFAULTDIR
-			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
+				snprintf(srb2home, sizeof srb2home, "%s", I_ConfigDir());
+#else
+				snprintf(srb2home, sizeof srb2home, "%s", userhome);
+#endif
 			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
 			if (dedicated)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, srb2home);
@@ -1173,35 +1216,45 @@ void D_SRB2Main(void)
 			strcatbf(savegamename, srb2home, PATHSEP);
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
-#else
-			snprintf(srb2home, sizeof srb2home, "%s", userhome);
-			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
-			if (dedicated)
-				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, userhome);
-			else
-				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, userhome);
-
-			// can't use sprintf since there is %u in savegamename
-			strcatbf(savegamename, userhome, PATHSEP);
-
-			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
-#endif
 		}
 
 		configfile[sizeof configfile - 1] = '\0';
 
-#ifdef _arch_dreamcast
-	strcpy(downloaddir, "/ram"); // the dreamcast's TMP
-#endif
 	}
 
+	// make sure workdir exists
+	I_mkdir(srb2home, 0755);
 
 	// Create addons dir
+	// But remove it first on Emscripten
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
+#ifdef __EMSCRIPTEN__
+	EM_ASM(
+	function force_rmdir(path) {
+		FS.readdir(path).forEach(function(f) {
+		if (f === '.' || f === '..') return;
+
+		fpath = path + '/' + f;
+
+		if (FS.analyzePath(fpath).object.isFolder) {
+			force_rmdir(fpath);
+			FS.rmdir(fpath);
+		} else {
+			FS.unlink(fpath);
+		}
+  	})
+	}
+	if (FS.analyzePath('/home/web_user/.srb2_21/addons').exists) force_rmdir('/home/web_user/.srb2_21/addons');
+	);
+#endif
 	I_mkdir(addonsdir, 0755);
 
-	// rand() needs seeded regardless of password
-	srand((unsigned int)time(NULL));
+	// seed M_Random because it is necessary; seed P_Random for scripts that
+	// might want to use random numbers immediately at start
+	if (!M_RandomSeedFromOS())
+		M_RandomSeed((UINT32)time(NULL)); // less good but serviceable
+
+	P_SetRandSeed(M_RandomizedSeed());
 
 	if (M_CheckParm("-password") && M_IsNextParm())
 		D_SetPassword(M_GetNextParm());
@@ -1300,7 +1353,10 @@ void D_SRB2Main(void)
 #ifdef USE_PATCH_DTA
 	W_VerifyFileMD5(mainwads++, ASSET_HASH_PATCH_DTA); // patch.dta
 #endif
-	// don't check music.dta because people like to modify it, and it doesn't matter if they do
+	if(legacypk3_loaded)
+		W_VerifyFileMD5(mainwads++, ASSET_HASH_LEGACY_PK3); // legacy.pk3
+
+	// don't check music.dta because peowple like to modify it, and it doesn't matter if they do
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 	//mainwads++; // music.dta does not increment mainwads (see <= 2.1.21)
 
@@ -1314,10 +1370,11 @@ void D_SRB2Main(void)
 	mainwads++; // patch.dta
 #endif
 	//mainwads++; // music.dta does not increment mainwads (see <= 2.1.21)
+	if(legacypk3_loaded)
+		mainwads++;
 
 #endif //ifndef DEVELOP
 
-	mainwadstally = packetsizetally;
 
 	cht_Init();
 
@@ -1343,12 +1400,7 @@ void D_SRB2Main(void)
 	HU_Init();
 
 	COM_Init();
-	// libogc has a CON_Init function, we must rename SRB2's CON_Init in WII/libogc
-#ifndef _WII
 	CON_Init();
-#else
-	CON_InitWii();
-#endif
 
 	D_RegisterServerCommands();
 	D_RegisterClientCommands(); // be sure that this is called before D_CheckNetGame
@@ -1362,14 +1414,14 @@ void D_SRB2Main(void)
 
 	G_LoadGameData();
 
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+#if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
 #endif
 
 	// set user default mode or mode set at cmdline
 	SCR_CheckDefaultMode();
 
-	// Jimita: Does the render mode need to change?
+	// Lactozilla: Does the render mode need to change?
 	if ((setrenderneeded != 0) && (setrenderneeded != rendermode))
 	{
 		CONS_Printf(M_GetText("Switching the renderer...\n"));
@@ -1595,29 +1647,23 @@ const char *D_Home(void)
 {
 	const char *userhome = NULL;
 
-#ifdef ANDROID
-	return "/data/data/org.srb2/";
-#endif
-#ifdef _arch_dreamcast
-	char VMUHOME[] = "HOME=/vmu/a1";
-	putenv(VMUHOME); //don't use I_PutEnv
-#endif
-
 	if (M_CheckParm("-home") && M_IsNextParm())
 		userhome = M_GetNextParm();
 	else
+#ifdef ANDROID
+	if (I_SharedStorageLocation())
+		userhome = I_SharedStorageLocation();
+	else
+#endif
 	{
-#if defined (GP2X)
-		usehome = false; //let use the CWD
-		return NULL;
-#elif !((defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)) && !defined (__APPLE__) && !defined(_WIN32_WCE)
+#if !(defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON))
 		if (FIL_FileOK(CONFIGFILENAME))
 			usehome = false; // Let's NOT use home
 		else
 #endif
 			userhome = I_GetEnv("HOME"); //Alam: my new HOME for srb2
 	}
-#if defined (_WIN32) && !defined(_WIN32_WCE) //Alam: only Win32 have APPDATA and USERPROFILE
+#ifdef _WIN32 //Alam: only Win32 have APPDATA and USERPROFILE
 	if (!userhome && usehome) //Alam: Still not?
 	{
 		char *testhome = NULL;

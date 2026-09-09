@@ -11,21 +11,14 @@
 /// \brief Transfer a file using HSendPacket.
 
 #include <stdio.h>
-#ifndef _WIN32_WCE
-#ifdef __OS2__
-#include <sys/types.h>
-#endif // __OS2__
 #include <sys/stat.h>
-#endif
 
-#if !defined (UNDER_CE)
 #include <time.h>
-#endif
 
-#if ((defined (_WIN32) && !defined (_WIN32_WCE)) || defined (__DJGPP__)) && !defined (_XBOX)
+#ifdef _WIN32
 #include <io.h>
 #include <direct.h>
-#elif !defined (_WIN32_WCE) && !(defined (_XBOX) && !defined (__GNUC__))
+#else
 #include <sys/types.h>
 #include <dirent.h>
 #include <utime.h>
@@ -34,12 +27,8 @@
 #ifdef __GNUC__
 #include <unistd.h>
 #include <limits.h>
-#elif defined (_WIN32) && !defined (_WIN32_WCE)
+#elif defined (_WIN32)
 #include <sys/utime.h>
-#endif
-#ifdef __DJGPP__
-#include <dir.h>
-#include <utime.h>
 #endif
 
 #include "doomdef.h"
@@ -107,31 +96,53 @@ luafiletransfer_t *luafiletransfers = NULL;
 boolean waitingforluafiletransfer = false;
 char luafiledir[256 + 16] = "luafiles";
 
+
 /** Fills a serverinfo packet with information about wad files loaded.
   *
   * \todo Give this function a better name since it is in global scope.
   * Used to have size limiting built in - now handed via W_LoadWadFile in w_wad.c
   *
   */
-UINT8 *PutFileNeeded(void)
+UINT8 *PutFileNeeded(UINT16 firstfile)
 {
-	size_t i, count = 0;
-	UINT8 *p = netbuffer->u.serverinfo.fileneeded;
+	size_t i;
+	UINT8 count = 0;
+	UINT8 *p_start = netbuffer->packettype == PT_MOREFILESNEEDED ? netbuffer->u.filesneededcfg.files : netbuffer->u.serverinfo.fileneeded;
+	UINT8 *p = p_start;
 	char wadfilename[MAX_WADPATH] = "";
 	UINT8 filestatus;
 
-	for (i = 0; i < numwadfiles; i++)
+	for (i = mainwads+1; i < numwadfiles; i++) //mainwads+1, otherwise we start on the first mainwad
 	{
 		// If it has only music/sound lumps, don't put it in the list
 		if (!wadfiles[i]->important)
 			continue;
+
+		if (firstfile)
+		{ // Skip files until we reach the first file.
+			firstfile--;
+			continue;
+		}
+
+		nameonly(strcpy(wadfilename, wadfiles[i]->filename));
+
+		// Look below at the WRITE macros to understand what these numbers mean.
+		if (p + 1 + 4 + min(strlen(wadfilename) + 1, MAX_WADPATH) + 16 > p_start + MAXFILENEEDED)
+		{
+			// Too many files to send all at once
+			if (netbuffer->packettype == PT_MOREFILESNEEDED)
+				netbuffer->u.filesneededcfg.more = 1;
+			else
+				netbuffer->u.serverinfo.flags |= SV_LOTSOFADDONS;
+			break;
+		}
 
 		filestatus = 1; // Importance - not really used any more, holds 1 by default for backwards compat with MS
 
 		// Store in the upper four bits
 		if (!cv_downloading.value)
 			filestatus += (2 << 4); // Won't send
-		else if (cv_maxsend.value == -1 || (wadfiles[i]->filesize <= (UINT32)cv_maxsend.value * 1024))
+		else if ((cv_maxsend.value == -1 ||  wadfiles[i]->filesize <= (UINT32)cv_maxsend.value * 1024))
 			filestatus += (1 << 4); // Will send if requested
 		// else
 			// filestatus += (0 << 4); -- Won't send, too big
@@ -140,39 +151,41 @@ UINT8 *PutFileNeeded(void)
 
 		count++;
 		WRITEUINT32(p, wadfiles[i]->filesize);
-		nameonly(strcpy(wadfilename, wadfiles[i]->filename));
 		WRITESTRINGN(p, wadfilename, MAX_WADPATH);
 		WRITEMEM(p, wadfiles[i]->md5sum, 16);
 	}
-	netbuffer->u.serverinfo.fileneedednum = (UINT8)count;
+	if (netbuffer->packettype == PT_MOREFILESNEEDED)
+		netbuffer->u.filesneededcfg.num = count;
+	else
+		netbuffer->u.serverinfo.fileneedednum = count;
 
 	return p;
 }
 
+
 /** Parses the serverinfo packet and fills the fileneeded table on client
   *
-  * \param fileneedednum_parm The number of files needed to join the server
+  * \param fileneedednum_parm The number of files (sent in this page) needed to join the server
   * \param fileneededstr The memory block containing the list of needed files
-  *
+  * \param firstfile The first file index to read from
   */
-void D_ParseFileneeded(INT32 fileneedednum_parm, UINT8 *fileneededstr)
+void D_ParseFileneeded(INT32 fileneedednum_parm, UINT8 *fileneededstr, UINT16 firstfile)
 {
 	INT32 i;
 	UINT8 *p;
 	UINT8 filestatus;
 
-	fileneedednum = fileneedednum_parm;
+	fileneedednum = firstfile + fileneedednum_parm;
 	p = (UINT8 *)fileneededstr;
-	for (i = 0; i < fileneedednum; i++)
+	for (i = firstfile; i < fileneedednum; i++)
 	{
-		fileneeded[i].status = FS_NOTFOUND; // We haven't even started looking for the file yet
+		fileneeded[i].status = FS_NOTCHECKED; // We haven't even started looking for the file yet
 		filestatus = READUINT8(p); // The first byte is the file status
 		fileneeded[i].willsend = (UINT8)(filestatus >> 4);
 		fileneeded[i].totalsize = READUINT32(p); // The four next bytes are the file size
 		fileneeded[i].file = NULL; // The file isn't open yet
 		READSTRINGN(p, fileneeded[i].filename, MAX_WADPATH); // The next bytes are the file name
 		READMEM(p, fileneeded[i].md5sum, 16); // The last 16 bytes are the file checksum
-		fileneeded[i].textmode = false;
 	}
 }
 
@@ -330,15 +343,16 @@ boolean Got_RequestFilePak(INT32 node)
   * \return 0 if some files are missing
   *         1 if all files exist
   *         2 if some already loaded files are not requested or are in a different order
+    * 		3 too many files, over WADLIMIT
+  * 		4 still checking, continuing next tic
   *
   */
 INT32 CL_CheckFiles(void)
 {
 	INT32 i, j;
 	char wadfilename[MAX_WADPATH];
-	INT32 ret = 1;
-	size_t packetsize = 0;
-	size_t filestoget = 0;
+	size_t filestoload = 0;
+	boolean downloadrequired = false;
 
 //	if (M_CheckParm("-nofiles"))
 //		return 1;
@@ -346,7 +360,8 @@ INT32 CL_CheckFiles(void)
 	// the first is the iwad (the main wad file)
 	// we don't care if it's called srb2.srb or srb2.wad.
 	// Never download the IWAD, just assume it's there and identical
-	fileneeded[0].status = FS_OPEN;
+	// ...No! Why were we sending the base wads to begin with??
+	//fileneeded[0].status = FS_OPEN;
 
 	// Modified game handling -- check for an identical file list
 	// must be identical in files loaded AND in order
@@ -354,7 +369,7 @@ INT32 CL_CheckFiles(void)
 	if (modifiedgame)
 	{
 		CONS_Debug(DBG_NETPLAY, "game is modified; only doing basic checks\n");
-		for (i = 1, j = 1; i < fileneedednum || j < numwadfiles;)
+		for (i = 0, j = mainwads+1; i < fileneedednum || j < numwadfiles;)
 		{
 			if (j < numwadfiles && !wadfiles[j]->important)
 			{
@@ -381,15 +396,21 @@ INT32 CL_CheckFiles(void)
 		return 1;
 	}
 
-	// See W_LoadWadFile in w_wad.c
-	packetsize = packetsizetally;
-
-	for (i = 1; i < fileneedednum; i++)
+	for (i = 0; i < fileneedednum; i++)
 	{
+		if (fileneeded[i].status == FS_NOTFOUND)
+			downloadrequired = true;
+
+		if (fileneeded[i].status == FS_FOUND || fileneeded[i].status == FS_NOTFOUND)
+			filestoload++;
+
+		if (fileneeded[i].status != FS_NOTCHECKED) //since we're running this over multiple tics now, its possible for us to come across files checked in previous tics
+			continue;
+
 		CONS_Debug(DBG_NETPLAY, "searching for '%s' ", fileneeded[i].filename);
 
 		// Check in already loaded files
-		for (j = 1; wadfiles[j]; j++)
+		for (j = mainwads+1; wadfiles[j]; j++)
 		{
 			nameonly(strcpy(wadfilename, wadfiles[j]->filename));
 			if (!stricmp(wadfilename, fileneeded[i].filename) &&
@@ -397,37 +418,31 @@ INT32 CL_CheckFiles(void)
 			{
 				CONS_Debug(DBG_NETPLAY, "already loaded\n");
 				fileneeded[i].status = FS_OPEN;
-				break;
+				return 4;
 			}
 		}
-		if (fileneeded[i].status != FS_NOTFOUND)
-			continue;
-
-		packetsize += nameonlylength(fileneeded[i].filename) + 22;
-
-		if ((numwadfiles+filestoget >= MAX_WADFILES)
-		|| (packetsize > MAXFILENEEDED*sizeof(UINT8)))
-			return 3;
-
-		filestoget++;
-
 		fileneeded[i].status = findfile(fileneeded[i].filename, fileneeded[i].md5sum, true);
 		CONS_Debug(DBG_NETPLAY, "found %d\n", fileneeded[i].status);
-		if (fileneeded[i].status != FS_FOUND)
-			ret = 0;
+		return 4;
 	}
-	return ret;
+	//now making it here means we've checked the entire list and no FS_NOTCHECKED files remain
+	if (numwadfiles+filestoload > MAX_WADFILES)
+		return 3;
+	else if (downloadrequired)
+		return 0; //some stuff is FS_NOTFOUND, needs download
+	else
+		return 1; //everything is FS_OPEN or FS_FOUND, proceed to loading
 }
 
 // Load it now
-void CL_LoadServerFiles(void)
+boolean CL_LoadServerFiles(void)
 {
 	INT32 i;
 
 //	if (M_CheckParm("-nofiles"))
 //		return;
 
-	for (i = 1; i < fileneedednum; i++)
+	for (i = 0; i < fileneedednum; i++)
 	{
 		if (fileneeded[i].status == FS_OPEN)
 			continue; // Already loaded
@@ -436,6 +451,7 @@ void CL_LoadServerFiles(void)
 			P_AddWadFile(fileneeded[i].filename);
 			G_SetGameModified(true);
 			fileneeded[i].status = FS_OPEN;
+			return false;
 		}
 		else if (fileneeded[i].status == FS_MD5SUMBAD)
 			I_Error("Wrong version of file %s", fileneeded[i].filename);
@@ -461,6 +477,7 @@ void CL_LoadServerFiles(void)
 				fileneeded[i].status, s);
 		}
 	}
+	return true;
 }
 
 void AddLuaFileTransfer(const char *filename, const char *mode)
@@ -990,6 +1007,7 @@ void Got_Filetxpak(void)
 		&& strcmp(filename, "rings.dta")
 		&& strcmp(filename, "patch.dta")
 		&& strcmp(filename, "music.dta")
+		&& strcmp(filename, "legacy.pk3")
 		))
 		I_Error("Tried to download \"%s\"", filename);
 
@@ -1039,7 +1057,7 @@ void Got_Filetxpak(void)
 			file->status = FS_FOUND;
 			CONS_Printf(M_GetText("Downloading %s...(done)\n"),
 				filename);
-			
+
 			if (luafiletransfers)
 			{
 				// Tell the server we have received the file
@@ -1165,7 +1183,7 @@ size_t nameonlylength(const char *s)
 
 filestatus_t checkfilemd5(char *filename, const UINT8 *wantedmd5sum)
 {
-#if defined (NOMD5) || defined (_arch_dreamcast)
+#if defined (NOMD5)
 	(void)wantedmd5sum;
 	(void)filename;
 #else
@@ -1228,11 +1246,7 @@ filestatus_t findfile(char *filename, const UINT8 *wantedmd5sum, boolean complet
 	// if not found at all, just move on without doing anything
 
 	// finally check "." directory
-#ifdef _arch_dreamcast
-	homecheck = filesearch(filename, "/cd", wantedmd5sum, completepath, 10);
-#else
 	homecheck = filesearch(filename, ".", wantedmd5sum, completepath, 10);
-#endif
 
 	if (homecheck != FS_NOTFOUND) // if not found this time, fall back on the below return statement
 		return homecheck; // otherwise return the result we got

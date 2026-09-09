@@ -4,7 +4,7 @@
   <id>io.github.PAS.srb2-legacy</id>
   <metadata_license>FSFAP</metadata_license>
   <project_license>GPL-2.0+</project_license>
-  <name>Sonic Robo Blast 2 Legacy</name>
+  <name>SRB2 Legacy</name>
   <summary>Updated fork of Sonic Robo Blast 2 2.1.25</summary>
   <description>
     <p>
@@ -32,9 +32,9 @@
       <caption>Knuckles in Arid Canyon Zone Act 1</caption>
     </screenshot>
   </screenshots>
-  <url type="homepage">https://github.com/P-AS/srb2-legacy</url>
-  <url type="bugtracker">https://github.com/P-AS/srb2-legacy/issues</url>
-  <url type="vcs-browser">https://github.com/P-AS/srb2-legacy</url>
+  <url type="homepage">https://github.com/srb2-preservation/srb2-legacy</url>
+  <url type="bugtracker">https://github.com/srb2-preservation/srb2-legacy/issues</url>
+  <url type="vcs-browser">https://github.com/srb2-preservation/srb2-legacy</url>
   <developer id="io.github.PAS">
     <name>SRB2 Legacy Contributors</name>
   </developer>
@@ -42,6 +42,7 @@
     <binary>srb2legacy</binary>
   </provides>
   <releases>
+    <release version="2.1.30" date="2026-09-09" />
     <release version="2.1.29" date="2025-08-17" />
     <release version="2.1.28" date="2025-03-15" />
     <release version="2.1.27" date="2025-01-10" />

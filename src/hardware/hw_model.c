@@ -554,11 +554,11 @@ void GeneratePolygonNormals(model_t *model, int ztag)
 			int k;
 			mdlframe_t *frame = &mesh->frames[j];
 			const float *vertices = frame->vertices;
-			vector_t *polyNormals;
+			//vector_t *polyNormals;
 
-			frame->polyNormals = (vector_t*)Z_Malloc(sizeof(vector_t) * mesh->numTriangles, ztag, 0);
+			//frame->polyNormals = (vector_t*)Z_Malloc(sizeof(vector_t) * mesh->numTriangles, ztag, 0);
 
-			polyNormals = frame->polyNormals;
+			//polyNormals = frame->polyNormals;
 
 			for (k = 0; k < mesh->numTriangles; k++)
 			{
@@ -566,7 +566,7 @@ void GeneratePolygonNormals(model_t *model, int ztag)
 				(void)vertices;
 //				Vector::Normal(vertices, polyNormals);
 				vertices += 3 * 3;
-				polyNormals++;
+				//polyNormals++;
 			}
 		}
 	}

@@ -35,12 +35,12 @@ if("${SRB2_CPACK_GENERATOR}" STREQUAL "")
 	elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 		set(SRB2_CPACK_GENERATOR "TGZ")
 	elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
-		set(SRB2_CPACK_GENERATOR "TGZ")
+		set(SRB2_CPACK_GENERATOR "DragNDrop")
 	endif()
 endif()
 
 set(CPACK_GENERATOR ${SRB2_CPACK_GENERATOR})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Sonic Robo Blast 2 Legacy" CACHE STRING "Program name for display purposes")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "SRB2 Legacy" CACHE STRING "Program name for display purposes")
 set(CPACK_PACKAGE_VENDOR "Sonic Team Jr." CACHE STRING "Vendor name for display purposes")
 #set(CPACK_PACKAGE_DESCRIPTION_FILE )
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
@@ -48,6 +48,8 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${SRB2_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${SRB2_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${SRB2_VERSION_PATCH})
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMAKE_VERSION_MAJOR}.${CMAKE_VERSION_MINOR}")
+set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/assets/DMGbackground.png")
+set(CPACK_DMG_DS_STORE_SETUP_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/assets/CMakeDMGSetup.scpt")
 include(CPack)
 
 # Set up CMAKE path
@@ -137,6 +139,10 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 
 add_subdirectory(src)
 add_subdirectory(assets)
+
+if(${CMAKE_SYSTEM} MATCHES "Android")
+	add_subdirectory(thirdparty)
+endif()
 
 ## config.h generation
 set(GIT_EXECUTABLE "git" CACHE FILEPATH "Path to git binary")

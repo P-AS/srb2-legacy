@@ -28,13 +28,11 @@
 
 // Use Mixer interface?
 #ifdef HAVE_MIXER
-    //#if !defined(DC) && !defined(_WIN32_WCE) && !defined(_XBOX) && !defined(GP2X)
     #define SOUND SOUND_MIXER
     #define NOHS // No HW3SOUND
     #ifdef HW3SOUND
     #undef HW3SOUND
     #endif
-    //#endif
 #endif
 
 // Use generic SDL interface.
@@ -70,31 +68,6 @@
 #endif
 #endif
 
-#if defined (_WIN32) || defined (_WIN32_WCE)
-#define ASMCALL __cdecl
-#else
-#define ASMCALL
-#endif
-
-#ifdef _MSC_VER
-#pragma warning(disable : 4127 4152 4213 4514)
-#ifdef _WIN64
-#pragma warning(disable : 4306)
-#endif
-#endif
-// warning level 4
-// warning C4127: conditional expression is constant
-// warning C4152: nonstandard extension, function/data pointer conversion in expression
-// warning C4213: nonstandard extension used : cast on l-value
-
-#if defined (_WIN32_WCE) && defined (DEBUG) && defined (ARM)
-#if defined (ARMV4) || defined (ARMV4I)
-//#pragma warning(disable : 1166)
-// warning LNK1166: cannot adjust code at offset=
-#endif
-#endif
-
-
 #include "doomtype.h"
 #include "version.h"
 
@@ -112,13 +85,11 @@
 #include <locale.h>
 #endif
 
-#if !defined (_WIN32_WCE)
 #include <sys/types.h>
 #include <sys/stat.h>
-#endif
 #include <ctype.h>
 
-#if ((defined (_WIN32) && !defined (_WIN32_WCE)) || defined (__DJGPP__)) && !defined (_XBOX)
+#ifdef _WIN32
 #include <io.h>
 #endif
 
@@ -132,7 +103,7 @@ FILE *fopenfile(const char*, const char*);
 //#define PARANOIA // do some tests that never fail but maybe
 // turn this on by make etc.. DEBUGMODE = 1 or use the Debug profile in the VC++ projects
 //#endif
-#if defined (_WIN32) || (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (macintosh)
+#if defined (_WIN32) || defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define LOGMESSAGES // write message in log.txt
 #endif
 
@@ -173,14 +144,17 @@ extern char logfilename[1024];
 // Comment out this line to completely disable update alerts (recommended for testing, but not for release)
 #define UPDATE_ALERT
 
-// If you maintain a fork of srb2-legacy, change this.
-#define RELEASES "github.com/P-AS/srb2-legacy/releases\n"
+// If you maintain a fork of srb2-legacy, change these.
+#define RELEASES "https://github.com/srb2-preservation\n/srb2-legacy/releases\n"
+
+#define ISSUES "https://github.com/srb2-preservation/srb2-legacy/issues"
 
 // The string used in the alert that pops up in the event of an update being available.
 // Please change to apply to your modification (we don't want everyone asking where your mod is on SRB2.org!).
 #define UPDATE_ALERT_STRING \
 "A new update is available for SRB2 Legacy.\n"\
 "You can grab the latest release from:\n"\
+"\n"\
 RELEASES \
 "\n"\
 "You are using version: %s\n"\
@@ -199,6 +173,7 @@ RELEASES \
 #define UPDATE_ALERT_STRING_CONSOLE \
 "A new update is available for SRB2 Legacy.\n"\
 "You can grab the latest release from:\n"\
+"\n"\
 RELEASES \
 "\n"\
 "You are using version: %s\n"\
@@ -255,7 +230,7 @@ typedef struct skincolor_s
 typedef enum
 {
 	SKINCOLOR_NONE = 0,
-	
+
 	SKINCOLOR_WHITE,
 	SKINCOLOR_SILVER,
 	SKINCOLOR_GREY,
@@ -281,7 +256,7 @@ typedef enum
 	SKINCOLOR_OLIVE,
 	SKINCOLOR_YELLOW,
 	SKINCOLOR_GOLD,
-	
+
 	FIRSTSUPERCOLOR,
 
 	// Super special awesome Super flashing colors!
@@ -304,10 +279,10 @@ typedef enum
 	SKINCOLOR_KSUPER3,
 	SKINCOLOR_KSUPER4,
 	SKINCOLOR_KSUPER5,
-	
+
 	SKINCOLOR_FIRSTFREESLOT,
 	SKINCOLOR_LASTFREESLOT = SKINCOLOR_FIRSTFREESLOT + NUMCOLORFREESLOTS - 1,
-	
+
 	MAXSKINCOLORS,
 
 	NUMSUPERCOLORS = ((SKINCOLOR_FIRSTFREESLOT - FIRSTSUPERCOLOR)/5)
@@ -337,9 +312,10 @@ enum {
 	LE_BRAKVILEATACK   = -6  // Brak's doing his LOS attack, oh noes
 };
 
-// Name of local directory for config files and savegames
-#if !defined(_arch_dreamcast) && !defined(_WIN32_WCE) && !defined(GP2X) && !defined(_WII) && !defined(_PS3)
-#if (((defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)) && !defined (__APPLE__)
+// Name of (fallback) local directory for config files and savegames
+// The XDG Base Directory Specification (*nix) or Application Support (macOS) directory is preferred
+#if !defined(__ANDROID__)
+#if (defined (__unix__) || defined (UNIXCOMMON)) && !defined (__CYGWIN__) && !defined (__APPLE__)
 #define DEFAULTDIR ".srb2_21"
 #else
 #define DEFAULTDIR "srb2_21"
@@ -407,6 +383,17 @@ char *sizeu2(size_t num);
 char *sizeu3(size_t num);
 char *sizeu4(size_t num);
 char *sizeu5(size_t num);
+
+#if defined(__ANDROID__)
+#include "android-jni/ndk_strings.h"
+#define M_sprintf Android_sprintf
+#define M_snprintf Android_snprintf
+#define M_vsnprintf Android_vsnprintf
+#else
+#define M_sprintf sprintf
+#define M_snprintf snprintf
+#define M_vsnprintf vsnprintf
+#endif
 
 // d_main.c
 extern int    VERSION;
@@ -517,12 +504,10 @@ extern const char *compdate, *comptime, *comprevision, *compbranch, *compnote;
 ///	    	Most modifications should probably enable this.
 //#define SAVEGAME_OTHERVERSIONS
 
-#if !defined (_NDS) && !defined (_PSP)
 ///	Shuffle's incomplete OpenGL sorting code.
 #define SHUFFLE // This has nothing to do with sorting, why was it disabled?
-#endif
 
-#if !defined (_NDS) && !defined (_PSP)
+#if !(defined (__EMSCRIPTEN__) && (__SIZEOF_SIZE_T__ == 4))
 ///	Allow the use of the SOC RESETINFO command.
 ///	\note	Builds that are tight on memory should disable this.
 ///	    	This stops the game from storing backups of the states, sprites, and mobjinfo tables.

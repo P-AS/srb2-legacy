@@ -17,20 +17,12 @@
 /// \file
 /// \brief SDL specific part of the OpenGL API for SRB2
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
-
 #ifdef HAVE_SDL
 #define _MATH_DEFINES_DEFINED
 
 #include "SDL.h"
 
 #include "sdlmain.h"
-
-#ifdef _MSC_VER
-#pragma warning(default : 4214 4244)
-#endif
 
 #include "../doomdef.h"
 #include "../d_main.h"
@@ -110,17 +102,22 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	INT32 cbpp = cv_scr_depth.value < 16 ? 16 : cv_scr_depth.value;
 	static int majorGL = 0, minorGL = 0;
 	static boolean first_init = false;
+#ifdef DEFAULTDIR
+	const char *homedir = NULL;
 	const char *gllogdir = NULL;
-
+#endif
 
 	if (!gllogstream)
 	{
-		gllogdir = D_Home();
-
 #ifdef DEBUG_TO_FILE
 #ifdef DEFAULTDIR
-		if (gllogdir)
-				gllogstream = fopen(va("%s/"DEFAULTDIR"/ogllog.txt",gllogdir), "wt");
+		homedir = D_Home();
+
+		if (homedir)
+		{
+			gllogdir = I_ConfigDir();
+			gllogstream = fopen(va("%s/ogllog.txt",gllogdir), "wt");
+		}
 		else
 #endif
 			gllogstream = fopen("./ogllog.txt", "wt");

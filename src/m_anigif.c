@@ -14,6 +14,7 @@
 ///        which by-the-way: the patents have expired for over ten years ago.
 
 #include "m_anigif.h"
+#include "m_misc.h"
 #include "d_main.h"
 #include "z_zone.h"
 #include "v_video.h"
@@ -26,8 +27,18 @@
 // GIFs are always little-endian
 #include "byteptr.h"
 
+// in MB
+CV_PossibleValue_t gif_maxsize_cons_t[] = {
+	{1, "MIN"},
+	{500, "MAX"},
+	{0, "Don\'t cap"},
+{0, NULL}};
+
 consvar_t cv_gif_optimize = CVAR_INIT ("gif_optimize", "On", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_gif_downscale =  CVAR_INIT("gif_downscale", "On", NULL, CV_SAVE, CV_OnOff, NULL);
+
+consvar_t cv_gif_maxsize =  CVAR_INIT ("gif_maxsize", "20", "Maximum size a GIF can reach before it is finalized", CV_SAVE, gif_maxsize_cons_t, NULL);
+consvar_t cv_gif_rolling =  CVAR_INIT ("gif_rolling", "Off", "Record additional GIFs after filesize limit is set", CV_SAVE, CV_OnOff, NULL);
 
 #ifdef HAVE_ANIGIF
 static boolean gif_optimize = false; // So nobody can do something dumb
@@ -461,20 +472,22 @@ static size_t gifframe_size = 8192;
 // converts an RGB frame to a frame with a palette.
 //
 #ifdef HWRENDER
+static colorlookup_t gif_colorlookup;
+
 static void GIF_rgbconvert(UINT8 *linear, UINT8 *scr)
 {
 	UINT8 r, g, b;
 	size_t src = 0, dest = 0;
 	size_t size = (vid.width * vid.height * 3);
 
-	InitColorLUT(gif_palette);
+	InitColorLUT(&gif_colorlookup, gif_palette, true);
 
 	while (src < size)
 	{
 		r = (UINT8)linear[src];
 		g = (UINT8)linear[src + 1];
 		b = (UINT8)linear[src + 2];
-		scr[dest] = colorlookup[r >> SHIFTCOLORBITS][g >> SHIFTCOLORBITS][b >> SHIFTCOLORBITS];
+		scr[dest] = GetColorLUTDirect(&gif_colorlookup, r, g, b);
 		src += (3 * scrbuf_downscaleamt);
 		dest += scrbuf_downscaleamt;
 	}
@@ -676,11 +689,14 @@ void GIF_frame(void)
 //
 INT32 GIF_close(void)
 {
+	float gif_size;
+
 	if (!gif_out)
 		return 0;
 
 	// final terminator.
 	fwrite(";", 1, 1, gif_out);
+	gif_size = GIF_GetSizeMB();
 	fclose(gif_out);
 	gif_out = NULL;
 
@@ -696,7 +712,15 @@ INT32 GIF_close(void)
 		Z_Free(giflzw_hashTable);
 	giflzw_hashTable = NULL;
 
-	CONS_Printf(M_GetText("Animated gif closed; wrote %d frames\n"), gif_frames);
+	CONS_Printf(M_GetText("Animated gif closed; wrote %d frames (%0.2f MB)\n"),
+		gif_frames, gif_size);
 	return 1;
+}
+float GIF_GetSizeMB(void)
+{
+	const float kMb = 1024.f * 1024.f;
+	float size = (moviemode == MM_GIF) ? ftell(gif_out) : 0;
+
+	return size / kMb;
 }
 #endif //ifdef HAVE_ANIGIF

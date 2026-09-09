@@ -2839,10 +2839,10 @@ void A_Invincibility(void *thing)
 
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		S_StopMusic();
 		if (mariomode)
 			G_GhostAddColor(GHC_INVINCIBLE);
 		S_ChangeMusicInternal((mariomode) ? "minvnc" : "invinc", false);
+		P_PlayJingle(player, (mariomode) ? JT_MINV : JT_INV);
 	}
 }
 
@@ -2875,10 +2875,7 @@ void A_SuperSneakers(void *thing)
 		if (S_SpeedMusic(0.0f) && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
 			S_SpeedMusic(1.4f);
 		else
-		{
-			S_StopMusic();
-			S_ChangeMusicInternal("shoes", false);
-		}
+			P_PlayJingle(player, JT_SHOES);
 	}
 }
 
@@ -3008,9 +3005,12 @@ void A_WaterShield(void *thing)
 	}
 
 	if (player->powers[pw_underwater] && player->powers[pw_underwater] <= 12*TICRATE + 1)
+	{
+		player->powers[pw_underwater] = 0;
 		P_RestoreMusic(player);
-
-	player->powers[pw_underwater] = 0;
+	}
+	else
+		player->powers[pw_underwater] = 0;
 
 	if (player->powers[pw_spacetime] > 1)
 	{

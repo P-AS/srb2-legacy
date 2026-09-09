@@ -19,15 +19,9 @@
 #include "../w_wad.h"
 #include "../z_zone.h"
 #include "../byteptr.h"
+#include "../m_argv.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
 #include "SDL.h"
-#ifdef _MSC_VER
-#pragma warning(default : 4214 4244)
-#endif
-
 #include "SDL_mixer.h"
 
 /* This is the version number macro for the current SDL_mixer version: */
@@ -54,10 +48,8 @@
 #define GME_BASS 1.0f
 
 #ifdef HAVE_ZLIB
-#ifndef _MSC_VER
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
 #endif
 
 #ifndef _LFS64_LARGEFILE
@@ -101,6 +93,7 @@ static UINT32 fading_timer;
 static UINT32 fading_duration;
 static INT32 fading_id;
 static void (*fading_callback)(void);
+static boolean fading_nocleanup;
 
 #ifdef HAVE_GME
 static Music_Emu *gme;
@@ -122,7 +115,12 @@ static void var_cleanup(void)
 	songpaused = is_looping =\
 	 is_fading = false;
 
-	fading_callback = NULL;
+	// HACK: See music_loop, where we want the fade timing to proceed after a non-looping
+	// song has stopped playing
+	if (!fading_nocleanup)
+		fading_callback = NULL;
+	else
+		fading_nocleanup = false; // use it once, set it back immediately
 
 	internal_volume = 100;
 }
@@ -158,9 +156,10 @@ void I_StartupSound(void)
 {
 	I_Assert(!sound_started);
 
-#ifdef _WIN32
+#if defined(_WIN32) && !SDL_VERSION_ATLEAST(2,26,5)
 	// Force DirectSound instead of WASAPI
 	// SDL 2.0.6+ defaults to the latter and it screws up our sound effects
+	// SDL 2.26.5 brought imrovements to resampling so this just screws up other stuff now
 	SDL_setenv("SDL_AUDIODRIVER", "directsound", 1);
 #endif
 
@@ -176,6 +175,8 @@ void I_StartupSound(void)
 		// call to start audio failed -- we do not have it
 		return;
 	}
+
+	fading_nocleanup = false;
 
 	var_cleanup();
 
@@ -193,9 +194,24 @@ void I_StartupSound(void)
 		return;
 	}
 
+	SDL_version SDLmixcompiled;
+	const SDL_version *SDLmixlinked;
+	SDL_MIXER_VERSION(&SDLmixcompiled)
+	SDLmixlinked = Mix_Linked_Version();
+
+	I_OutputMsg("Compiled for SDL_mixer version: %d.%d.%d\n",
+				SDLmixcompiled.major, SDLmixcompiled.minor, SDLmixcompiled.patch);
+	I_OutputMsg("Linked with SDL_mixer version: %d.%d.%d\n",
+				SDLmixlinked->major, SDLmixlinked->minor, SDLmixlinked->patch);
+
 #ifdef HAVE_OPENMPT
-	CONS_Printf("libopenmpt version: %s\n", openmpt_get_string("library_version"));
-	CONS_Printf("libopenmpt build date: %s\n", openmpt_get_string("build"));
+	const char *openmptstr;
+	openmptstr = openmpt_get_string("library_version");
+	I_OutputMsg("libopenmpt version: %s\n", openmptstr);
+	openmpt_free_string(openmptstr);
+	openmptstr = openmpt_get_string("build");
+	I_OutputMsg("libopenmpt build date: %s\n", openmptstr);
+	openmpt_free_string(openmptstr);
 #endif
 
 	sound_started = true;
@@ -582,7 +598,15 @@ static void music_loop(void)
 		music_bytes = (UINT32)(loop_point*44100.0L*4); //assume 44.1khz, 4-byte length (see I_GetSongPosition)
 	}
 	else
+	{
+		// HACK: Let fade timing proceed beyond the end of a
+		// non-looping song. This is a specific case where the timing
+		// should persist after stopping a song, so I don't believe
+		// this should apply every time the user stops a song.
+		// This is auto-unset in var_cleanup, called by I_StopSong
+		fading_nocleanup = true;
 		I_StopSong();
+	}
 }
 
 static UINT32 music_fade(UINT32 interval, void *param)
@@ -1082,7 +1106,7 @@ boolean I_LoadSong(char *data, size_t len)
 		else
 			return true;
 	}
-#endif	
+#endif
 
 	rw = SDL_RWFromMem(data, len);
 	if (rw != NULL)
@@ -1218,7 +1242,10 @@ boolean I_PlaySong(boolean looping)
 
 void I_StopSong(void)
 {
-	I_StopFadingSong();
+	// HACK: See music_loop on why we want fade timing to proceed
+	// after end of song
+	if (!fading_nocleanup)
+		I_StopFadingSong();
 
 #ifdef HAVE_GME
 	if (gme)
@@ -1357,6 +1384,8 @@ void I_StopFadingSong(void)
 		SDL_RemoveTimer(fading_id);
 	is_fading = false;
 	fading_source = fading_target = fading_timer = fading_duration = fading_id = 0;
+	// don't unset fading_nocleanup here just yet; fading_callback is cleaned up
+	// in var_cleanup()
 }
 
 boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void))
@@ -1368,13 +1397,12 @@ boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms
 
 	I_StopFadingSong();
 
-	if (!ms && volume_delta)
+	if ((!ms && volume_delta) || M_CheckParm("-nomusicfades"))
 	{
 		I_SetInternalMusicVolume(target_volume);
 		if (callback)
 			(*callback)();
 		return true;
-
 	}
 	else if (!volume_delta)
 	{
@@ -1428,4 +1456,3 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
 		return false;
 }
 #endif
-

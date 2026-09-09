@@ -47,7 +47,7 @@ extern consvar_t cv_joyscale2;
 // splitscreen with second mouse
 extern consvar_t cv_mouse2port;
 extern consvar_t cv_usemouse2;
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)
+#if defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON)
 extern consvar_t cv_mouse2opt;
 #endif
 
@@ -156,14 +156,6 @@ typedef enum
 
 extern const char *netxcmdnames[MAXNETXCMD - 1];
 
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
-
-#ifdef _MSC_VER
-#pragma warning(disable :  4214)
-#endif
-
 //Packet composition for Command_TeamChange_f() ServerTeamChange, etc.
 //bitwise structs make packing bits a little easier, but byte alignment harder?
 //todo: decide whether to make the other netcommands conform, or just get rid of this experiment.
@@ -174,10 +166,6 @@ typedef struct {
 	UINT32 autobalance  : 1;  // value 0 to 1
 	UINT32 scrambled    : 1;  // value 0 to 1
 } ATTRPACK changeteam_packet_t;
-
-#ifdef _MSC_VER
-#pragma warning(default : 4214)
-#endif
 
 typedef struct {
 	UINT16 l; // liitle endian
@@ -192,16 +180,15 @@ typedef union {
 	changeteam_value_t value;
 } ATTRPACK changeteam_union;
 
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
-
 // add game commands, needs cleanup
 void D_RegisterServerCommands(void);
 void D_RegisterClientCommands(void);
 void D_SendPlayerConfig(void);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
+#ifdef __EMSCRIPTEN__
+void Command_ListWADS_f(void);
+#endif
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
 void D_MapChange(INT32 pmapnum, INT32 pgametype, boolean pultmode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pfromlevelselect);
 boolean IsPlayerAdmin(INT32 playernum);

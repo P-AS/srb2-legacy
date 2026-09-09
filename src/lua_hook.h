@@ -48,6 +48,7 @@ enum hook {
 	hook_IntermissionThinker,
 	hook_PlayerThink,
 	hook_GameQuit,
+	hook_AddonLoaded,
 
 	hook_MAX // last hook
 };
@@ -90,3 +91,4 @@ boolean LUAh_HurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source); // Ho
 void LUAh_PlayerQuit(player_t *plr, int reason); // Hook for player quitting
 void LUAh_IntermissionThinker(void); // Hook for Y_Ticker
 void LUAh_GameQuit(void); // Hook for game quitting
+void LUAh_AddonLoaded(void);

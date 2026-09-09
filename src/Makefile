@@ -30,6 +30,7 @@
 # LINUX=1, LINUX64=1
 # MINGW=1, MINGW64=1 - Windows (MinGW toolchain)
 # UNIX=1 - Generic Unix like system
+# MACOS=1
 # FREEBSD=1
 # OPENBSD=1
 # SDL=1 - Use SDL backend. SDL is the only backend though
@@ -55,8 +56,10 @@
 # NOOPENMPT=1 - Disable module (tracker) music support.
 # NOMIXER=1 - Disable SDL Mixer (audio playback).
 # NOTHREADS=1 - Disable multithreading.
-# NOEXECINFO=1 - Disable stack trace dump support
-# NOLTO=1 - Disable link time optimizations
+# NOEXECINFO=1 - Disable stack trace dump support.
+# NOLTO=1 - Disable link time optimizations.
+# NATIVESCREENRES=1 - Enable additional resolution options 
+#                     menu from the Android port.
 #
 # Netplay incompatible
 # --------------------
@@ -74,6 +77,8 @@
 #
 # VALGRIND=1 - Enable Valgrind memory debugging support.
 # PROFILEMODE=1 - Enable performance profiling (gprof).
+# USEASAN=1 - Enable building with Address Sanitizer.
+# USEUBSAN=1 - Enable building with Undefined Behavior Sanitizer.
 #
 # General flags for building:
 #
@@ -218,7 +223,8 @@ DBGNAME?=$(EXENAME).debug
 exe:=$(bin)/$(EXENAME)
 dbg:=$(bin)/$(DBGNAME)
 
-build_done=Build is done, please look for $(<F) in $(<D)
+build_done==== Build is done, look for \
+           $(<F) at $(abspath $(<D)) ===
 
 all : $(exe)
 	$(call Echo,$(build_done))
@@ -246,6 +252,18 @@ ifndef NOLTO
 opts+=-flto=auto
 libs+=-flto=auto
 endif
+endif
+
+ifdef USEASAN
+# compile with asan
+opts+=-O1 -fsanitize=address -fno-omit-frame-pointer -fno-common
+libs+=-fsanitize=address
+endif
+
+ifdef USEUBSAN
+# compile with ubsan
+opts+=-O1 -fsanitize=undefined -fno-omit-frame-pointer
+libs+=-fsanitize=undefined
 endif
 
 # debug_opts also get passed to windres
@@ -312,8 +330,10 @@ unexport UPX
 
 # executable stripped of debugging symbols
 $(exe) : $(dbg) | $$(@D)/
+ifndef MACOS
 	$(.)$(OBJCOPY) --strip-debug $< $@
 	$(.)-$(OBJCOPY) --add-gnu-debuglink=$< $@
+endif
 ifdef UPX
 	$(call Echo,Compressing final executable...)
 	$(.)-$(upx) $@

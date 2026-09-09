@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>SRB2 Legacy</title>
+    <link rel="icon" href="favicon.ico">
+    <style>
+      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+      textarea.emscripten { font-family: monospace; width: 80%; }
+      div.emscripten { text-align: center; }
+      div.emscripten_border { border: 1px solid black; }
+      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+      canvas.emscripten { border: 0px none; background-color: black; }
+
+      .spinner {
+        height: 50px;
+        width: 50px;
+        margin: 0px auto;
+        -webkit-animation: rotation .8s linear infinite;
+        -moz-animation: rotation .8s linear infinite;
+        -o-animation: rotation .8s linear infinite;
+        animation: rotation 0.8s linear infinite;
+        border-left: 10px solid rgb(0,150,240);
+        border-right: 10px solid rgb(0,150,240);
+        border-bottom: 10px solid rgb(0,150,240);
+        border-top: 10px solid rgb(100,0,200);
+        border-radius: 100%;
+        background-color: rgb(200,100,250);
+      }
+      @-webkit-keyframes rotation {
+        from {-webkit-transform: rotate(0deg);}
+        to {-webkit-transform: rotate(360deg);}
+      }
+      @-moz-keyframes rotation {
+        from {-moz-transform: rotate(0deg);}
+        to {-moz-transform: rotate(360deg);}
+      }
+      @-o-keyframes rotation {
+        from {-o-transform: rotate(0deg);}
+        to {-o-transform: rotate(360deg);}
+      }
+      @keyframes rotation {
+        from {transform: rotate(0deg);}
+        to {transform: rotate(360deg);}
+      }
+
+      #output { background-color: black; color: white; font-family: monospace; font-size: 18px; border: 1px solid #333; padding: 6px; border-radius: 4px; }
+      body { font-size: 18px; font-family: Arial, sans-serif; background: #111; color: #eee; margin: 20px; border-radius: 4px; }
+      input, button { font-size: 16px; padding: 6px 10px; margin: 5px 0; border-radius: 4px; }
+      canvas { display: block; margin: 10px auto; border: 2px solid #333; border-radius: 4px; }
+      hr { border: none; height: 1px; background: #333; margin: 16px 0; }
+      #wadList { margin-top: 10px; font-family: monospace; }
+    </style>
+  </head>
+  <body>
+    <hr/>
+    <figure style="overflow:visible;" id="spinner"><div class="spinner"></div><center style="margin-top:0.5em"><strong>emscripten</strong></center></figure>
+    <div class="emscripten" id="status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="progress" hidden=1></progress>
+    </div>
+    <div class="emscripten_border">
+      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+    </div>
+    <hr/>
+    <div class="emscripten">
+      <span><input type="button" value="Start" id="start" onclick="SRB2_Init()"></span><br>
+      &nbsp;&nbsp;&nbsp;
+      <input type="button" value="Fullscreen" id="fullscreen" onclick="Module.requestFullscreen(true,
+                                                                                true)">
+      <br>                                                                          
+      <input type="file" id="wadInput" accept=".wad, .pk3, .soc, .lua">
+      <div id="wadList">Loaded: none</div>
+      <textarea id="userArguments" rows="2" placeholder="Custom Arguments"></textarea>
+    </div>
+
+    <hr/>
+    <textarea class="emscripten" id="output" rows="12"></textarea>
+    <hr>
+    <script type='text/javascript'>
+      var statusElement = document.getElementById('status');
+      var progressElement = document.getElementById('progress');
+      var spinnerElement = document.getElementById('spinner');
+      var canvasElement = document.getElementById('canvas');
+      var outputElement = document.getElementById('output');
+      var startElement = document.getElementById('start');
+      var wadinputElement = document.getElementById('wadInput');
+      var wadlistElement = document.getElementById('wadList');
+      var fullscreenElement =  document.getElementById('fullscreen');
+      var userargElement = document.getElementById('userArguments');
+      
+      statusElement.style.display = "none";
+      progressElement.hidden = true;
+      spinnerElement.hidden = true;
+      canvasElement.style.display = "none";
+      outputElement.style.display = "none";
+      wadlistElement.hidden = true;
+      wadinputElement.hidden = true;
+      fullscreenElement.hidden = true;
+
+      if (outputElement) outputElement.value = ''; // clear browser cache
+
+      // As a default initial behavior, pop up an alert when webgl context is lost. To make your
+      // application robust, you may want to override this behavior before shipping!
+      // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+      canvasElement.addEventListener("webglcontextlost", (e) => {
+        alert('WebGL context lost. You will need to reload the page.');
+        e.preventDefault();
+      }, false);
+
+      function SRB2_Init() {
+        const SRB2Script = document.createElement("script");
+        SRB2Script.setAttribute("src", "srb2legacy.js");
+
+        SRB2Script.setAttribute("type", "text/javascript");
+        SRB2Script.setAttribute("async", true);
+        document.body.appendChild(SRB2Script);
+        canvasElement.style.display = "block";
+        wadlistElement.hidden = false;
+        wadinputElement.hidden = false;
+        fullscreenElement.hidden = false;
+        startElement.style.display = "none";
+        outputElement.style.display = "block";
+        userargElement.hidden = true;
+      }
+
+      function setStatus(text) {
+        if (!setStatus.last) setStatus.last = { time: Date.now(), text: '' };
+        if (text === setStatus.last.text) return;
+        var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+        var now = Date.now();
+        if (m && now - setStatus.last.time < 30) return; // if this is a progress update, skip it if too soon
+        setStatus.last.time = now;
+        setStatus.last.text = text;
+        if (m) {
+          text = m[1];
+          progressElement.value = parseInt(m[2])*100;
+          progressElement.max = parseInt(m[4])*100;
+          progressElement.hidden = false;
+          spinnerElement.hidden = false;
+        } else {
+          progressElement.value = null;
+          progressElement.max = null;
+          progressElement.hidden = true;
+          if (!text) spinnerElement.hidden = true;
+        }
+        statusElement.text = text;
+      }
+
+    const supportsKeyboardLock = ('keyboard' in navigator) && ('lock' in navigator.keyboard);
+    if (supportsKeyboardLock) {
+       document.addEventListener('fullscreenchange', async () => {
+      if (document.fullscreenElement) {
+          await navigator.keyboard.lock(['Escape']);        
+        return; 
+      }
+     navigator.keyboard.unlock();
+    });
+}
+
+      if(localStorage.getItem("legacyargtext") != null && localStorage.getItem("legacyargtext").trim().length > 0)
+          userargElement.value = localStorage.getItem("legacyargtext");
+
+      var userArguments = [];
+
+      var buildUserArguments = () => {
+        let argString = userargElement.value;
+        let args = [];
+        if (argString.trim().length > 0)
+          args = argString.split(' ');
+        userArguments = args;
+      };
+
+      userargElement.addEventListener("selectionchange", () =>
+          localStorage.setItem("legacyargtext", userargElement.value)
+      );
+
+      var Module = {
+        print(...args) {
+          // These replacements are necessary if you render to raw HTML
+          //text = text.replace(/&/g, "&amp;");
+          //text = text.replace(/</g, "&lt;");
+          //text = text.replace(/>/g, "&gt;");
+          //text = text.replace('\n', '<br>', 'g');
+          console.log(...args);
+          if (outputElement) {
+            var text = args.join(' ');
+            outputElement.value += text + "\n";
+            outputElement.scrollTop = outputElement.scrollHeight; // focus on bottom
+          }
+        },
+        canvas: canvasElement,
+        arguments: [],
+        preRun: [() => {
+           buildUserArguments();
+           Module['arguments'].push(...userArguments);
+        }],
+        setStatus: setStatus,
+        totalDependencies: 0,
+        monitorRunDependencies(left) {
+          this.totalDependencies = Math.max(this.totalDependencies, left);
+          setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+        }
+      };
+      setStatus('Downloading...');
+      window.onerror = () => {
+        setStatus('Exception thrown, see JavaScript console');
+        spinnerElement.style.display = 'none';
+        setStatus = (text) => {
+          if (text) console.error('[post-exception status] ' + text);
+        };
+      };
+    </script>
+    <script>
+      // wad loading & listing
+      Module.onRuntimeInitialized = () => {
+        const wadlist = document.getElementById('wadList');
+        const loaded = [];
+
+        wadInput.onchange = async (e) => {
+          for (const file of e.target.files) {
+            const path = '/home/web_user/.srb2_21/addons/' + file.name;
+            const data = new Uint8Array(await file.arrayBuffer());
+
+            FS.writeFile(path, data);
+
+            loaded.push(file.name);
+      }
+
+          wadlist.innerHTML = 'Loaded:<br>' + loaded.join('<br>');
+        };
+      };
+    </script>
+    <script src="timidity.js"></script>
+  </body>
+</html>

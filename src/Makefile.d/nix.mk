@@ -4,6 +4,8 @@
 
 ifeq (${DEDICATED},1)
 EXENAME?=lsrb2dlegacy
+else ifdef DUMMY
+EXENAME?=lsrb2legacy
 else
 EXENAME?=lsdl2srb2legacy
 endif
@@ -32,4 +34,8 @@ endif
 
 ifdef OPENBSD
 libs+=-lexecinfo -lpthread
+endif
+
+ifdef MACOS
+libs+=-framework CoreFoundation
 endif

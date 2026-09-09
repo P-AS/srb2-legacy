@@ -28,6 +28,8 @@
 #include "m_menu.h"
 #include "m_cheat.h"
 #include "p_setup.h" // NiGHTS grading
+#include "m_misc.h"
+#include "m_anigif.h"
 
 //random index
 #include "m_random.h"
@@ -613,7 +615,7 @@ static void ST_drawScore(void)
 	const INT32 v_splitflag = (splitscreen && stplyr == &players[displayplayer] ? V_SPLITSCREEN : 0);
 	const INT32 v_splitoffset = splitscreen ? (v_splitflag ? 0 : BASEVIDHEIGHT/2) : 0;
 
-	INT32 scoreflags = hudinfo[HUD_SCORE].flags|v_splitflag;
+	INT32 scoreflags = hudinfo[HUD_SCORE].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		scoreflags &= ~(V_SNAPTOTOP);
 
@@ -627,12 +629,12 @@ static void ST_drawScore(void)
 			V_DrawTallNum(hudinfo[HUD_SCORENUM].x, hudinfo[HUD_SCORENUM].y, hudinfo[HUD_SCORENUM].flags, op_displayflags);
 	}
 
-	INT32 scorenumflags = hudinfo[HUD_SCORENUM].flags|v_splitflag;
+	INT32 scorenumflags = hudinfo[HUD_SCORENUM].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		scorenumflags &= ~(V_SNAPTOTOP);
 
 	if (!splitscreen && (cv_scorepos.value == 1))
-		V_DrawTallNum(hudinfo[HUD_SCORENUMMODERN].x, hudinfo[HUD_SCORENUMMODERN].y, hudinfo[HUD_SCORENUMMODERN].flags, stplyr->score);
+		V_DrawTallNum(hudinfo[HUD_SCORENUMMODERN].x, hudinfo[HUD_SCORENUMMODERN].y, scorenumflags, stplyr->score);
 	else
 		V_DrawTallNum(hudinfo[HUD_SCORENUM].x, hudinfo[HUD_SCORENUM].y + v_splitoffset, scorenumflags, stplyr->score);
 }
@@ -645,7 +647,7 @@ static void ST_drawTime(void)
 
 	// TIME:
 	INT32 timepos = splitscreen ? HUD_TIMESPLIT : HUD_TIME;
-	INT32 timeflags = hudinfo[timepos].flags|v_splitflag;
+	INT32 timeflags = hudinfo[timepos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		timeflags &= ~(V_SNAPTOTOP);
 
@@ -670,15 +672,15 @@ static void ST_drawTime(void)
 	INT32 colonspos = splitscreen ? HUD_TIMECOLONSPLIT : HUD_TIMECOLON;
 	INT32 secondspos = splitscreen ? HUD_SECONDSSPLIT : HUD_SECONDS;
 
-	INT32 minutesflags = hudinfo[minutespos].flags|v_splitflag;
+	INT32 minutesflags = hudinfo[minutespos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		minutesflags &= ~(V_SNAPTOTOP);
 
-	INT32 colonflags = hudinfo[colonspos].flags|v_splitflag;
+	INT32 colonflags = hudinfo[colonspos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		colonflags &= ~(V_SNAPTOTOP);
 
-	INT32 secondsflags = hudinfo[secondspos].flags|v_splitflag;
+	INT32 secondsflags = hudinfo[secondspos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		secondsflags &= ~(V_SNAPTOTOP);
 
@@ -690,10 +692,10 @@ static void ST_drawTime(void)
 		V_DrawScaledPatch(hudinfo[colonspos].x, hudinfo[colonspos].y + v_splitoffset, colonflags, sbocolon); // Colon
 		V_DrawPaddedTallNum(hudinfo[secondspos].x, hudinfo[secondspos].y + v_splitoffset, secondsflags, seconds, 2); // Seconds
 
-		if (!splitscreen && (cv_timetic.value == 1 || cv_timetic.value == 2 || modeattacking)) // there's not enough room for tics in splitscreen, don't even bother trying!
+		if (!splitscreen && (cv_timetic.value == 1 || cv_timetic.value == 2 || modeattacking || marathonmode)) // there's not enough room for tics in splitscreen, don't even bother trying!
 		{
-			V_DrawScaledPatch(hudinfo[HUD_TIMETICCOLON].x, hudinfo[HUD_TIMETICCOLON].y, hudinfo[HUD_TIMETICCOLON].flags, sboperiod); // Period
-			V_DrawPaddedTallNum(hudinfo[HUD_TICS].x, hudinfo[HUD_TICS].y, hudinfo[HUD_TICS].flags, centiseconds, 2); // Centiseconds
+			V_DrawScaledPatch(hudinfo[HUD_TIMETICCOLON].x, hudinfo[HUD_TIMETICCOLON].y, colonflags, sboperiod); // Period
+			V_DrawPaddedTallNum(hudinfo[HUD_TICS].x, hudinfo[HUD_TICS].y, secondsflags, centiseconds, 2); // Centiseconds
 		}
 	}
 }
@@ -705,7 +707,7 @@ static inline void ST_drawRings(void)
 	INT32 ringnum = max(stplyr->health-1, 0);
 
 	INT32 ringspos = splitscreen ? HUD_RINGSSPLIT : HUD_RINGS;
-	INT32 ringsflags = hudinfo[ringspos].flags|v_splitflag;
+	INT32 ringsflags = hudinfo[ringspos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		ringsflags &= ~(V_SNAPTOTOP);
 
@@ -723,14 +725,14 @@ static inline void ST_drawRings(void)
 	}
 
 	INT32 ringsnumpos = splitscreen ? HUD_RINGSNUMSPLIT : HUD_RINGSNUM;
-	INT32 ringsnumflags = hudinfo[ringsnumpos].flags|v_splitflag;
+	INT32 ringsnumflags = hudinfo[ringsnumpos].flags|V_HUDTRANS|v_splitflag;
 	if (splitscreen && stplyr == &players[secondarydisplayplayer])
 		ringsnumflags &= ~(V_SNAPTOTOP);
 
 	if (cv_timetic.value != 2 || splitscreen)
 		V_DrawTallNum(hudinfo[ringsnumpos].x, hudinfo[ringsnumpos].y + v_splitoffset, ringsnumflags, ringnum);
 	else
-		V_DrawTallNum(hudinfo[HUD_RINGSNUMTICS].x, hudinfo[HUD_RINGSNUMTICS].y, hudinfo[HUD_RINGSNUMTICS].flags, ringnum);
+		V_DrawTallNum(hudinfo[HUD_RINGSNUMTICS].x, hudinfo[HUD_RINGSNUMTICS].y, ringsnumflags, ringnum);
 }
 
 static void ST_drawLives(void)
@@ -783,10 +785,10 @@ static void ST_drawInput(void)
 
 	if(stplyr->pflags & PF_NIGHTSMODE)
 		y += 8;
-	else if (modeattacking || !LUA_HudEnabled(hud_lives))
+	else if ((modeattacking || !LUA_HudEnabled(hud_lives)) || !G_GametypeUsesLives())
 		y += 24;
-	else if (G_RingSlingerGametype() && LUA_HudEnabled(hud_powerstones))
-		y -= 5;
+	/*else if (G_RingSlingerGametype() && LUA_HudEnabled(hud_powerstones))
+		y -= 5;*/
 
 	// O backing
 	V_DrawFill(x, y-1, 16, 16, inputflags|20);
@@ -945,11 +947,11 @@ static void ST_drawInput(void)
 	x -= 2;
 	y -= 13;
 
-		if (stplyr->pflags & PF_ANALOGMODE)
-		{
-			V_DrawThinString(x, y, inputflags, "ANALOG");
-			y -= 8;
-		}
+	if (stplyr->pflags & PF_ANALOGMODE)
+	{
+		V_DrawThinString(x, y, inputflags, "ANALOG");
+		y -= 8;
+	}
 	if (!demosynced) // should always be last, so it doesn't push anything else around
 		V_DrawThinString(x, y, inputflags|((leveltime & 4) ? V_YELLOWMAP : V_REDMAP), "BAD DEMO!!");
 }
@@ -966,6 +968,9 @@ static void ST_drawLevelTitle(void)
 
 	INT32 lvlttly;
 	INT32 zoney;
+
+	if (!LUA_HudEnabled(hud_stagetitle))
+		goto luahook;
 
 	if (!(timeinmap > 2 && timeinmap-3 < 110))
 		return;
@@ -1013,6 +1018,9 @@ static void ST_drawLevelTitle(void)
 
 	if (lvlttly+48 < 200)
 		V_DrawCenteredString(subttlxpos, lvlttly+48, V_ALLOWLOWERCASE, subttl);
+
+luahook:
+	LUAh_TitleCardHUD();
 }
 
 static void ST_drawFirstPersonHUD(void)
@@ -2147,4 +2155,46 @@ void ST_Drawer(void)
 			ST_overlayDrawer();
 		}
 	}
+}
+
+// draw movie frame amount and size
+void ST_MovieInfoDrawer(void)
+{
+	if (!moviemode)
+		return;
+
+	if (!cv_moviemodeinfo.value)
+		return;
+
+	INT32 gif_frames = M_RecordedFrames();
+
+	INT32 x = 3;
+	INT32 y = BASEVIDHEIGHT - 8;
+
+	float gif_size = M_SavedSize();
+
+	INT32 movietype_color = ((gif_frames / (TICRATE / 2)) % 2) ? V_REDMAP : 0;
+
+	const char *movietype = (moviemode == MM_APNG ? "APNG" : "GIF");
+
+	V_DrawThinString(x, y,
+		movietype_color|V_USERHUDTRANS|V_SNAPTOLEFT|V_SNAPTOBOTTOM,
+		movietype
+	);
+
+	INT32 capwarning = max(cv_gif_maxsize.value - 2, 0);
+	boolean withincap = (capwarning > 0 ? (gif_size >= capwarning) : false);
+
+	V_DrawThinString(strlen(movietype) * 6 + x, y,
+		V_ALLOWLOWERCASE|V_USERHUDTRANS|V_SNAPTOLEFT|V_SNAPTOBOTTOM,
+		va(
+			"%s%d.%02ds | %.2f mb\x86", // the main format
+
+			(withincap ? "\x82" : "\x86"), // color if near the limit
+			
+			G_TicsToSeconds(gif_frames), // seconds
+			G_TicsToCentiseconds(gif_frames), // centiseconds
+			gif_size // size in megabytes
+		)
+	);
 }

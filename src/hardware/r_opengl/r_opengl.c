@@ -227,7 +227,6 @@ static void GL_MSG_Error(const char *format, ...)
 /* 1.0 functions */
 /* Miscellaneous */
 #define pglClearColor glClearColor
-//glClear
 #define pglColorMask glColorMask
 #define pglAlphaFunc glAlphaFunc
 #define pglBlendFunc glBlendFunc
@@ -237,9 +236,7 @@ static void GL_MSG_Error(const char *format, ...)
 #define pglEnable glEnable
 #define pglDisable glDisable
 #define pglGetFloatv glGetFloatv
-//glGetIntegerv
-//glGetString
-#define pglHint glHint
+#define pglPolygonMode glPolygonMode
 
 /* Depth Buffer */
 #define pglClearDepth glClearDepth
@@ -288,6 +285,7 @@ static void GL_MSG_Error(const char *format, ...)
 /* Texture mapping */
 #define pglTexEnvi glTexEnvi
 #define pglTexParameteri glTexParameteri
+#define pglTexImage1D glTexImage1D
 #define pglTexImage2D glTexImage2D
 #define pglTexSubImage2D glTexSubImage2D
 
@@ -708,7 +706,8 @@ void SetupGLFunc4(void)
 {
 	/* 1.2 funcs */
 	pglTexImage3D = GetGLFunc("glTexImage3D");
-	/* 1.3 funcs */	
+
+	/* 1.3 funcs */
 	pglActiveTexture = GetGLFunc("glActiveTexture");
 	pglMultiTexCoord2f = GetGLFunc("glMultiTexCoord2f");
 	pglClientActiveTexture = GetGLFunc("glClientActiveTexture");
@@ -2436,7 +2435,7 @@ EXPORT void HWRAPI(CreateModelVBOs) (model_t *model)
 	}
 }
 
-#define BUFFER_OFFSET(i) ((char*)(i))
+#define BUFFER_OFFSET(i) ((void*)(i))
 
 static void DrawModelEx(model_t *model, INT32 frameIndex, float duration, float tics, INT32 nextFrameIndex, FTransform *pos, float scale, UINT8 flipped, FSurfaceInfo *Surface)
 {
@@ -3177,6 +3176,24 @@ EXPORT UINT32 HWRAPI(CreateLightTable)(RGBA_t *hw_lighttable)
 	pglBindTexture(GL_TEXTURE_2D, tex_downloaded);
 
 	return item->id;
+}
+
+EXPORT void HWRAPI(UpdateLightTable)(UINT32 id, RGBA_t *hw_lighttable)
+{
+	LTListItem *item = LightTablesHead;
+	while (item && item->id != id)
+		item = item->next;
+
+	if (item)
+	{
+		pglBindTexture(GL_TEXTURE_2D, item->id);
+
+		// Just update it
+		pglTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 32, GL_RGBA, GL_UNSIGNED_BYTE, hw_lighttable);
+
+		// restore previously bound texture
+		pglBindTexture(GL_TEXTURE_2D, tex_downloaded);
+	}
 }
 
 // Delete light table textures, ids given before become invalid and must not be used.

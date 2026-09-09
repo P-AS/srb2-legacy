@@ -885,7 +885,7 @@ fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_IsPointInSector(boundsec ? boundsec : sector, testx, testy))
+		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -961,7 +961,7 @@ fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_IsPointInSector(boundsec ? boundsec : sector, testx, testy))
+		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
 			return P_GetZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
@@ -3473,10 +3473,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 			dummy.z = thiscam->z;
 			dummy.height = thiscam->height;
 			if (!resetcalled && !(player->pflags & PF_NOCLIP) && !P_CheckSight(&dummy, player->mo)) // TODO: "P_CheckCameraSight" instead.
-			{
 				P_ResetCamera(player, thiscam);
-				resetcalled = true;
-			}
 			else
 			{
 				fixed_t camspeed = P_AproxDistance(thiscam->momx, thiscam->momy);
@@ -3506,7 +3503,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 		// adjust height
 		thiscam->z += thiscam->momz + player->mo->pmomz;
 
-		if (!itsatwodlevel && !(player->pflags & PF_NOCLIP))
+		if (!itsatwodlevel && !(player->pflags & PF_NOCLIP) && !P_IsCameraNoclip(thiscam))
 		{
 			// clip movement
 			if (thiscam->z <= thiscam->floorz) // hit the floor

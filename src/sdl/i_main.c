@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 /// \file
 /// \brief Main program, simply calls D_SRB2Main and D_SRB2Loop, the high level loop.
-
+#if !defined(__ANDROID__)
 #include "../doomdef.h"
 #include "../m_argv.h"
 #include "../d_main.h"
@@ -73,7 +73,10 @@ typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
 #ifdef LOGMESSAGES
 static void InitLogging(void)
 {
+	const char *homedir = NULL;
+#ifdef DEFAULTDIR
 	const char *logdir = NULL;
+#endif
 	time_t my_time;
 	struct tm * timeinfo;
 	const char *format;
@@ -84,7 +87,7 @@ static void InitLogging(void)
 	const char *link;
 #endif
 
-	logdir = D_Home();
+	homedir = D_Home();
 
 	my_time = time(NULL);
 	timeinfo = localtime(&my_time);
@@ -118,10 +121,11 @@ static void InitLogging(void)
 		}
 		else
 #ifdef DEFAULTDIR
-		if (logdir)
+		if (homedir)
 		{
+			logdir = I_ConfigDir();
 			left = snprintf(logfilename, sizeof logfilename,
-					"%s"PATHSEP DEFAULTDIR PATHSEP"%s"PATHSEP, logdir, reldir);
+					"%s"PATHSEP"%s"PATHSEP, logdir, reldir);
 		}
 		else
 #endif/*DEFAULTDIR*/
@@ -135,14 +139,14 @@ static void InitLogging(void)
 	}
 
 	M_MkdirEachUntil(logfilename,
-			M_PathParts(logdir) - 1,
+			M_PathParts(homedir) - 1,
 			M_PathParts(logfilename) - 1, 0755);
 
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 	logstream = fopen(logfilename, "w");
 #ifdef DEFAULTDIR
-	if (logdir)
-		link = va("%s/"DEFAULTDIR"/latest-log.txt", logdir);
+	if (homedir)
+		link = va("%s/latest-log.txt", logdir);
 	else
 #endif/*DEFAULTDIR*/
 		link = "latest-log.txt";
@@ -169,6 +173,10 @@ static void InitLogging(void)
 #pragma GCC diagnostic ignored "-Wmissing-noreturn"
 #endif
 
+#if defined(__EMSCRIPTEN__)
+int main_program(void)
+{
+#else
 #ifdef FORCESDLMAIN
 int SDL_main(int argc, char **argv)
 #else
@@ -177,6 +185,7 @@ int main(int argc, char **argv)
 {
 	myargc = argc;
 	myargv = argv; /// \todo pull out path to exe from this string
+#endif
 
 	// disable text input right off the bat, since we don't need it at the start.
 	I_SetTextInputMode(false);
@@ -234,4 +243,17 @@ int main(int argc, char **argv)
 	// return to OS
 	return 0;
 }
+
+#if defined (__EMSCRIPTEN__)
+int main(int argc, char **argv)
+{
+    myargc = argc;
+	myargv = argv;
+
+    I_MountIDBFS(); // Mount IndexedDB filesystem on entry
+
+	return 0;
+}
+#endif
+#endif
 #endif

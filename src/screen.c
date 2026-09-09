@@ -15,6 +15,7 @@
 #include "screen.h"
 #include "console.h"
 #include "am_map.h"
+#include "g_game.h"
 #include "i_time.h"
 #include "i_system.h"
 #include "i_video.h"
@@ -65,13 +66,42 @@ consvar_t cv_scr_height_w = CVAR_INIT ("scr_height_w", "400", NULL, CV_SAVE, CV_
 consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", "Bit depth of textures", CV_SAVE, scr_depth_cons_t, NULL);
 consvar_t cv_renderview = CVAR_INIT ("renderview", "On", NULL, 0, CV_OnOff, NULL);
 
+#ifdef NATIVESCREENRES
+static void SCR_ToggleNativeRes(void);
+static CV_PossibleValue_t nativeresdiv_cons_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t nativerescompare_cons_t[] = {{0, "Width"}, {1, "Height"}, {0, NULL}};
+
+#define NATIVERESCVAR(name, default, possiblevalue) {name, default, NULL, (CV_CALL | CV_SAVE), possiblevalue, SCR_ToggleNativeRes, 0, NULL, NULL, 0, 0, NULL};
+
+consvar_t cv_nativeres = NATIVERESCVAR("nativeres", "Off", CV_OnOff);
+consvar_t cv_nativeresdiv = NATIVERESCVAR("nativeresdiv", "1", nativeresdiv_cons_t);
+consvar_t cv_nativeresfov = NATIVERESCVAR("nativeresfov", "On", CV_OnOff);
+consvar_t cv_nativerescompare = NATIVERESCVAR("nativerescompare", "Width", nativerescompare_cons_t);
+
+#undef NATIVERESCVAR
+
+#endif
+
+static void SCR_ChangeFullscreen (void);
 static void SCR_ActuallyChangeRenderer(void);
-static CV_PossibleValue_t cv_renderer_t[] = {{1, "Software"}, {2, "OpenGL"}, {0, NULL}};
+static CV_PossibleValue_t cv_renderer_t[] = {
+	{1, "Software"},
+#ifdef HWRENDER
+	{2, "OpenGL"},
+#endif
+	{0, NULL}
+};
 consvar_t cv_renderer = CVAR_INIT ("renderer", "Software", "The current renderer", CV_SAVE|CV_CALL, cv_renderer_t, SCR_ChangeRenderer);
 
 static void SCR_ChangeFullscreen(void);
 
-consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", "If on, the game will take up the full screen rather than just a desktop window", CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen);
+static CV_PossibleValue_t fullscreen_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Borderless"}, {0, NULL}};
+
+#ifndef __EMSCRIPTEN__
+consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", "If on, the game will take up the full screen rather than just a desktop window", CV_SAVE|CV_CALL, fullscreen_cons_t, SCR_ChangeFullscreen);
+#else
+consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "No", "If on, the game will take up the full screen rather than just a desktop window", CV_SAVE|CV_CALL|CV_HIDEN, fullscreen_cons_t, SCR_ChangeFullscreen);
+#endif
 
 // =========================================================================
 //                           SCREEN VARIABLES
@@ -117,10 +147,8 @@ void SCR_SetDrawFuncs(void)
 	}*/
 	else
 		I_Error("unknown bytes per pixel mode %d\n", vid.bpp);
-/*#if !defined (DC) && !defined (WII)
-	if (SCR_IsAspectCorrect(vid.width, vid.height))
-		CONS_Alert(CONS_WARNING, M_GetText("Resolution is not aspect-correct!\nUse a multiple of %dx%d\n"), BASEVIDWIDTH, BASEVIDHEIGHT);
-#endif*/
+	/*if (SCR_IsAspectCorrect(vid.width, vid.height))
+		CONS_Alert(CONS_WARNING, M_GetText("Resolution is not aspect-correct!\nUse a multiple of %dx%d\n"), BASEVIDWIDTH, BASEVIDHEIGHT);*/
 
 	wallcolfunc = walldrawerfunc;
 }
@@ -133,7 +161,7 @@ void SCR_SetMode(void)
 	if (!(setmodeneeded || setrenderneeded) || WipeInAction)
 		return; // should never happen and don't change it during a wipe, BAD!
 
-	// Jimita
+	// Lactozilla: Renderer switching
 	if (setrenderneeded)
 	{
 		needpatchflush = true;
@@ -155,6 +183,30 @@ void SCR_SetMode(void)
 	setrenderneeded = 0;
 }
 
+
+// scale 1,2,3 times in x and y the patches for the menus and overlays...
+// calculated once and for all, used by routines in v_video.c
+static void SCR_SetScale(void)
+{
+	INT32 dup;
+
+	vid.dupx = max(1, vid.width / BASEVIDWIDTH);
+	vid.dupy = max(1, vid.height / BASEVIDHEIGHT);
+
+	vid.fdupx = FixedDiv(vid.width*FRACUNIT, BASEVIDWIDTH*FRACUNIT);
+	vid.fdupy = FixedDiv(vid.height*FRACUNIT, BASEVIDHEIGHT*FRACUNIT);
+
+#ifdef NATIVESCREENRES
+	if (cv_nativeres.value && !cv_nativerescompare.value)
+		dup = (vid.dupx > vid.dupy ? vid.dupx : vid.dupy);
+	else
+#endif
+		dup = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
+
+	// Set a constant scale for both axes
+	vid.dupx = vid.dupy = dup;
+}
+
 // do some initial settings for the game loading screen
 //
 void SCR_Startup(void)
@@ -168,11 +220,7 @@ void SCR_Startup(void)
 
 	vid.modenum = 0;
 
-	vid.dupx = vid.width / BASEVIDWIDTH;
-	vid.dupy = vid.height / BASEVIDHEIGHT;
-	vid.dupx = vid.dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
-	vid.fdupx = FixedDiv(vid.width*FRACUNIT, BASEVIDWIDTH*FRACUNIT);
-	vid.fdupy = FixedDiv(vid.height*FRACUNIT, BASEVIDHEIGHT*FRACUNIT);
+	SCR_SetScale();
 
 #ifdef HWRENDER
 	if (rendermode != render_opengl && rendermode != render_none) // This was just placing it incorrectly at non aspect correct resolutions in opengl
@@ -214,13 +262,7 @@ void SCR_Recalc(void)
 	// bytes per pixel quick access
 	scr_bpp = vid.bpp;
 
-	// scale 1,2,3 times in x and y the patches for the menus and overlays...
-	// calculated once and for all, used by routines in v_video.c
-	vid.dupx = vid.width / BASEVIDWIDTH;
-	vid.dupy = vid.height / BASEVIDHEIGHT;
-	vid.dupx = vid.dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
-	vid.fdupx = FixedDiv(vid.width*FRACUNIT, BASEVIDWIDTH*FRACUNIT);
-	vid.fdupy = FixedDiv(vid.height*FRACUNIT, BASEVIDHEIGHT*FRACUNIT);
+	SCR_SetScale();
 
 #ifdef HWRENDER
 	//if (rendermode != render_opengl && rendermode != render_none) // This was just placing it incorrectly at non aspect correct resolutions in opengl
@@ -296,7 +338,7 @@ void SCR_CheckDefaultMode(void)
 		CONS_Printf(M_GetText("Default resolution: %d x %d\n"), cv_scr_width.value, cv_scr_height.value);
 		CONS_Printf(M_GetText("Windowed resolution: %d x %d\n"), cv_scr_width_w.value, cv_scr_height_w.value);
 		CONS_Printf(M_GetText("Default bit depth: %d bits\n"), cv_scr_depth.value);
-		if (cv_fullscreen.value)
+		if (cv_fullscreen.value == 1)
 			setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1; // see note above
 		else
 			setmodeneeded = VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value) + 1; // see note above
@@ -312,14 +354,16 @@ void SCR_CheckDefaultMode(void)
 void SCR_SetDefaultMode(void)
 {
 	// remember the default screen size
-	CV_SetValue(cv_fullscreen.value ? &cv_scr_width : &cv_scr_width_w, vid.width);
-	CV_SetValue(cv_fullscreen.value ? &cv_scr_height : &cv_scr_height_w, vid.height);
+	CV_SetValue((cv_fullscreen.value == 1)  ? &cv_scr_width : &cv_scr_width_w, vid.width);
+	CV_SetValue((cv_fullscreen.value == 1) ? &cv_scr_height : &cv_scr_height_w, vid.height);
 }
 
 // Change fullscreen on/off according to cv_fullscreen
 void SCR_ChangeFullscreen(void)
 {
 #ifdef DIRECTFULLSCREEN
+	I_SetBorderlessWindow();
+
 	// allow_fullscreen is set by VID_PrepareModeList
 	// it is used to prevent switching to fullscreen during startup
 	if (!allow_fullscreen)
@@ -328,7 +372,7 @@ void SCR_ChangeFullscreen(void)
 	if (graphics_started)
 	{
 		VID_PrepareModeList();
-		if (cv_fullscreen.value)
+		if (cv_fullscreen.value == 1)
 			setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
 		else
 			setmodeneeded = VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value) + 1;
@@ -367,7 +411,7 @@ void SCR_ActuallyChangeRenderer(void)
 		setrenderneeded = 0;
 }
 
-// Jimita
+// Lactozilla: Renderer switching
 void SCR_ChangeRenderer(void)
 {
 	setrenderneeded = 0;
@@ -411,6 +455,14 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 	 && width / BASEVIDWIDTH == height / BASEVIDHEIGHT
 	 );
 }
+
+
+#ifdef NATIVESCREENRES
+static void SCR_ToggleNativeRes(void)
+{
+	setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
+}
+#endif
 
 // XMOD FPS display
 // moved out of os-specific code for consistency
@@ -513,7 +565,7 @@ void SCR_DisplayTicRate(void)
 			stringdrawfunc = V_DrawString;
 			stringwidthfunc = V_StringWidth;
 		break;
-		
+
 		case 1: // Thin
 			stringdrawfunc = V_DrawThinString;
 			stringwidthfunc = V_ThinStringWidth;
@@ -593,4 +645,52 @@ void SCR_DisplayLocalPing(void)
 
 		HU_drawPing(307, dispy, ping, packetloss, true, transflag|V_SNAPTORIGHT|V_SNAPTOBOTTOM);
 	}
+}
+
+void SCR_DisplayMarathonInfo(void)
+{
+	INT32 flags = V_SNAPTOBOTTOM;
+	static tic_t entertic, oldentertics = 0, antisplice[2] = {48,0};
+	const char *str;
+#if 0 // eh, this probably isn't going to be a problem
+	if (((signed)marathontime) < 0)
+	{
+		flags |= V_REDMAP;
+		str = "No waiting out the clock to submit a bogus time.";
+	}
+	else
+#endif
+	{
+		entertic = I_GetTime();
+		if (gamecomplete)
+			flags |= V_YELLOWMAP;
+		else if (marathonmode & MA_INGAME)
+			; // see also G_Ticker
+		else if (marathonmode & MA_INIT)
+			marathonmode &= ~MA_INIT;
+		else
+			marathontime += entertic - oldentertics;
+
+		// Create a sequence of primes such that their LCM is nice and big.
+#define PRIMEV1 13
+#define PRIMEV2 17 // I can't believe it! I'm on TV!
+		antisplice[0] += (entertic - oldentertics)*PRIMEV2;
+		antisplice[0] %= PRIMEV1*((vid.width/vid.dupx)+1);
+		antisplice[1] += (entertic - oldentertics)*PRIMEV1;
+		antisplice[1] %= PRIMEV1*((vid.width/vid.dupx)+1);
+		str = va("%i:%02i:%02i.%02i",
+			G_TicsToHours(marathontime),
+			G_TicsToMinutes(marathontime, false),
+			G_TicsToSeconds(marathontime),
+			G_TicsToCentiseconds(marathontime));
+		oldentertics = entertic;
+	}
+	V_DrawFill((antisplice[0]/PRIMEV1)-1, BASEVIDHEIGHT-8, 1, 8, V_SNAPTOBOTTOM|V_SNAPTOLEFT);
+	V_DrawFill((antisplice[0]/PRIMEV1),   BASEVIDHEIGHT-8, 1, 8, V_SNAPTOBOTTOM|V_SNAPTOLEFT|31);
+	V_DrawFill(BASEVIDWIDTH-((antisplice[1]/PRIMEV1)-1), BASEVIDHEIGHT-8, 1, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT);
+	V_DrawFill(BASEVIDWIDTH-((antisplice[1]/PRIMEV1)),   BASEVIDHEIGHT-8, 1, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT|31);
+#undef PRIMEV1
+#undef PRIMEV2
+	V_DrawFillConsoleMap(-500, BASEVIDHEIGHT-8, BASEVIDWIDTH+500, 8, V_SNAPTOBOTTOM|V_SNAPTORIGHT|cons_backcolor.value);
+	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-8, flags, str);
 }

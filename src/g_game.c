@@ -84,7 +84,10 @@ UINT8 globalweather = 0;
 INT32 curWeather = PRECIP_NONE;
 INT32 cursaveslot = -1; // Auto-save 1p savegame slot
 INT16 lastmapsaved = 0; // Last map we auto-saved at
-boolean gamecomplete = false;
+UINT8 gamecomplete = 0;
+
+marathonmode_t marathonmode = 0;
+tic_t marathontime = 0;
 
 UINT16 mainwads = 0;
 boolean modifiedgame; // Set if homebrew PWAD stuff has been added.
@@ -121,9 +124,11 @@ UINT32 totalrings; // for intermission
 INT16 lastmap; // last level you were at (returning from special stages)
 tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 
-INT16 spstage_start;
+INT16 spstage_start, spmarathon_start;
 INT16 sstage_start;
 INT16 sstage_end;
+
+boolean hidetitlepics = false;
 
 boolean looptitle = false;
 boolean useNightsSS = false;
@@ -208,6 +213,7 @@ UINT8 maxXtraLife = 2; // Max extra lives from rings
 
 UINT8 introtoplay;
 UINT8 creditscutscene;
+UINT8 useBlackRock = 1;
 
 // Emerald locations
 mobj_t *hunt1;
@@ -296,43 +302,7 @@ void SendWeaponPref2(void);
 
 static CV_PossibleValue_t crosshair_cons_t[] = {{0, "Off"}, {1, "Cross"}, {2, "Angle"}, {3, "Point"}, {0, NULL}};
 static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
-#ifdef _WII
-{1, "LStick.X"}, {2, "LStick.Y"}, {-1, "LStick.X-"}, {-2, "LStick.Y-"},
-#if JOYAXISSET > 1
-{3, "RStick.X"}, {4, "RStick.Y"}, {-3, "RStick.X-"}, {-4, "RStick.Y-"},
-#endif
-#if JOYAXISSET > 2
-{5, "RTrigger"}, {6, "LTrigger"}, {-5, "RTrigger-"}, {-6, "LTrigger-"},
-#endif
-#if JOYAXISSET > 3
-{7, "Pitch"}, {8, "Roll"}, {-7, "Pitch-"}, {-8, "Roll-"},
-#endif
-#if JOYAXISSET > 4
-{7, "Yaw"}, {8, "Dummy"}, {-7, "Yaw-"}, {-8, "Dummy-"},
-#endif
-#if JOYAXISSET > 4
-{9, "LAnalog"}, {10, "RAnalog"}, {-9, "LAnalog-"}, {-10, "RAnalog-"},
-#endif
-#elif defined (WMINPUT)
-{1, "LStick.X"}, {2, "LStick.Y"}, {-1, "LStick.X-"}, {-2, "LStick.Y-"},
-#if JOYAXISSET > 1
-{3, "RStick.X"}, {4, "RStick.Y"}, {-3, "RStick.X-"}, {-4, "RStick.Y-"},
-#endif
-#if JOYAXISSET > 2
-{5, "NStick.X"}, {6, "NStick.Y"}, {-5, "NStick.X-"}, {-6, "NStick.Y-"},
-#endif
-#if JOYAXISSET > 3
-{7, "LAnalog"}, {8, "RAnalog"}, {-7, "LAnalog-"}, {-8, "RAnalog-"},
-#endif
-#else
 {1, "X-Axis"}, {2, "Y-Axis"}, {-1, "X-Axis-"}, {-2, "Y-Axis-"},
-#ifdef _arch_dreamcast
-{3, "R-Trig"}, {4, "L-Trig"}, {-3, "R-Trig-"}, {-4, "L-Trig-"},
-{5, "Alt X-Axis"}, {6, "Alt Y-Axis"}, {-5, "Alt X-Axis-"}, {-6, "Alt Y-Axis-"},
-{7, "Triggers"}, {-7,"Triggers-"},
-#elif defined (_XBOX)
-{3, "Alt X-Axis"}, {4, "Alt Y-Axis"}, {-3, "Alt X-Axis-"}, {-4, "Alt Y-Axis-"},
-#else
 #if JOYAXISSET > 1
 {3, "Z-Axis"}, {4, "X-Rudder"}, {-3, "Z-Axis-"}, {-4, "X-Rudder-"},
 #endif
@@ -342,17 +312,9 @@ static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 #if JOYAXISSET > 3
 {7, "U-Axis"}, {8, "V-Axis"}, {-7, "U-Axis-"}, {-8, "V-Axis-"},
 #endif
-#endif
-#endif
  {0, NULL}};
-#ifdef _WII
-#if JOYAXISSET > 5
-"More Axis Sets"
-#endif
-#else
 #if JOYAXISSET > 4
 "More Axis Sets"
-#endif
 #endif
 
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
@@ -401,6 +363,8 @@ consvar_t cv_analog2 = CVAR_INIT ("analog2", "Off", "This does not save, change 
 consvar_t cv_useranalog = CVAR_INIT ("useranalog", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog_OnChange);
 consvar_t cv_useranalog2 = CVAR_INIT ("useranalog2", "Off", "Player faces and moves in the same direction as input, instead of always facing the direction of the camera", CV_SAVE|CV_CALL, CV_OnOff, UserAnalog2_OnChange);
 
+static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
+
 typedef enum
 {
 	AXISNONE = 0,
@@ -415,26 +379,27 @@ typedef enum
 	AXISFIRENORMAL,
 } axis_input_e;
 
-
-consvar_t cv_turnaxis = CVAR_INIT ("joyaxis_turn", "X-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_moveaxis = CVAR_INIT ("joyaxis_move", "Y-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "X-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_lookaxis = CVAR_INIT ("joyaxis_look", "Y-Rudder-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_moveaxis = CVAR_INIT ("joyaxis_move", "Y-Axis", "Axis for moving forwards and backwards", CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_sideaxis = CVAR_INIT ("joyaxis_side", "X-Axis", "Axis for strafing left and right", CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_lookaxis = CVAR_INIT ("joyaxis_look", "X-Rudder-", "Axis for vertical camera movement", CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_turnaxis = CVAR_INIT ("joyaxis_turn", "Z-Axis", "Axis for horizontal camera movement", CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_jumpaxis = CVAR_INIT ("joyaxis_jump", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_spinaxis = CVAR_INIT ("joyaxis_spin", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_fireaxis = CVAR_INIT ("joyaxis_fire", "Z-Axis-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_fireaxis = CVAR_INIT ("joyaxis_fire", "Z-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_firenaxis = CVAR_INIT ("joyaxis_firenormal", "Z-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_deadzone = CVAR_INIT ("joy_deadzone", "0.125", NULL, CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL);
+consvar_t cv_digitaldeadzone = CVAR_INIT ("joy_digdeadzone", "0.25", NULL, CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL);
 
-
-consvar_t cv_turnaxis2 = CVAR_INIT ("joyaxis2_turn", "X-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_moveaxis2 = CVAR_INIT ("joyaxis2_move", "Y-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "X-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_lookaxis2 = CVAR_INIT ("joyaxis2_look", "Y-Rudder-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_moveaxis2 = CVAR_INIT ("joyaxis2_move", "Y-Axis", "Axis for moving forwards and backwards", CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_sideaxis2 = CVAR_INIT ("joyaxis2_side", "X-Axis", "Axis for strafing left and right", CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_lookaxis2 = CVAR_INIT ("joyaxis2_look", "X-Rudder-", "Axis for vertical camera movement", CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_turnaxis2 = CVAR_INIT ("joyaxis2_turn", "Z-Axis", "Axis for horizontal camera movement", CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_jumpaxis2 = CVAR_INIT ("joyaxis2_jump", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_spinaxis2 = CVAR_INIT ("joyaxis2_spin", "None", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-consvar_t cv_fireaxis2 = CVAR_INIT ("joyaxis2_fire", "Z-Axis-", NULL, CV_SAVE, joyaxis_cons_t, NULL);
+consvar_t cv_fireaxis2 = CVAR_INIT ("joyaxis2_fire", "Z-Rudder", NULL, CV_SAVE, joyaxis_cons_t, NULL);
 consvar_t cv_firenaxis2 = CVAR_INIT ("joyaxis2_firenormal", "Z-Axis", NULL, CV_SAVE, joyaxis_cons_t, NULL);
-
+consvar_t cv_deadzone2 = CVAR_INIT ("joy_deadzone2", "0.125", NULL, CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL);
+consvar_t cv_digitaldeadzone2 = CVAR_INIT ("joy_digdeadzone2", "0.25", NULL, CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL);
 
 #if MAXPLAYERS > 32
 #error "please update player_name table using the new value for MAXPLAYERS"
@@ -692,8 +657,7 @@ void G_SetNightsRecords(void)
 	free(gpath);
 
 	// If the mare count changed, this will update the score display
-	CV_AddValue(&cv_nextmap, 1);
-	CV_AddValue(&cv_nextmap, -1);
+	Nextmap_OnChange();
 }
 
 // for consistency among messages: this modifies the game and removes savemoddata.
@@ -711,6 +675,8 @@ void G_SetGameModified(boolean silent)
 	// If in record attack recording, cancel it.
 	if (modeattacking)
 		M_EndModeAttackRun();
+	else if (marathonmode)
+		Command_ExitGame_f();
 }
 
 /** Builds an original game map name from a map number.
@@ -819,14 +785,6 @@ static INT32 JoyAxis(axis_input_e axissel)
 		axisval = -axisval;
 		flp = true;
 	}
-#ifdef _arch_dreamcast
-	if (axisval == 7) // special case
-	{
-		retaxis = joyxmove[1] - joyymove[1];
-		goto skipDC;
-	}
-	else
-#endif
 	if (axisval > JOYAXISSET*2 || axisval == 0) //not there in array or None
 		return 0;
 
@@ -842,17 +800,13 @@ static INT32 JoyAxis(axis_input_e axissel)
 		retaxis = joyymove[axisval];
 	}
 
-#ifdef _arch_dreamcast
-	skipDC:
-#endif
-
 	if (retaxis < (-JOYAXISRANGE))
 		retaxis = -JOYAXISRANGE;
 	if (retaxis > (+JOYAXISRANGE))
 		retaxis = +JOYAXISRANGE;
-	if (!Joystick.bGamepadStyle && axissel < AXISDEAD)
+	if (!Joystick.bGamepadStyle)
 	{
-		const INT32 jdeadzone = JOYAXISRANGE/4;
+		const INT32 jdeadzone = ((JOYAXISRANGE-1) * ((axissel < AXISDEAD) ? cv_deadzone.value : cv_digitaldeadzone.value)) >> FRACBITS;
 		if (-jdeadzone < retaxis && retaxis < jdeadzone)
 			return 0;
 	}
@@ -903,14 +857,6 @@ static INT32 Joy2Axis(axis_input_e axissel)
 		axisval = -axisval;
 		flp = true;
 	}
-#ifdef _arch_dreamcast
-	if (axisval == 7) // special case
-	{
-		retaxis = joy2xmove[1] - joy2ymove[1];
-		goto skipDC;
-	}
-	else
-#endif
 	if (axisval > JOYAXISSET*2 || axisval == 0) //not there in array or None
 		return 0;
 
@@ -926,17 +872,13 @@ static INT32 Joy2Axis(axis_input_e axissel)
 		retaxis = joy2ymove[axisval];
 	}
 
-#ifdef _arch_dreamcast
-	skipDC:
-#endif
-
 	if (retaxis < (-JOYAXISRANGE))
 		retaxis = -JOYAXISRANGE;
 	if (retaxis > (+JOYAXISRANGE))
 		retaxis = +JOYAXISRANGE;
-	if (!Joystick2.bGamepadStyle && axissel < AXISDEAD)
+	if (!Joystick2.bGamepadStyle)
 	{
-		const INT32 jdeadzone = JOYAXISRANGE/4;
+		const INT32 jdeadzone = ((JOYAXISRANGE-1) * ((axissel < AXISDEAD) ? cv_deadzone2.value : cv_digitaldeadzone2.value)) >> FRACBITS;
 		if (-jdeadzone < retaxis && retaxis < jdeadzone)
 			return 0;
 	}
@@ -1051,14 +993,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics)
 	else
 	{
 		if (turnright)
-			cmd->angleturn = (INT16)(cmd->angleturn - angleturn[tspeed]);
+			cmd->angleturn = (INT16)(cmd->angleturn - (FixedMul(angleturn[tspeed]<<FRACBITS, cv_cam_turnmultiplier.value)>>FRACBITS));
 		else if (turnleft)
-			cmd->angleturn = (INT16)(cmd->angleturn + angleturn[tspeed]);
+			cmd->angleturn = (INT16)(cmd->angleturn + (FixedMul(angleturn[tspeed]<<FRACBITS, cv_cam_turnmultiplier.value)>>FRACBITS));
 
 		if (analogjoystickmove && axis != 0)
 		{
 			// JOYAXISRANGE should be 1023 (divide by 1024)
-			cmd->angleturn = (INT16)(cmd->angleturn - ((axis * angleturn[1]) >> 10)); // ANALOG!
+			cmd->angleturn = (INT16)(cmd->angleturn - (FixedMul(((axis * angleturn[1]) >> 10)<<FRACBITS, cv_cam_turnmultiplier.value)>>FRACBITS)); // ANALOG!
 		}
 	}
 
@@ -1361,14 +1303,14 @@ void G_BuildTiccmd2(ticcmd_t *cmd, INT32 realtics)
 	else
 	{
 		if (turnright)
-			cmd->angleturn = (INT16)(cmd->angleturn - angleturn[tspeed]);
+			cmd->angleturn = (INT16)(cmd->angleturn - (FixedMul(angleturn[tspeed]<<FRACBITS, cv_cam2_turnmultiplier.value)>>FRACBITS));
 		else if (turnleft)
-			cmd->angleturn = (INT16)(cmd->angleturn + angleturn[tspeed]);
+			cmd->angleturn = (INT16)(cmd->angleturn + (FixedMul(angleturn[tspeed]<<FRACBITS, cv_cam2_turnmultiplier.value)>>FRACBITS));
 
 		if (analogjoystickmove && axis != 0)
 		{
 			// JOYAXISRANGE should be 1023 (divide by 1024)
-			cmd->angleturn = (INT16)(cmd->angleturn - ((axis * angleturn[1]) >> 10)); // ANALOG!
+			cmd->angleturn = (INT16)(cmd->angleturn - (FixedMul(((axis * angleturn[1]) >> 10)<<FRACBITS, cv_cam2_turnmultiplier.value)>>FRACBITS)); // ANALOG!
 		}
 	}
 
@@ -1919,6 +1861,10 @@ void G_Ticker(boolean run)
 	UINT32 i;
 	INT32 buf;
 
+	// see also SCR_DisplayMarathonInfo
+	if ((marathonmode & (MA_INIT|MA_INGAME)) == MA_INGAME && gamestate == GS_LEVEL)
+		marathontime++;
+
 	P_MapStart();
 	// do player reborns if needed
 	if (gamestate == GS_LEVEL)
@@ -1928,8 +1874,13 @@ void G_Ticker(boolean run)
 		{
 			G_ClearRetryFlag();
 
-			// Costs a life to retry ... unless the player in question is dead already.
-			if (G_GametypeUsesLives() && players[consoleplayer].playerstate == PST_LIVE)
+			// Costs a life to retry ... unless the player in question is dead already, or you haven't even touched the first starpost in marathon run.
+			if (marathonmode && gamemap == spmarathon_start && !players[consoleplayer].starposttime)
+			{
+				marathonmode |= MA_INIT;
+				marathontime = 0;
+			}
+			else if (G_GametypeUsesLives() && players[consoleplayer].playerstate == PST_LIVE)
 				players[consoleplayer].lives -= 1;
 
 			G_DoReborn(consoleplayer);
@@ -2551,7 +2502,7 @@ void G_DoReborn(INT32 playernum)
 			player->starpostz = 0;
 			player->starpostnum = 0;
 		}
-		if (!countdowntimeup && (mapheaderinfo[gamemap-1]->levelflags & LF_NORELOAD))
+		if (!countdowntimeup && (mapheaderinfo[gamemap-1]->levelflags & LF_NORELOAD) && !(marathonmode & MA_INIT))
 		{
 			INT32 i;
 
@@ -2859,8 +2810,14 @@ static void G_DoCompleted(void)
 	// nextmap is 0-based, unlike gamemap
 	if (nextmapoverride != 0)
 		nextmap = (INT16)(nextmapoverride-1);
+	else if (marathonmode && mapheaderinfo[gamemap-1]->marathonnext)
+		nextmap = (INT16)(mapheaderinfo[gamemap-1]->marathonnext-1);
 	else
+	{
 		nextmap = (INT16)(mapheaderinfo[gamemap-1]->nextlevel-1);
+		if (marathonmode && nextmap == spmarathon_start-1)
+			nextmap = 1100-1; // No infinite loop for you
+	}
 
 	// Remember last map for when you come out of the special stage.
 	if (!G_IsSpecialStage(gamemap))
@@ -2884,6 +2841,8 @@ static void G_DoCompleted(void)
 			visitedmap[cm/8] |= (1<<(cm&7));
 			if (!mapheaderinfo[cm])
 				cm = -1; // guarantee error execution
+			else if (marathonmode && mapheaderinfo[cm]->marathonnext)
+				cm = (INT16)(mapheaderinfo[cm]->marathonnext-1);
 			else
 				cm = (INT16)(mapheaderinfo[cm]->nextlevel-1);
 
@@ -2961,6 +2920,22 @@ static void G_DoCompleted(void)
 	if (nextmap < NUMMAPS && !mapheaderinfo[nextmap])
 		P_AllocMapHeader(nextmap);
 
+	// do this before going to the intermission or starting a custom cutscene, mostly for the sake of marathon mode but it also massively reduces redundant file save events in f_finale.c
+	if (nextmap >= 1100-1)
+	{
+		if (!gamecomplete)
+			gamecomplete = 2; // special temporary mode to prevent using SP level select in pause menu until the intermission is over without restricting it in every intermission
+		if (cursaveslot > 0)
+		{
+			if (marathonmode)
+			{
+				cursaveslot = 0;
+			}
+			else if ((!modifiedgame || savemoddata) && !(netgame || multiplayer))
+				G_SaveGame((UINT32)cursaveslot);
+		}
+	}
+
 	if (skipstats && !modeattacking) // Don't skip stats if we're in record attack
 		G_AfterIntermission();
 	else
@@ -2970,11 +2945,15 @@ static void G_DoCompleted(void)
 	}
 }
 
+// See also F_EndCutscene, the only other place which handles intra-map/ending transitions
 void G_AfterIntermission(void)
 {
+	if (gamecomplete == 2) // special temporary mode to prevent using SP level select in pause menu until the intermission is over without restricting it in every intermission
+		gamecomplete = 1;
+
 	HU_ClearCEcho();
 
-	if (mapheaderinfo[gamemap-1]->cutscenenum && !modeattacking) // Start a custom cutscene.
+	if (mapheaderinfo[gamemap-1]->cutscenenum && !modeattacking && !(marathonmode & MA_NOCUTSCENES)) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->cutscenenum-1, false, false);
 	else
 	{
@@ -3106,7 +3085,7 @@ void G_EndGame(void)
 void G_LoadGameSettings(void)
 {
 	// defaults
-	spstage_start = 1;
+	spstage_start = spmarathon_start = 1;
 	sstage_start = 50;
 	sstage_end = 57; // 8 special stages in vanilla SRB2
 	useNightsSS = false; //true;
@@ -3522,6 +3501,11 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 		memset(&savedata, 0, sizeof(savedata));
 		return;
 	}
+	if (marathonmode)
+	{
+		marathontime = READUINT32(save_p);
+		marathonmode |= READUINT8(save_p);
+	}
 
 	// done
 	Z_Free(savebuffer);
@@ -3553,10 +3537,6 @@ void G_SaveGame(UINT32 savegameslot)
 	sprintf(savename, savegamename, savegameslot);
 	backup = va("%s",savename);
 
-	// save during evaluation or credits? game's over, folks!
-	if (gamestate == GS_CREDITS || gamestate == GS_EVALUATION)
-		gamecomplete = true;
-
 	gameaction = ga_nothing;
 	{
 		char name[VERSIONSIZE];
@@ -3574,6 +3554,11 @@ void G_SaveGame(UINT32 savegameslot)
 		WRITEMEM(save_p, name, VERSIONSIZE);
 
 		P_SaveGame();
+		if (marathonmode)
+		{
+			WRITEUINT32(save_p, marathontime);
+			WRITEUINT8(save_p, (marathonmode & ~MA_INIT));
+		}
 
 		length = save_p - savebuffer;
 		saved = FIL_WriteFile(backup, savebuffer, length);
@@ -3720,7 +3705,7 @@ void G_InitNew(UINT8 pultmode, const char *mapname, boolean resetplayer, boolean
 	automapactive = false;
 	imcontinuing = false;
 
-	if (!skipprecutscene && mapheaderinfo[gamemap-1]->precutscenenum && !modeattacking) // Start a custom cutscene.
+	if (!skipprecutscene && mapheaderinfo[gamemap-1]->precutscenenum && !modeattacking  && !(marathonmode & MA_NOCUTSCENES)) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
 		G_DoLoadLevel(resetplayer);

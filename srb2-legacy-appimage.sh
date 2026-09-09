@@ -20,7 +20,7 @@ done
 if [ "$noassets" == true ]; then
 	echo "Skipping asset cloning"
 else
-	git clone https://git.do.srb2.org/STJr/srb2assets-public.git -b SRB2_2.1 assets/appimage
+	git clone https://codeberg.org/srb2-preservation/assets.git -b legacy assets/appimage
 	cd assets/appimage
 	git lfs pull
 	echo -e "Downloaded assets: \n\n$(git lfs ls-files)"
@@ -46,7 +46,7 @@ cp srb2.png srb2legacy.png
 # Create app entrypoint
 echo -e \#\!$(dirname $SHELL)/sh >> AppDir/AppRun
 echo -e 'HERE="$(dirname "$(readlink -f "${0}")")"' >> AppDir/AppRun
-echo -e 'SRB2LEGACYWADDIR=$HERE/usr/bin LD_LIBRARY_PATH=$HERE/usr/lib:$LD_LIBRARY_PATH exec $HERE/usr/bin/srb2legacy "$@"' >> AppDir/AppRun
+echo -e 'SRB2LEGACYWADDIR="$HERE/usr/bin" LD_LIBRARY_PATH="$HERE/usr/lib:$LD_LIBRARY_PATH" exec "$HERE/usr/bin/srb2legacy" "$@"' >> AppDir/AppRun
 chmod +x AppDir/AppRun
 
 # Build AppImage

@@ -41,12 +41,10 @@
 
 #include "hw_main.h"
 #include "../v_video.h"
-#ifdef HAVE_PNG
 
-#ifndef _MSC_VER
+#ifdef HAVE_PNG
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
 #endif
 
 #ifndef _LFS64_LARGEFILE
@@ -641,7 +639,7 @@ spritemd2found:
 #define SETBRIGHTNESS(brightness,r,g,b) \
 	brightness = (UINT8)(((1063*(UINT16)(r))/5000) + ((3576*(UINT16)(g))/5000) + ((361*(UINT16)(b))/5000))
 
-// Uncomment this if you ever implement TC_RAINBOW	
+// Uncomment this if you ever implement TC_RAINBOW
 //#define HAVE_RAINBOWCOLORMAP
 
 static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, GLMipmap_t *grmip, INT32 skinnum, skincolornum_t color)
@@ -650,7 +648,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 	UINT32 size = w*h;
 	RGBA_t *image, *blendimage, *cur, blendcolor;
 	RGBA_t *palette = HWR_GetTexturePalette();
-	UINT8 translation[16]; // First the color index
+	UINT16 translation[16]; // First the color index
 	UINT8 cutoff[16]; // Brightness cutoff before using the next color
 	UINT8 translen = 0;
 	UINT8 i;
@@ -709,7 +707,7 @@ static void HWR_CreateBlendedTexture(GLPatch_t *gpatch, GLPatch_t *blendgpatch, 
 			numdupes = 1;
 			translen++;
 
-			translation[translen] = (UINT8)skincolors[color].ramp[i];
+			translation[translen] = (UINT16)skincolors[color].ramp[i];
 		}
 
 		translen++;
@@ -1128,8 +1126,8 @@ void HWR_DrawMD2(gl_vissprite_t *spr)
 			if (!(spr->mobj->frame & FF_FULLBRIGHT))
 				lightlevel = max(min(255, *sector->lightlist[light].lightlevel), 0);
 
-			if (sector->lightlist[light].extra_colormap)
-				colormap = sector->lightlist[light].extra_colormap;
+			if (*sector->lightlist[light].extra_colormap)
+				colormap = *sector->lightlist[light].extra_colormap;
 		}
 		else
 		{

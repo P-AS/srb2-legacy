@@ -56,6 +56,17 @@ void I_Tactile2(FFType Type, const JoyFF_t *Effect)
 	(void)Effect;
 }
 
+void I_CursedWindowMovement (int xd, int yd)
+{
+	(void)xd;
+	(void)yd;
+}
+
+const char *I_GetPlatform(void)
+{
+	return "Other OS";
+}
+
 void I_JoyScale(void){}
 
 void I_JoyScale2(void){}
@@ -100,6 +111,8 @@ INT32 I_GetKey(void)
 }
 
 void I_StartupTimer(void){}
+
+void I_Sleep(UINT32 ms){ (void)ms; }
 
 void I_AddExitFunc(void (*func)())
 {
@@ -177,11 +190,22 @@ INT32 I_ClipboardCopy(const char *data, size_t size)
 	return -1;
 }
 
-char *I_ClipboardPaste(void)
+const char *I_ClipboardPaste(void)
 {
 	return NULL;
 }
 
+size_t I_GetRandomBytes(char *destination, size_t amount)
+{
+	return 0;
+}
+
 void I_RegisterSysCommands(void) {}
+
+int I_OpenURL(const char *url)
+{
+	(void)url;
+	return -1;
+}
 
 #include "../sdl/dosstr.c"

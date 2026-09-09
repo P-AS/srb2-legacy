@@ -34,10 +34,6 @@
 extern INT16 hardware_MAXPACKETLENGTH;
 extern INT32 net_bandwidth; // in byte/s
 
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
-
 typedef struct
 {
 	/// Supposed to be DOOMCOM_ID
@@ -76,10 +72,6 @@ typedef struct
 	/// The packet data to be sent.
 	char data[MAXPACKETLENGTH];
 } ATTRPACK doomcom_t;
-
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
 
 extern doomcom_t *doomcom;
 

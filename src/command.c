@@ -48,6 +48,7 @@ static void COM_CEchoDuration_f(void);
 static void COM_Exec_f(void);
 static void COM_Wait_f(void);
 static void COM_Help_f(void);
+static void COM_Find_f(void);
 static void COM_Toggle_f(void);
 static void COM_Add_f(void);
 
@@ -292,6 +293,7 @@ void COM_Init(void)
 	COM_AddCommand("exec", NULL, COM_Exec_f);
 	COM_AddCommand("wait", NULL, COM_Wait_f);
 	COM_AddCommand("help", NULL,  COM_Help_f);
+	COM_AddCommand("find", NULL,  COM_Find_f);
 	COM_AddCommand("toggle", NULL, COM_Toggle_f);
 	COM_AddCommand("add", NULL, COM_Add_f);
 	RegisterNetXCmd(XD_NETVAR, Got_NetVar);
@@ -794,31 +796,8 @@ static void COM_Help_f(void)
 				return;
 			}
 
-			CONS_Printf("No exact match, searching...\n");
-
-			// variables
-			CONS_Printf("\x82""Variables:\n");
-			for (cvar = consvar_vars; cvar; cvar = cvar->next)
-			{
-				if ((cvar->flags & CV_NOSHOWHELP) || (!strstr(cvar->name, help)))
-					continue;
-				CONS_Printf("%s ", cvar->name);
-				i++;
-			}
-
-			// commands
-			CONS_Printf("\x82""\nCommands:\n");
-			for (cmd = com_commands; cmd; cmd = cmd->next)
-			{
-				if (!strstr(cmd->name, help))
-					continue;
-				CONS_Printf("%s ",cmd->name);
-				i++;
-			}
-
+			CONS_Printf("No variable or command named %s", help);
 			CONS_Printf("\x82""\nCheck wiki.srb2.org for more or type help <command or variable>\n");
-
-			CONS_Debug(DBG_GAMELOGIC, "\x87Total : %d\n", i);
 		}
 		return;
 	}
@@ -846,6 +825,76 @@ static void COM_Help_f(void)
 
 		CONS_Debug(DBG_GAMELOGIC, "\x82Total : %d\n", i);
 	}
+}
+
+static void COM_Find_f(void)
+{
+	static char prefix[80];
+	xcommand_t *cmd;
+	consvar_t *cvar;
+	cmdalias_t *alias;
+	const char *match;
+	const char *help;
+	size_t helplen;
+	boolean matchesany;
+
+	if (COM_Argc() != 2)
+	{
+		CONS_Printf(M_GetText("find <text>: Search for variables, commands and aliases containing <text>\n"));
+		return;
+	}
+
+	help = COM_Argv(1);
+	helplen = strlen(help);
+	CONS_Printf("\x82""Variables:\n");
+	matchesany = false;
+	for (cvar = consvar_vars; cvar; cvar = cvar->next)
+	{
+		if (cvar->flags & CV_NOSHOWHELP)
+			continue;
+		match = strstr(cvar->name, help);
+		if (match != NULL)
+		{
+			memcpy(prefix, cvar->name, match - cvar->name);
+			prefix[match - cvar->name] = '\0';
+			CONS_Printf("  %s\x83%s\x80%s\n", prefix, help, &match[helplen]);
+			matchesany = true;
+		}
+	}
+	if (!matchesany)
+		CONS_Printf("  (none)\n");
+
+	CONS_Printf("\x82""Commands:\n");
+	matchesany = false;
+	for (cmd = com_commands; cmd; cmd = cmd->next)
+	{
+		match = strstr(cmd->name, help);
+		if (match != NULL)
+		{
+			memcpy(prefix, cmd->name, match - cmd->name);
+			prefix[match - cmd->name] = '\0';
+			CONS_Printf("  %s\x83%s\x80%s\n", prefix, help, &match[helplen]);
+			matchesany = true;
+		}
+	}
+	if (!matchesany)
+		CONS_Printf("  (none)\n");
+
+	CONS_Printf("\x82""Aliases:\n");
+	matchesany = false;
+	for (alias = com_alias; alias; alias = alias->next)
+	{
+		match = strstr(alias->name, help);
+		if (match != NULL)
+		{
+			memcpy(prefix, alias->name, match - alias->name);
+			prefix[match - alias->name] = '\0';
+			CONS_Printf("  %s\x83%s\x80%s\n", prefix, help, &match[helplen]);
+			matchesany = true;
+		}
+	}
+	if (!matchesany)
+		CONS_Printf("  (none)\n");
 }
 
 
@@ -1363,7 +1412,7 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal netvar command received from %s\n"), player_names[playernum]);
 
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL);	
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 	netid = READUINT16(*p);
@@ -1377,9 +1426,6 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 		CONS_Alert(CONS_WARNING, "Netvar not found with netid %hu\n", netid);
 		return;
 	}
-#if 0 //defined (GP2X) || defined (PSP)
-	CONS_Printf("Netvar received: %s [netid=%d] value %s\n", cvar->name, netid, svalue);
-#endif
 	DEBFILE(va("Netvar received: %s [netid=%d] value %s\n", cvar->name, netid, svalue));
 
 	Setvalue(cvar, svalue, stealth);
@@ -1478,7 +1524,7 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 	if (var->flags & CV_NETVAR)
 	{
 		// send the value of the variable
-		XBOXSTATIC UINT8 buf[128];
+		UINT8 buf[128];
 		UINT8 *p = buf;
 		if (!(server || (IsPlayerAdmin(consoleplayer))))
 		{
@@ -1679,35 +1725,27 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			if (var == &cv_chooseskin)
 			{
 				// Special case for the chooseskin variable, used only directly from the menu
+					newvalue = var->value - 1;
+				do
+				{
 				if (increment > 0) // Going up!
 				{
-					newvalue = var->value - 1;
-					do
-					{
 						newvalue++;
 						if (newvalue == MAXSKINS)
 							newvalue = 0;
-					} while (var->PossibleValue[newvalue].strvalue == NULL);
-					var->value = newvalue + 1;
-					var->string = var->PossibleValue[newvalue].strvalue;
-					var->func();
-					return;
 				}
 				else if (increment < 0) // Going down!
-				{
-					newvalue = var->value - 1;
-					do
 					{
 						newvalue--;
 						if (newvalue == -1)
 							newvalue = MAXSKINS-1;
+					}
 					} while (var->PossibleValue[newvalue].strvalue == NULL);
 					var->value = newvalue + 1;
 					var->string = var->PossibleValue[newvalue].strvalue;
 					var->func();
 					return;
 				}
-			}
 #ifdef PARANOIA
 			if (currentindice == -1)
 				I_Error("CV_AddValue: current value %d not found in possible value\n",
@@ -1748,7 +1786,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 
 	if (joyaxis_default)
 	{
-#if !defined (_WII) && !defined  (WMINPUT)
 		if (!stricmp(v->name, "joyaxis_turn"))
 		{
 			if (joyaxis_count > 6) return false;
@@ -1758,7 +1795,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "X-Axis")) joyaxis_count++;
 			else joyaxis_default = false;
 		}
-#if !defined (PSP)
 		if (!stricmp(v->name, "joyaxis_move"))
 		{
 			if (joyaxis_count > 6) return false;
@@ -1767,8 +1803,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "Y-Axis")) joyaxis_count++;
 			else joyaxis_default = false;
 		}
-#endif
-#if !defined (_arch_dreamcast) && !defined (_XBOX) && !defined (PSP)
 		if (!stricmp(v->name, "joyaxis_side"))
 		{
 			if (joyaxis_count > 6) return false;
@@ -1777,8 +1811,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "Z-Axis")) joyaxis_count++;
 			else joyaxis_default = false;
 		}
-#endif
-#if !defined (_XBOX) && !defined (PSP)
 		if (!stricmp(v->name, "joyaxis_look"))
 		{
 			if (joyaxis_count > 6) return false;
@@ -1787,7 +1819,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "None")) joyaxis_count++;
 			else joyaxis_default = false;
 		}
-#endif
 		if (!stricmp(v->name, "joyaxis_fire")
 			|| !stricmp(v->name, "joyaxis_firenormal"))
 		{
@@ -1797,7 +1828,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "None")) joyaxis_count++;
 			else joyaxis_default = false;
 		}
-#endif
 		// reset all axis settings to defaults
 		if (joyaxis_count == 6)
 		{
@@ -1814,7 +1844,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 
 	if (joyaxis2_default)
 	{
-#if !defined (_WII) && !defined  (WMINPUT)
 		if (!stricmp(v->name, "joyaxis2_turn"))
 		{
 			if (joyaxis2_count > 6) return false;
@@ -1824,7 +1853,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "X-Axis")) joyaxis2_count++;
 			else joyaxis2_default = false;
 		}
-// #if !defined (PSP)
 		if (!stricmp(v->name, "joyaxis2_move"))
 		{
 			if (joyaxis2_count > 6) return false;
@@ -1833,8 +1861,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "Y-Axis")) joyaxis2_count++;
 			else joyaxis2_default = false;
 		}
-// #endif
-#if !defined (_arch_dreamcast) && !defined (_XBOX) && !defined (PSP)
 		if (!stricmp(v->name, "joyaxis2_side"))
 		{
 			if (joyaxis2_count > 6) return false;
@@ -1843,8 +1869,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "Z-Axis")) joyaxis2_count++;
 			else joyaxis2_default = false;
 		}
-#endif
-#if !defined (_XBOX) // && !defined (PSP)
 		if (!stricmp(v->name, "joyaxis2_look"))
 		{
 			if (joyaxis2_count > 6) return false;
@@ -1853,7 +1877,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "None")) joyaxis2_count++;
 			else joyaxis2_default = false;
 		}
-#endif
 		if (!stricmp(v->name, "joyaxis2_fire")
 			|| !stricmp(v->name, "joyaxis2_firenormal"))
 		{
@@ -1863,7 +1886,6 @@ static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
 			if (!stricmp(valstr, "None")) joyaxis2_count++;
 			else joyaxis2_default = false;
 		}
-#endif
 
 		// reset all axis settings to defaults
 		if (joyaxis2_count == 6)

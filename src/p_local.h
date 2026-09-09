@@ -110,19 +110,22 @@ typedef struct camera_s
 
 extern camera_t camera, camera2;
 extern consvar_t cv_cam_dist, cv_cam_still, cv_cam_height;
-extern consvar_t cv_cam_speed, cv_cam_rotate, cv_cam_rotspeed;
+extern consvar_t cv_cam_speed, cv_cam_rotate, cv_cam_rotspeed, cv_cam_turnmultiplier;
 
 extern consvar_t cv_cam_orbit, cv_cam2_orbit;
 
 extern consvar_t cv_cam_adjust, cv_cam2_adjust;
 
 extern consvar_t cv_cam2_dist, cv_cam2_still, cv_cam2_height;
-extern consvar_t cv_cam2_speed, cv_cam2_rotate, cv_cam2_rotspeed;
+extern consvar_t cv_cam2_speed, cv_cam2_rotate, cv_cam2_rotspeed, cv_cam2_turnmultiplier;
 
 extern fixed_t t_cam_dist, t_cam_height, t_cam_rotate;
 extern fixed_t t_cam2_dist, t_cam2_height, t_cam2_rotate;
 
 extern consvar_t cv_viewroll, cv_quakeiiiarena, cv_quakeiv, cv_quakelive;
+
+extern consvar_t cv_cam_clipping, cv_cam2_clipping;
+extern consvar_t cv_cam_exact, cv_cam2_exact;
 
 fixed_t P_GetPlayerHeight(player_t *player);
 fixed_t P_GetPlayerSpinHeight(player_t *player);
@@ -190,6 +193,46 @@ void P_PlayLivesJingle(player_t *player);
 #define P_PlayDeathSound(s)		S_StartSound(s, sfx_altdi1 + P_RandomKey(4));
 #define P_PlayVictorySound(s)	S_StartSound(s, sfx_victr1 + P_RandomKey(4));
 
+/// ------------------------
+/// Jingle stuff
+/// ------------------------
+
+typedef enum
+{
+	JT_NONE,   // Null state
+	JT_OTHER,  // Other state
+	JT_MASTER, // Main level music
+	JT_1UP, // Extra life
+	JT_SHOES,  // Speed shoes
+	JT_INV, // Invincibility
+	JT_MINV, // Mario Invincibility
+	JT_DROWN,  // Drowning
+	JT_SUPER,  // Super Sonic
+	JT_GOVER, // Game Over
+	JT_NIGHTSTIMEOUT, // NiGHTS Time Out (10 seconds)
+	JT_SSTIMEOUT, // NiGHTS Special Stage Time Out (10 seconds)
+
+	// these are not jingles
+	// JT_LCLEAR, // Level Clear
+	// JT_RACENT, // Multiplayer Intermission
+	// JT_CONTSC, // Continue
+
+	NUMJINGLES
+} jingletype_t;
+
+typedef struct
+{
+	char musname[7];
+	boolean looping;
+} jingle_t;
+
+extern jingle_t jingleinfo[NUMJINGLES];
+
+#define JINGLEPOSTFADE 1000
+
+void P_PlayJingle(player_t *player, jingletype_t jingletype);
+boolean P_EvaluateMusicStatus(UINT16 status);
+void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, boolean looping, UINT16 status);
 
 //
 // P_MOBJ
@@ -330,6 +373,8 @@ void P_SetThingPosition(mobj_t *thing);
 void P_SetUnderlayPosition(mobj_t *thing);
 
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
+boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam); // romoney5: why is this defined twice?
+boolean P_IsCameraNoclip(camera_t *thiscam);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(void *thing, fixed_t speed);
@@ -354,6 +399,10 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height);
 boolean PIT_PushableMoved(mobj_t *thing);
 
 boolean P_DoSpring(mobj_t *spring, mobj_t *object);
+
+INT32 P_GetSectorLightAt(sector_t *sector, fixed_t x, fixed_t y, fixed_t z);
+extracolormap_t *P_GetColormapFromSectorAt(sector_t *sector, fixed_t x, fixed_t y, fixed_t z);
+extracolormap_t *P_GetSectorColormapAt(fixed_t x, fixed_t y, fixed_t z);
 
 //
 // P_SETUP

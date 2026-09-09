@@ -64,6 +64,10 @@ static void MusicPref_OnChange(void);
 static void ModFilter_OnChange(void);
 #endif
 
+static lumpnum_t S_GetMusicLumpNum(const char *mname);
+
+static boolean S_CheckQueue(void);
+
 // commands for music and sound servers
 #ifdef MUSSERV
 consvar_t musserver_cmd = CVAR_INIT ("musserver_cmd", "musserver", NULL, CV_SAVE, NULL, NULL);
@@ -78,12 +82,6 @@ consvar_t sndserver_arg = CVAR_INIT ("sndserver_arg", "-quiet", NULL, CV_SAVE, N
 #define SURROUND
 #endif
 
-#ifdef _WINDOWS
-consvar_t cv_samplerate = CVAR_INIT ("samplerate", "44100", NULL, 0, CV_Unsigned, NULL); //Alam: For easy hacking?
-#else
-consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", NULL, 0, CV_Unsigned, NULL); //Alam: For easy hacking?
-#endif
-
 // stereo reverse
 consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 
@@ -95,14 +93,19 @@ consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "18", "Volume of sound effe
 consvar_t cv_digmusicvolume = CVAR_INIT ("digmusicvolume", "18", "Volume of digital music", CV_SAVE, soundvolume_cons_t, NULL);
 consvar_t cv_midimusicvolume = CVAR_INIT ("midimusicvolume", "18", "Volume of MIDI music", CV_SAVE, soundvolume_cons_t, NULL);
 // number of channels available
-#if defined (_WIN32_WCE) || defined (DC) || defined (PSP) || defined(GP2X)
-consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "8", NULL, CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
-#else
-consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "32", NULL, CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
-#endif
+static CV_PossibleValue_t numChannels_cons_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
+consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "64", NULL, CV_SAVE|CV_CALL, numChannels_cons_t, SetChannelsNum);
 
 static consvar_t surround = CVAR_INIT ("surround", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_resetmusic = CVAR_INIT ("resetmusic", "No", NULL, CV_SAVE, CV_YesNo, NULL);
+
+static CV_PossibleValue_t cons_1upsound_t[] = {
+	{0, "Jingle"},
+	{1, "Sound"},
+	
+	{0}
+};
+consvar_t cv_1upsound = CVAR_INIT("1upsound", "Jingle", "Whether to use music or a sound for 1-ups", CV_SAVE, cons_1upsound_t, NULL);
 
 // Sound system toggles, saved into the config
 consvar_t cv_gamedigimusic = CVAR_INIT ("digimusic", "On", "Enable or disable digital music", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange);
@@ -120,6 +123,7 @@ consvar_t cv_musicpref = CVAR_INIT ("musicpref", "Digital", "Preferred type of m
 // Window focus sound sytem toggles
 consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused", "No", "Play music if game window is not focused", CV_SAVE, CV_YesNo, NULL);
 consvar_t cv_playsoundsifunfocused = CVAR_INIT ("playsoundsifunfocused", "No", "Play sound effects if game window is not focused", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_playtitlescreenmusic = CVAR_INIT ("playtitlescreenmusic", "Yes", "Enable/Disable title screen music", CV_SAVE, CV_YesNo, NULL);
 
 #ifdef HAVE_OPENMPT
 openmpt_module *openmpt_mhandle = NULL;
@@ -279,10 +283,11 @@ void S_RegisterSoundStuff(void)
 	CV_RegisterVar(&musserver_arg);
 #endif
 	CV_RegisterVar(&surround);
-	CV_RegisterVar(&cv_samplerate);
 	CV_RegisterVar(&cv_resetmusic);
+	CV_RegisterVar(&cv_1upsound);
 	CV_RegisterVar(&cv_playsoundsifunfocused);
 	CV_RegisterVar(&cv_playmusicifunfocused);
+	CV_RegisterVar(&cv_playtitlescreenmusic);
 	CV_RegisterVar(&cv_gamesounds);
 	CV_RegisterVar(&cv_gamedigimusic);
 	CV_RegisterVar(&cv_gamemidimusic);
@@ -329,17 +334,6 @@ static void SetChannelsNum(void)
 	Z_Free(channels);
 	channels = NULL;
 
-
-	if (cv_numChannels.value == 999999999) //Alam_GBC: OH MY ROD!(ROD rimmiced with GOD!)
-		CV_StealthSet(&cv_numChannels,cv_numChannels.defaultvalue);
-
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_SetSourcesNum();
-		return;
-	}
-#endif
 	if (cv_numChannels.value)
 		channels = (channel_t *)Z_Malloc(cv_numChannels.value * sizeof (channel_t), PU_STATIC, NULL);
 	numofchannels = cv_numChannels.value;
@@ -924,11 +918,9 @@ void S_SetSfxVolume(INT32 volume)
 
 void S_ClearSfx(void)
 {
-#ifndef DJGPPDOS
 	size_t i;
 	for (i = 1; i < NUMSFX; i++)
 		I_FreeSfx(S_sfx + i);
-#endif
 }
 
 static void S_StopChannel(INT32 cnum)
@@ -1287,6 +1279,8 @@ static boolean   queue_looping;
 static UINT32    queue_position;
 static UINT32    queue_fadeinms;
 
+static tic_t     pause_starttic;
+
 /// ------------------------
 /// Music Status
 /// ------------------------
@@ -1379,6 +1373,298 @@ UINT32 S_GetMusicPosition(void)
 }
 
 /// ------------------------
+/// Music Stacking (Jingles)
+/// In this section: mazmazz doesn't know how to do dynamic arrays or struct pointers!
+/// ------------------------
+
+char music_stack_nextmusname[7];
+boolean music_stack_noposition = false;
+UINT32 music_stack_fadeout = 0;
+UINT32 music_stack_fadein = 0;
+static musicstack_t *music_stacks = NULL;
+static musicstack_t *last_music_stack = NULL;
+
+void S_SetStackAdjustmentStart(void)
+{
+	if (!pause_starttic)
+		pause_starttic = gametic;
+}
+
+void S_AdjustMusicStackTics(void)
+{
+	if (pause_starttic)
+	{
+		musicstack_t *mst;
+		for (mst = music_stacks; mst; mst = mst->next)
+			mst->tic += gametic - pause_starttic;
+		pause_starttic = 0;
+	}
+}
+
+static void S_ResetMusicStack(void)
+{
+	musicstack_t *mst, *mst_next;
+	for (mst = music_stacks; mst; mst = mst_next)
+	{
+		mst_next = mst->next;
+		Z_Free(mst);
+	}
+	music_stacks = last_music_stack = NULL;
+}
+
+static void S_RemoveMusicStackEntry(musicstack_t *entry)
+{
+	musicstack_t *mst;
+	for (mst = music_stacks; mst; mst = mst->next)
+	{
+		if (mst == entry)
+		{
+			// Remove ourselves from the chain and link
+			// prev and next together
+
+			if (mst->prev)
+				mst->prev->next = mst->next;
+			else
+				music_stacks = mst->next;
+
+			if (mst->next)
+				mst->next->prev = mst->prev;
+			else
+				last_music_stack = mst->prev;
+
+			break;
+		}
+	}
+	Z_Free(entry);
+}
+
+static void S_RemoveMusicStackEntryByStatus(UINT16 status)
+{
+	musicstack_t *mst, *mst_next;
+
+	if (!status)
+		return;
+
+	for (mst = music_stacks; mst; mst = mst_next)
+	{
+		mst_next = mst->next;
+		if (mst->status == status)
+			S_RemoveMusicStackEntry(mst);
+	}
+}
+
+static void S_AddMusicStackEntry(const char *mname, UINT16 mflags, boolean looping, UINT32 position, UINT16 status)
+{
+	musicstack_t *mst, *new_mst;
+
+	// if the first entry is empty, force master onto it
+	if (!music_stacks)
+	{
+		music_stacks = Z_Calloc(sizeof (*mst), PU_MUSIC, NULL);
+		strncpy(music_stacks->musname, (status == JT_MASTER ? mname : (S_CheckQueue() ? queue_name : mapmusname)), 7);
+		music_stacks->musflags = (status == JT_MASTER ? mflags : (S_CheckQueue() ? queue_flags : mapmusflags));
+		music_stacks->looping = (status == JT_MASTER ? looping : (S_CheckQueue() ? queue_looping : true));
+		music_stacks->position = (status == JT_MASTER ? position : (S_CheckQueue() ? queue_position : S_GetMusicPosition()));
+		music_stacks->tic = gametic;
+		music_stacks->status = JT_MASTER;
+		music_stacks->mlumpnum = S_GetMusicLumpNum(music_stacks->musname);
+		music_stacks->noposition = S_CheckQueue();
+
+		if (status == JT_MASTER)
+			return; // we just added the user's entry here
+	}
+
+	// look for an empty slot to park ourselves
+	for (mst = music_stacks; mst->next; mst = mst->next);
+
+	// create our new entry
+	new_mst = Z_Calloc(sizeof (*new_mst), PU_MUSIC, NULL);
+	strncpy(new_mst->musname, mname, 7);
+	new_mst->musname[6] = 0;
+	new_mst->musflags = mflags;
+	new_mst->looping = looping;
+	new_mst->position = position;
+	new_mst->tic = gametic;
+	new_mst->status = status;
+	new_mst->mlumpnum = S_GetMusicLumpNum(new_mst->musname);
+	new_mst->noposition = false;
+
+	mst->next = new_mst;
+	new_mst->prev = mst;
+	new_mst->next = NULL;
+	last_music_stack = new_mst;
+}
+
+static musicstack_t *S_GetMusicStackEntry(UINT16 status, boolean fromfirst, INT16 startindex)
+{
+	musicstack_t *mst, *start_mst = NULL, *mst_next;
+
+	// if the first entry is empty, force master onto it
+	// fixes a memory corruption bug
+	if (!music_stacks && status != JT_MASTER)
+		S_AddMusicStackEntry(mapmusname, mapmusflags, true, S_GetMusicPosition(), JT_MASTER);
+
+	if (startindex >= 0)
+	{
+		INT16 i = 0;
+		for (mst = music_stacks; mst && i <= startindex; mst = mst->next, i++)
+			start_mst = mst;
+	}
+	else
+		start_mst = (fromfirst ? music_stacks : last_music_stack);
+
+	for (mst = start_mst; mst; mst = mst_next)
+	{
+		mst_next = (fromfirst ? mst->next : mst->prev);
+
+		if (!status || mst->status == status)
+		{
+			if (P_EvaluateMusicStatus(mst->status))
+			{
+				if (!S_MusicExists(mst->musname, !midi_disabled, !digital_disabled)) // paranoia
+					S_RemoveMusicStackEntry(mst); // then continue
+				else
+					return mst;
+			}
+			else
+				S_RemoveMusicStackEntry(mst); // then continue
+		}
+	}
+
+	return NULL;
+}
+
+void S_RetainMusic(const char *mname, UINT16 mflags, boolean looping, UINT32 position, UINT16 status)
+{
+	musicstack_t *mst;
+
+	if (!status) // we use this as a null indicator, don't push
+	{
+		CONS_Alert(CONS_ERROR, "Music stack entry must have a nonzero status.\n");
+		return;
+	}
+	else if (status == JT_MASTER) // enforce only one JT_MASTER
+	{
+		for (mst = music_stacks; mst; mst = mst->next)
+		{
+			if (mst->status == JT_MASTER)
+			{
+				CONS_Alert(CONS_ERROR, "Music stack can only have one JT_MASTER entry.\n");
+				return;
+			}
+		}
+	}
+	else // remove any existing status
+		S_RemoveMusicStackEntryByStatus(status);
+
+	S_AddMusicStackEntry(mname, mflags, looping, position, status);
+}
+
+boolean S_RecallMusic(UINT16 status, boolean fromfirst)
+{
+	UINT32 newpos = 0;
+	boolean mapmuschanged = false;
+	musicstack_t *result;
+	musicstack_t *entry = Z_Calloc(sizeof (*result), PU_MUSIC, NULL);
+	boolean currentmidi = (I_SongType() == MU_MID /*|| I_SongType() == MU_MID_EX*/);
+	boolean midipref = cv_musicpref.value;
+
+	if (status)
+		result = S_GetMusicStackEntry(status, fromfirst, -1);
+	else
+		result = S_GetMusicStackEntry(JT_NONE, false, -1);
+
+	if (result && !S_MusicExists(result->musname, !midi_disabled, !digital_disabled))
+	{
+		Z_Free(entry);
+		return false; // music doesn't exist, so don't do anything
+	}
+
+	// make a copy of result, since we make modifications to our copy
+	if (result)
+	{
+		*entry = *result;
+		strncpy(entry->musname, result->musname, 7);
+	}
+
+	// no result, just grab mapmusname
+	if (!result || !entry->musname[0] || ((status == JT_MASTER || (music_stacks ? !music_stacks->status : false)) && !entry->status))
+	{
+		strncpy(entry->musname, mapmusname, 7);
+		entry->musflags = mapmusflags;
+		entry->looping = true;
+		entry->position = mapmusposition;
+		entry->tic = gametic;
+		entry->status = JT_MASTER;
+		entry->mlumpnum = S_GetMusicLumpNum(entry->musname);
+		entry->noposition = false; // don't set this until we do the mapmuschanged check, below. Else, this breaks some resumes.
+	}
+
+	if (entry->status == JT_MASTER)
+	{
+		mapmuschanged = strnicmp(entry->musname, mapmusname, 7);
+		if (mapmuschanged)
+		{
+			strncpy(entry->musname, mapmusname, 7);
+			entry->musflags = mapmusflags;
+			entry->looping = true;
+			entry->position = mapmusposition;
+			entry->tic = gametic;
+			entry->status = JT_MASTER;
+			entry->mlumpnum = S_GetMusicLumpNum(entry->musname);
+			entry->noposition = true;
+		}
+		S_ResetMusicStack();
+	}
+	else if (!entry->status)
+	{
+		Z_Free(entry);
+		return false;
+	}
+
+	if (strncmp(entry->musname, S_MusicName(), 7) || // don't restart music if we're already playing it
+		(midipref != currentmidi && S_PrefAvailable(midipref, entry->musname))) // but do if the user's preference has changed
+	{
+		if (music_stack_fadeout)
+			S_ChangeMusicEx(entry->musname, entry->musflags, entry->looping, 0, music_stack_fadeout, 0);
+		else
+		{
+			S_ChangeMusicEx(entry->musname, entry->musflags, entry->looping, 0, 0, music_stack_fadein);
+
+			if (!entry->noposition && !music_stack_noposition) // HACK: Global boolean to toggle position resuming, e.g., de-superize
+			{
+				UINT32 poslapse = 0;
+
+				// To prevent the game from jumping past the end of the music, we need
+				// to check if we can get the song's length. Otherwise, if the lapsed resume time goes
+				// over a LOOPPOINT, mixer_sound.c will be unable to calculate the new resume position.
+				if (S_GetMusicLength())
+					poslapse = (UINT32)((float)(gametic - entry->tic)/(float)TICRATE*(float)MUSICRATE);
+
+				newpos = entry->position + poslapse;
+			}
+
+			// If the newly recalled music lumpnum does not match the lumpnum that we stored in stack,
+			// then discard the new position. That way, we will not recall an invalid position
+			// when the music is replaced or digital/MIDI is toggled.
+			if (newpos > 0 && S_MusicPlaying() && S_GetMusicLumpNum(entry->musname) == entry->mlumpnum)
+				S_SetMusicPosition(newpos);
+			else
+			{
+				S_StopFadingMusic();
+				S_SetInternalMusicVolume(100);
+			}
+		}
+		music_stack_noposition = false;
+		music_stack_fadeout = 0;
+		music_stack_fadein = JINGLEPOSTFADE;
+	}
+
+	Z_Free(entry);
+	return true;
+}
+
+/// ------------------------
 /// Music Playback
 /// ------------------------
 
@@ -1452,6 +1738,9 @@ static void S_UnloadMusic(void)
 
 static boolean S_PlayMusic(boolean looping, UINT32 fadeinms)
 {
+	if (!cv_playtitlescreenmusic.value && (gamestate == GS_TITLESCREEN))
+		return true;
+
 	if (S_MusicDisabled())
 		return false;
 
@@ -1479,6 +1768,11 @@ static void S_QueueMusic(const char *mmusic, UINT16 mflags, boolean looping, UIN
 	queue_fadeinms = fadeinms;
 }
 
+static boolean S_CheckQueue(void)
+{
+	return queue_name[0];
+}
+
 static void S_ClearQueue(void)
 {
 	queue_name[0] = 0;
@@ -1499,10 +1793,6 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	char newmusic[7];
 	boolean currentmidi = (I_SongType() == MU_MID);
 	boolean midipref = cv_musicpref.value;
-
-#if defined (DC) || defined (_WIN32_WCE) || defined (PSP) || defined(GP2X)
-	S_ClearSfx();
-#endif
 
 	if (S_MusicDisabled())
 		return;
@@ -1531,7 +1821,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		I_FadeSong(0, prefadems, S_ChangeMusicToQueue);
 		return;
 	}
-	else if (strnicmp(music_name, newmusic, 6) || (mflags & MUSIC_FORCERESET) ||
+	else if (strnicmp(music_name, newmusic, 6) || (mflags & MUSIC_FORCERESET) || 
 		(midipref != currentmidi && S_PrefAvailable(midipref, newmusic)))
  	{
 		CONS_Debug(DBG_DETAILED, "Now playing song %s\n", newmusic);
@@ -1590,6 +1880,7 @@ void S_PauseAudio(void)
 {
 	if (I_SongPlaying() && !I_SongPaused())
 		I_PauseSong();
+	S_SetStackAdjustmentStart();
 }
 
 void S_ResumeAudio(void)
@@ -1599,6 +1890,7 @@ void S_ResumeAudio(void)
 
 	if (I_SongPlaying() && I_SongPaused())
 		I_ResumeSong();
+	S_AdjustMusicStackTics();
 }
 
 void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume)
@@ -1680,6 +1972,10 @@ void S_Start(void)
 	if (cv_resetmusic.value)
 		S_StopMusic();
 	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+	S_ResetMusicStack();
+	music_stack_noposition = false;
+	music_stack_fadeout = 0;
+	music_stack_fadein = JINGLEPOSTFADE;
 }
 
 static void Command_Tunes_f(void)

@@ -34,14 +34,28 @@
 #define FMT_FILECALLBACKID "file_callback_%d"
 
 
-static const char *whitelist[] = { // Allow scripters to write files of these types to SRB2's folder
-	".bmp",
-	".cfg",
-	".csv",
+// Allow scripters to write files of these types to SRB2's folder
+static const char *whitelist[] = {
 	".dat",
+	".bin",
+
+	".bmp",
 	".png",
-	".sav2",
+
+	".obj",
+
+	".json",
+	".yaml",
+	".xml",
+	".csv",
+	".soc",
+	".cfg",
+	".ini",
 	".txt",
+	".log",
+	".md",
+
+	".sav2",
 };
 
 
@@ -175,26 +189,34 @@ void MakePathDirs(char *path)
 }
 
 
-static int CheckFileName(lua_State *L, const char *filename)
+static int CheckFileName(lua_State* L, const char* filename, boolean extensioncheck)
 {
 	int length = strlen(filename);
 	boolean pass = false;
 	size_t i;
 
-	if (strchr(filename, '\\'))
+	if (luaL_strchr(filename, '\\'))
 	{
 		luaL_error(L, "access denied to %s: \\ is not allowed, use / instead", filename);
-		return pushresult(L,0,filename);
+		return pushresult(L, 0, filename);
 	}
 
-	for (i = 0; i < (sizeof (whitelist) / sizeof(const char *)); i++)
-		if (!stricmp(&filename[length - strlen(whitelist[i])], whitelist[i]))
-		{
-			pass = true;
-			break;
-		}
+	if (extensioncheck)
+	{
+		for (i = 0; i < (sizeof(whitelist) / sizeof(const char*)); i++)
+			if (!stricmp(&filename[length - strlen(whitelist[i])], whitelist[i]))
+			{
+				pass = true;
+				break;
+			}
+	}
+	else
+	{
+		pass = true;
+	}
+
 	if (strstr(filename, "./")
-		|| strstr(filename, "..") || strchr(filename, ':')
+		|| strstr(filename, "..") || luaL_strchr(filename, ':')
 		|| filename[0] == '/'
 		|| !pass)
 	{
@@ -210,13 +232,13 @@ static int io_opennew (lua_State *L) {
 	const char *mode = luaL_optstring(L, 2, "r");
 	int checkresult;
 
-	checkresult = CheckFileName(L, filename);
+	checkresult = CheckFileName(L, filename, false);
 	if (checkresult)
 		return checkresult;
 
 	luaL_checktype(L, 3, LUA_TFUNCTION);
 
-	if (!(strchr(mode, 'r') || strchr(mode, '+')))
+	if (!(luaL_strchr(mode, 'r') || luaL_strchr(mode, '+')))
 		luaL_error(L, "opennew() is only for reading, use openlocal() for writing");
 
 	AddLuaFileTransfer(filename, mode);
@@ -233,7 +255,10 @@ static int io_openlocal (lua_State *L) {
 	luafiletransfer_t *filetransfer;
 	int checkresult;
 
-	checkresult = CheckFileName(L, filename);
+	// Decision was made for normal reading (binary + text) to have no whitelist restrictions
+	boolean readcheck = (strchr(mode, 'w') != NULL) || (strchr(mode, 'a') != NULL) || (strchr(mode, '+') != NULL);
+
+	checkresult = CheckFileName(L, filename, readcheck);
 	if (checkresult)
 		return checkresult;
 
@@ -513,7 +538,6 @@ static int io_readline (lua_State *L) {
 static int g_write (lua_State *L, FILE *f, int arg) {
   int nargs = lua_gettop(L) - 1;
   int status = 1;
-  size_t count;
   for (; nargs--; arg++) {
     if (lua_type(L, arg) == LUA_TNUMBER) {
       /* optimization: could be done exactly as for strings */
@@ -523,7 +547,6 @@ static int g_write (lua_State *L, FILE *f, int arg) {
     else {
       size_t l;
       const char *s = luaL_checklstring(L, arg, &l);
-	  count += l;
 	  if (ftell(f) + l > FILELIMIT)
 	  {
 		luaL_error(L,"write limit bypassed in file. Changes have been discarded.");
@@ -640,4 +663,3 @@ LUALIB_API int luaopen_io (lua_State *L) {
   lua_pop(L, 1);  /* pop environment for default files */
   return 1;
 }
-

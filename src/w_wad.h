@@ -24,19 +24,12 @@
 
 // a raw entry of the wad directory
 // NOTE: This sits here and not in w_wad.c because p_setup.c makes use of it to load map WADs inside PK3s.
-#if defined(_MSC_VER)
-#pragma pack(1)
-#endif
 typedef struct
 {
 	UINT32 filepos; // file offset of the resource
 	UINT32 size; // size of the resource
 	char name[8]; // name of the resource
 } ATTRPACK filelump_t;
-#if defined(_MSC_VER)
-#pragma pack()
-#endif
-
 
 // ==============================================================
 //               WAD FILE STRUCTURE DEFINITIONS
@@ -78,7 +71,7 @@ typedef struct
 // =========================================================================
 
 #define MAX_WADPATH 512
-#define MAX_WADFILES 48 // maximum of wad files used at the same time
+#define MAX_WADFILES 255 // maximum of wad files used at the same time
 // (there is a max of simultaneous open files anyway, and this should be plenty)
 
 #define lumpcache_t void *

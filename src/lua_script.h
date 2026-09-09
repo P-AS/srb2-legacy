@@ -89,3 +89,11 @@ void COM_Lua_f(void);
 		CONS_Alert(CONS_WARNING,"%s\n", warningmsg);\
 	}\
 }
+
+
+#define ISINLEVEL \
+	(gamestate == GS_LEVEL)
+
+#define INLEVEL if (! ISINLEVEL)\
+return luaL_error(L, "This can only be used in a level!");
+

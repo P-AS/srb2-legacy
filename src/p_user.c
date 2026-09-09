@@ -14,11 +14,15 @@
 ///        Bobbing POV/weapon, movement.
 ///        Pending weapon.
 
+
+#include "command.h"
 #include "doomdef.h"
+#include "doomstat.h"
 #include "i_system.h"
 #include "d_event.h"
 #include "d_net.h"
 #include "g_game.h"
+#include "info.h"
 #include "p_local.h"
 #include "r_main.h"
 #include "s_sound.h"
@@ -55,6 +59,29 @@
 #if 0
 static void P_NukeAllPlayers(player_t *player);
 #endif
+
+//
+// Jingle stuff.
+//
+
+jingle_t jingleinfo[NUMJINGLES] = {
+	// {musname, looping, reset, nest}
+	{""        , false}, // JT_NONE
+	{""        , false}, // JT_OTHER
+	{""        , false}, // JT_MASTER
+	{"xtlife"    , false},
+	{"shoes"  ,  true},
+	{"invinc"    , false},
+	{"minvnc"   , false},
+	{"drown"  , false},
+	{"supers"  ,  true},
+	{"gmover"  , false},
+	{"drown"  , false},  // JT_NIGHTSTIMEOUT
+	{"drown"  , false}   // JT_SSTIMEOUT
+	// {"lclear"  , false},
+	// {"racent"  ,  true},
+	// {"contsc"  ,  true}
+};
 
 //
 // Movement.
@@ -165,7 +192,7 @@ fixed_t P_ReturnThrustY(mobj_t *mo, angle_t angle, fixed_t move)
 boolean P_AutoPause(void)
 {
 	// Don't pause even on menu-up or focus-lost in netgames or record attack
-	if (netgame || modeattacking)
+	if (netgame || modeattacking || (marathonmode && gamestate == GS_INTERMISSION))
 		return false;
 
 	return (menuactive || window_notinfocus);
@@ -636,6 +663,7 @@ static void P_DeNightserizePlayer(player_t *player)
 	}
 
 	// Restore from drowning music
+	music_stack_fadein = 0; // HACK: Change fade-in for restore music
 	P_RestoreMusic(player);
 }
 //
@@ -675,6 +703,7 @@ void P_NightserizePlayer(player_t *player, INT32 nighttime)
 	player->nightstime = player->startedtime = nighttime*TICRATE;
 	player->bonustime = false;
 
+	music_stack_fadein = 0; // HACK: Change fade-in for restore music
 	P_RestoreMusic(player);
 	P_SetMobjState(player->mo->tracer, S_SUPERTRANS1);
 
@@ -961,8 +990,7 @@ void P_DoSuperTransformation(player_t *player, boolean giverings)
 	player->powers[pw_super] = 1;
 	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player))
 	{
-		S_StopMusic();
-		S_ChangeMusicInternal("supers", true);
+		P_PlayJingle(player, JT_SUPER);
 	}
 
 	S_StartSound(NULL, sfx_supert); //let all players hear it -mattw_cfi
@@ -1093,14 +1121,122 @@ void P_PlayLivesJingle(player_t *player)
 		S_StartSound(NULL, sfx_oneup);
 	else if (mariomode)
 		S_StartSound(NULL, sfx_marioa);
+	else if (cv_1upsound.value)
+	{
+		if (S_sfx[sfx_oneup].lumpnum != LUMPERROR)
+			S_StartSound(NULL, sfx_oneup);
+		else
+			S_StartSound(NULL, sfx_chchng);/* at least play something! */
+	}
 	else
 	{
 		if (player)
 			player->powers[pw_extralife] = extralifetics + 1;
-		S_StopMusic(); // otherwise it won't restart if this is done twice in a row
-		S_ChangeMusicInternal("xtlife", false);
+		P_PlayJingle(player, JT_1UP);
 	}
 }
+
+void P_PlayJingle(player_t *player, jingletype_t jingletype)
+{
+	const char *musname = jingleinfo[jingletype].musname;
+	UINT16 musflags = 0;
+	boolean looping = jingleinfo[jingletype].looping;
+
+	char newmusic[7];
+	strncpy(newmusic, musname, 7);
+#if defined(HAVE_BLUA) && defined(HAVE_LUA_MUSICPLUS)
+ 	if(LUAh_MusicJingle(jingletype, newmusic, &musflags, &looping))
+ 		return;
+#endif
+	newmusic[6] = 0;
+
+	P_PlayJingleMusic(player, newmusic, musflags, looping, jingletype);
+}
+
+//
+// P_PlayJingleMusic
+//
+void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, boolean looping, UINT16 status)
+{
+	// If gamestate != GS_LEVEL, always play the jingle (1-up intermission)
+	if (gamestate == GS_LEVEL && !P_IsLocalPlayer(player))
+		return;
+
+	S_RetainMusic(musname, musflags, looping, 0, status);
+	S_StopMusic();
+	S_ChangeMusicInternal(musname, looping);
+}
+
+boolean P_EvaluateMusicStatus(UINT16 status)
+{
+	// \todo lua hook
+	int i;
+	boolean result = false;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!P_IsLocalPlayer(&players[i]))
+			continue;
+
+		switch(status)
+		{
+			case JT_1UP: // Extra life
+				result = (players[i].powers[pw_extralife] > 1);
+				break;
+
+			case JT_SHOES:  // Speed shoes
+				if (players[i].powers[pw_sneakers] > 1 && !players[i].powers[pw_super])
+				{
+					//strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);
+					//S_StartCaption(sfx_None, -1, players[i].powers[pw_sneakers]);
+					result = true;
+				}
+				else
+					result = false;
+				break;
+
+			case JT_INV: // Invincibility
+			case JT_MINV: // Mario Invincibility
+				if (players[i].powers[pw_invulnerability] > 1)
+				{
+					//strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
+					//S_StartCaption(sfx_None, -1, players[i].powers[pw_invulnerability]);
+					result = true;
+				}
+				else
+					result = false;
+				break;
+
+			case JT_DROWN:  // Drowning
+				result = (players[i].powers[pw_underwater] && players[i].powers[pw_underwater] <= 11*TICRATE + 1);
+				break;
+
+			case JT_SUPER:  // Super Sonic
+				result = (players[i].powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC));
+				break;
+
+			case JT_GOVER: // Game Over
+				result = (players[i].lives <= 0);
+				break;
+
+			case JT_NIGHTSTIMEOUT: // NiGHTS Time Out (10 seconds)
+			case JT_SSTIMEOUT:
+				result = (players[i].nightstime && players[i].nightstime <= 10*TICRATE);
+				break;
+
+			case JT_NONE:   // Null state
+			case JT_OTHER:  // Other state
+			case JT_MASTER: // Main level music
+			default:
+				result = true;
+		}
+
+		if (result)
+			break;
+ 	}
+
+	return result;
+ }
 
 //
 // P_RestoreMusic
@@ -1112,25 +1248,46 @@ void P_RestoreMusic(player_t *player)
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
 		return;
 
+	S_SpeedMusic(1.0f);
+
+	// Jingles have a priority in this order, so follow it
+	// and as a default case, go down the music stack.
+
+	// Extra life
 	if (player->powers[pw_extralife] > 1)
 		return;
-	S_SpeedMusic(1.0f);
-	if (player->powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC))
-		S_ChangeMusicInternal("supers", true);
+
+	// Super
+	else if (player->powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC)
+		&& !S_RecallMusic(JT_SUPER, false))
+		P_PlayJingle(player, JT_SUPER);
+
+	// Invulnerability
 	else if (player->powers[pw_invulnerability] > 1)
-		S_ChangeMusicInternal((mariomode) ? "minvnc" : "invinc", false);
+	{
+		if (!S_RecallMusic(JT_INV, false) && !S_RecallMusic(JT_MINV, false))
+			P_PlayJingle(player, (mariomode) ? JT_MINV : JT_INV);
+	}
+
+	// Shoes
 	else if (player->powers[pw_sneakers] > 1 && !player->powers[pw_super])
 	{
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
 			S_SpeedMusic(1.4f);
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+			if (!S_RecallMusic(JT_MASTER, true))
+				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}
-		else
-			S_ChangeMusicInternal("shoes", true);
+		else if (!S_RecallMusic(JT_SHOES, false))
+			P_PlayJingle(player, JT_SHOES);
 	}
-	else
-		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+
+	// Default
+	else if (!S_RecallMusic(JT_NONE, false)) // go down the stack
+	{
+		CONS_Debug(DBG_BASIC, "Cannot find any music in resume stack!\n");
+	 	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+ 	}
 }
 
 //
@@ -2012,10 +2169,6 @@ static void P_CheckQuicksand(player_t *player)
 //
 static void P_CheckSneakerAndLivesTimer(player_t *player)
 {
-	if ((player->powers[pw_underwater] <= 11*TICRATE + 1)
-	&& (player->powers[pw_underwater] > 1))
-		return; // don't restore music if drowning music is playing
-
 	if (player->powers[pw_extralife] == 1) // Extra Life!
 		P_RestoreMusic(player);
 
@@ -2100,15 +2253,18 @@ static void P_CheckUnderwaterAndSpaceTimer(player_t *player)
 	if (!(player->mo->eflags & MFE_UNDERWATER) && player->powers[pw_underwater])
 	{
 		if (player->powers[pw_underwater] <= 12*TICRATE + 1)
+		{
+			player->powers[pw_underwater] = 0;
 			P_RestoreMusic(player);
-
-		player->powers[pw_underwater] = 0;
+		}
+		else
+			player->powers[pw_underwater] = 0;
 	}
 
 	if (player->powers[pw_spacetime] > 1 && !P_InSpaceSector(player->mo))
 	{
-		P_RestoreMusic(player);
 		player->powers[pw_spacetime] = 0;
+		P_RestoreMusic(player);
 	}
 
 	// Underwater audio cues
@@ -2117,8 +2273,7 @@ static void P_CheckUnderwaterAndSpaceTimer(player_t *player)
 		if (player->powers[pw_underwater] == 11*TICRATE + 1
 		&& player == &players[consoleplayer])
 		{
-			S_StopMusic();
-			S_ChangeMusicInternal("drown", false);
+			P_PlayJingle(player, JT_DROWN);
 		}
 
 		if (player->powers[pw_underwater] == 25*TICRATE + 1)
@@ -2179,10 +2334,6 @@ static void P_CheckInvincibilityTimer(player_t *player)
 			// If you had a shield, restore its visual significance
 			P_SpawnShieldOrb(player);
 		}
-
-		if ((player->powers[pw_underwater] <= 11*TICRATE + 1)
-		&& (player->powers[pw_underwater] > 1))
-			return; // don't restore music if drowning music is playing
 
 		if (!player->powers[pw_super] || (mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC))
 			P_RestoreMusic(player);
@@ -2263,12 +2414,23 @@ static void P_DoPlayerHeadSigns(player_t *player)
 		// If you're "IT", show a big "IT" over your head for others to see.
 		if (player->pflags & PF_TAGIT)
 		{
-			if (!(player == &players[consoleplayer] || player == &players[secondarydisplayplayer] || player == &players[displayplayer])) // Don't display it on your own view.
+			mobj_t* it = P_SpawnMobj(player->mo->x,  player->mo->y, player->mo->z, MT_TAG);
+			it->x = player->mo->x;
+			it->y = player->mo->y;
+			it->z = player->mo->z;
+			it->old_x = player->mo->old_x;
+			it->old_y = player->mo->old_y;
+			it->old_z = player->mo->old_z;
+
+			if (!(player->mo->eflags & MFE_VERTICALFLIP))
 			{
-				if (!(player->mo->eflags & MFE_VERTICALFLIP))
-					P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height, MT_TAG);
-				else
-					P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z - mobjinfo[MT_TAG].height, MT_TAG)->eflags |= MFE_VERTICALFLIP;
+				it->z += player->mo->height;
+				it->old_z += player->mo->height;
+			}
+			else
+			{
+				it->z -= mobjinfo[MT_TAG].height;
+				it->old_z -= mobjinfo[MT_TAG].height;
 			}
 		}
 	}
@@ -3380,6 +3542,8 @@ static void P_DoSuperStuff(player_t *player)
 		{
 			player->powers[pw_super] = 0;
 			P_SetPlayerMobjState(player->mo, S_PLAY_STND);
+			music_stack_noposition = true; // HACK: Do not reposition next music
+			music_stack_fadeout = MUSICRATE/2; // HACK: Fade out current music
 			P_RestoreMusic(player);
 			P_SpawnShieldOrb(player);
 
@@ -3475,6 +3639,8 @@ static void P_DoSuperStuff(player_t *player)
 			}
 
 			// Resume normal music if you're the console player
+			music_stack_noposition = true; // HACK: Do not reposition next music
+			music_stack_fadeout = MUSICRATE/2; // HACK: Fade out current music
 			P_RestoreMusic(player);
 
 			// If you had a shield, restore its visual significance.
@@ -5511,13 +5677,14 @@ static void P_NiGHTSMovement(player_t *player)
 		P_DeNightserizePlayer(player);
 		S_StartScreamSound(player->mo, sfx_s3k66);
 //		S_StopSoundByNum(sfx_timeup); // Kill the "out of time" music, if it's playing. Dummied out, as some on the dev team thought it wasn't Sonic-y enough (Mystic, notably). Uncomment to restore. -SH
+		music_stack_fadein = 0; // HACK: Change fade-in for restore music
 		P_RestoreMusic(player); // I have my doubts that this is the right place for this...
 
 		return;
 	}
 	else if (P_IsLocalPlayer(player) && player->nightstime == 10*TICRATE)
 //		S_StartSound(NULL, sfx_timeup); // that creepy "out of time" music from NiGHTS. Dummied out, as some on the dev team thought it wasn't Sonic-y enough (Mystic, notably). Uncomment to restore. -SH
-		S_ChangeMusicInternal("drown",false);
+		P_PlayJingle(player, ((maptol & TOL_NIGHTS) && !G_IsSpecialStage(gamemap)) ? JT_NIGHTSTIMEOUT : JT_SSTIMEOUT);
 
 
 	if (player->mo->z < player->mo->floorz)
@@ -7715,6 +7882,7 @@ static void CV_CamRotate2_OnChange(void)
 static CV_PossibleValue_t CV_CamSpeed[] = {{0, "MIN"}, {1*FRACUNIT, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t rotation_cons_t[] = {{1, "MIN"}, {45, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t CV_CamRotate[] = {{-720, "MIN"}, {720, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t multiplier_cons_t[] = {{0, "MIN"}, {3*FRACUNIT, "MAX"}, {0, NULL}};
 
 consvar_t cv_cam_dist = CVAR_INIT ("cam_dist", "160", NULL, CV_FLOAT|CV_SAVE, NULL, NULL);
 consvar_t cv_cam_height = CVAR_INIT ("cam_height", "25", NULL, CV_FLOAT|CV_SAVE, NULL, NULL);
@@ -7722,6 +7890,7 @@ consvar_t cv_cam_still = CVAR_INIT ("cam_still", "Off", NULL, 0, CV_OnOff, NULL)
 consvar_t cv_cam_speed = CVAR_INIT ("cam_speed", "0.3", NULL, CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL);
 consvar_t cv_cam_rotate = CVAR_INIT ("cam_rotate", "0", NULL, CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange);
 consvar_t cv_cam_rotspeed = CVAR_INIT ("cam_rotspeed", "10", NULL, CV_SAVE, rotation_cons_t, NULL);
+consvar_t cv_cam_turnmultiplier = CVAR_INIT ("cam_turnmultiplier", "1.0", "Mulitiplies camera turning speed by this value", CV_FLOAT|CV_SAVE, multiplier_cons_t, NULL);
 consvar_t cv_cam_orbit = CVAR_INIT ("cam_orbit", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_cam_adjust = CVAR_INIT ("cam_adjust", "On", NULL, CV_SAVE|CV_SHOWMODIF, CV_OnOff, NULL);
 consvar_t cv_cam2_dist = CVAR_INIT ("cam2_dist", "160", NULL, CV_FLOAT|CV_SAVE, NULL, NULL);
@@ -7730,13 +7899,26 @@ consvar_t cv_cam2_still = CVAR_INIT ("cam2_still", "Off", NULL, 0, CV_OnOff, NUL
 consvar_t cv_cam2_speed = CVAR_INIT ("cam2_speed", "0.3", NULL, CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL);
 consvar_t cv_cam2_rotate = CVAR_INIT ("cam2_rotate", "0", NULL, CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate2_OnChange);
 consvar_t cv_cam2_rotspeed = CVAR_INIT ("cam2_rotspeed", "10", NULL, CV_SAVE, rotation_cons_t, NULL);
+consvar_t cv_cam2_turnmultiplier = CVAR_INIT ("cam2_turnmultiplier", "1.0", "Mulitiplies camera turning speed by this value, for player two", CV_FLOAT|CV_SAVE, multiplier_cons_t, NULL);
 consvar_t cv_cam2_orbit = CVAR_INIT ("cam2_orbit", "Off", NULL, CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_cam2_adjust = CVAR_INIT ("cam2_adjust", "On", NULL, CV_SAVE|CV_SHOWMODIF, CV_OnOff, NULL);
 
-consvar_t cv_viewroll = CVAR_INIT ("viewroll", "Off", "Tilt camera on slopes, in the direction of the slope", CV_SAVE, CV_OnOff, NULL);
+static CV_PossibleValue_t CV_ViewRoll[] = { {0, "Off"}, {1, "On"}, {2, "First-Person"}, {0, NULL} };
+
+consvar_t cv_viewroll = CVAR_INIT ("viewroll", "Off", "Tilt camera on slopes, in the direction of the slope", CV_SAVE, CV_ViewRoll, NULL);
 consvar_t cv_quakeiiiarena = CVAR_INIT ("earthquake", "On", "Roll camera up and down during earthquake", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_quakeiv = CVAR_INIT ("quakeroll", "Off", "Tilt camera when moving side to side, resembling Quake", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_quakelive = CVAR_INIT ("windowquake", "Off", "Shake the game window during earthquakes", CV_SAVE, CV_OnOff, NULL);
+
+// romoney5: noclip camera
+static CV_PossibleValue_t clipping_cons_t[] = { {0, "Off"}, {1, "Vanilla"}, {2, "Exact"}, {0, NULL} };
+
+consvar_t cv_cam_clipping = CVAR_INIT ("cam_clipping", "Vanilla", "The way that the camera clips through walls", CV_SAVE, clipping_cons_t, NULL);
+consvar_t cv_cam2_clipping = CVAR_INIT ("cam2_clipping", "Vanilla", "The way that the camera clips through walls, for player two", CV_SAVE, clipping_cons_t, NULL);
+
+// romoney5: exact camera aiming
+consvar_t cv_cam_exact = CVAR_INIT ("cam_exact", "Off", "More precise camera movement", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_cam2_exact = CVAR_INIT ("cam2_exact", "Off", "More precise camera movement, for player two", CV_SAVE, CV_OnOff, NULL);
 
 fixed_t t_cam_dist = -42;
 fixed_t t_cam_height = -42;
@@ -7793,7 +7975,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	angle_t angle = 0, focusangle = 0, focusaiming = 0;
 	fixed_t x, y, z, dist, distxy, distz, checkdist, viewpointx, viewpointy, camspeed, camdist, camheight, pviewheight, slopez = 0;
 	INT32 camrotate;
-	boolean camstill, cameranoclip, camorbit;
+	boolean camstill, cameranoclip, camorbit, cameraexact;
+	INT32 camclipping;
 	mobj_t *mo;
 	subsector_t *newsubsec;
 	fixed_t f1, f2;
@@ -7804,7 +7987,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	mo = player->mo;
 
-	cameranoclip = (player->pflags & (PF_NOCLIP|PF_NIGHTSMODE)) || (mo->flags & (MF_NOCLIP|MF_NOCLIPHEIGHT)); // Noclipping player camera noclips too!!
+	cameranoclip = (P_IsCameraNoclip(thiscam) || player->pflags & (PF_NOCLIP|PF_NIGHTSMODE)) || (mo->flags & (MF_NOCLIP|MF_NOCLIPHEIGHT)); // Noclipping player camera noclips too!!
 
 	if (!(player->climbing || (player->pflags & PF_NIGHTSMODE) || player->playerstate == PST_DEAD))
 	{
@@ -7866,8 +8049,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		focusaiming = player->aiming;
 	}
 
-	if (P_CameraThinker(player, thiscam, resetcalled))
-		return true;
 
 	if (thiscam == &camera)
 	{
@@ -7877,6 +8058,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		camrotate = cv_cam_rotate.value;
 		camdist = FixedMul(cv_cam_dist.value, mo->scale);
 		camheight = FixedMul(cv_cam_height.value, mo->scale);
+
+		cameraexact = cv_cam_exact.value;
+		camclipping = cv_cam_clipping.value;
 	}
 	else // Camera 2
 	{
@@ -7886,7 +8070,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		camrotate = cv_cam2_rotate.value;
 		camdist = FixedMul(cv_cam2_dist.value, mo->scale);
 		camheight = FixedMul(cv_cam2_height.value, mo->scale);
+
+		cameraexact = cv_cam2_exact.value;
+		camclipping = cv_cam2_clipping.value;
 	}
+
+	if (!cameraexact && P_CameraThinker(player, thiscam, resetcalled))
+		return true;
 
 #ifdef REDSANALOG
 	if (P_AnalogMove(player) && (player->cmd.buttons & (BT_CAMLEFT|BT_CAMRIGHT)) == (BT_CAMLEFT|BT_CAMRIGHT)) {
@@ -8016,7 +8206,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		if ((thiscam == &camera && cv_cam_adjust.value) || (thiscam == &camera2 && cv_cam2_adjust.value))
 		{
 			if (!(mo->eflags & MFE_JUSTHITFLOOR) && (P_IsObjectOnGround(mo)) // Check that player is grounded
-			&& thiscam->ceilingz - thiscam->floorz >= P_GetPlayerHeight(player)) // Check that camera's sector is large enough for the player to fit into, at least
+			&& thiscam->ceilingz - thiscam->floorz >= P_GetPlayerHeight(player) // Check that camera's sector is large enough for the player to fit into, at least
+			&& thiscam->z >= thiscam->floorz && thiscam->z <= thiscam->ceilingz) // romoney5: if the camera is out of bounds, don't snap
 			{
 				if (mo->eflags & MFE_VERTICALFLIP) // if player is upside-down
 				{
@@ -8244,7 +8435,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 		// camera fit?
 		if (myceilingz != myfloorz
-			&& myceilingz - thiscam->height < z)
+			&& myceilingz - thiscam->height < z
+			&& !cameranoclip)
 		{
 /*			// no fit
 			if (!resetcalled && !cameranoclip)
@@ -8303,7 +8495,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	viewpointx = mo->x + FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);
 	viewpointy = mo->y + FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);
 
-	if (!camstill && !resetcalled && !paused)
+	if (!camstill && !resetcalled && !paused && !cameraexact)
 		thiscam->angle = R_PointToAngle2(thiscam->x, thiscam->y, viewpointx, viewpointy);
 
 	viewpointx = mo->x + FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist);
@@ -8325,6 +8517,43 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		}
 	}*/
 
+	// compute aming to look the viewed point
+	f1 = viewpointx-thiscam->x;
+	f2 = viewpointy-thiscam->y;
+	dist = FixedHypot(f1, f2);
+
+	if (mo->eflags & MFE_VERTICALFLIP)
+		angle = R_PointToAngle2(0, thiscam->z + thiscam->height, dist, mo->z + mo->height - P_GetPlayerHeight(player));
+	else
+		angle = R_PointToAngle2(0, thiscam->z, dist, mo->z + P_GetPlayerHeight(player));
+
+	if (player->playerstate != PST_DEAD)
+		angle += (focusaiming < ANGLE_180 ? focusaiming/2 : InvAngle(InvAngle(focusaiming)/2)); // overcomplicated version of '((signed)focusaiming)/2;'
+
+	if (twodlevel || (mo->flags2 & MF2_TWOD) || !camstill) // Keep the view still...
+	{
+
+		if (cameraexact)
+		{
+			angle = focusaiming;
+			if (mo->eflags & MFE_VERTICALFLIP)
+				z = z + camheight / 2;
+			else
+				z = z - camheight / 2;
+
+			G_ClipAimingPitch((INT32 *)&angle);
+			dist = thiscam->aiming - angle;
+			thiscam->aiming -= FixedMul(dist, camspeed);
+		}
+		else
+		{
+			G_ClipAimingPitch((INT32 *)&angle);
+			dist = thiscam->aiming - angle;
+			thiscam->aiming -= (dist>>3);
+		}
+	}
+
+
 	if (twodlevel || (mo->flags2 & MF2_TWOD))
 	{
 		thiscam->momx = x-thiscam->x;
@@ -8344,25 +8573,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		}
 		else
 			thiscam->momz = FixedMul(z - thiscam->z, camspeed);
-	}
-
-	// compute aming to look the viewed point
-	f1 = viewpointx-thiscam->x;
-	f2 = viewpointy-thiscam->y;
-	dist = FixedHypot(f1, f2);
-
-	if (mo->eflags & MFE_VERTICALFLIP)
-		angle = R_PointToAngle2(0, thiscam->z + thiscam->height, dist, mo->z + mo->height - P_GetPlayerHeight(player));
-	else
-		angle = R_PointToAngle2(0, thiscam->z, dist, mo->z + P_GetPlayerHeight(player));
-	if (player->playerstate != PST_DEAD && !(player->pflags & PF_NIGHTSMODE && player->exiting))
-		angle += (focusaiming < ANGLE_180 ? focusaiming/2 : InvAngle(InvAngle(focusaiming)/2)); // overcomplicated version of '((signed)focusaiming)/2;'
-
-	if (twodlevel || (mo->flags2 & MF2_TWOD) || !camstill) // Keep the view still...
-	{
-		G_ClipAimingPitch((INT32 *)&angle);
-		dist = thiscam->aiming - angle;
-		thiscam->aiming -= (dist>>3);
 	}
 
 	// Make player translucent if camera is too close (only in single player).
@@ -8408,6 +8618,79 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 			thiscam->aiming = ANGLE_337h;
 		else if (mo->eflags & MFE_VERTICALFLIP && thiscam->aiming > ANGLE_22h && thiscam->aiming < ANGLE_180)
 			thiscam->aiming = ANGLE_22h;
+	}
+
+	// romoney5: move after setting momentum
+	if (cameraexact && P_CameraThinker(player, thiscam, resetcalled))
+		return true;
+
+	if (!camstill && !resetcalled && !paused && cameraexact)
+		thiscam->angle = R_PointToAngle2(thiscam->x, thiscam->y, viewpointx, viewpointy);
+
+	// romoney5: exact camera clipping
+	if (camclipping == 2 && !( // not under these conditions, though:
+		twodlevel || (mo->flags2 & MF2_TWOD)
+		|| (player->playerstate == PST_DEAD || player->playerstate == PST_REBORN)
+		))
+	{
+		INT32 targetx = thiscam->x, targety = thiscam->y, targetz = thiscam->z;
+
+		thiscam->x = mo->x;
+		thiscam->y = mo->y;
+		if (mo->eflags & MFE_VERTICALFLIP)
+			thiscam->z = mo->z + mo->height - pviewheight - camheight / 2; // romoney5: reverse height is very slightly inaccurate
+		else
+			thiscam->z = mo->z + pviewheight;
+
+		fixed_t tryangle = (R_PointToAngle2(thiscam->x, thiscam->y, targetx, targety) >> ANGLETOFINESHIFT) & FINEMASK;
+		fixed_t trydist = R_PointToDist2(targetx, targety, thiscam->x, thiscam->y);
+		fixed_t tryzangle = (R_PointToAngle2(0, 0, trydist, -(thiscam->z - targetz)) >> ANGLETOFINESHIFT) & FINEMASK;
+		trydist = R_PointToDist2(0, 0, trydist, thiscam->z - targetz);
+		
+		fixed_t move_step = mo->scale / 2;
+		fixed_t movex = FixedMul(FINECOSINE(tryangle), move_step);
+		fixed_t movey = FixedMul(FINESINE(tryangle), move_step);
+		fixed_t movez = FixedMul(FINESINE(tryzangle), move_step);
+		movex = FixedMul(movex, FINECOSINE(tryzangle));
+		movey = FixedMul(movey, FINECOSINE(tryzangle));
+
+		// hack: decrease the camera's radius
+		fixed_t radius = thiscam->radius;
+		thiscam->radius = radius / 3;
+
+		for (fixed_t moved = 0; ; moved += move_step)
+		{
+			// reached max distance; return to the original position to avoid snapping
+			// at very small scales
+			if (moved >= trydist)
+			{
+				thiscam->x = targetx;
+				thiscam->y = targety;
+				thiscam->z = targetz;
+
+				break;
+			}
+
+			thiscam->x += movex;
+			thiscam->y += movey;
+			thiscam->z += movez;
+
+			// one-side wall
+			if (!P_CheckCameraPosition(thiscam->x, thiscam->y, thiscam))
+				break; // solid wall or thing
+
+			if (tmceilingz - tmfloorz < thiscam->height)
+				break; // doesn't fit
+
+			if (tmceilingz - thiscam->z < thiscam->height)
+				break;
+
+			// floor
+			if ((tmfloorz - thiscam->z > 0))
+				break; // too big a step up
+		}
+
+		thiscam->radius = radius;
 	}
 
 	return (x == thiscam->x && y == thiscam->y && z == thiscam->z && angle == thiscam->aiming);
@@ -8670,14 +8953,14 @@ Quaketilt (player_t *player)
 	return moma;
 }
 
-
 static void
 DoABarrelRoll (player_t *player)
 {
 	angle_t slope;
 	angle_t delta;
+	bool useviewroll = (cv_viewroll.value == 1 || (cv_viewroll.value == 2 && !cv_chasecam.value));
 
-	if (player->mo->standingslope)
+	if (player->mo->standingslope && useviewroll)
 	{
 		slope = player->mo->standingslope->zangle;
 	}
@@ -8686,8 +8969,7 @@ DoABarrelRoll (player_t *player)
 		slope = 0;
 	}
 
-
-	if (player->mo->standingslope && cv_viewroll.value && (abs((INT32)slope) > ANGLE_11hh))
+	if (player->mo->standingslope && useviewroll && (abs((INT32)slope) > ANGLE_11hh))
 	{
 		delta = ( player->mo->angle - player->mo->standingslope->xydirection );
 		slope = -(FixedMul(FINESINE (delta>>ANGLETOFINESHIFT), slope));
@@ -8695,7 +8977,7 @@ DoABarrelRoll (player_t *player)
 	else
 		slope = 0;
 
-	if(cv_quakeiv.value && cv_viewroll.value)
+	if (cv_quakeiv.value && useviewroll)
 	{
 		slope -= Quaketilt(player);
 	}
@@ -8707,11 +8989,9 @@ DoABarrelRoll (player_t *player)
 	else
 		player->viewrollangle  = slope;
 
-	if(cv_viewroll.value && cv_quakeiiiarena.value)
+	if (useviewroll && cv_quakeiiiarena.value)
 		player->viewrollangle += quake.roll;
 }
-
-
 
 //
 // P_PlayerThink
@@ -8834,7 +9114,7 @@ void P_PlayerThink(player_t *player)
 		if (countdown == 11*TICRATE - 1)
 		{
 			if (P_IsLocalPlayer(player))
-				S_ChangeMusicInternal("drown", false);
+				P_PlayJingle(player, JT_DROWN);
 		}
 
 		// If you've hit the countdown and you haven't made
@@ -9098,7 +9378,6 @@ void P_PlayerThink(player_t *player)
 	P_DoBubbleBreath(player); // Spawn Sonic's bubbles
 	P_CheckUnderwaterAndSpaceTimer(player); // Display the countdown drown numbers!
 	P_CheckInvincibilityTimer(player); // Spawn Invincibility Sparkles
-	P_DoPlayerHeadSigns(player); // Spawn Tag/CTF signs over player's head
 
 #if 1
 	// "Blur" a bit when you have speed shoes and are going fast enough
@@ -9163,9 +9442,12 @@ void P_PlayerThink(player_t *player)
 	if (player->powers[pw_underwater] && (player->pflags & PF_GODMODE || (player->powers[pw_shield] & SH_NOSTACK) == SH_ELEMENTAL))
 	{
 		if (player->powers[pw_underwater] <= 12*TICRATE+1)
+		{
+			player->powers[pw_underwater] = 0;
 			P_RestoreMusic(player); //incase they were about to drown
-
-		player->powers[pw_underwater] = 0;
+		}
+		else
+			player->powers[pw_underwater] = 0;
 	}
 	else if (player->powers[pw_underwater] && !(maptol & TOL_NIGHTS) && !((netgame || multiplayer) && player->spectator)) // underwater timer
 		player->powers[pw_underwater]--;
@@ -9293,14 +9575,10 @@ void P_PlayerThink(player_t *player)
 
 		I_Error("I'm done!\n");
 	}*/
-	if (cv_viewroll.value)
-	{
+	if (cv_viewroll.value != 0)
 		DoABarrelRoll(player);
-	}
 	else
-	{
 		player->viewrollangle = 0;
-	}
 }
 
 //
@@ -9638,6 +9916,8 @@ void P_PlayerAfterThink(player_t *player)
 
 	if (P_IsObjectOnGround(player->mo))
 		player->mo->pmomz = 0;
+
+	P_DoPlayerHeadSigns(player); // Spawn Tag/CTF signs over player's head
 }
 
 void P_ForceLocalAngle(player_t *player, angle_t angle)

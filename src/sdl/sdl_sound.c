@@ -16,20 +16,13 @@
 /// \file
 /// \brief SDL interface for sound
 
-#include <math.h>
 #include "../doomdef.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
+#if defined(HAVE_SDL) && SOUND == SOUND_SDL
 
-#if defined(HAVE_SDL) && SOUND==SOUND_SDL
+#include <math.h>
 
 #include "SDL.h"
-
-#ifdef _MSC_VER
-#pragma warning(default : 4214 4244)
-#endif
 
 #ifdef HAVE_MIXER
 #include "SDL_mixer.h"
@@ -234,11 +227,6 @@ static inline Uint16 Snd_LowerRate(Uint16 sr)
 	return sr*2; // just keep it just above the output sample rate
 }
 
-#ifdef _MSC_VER
-#pragma warning(disable :  4200)
-#pragma pack(1)
-#endif
-
 typedef struct
 {
 	Uint16 header;     // 3?
@@ -247,11 +235,6 @@ typedef struct
 	Uint16 dummy;      // 0
 	Uint8  data[0];    // data;
 } ATTRPACK dssfx_t;
-
-#ifdef _MSC_VER
-#pragma pack()
-#pragma warning(default : 4200)
-#endif
 
 //
 // This function loads the sound data from the WAD lump,
@@ -1186,9 +1169,10 @@ void I_StartupSound(void)
 	// Configure sound device
 	CONS_Printf("I_StartupSound:\n");
 
-#ifdef _WIN32
+#if defined(_WIN32) && !SDL_VERSION_ATLEAST(2,26,5)
 	// Force DirectSound instead of WASAPI
 	// SDL 2.0.6+ defaults to the latter and it screws up our sound effects
+	// SDL 2.26.5 brought imrovements to resampling so this just screws up other stuff now
 	SDL_setenv("SDL_AUDIODRIVER", "directsound", 1);
 #endif
 
@@ -1206,14 +1190,14 @@ void I_StartupSound(void)
 	if (M_CheckParm ("-freq") && M_IsNextParm())
 	{
 		audio.freq = atoi(M_GetNextParm());
-		if (!audio.freq) audio.freq = cv_samplerate.value;
+		if (!audio.freq) audio.freq = 44100;
 		audio.samples = (Uint16)((samplecount/2)*(INT32)(audio.freq/11025)); //Alam: to keep it around the same XX ms
 		CONS_Printf (M_GetText(" requested frequency of %d hz\n"), audio.freq);
 	}
 	else
 	{
 		audio.samples = samplecount;
-		audio.freq = cv_samplerate.value;
+		audio.freq = 44100;
 	}
 
 	if (M_CheckParm ("-mono"))
@@ -1306,7 +1290,6 @@ void I_StartupSound(void)
 		//CONS_Printf(M_GetText(" Starting up with audio driver : %s\n"), SDL_AudioDriverName(ad, (int)sizeof ad));
 	}
 	samplecount = audio.samples;
-	CV_SetValue(&cv_samplerate, audio.freq);
 	CONS_Printf(M_GetText(" configured audio device with %d samples/slice at %ikhz(%dms buffer)\n"), samplecount, audio.freq/1000, (INT32) (((float)audio.samples * 1000.0f) / audio.freq));
 	// Finished initialization.
 	CONS_Printf("%s", M_GetText(" Sound module ready\n"));

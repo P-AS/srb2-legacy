@@ -54,7 +54,7 @@
 
 #ifdef HAVE_SDL
 #include "sdl/hwsym_sdl.h"
-#ifdef __linux__
+#if defined(__linux__) && !defined(__BIONIC__) && !defined(__ANDROID__)
 #ifndef _LARGEFILE64_SOURCE
 typedef off_t off64_t;
 #endif
@@ -73,12 +73,8 @@ typedef off_t off64_t;
 
 #ifdef HAVE_PNG
 
-#ifndef _MSC_VER
-#ifndef _WII
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
-#endif
-#endif
 #endif
 
 #ifndef _LFS64_LARGEFILE
@@ -167,6 +163,7 @@ consvar_t cv_apng_delay = CVAR_INIT ("apng_speed", "1/2x", NULL, CV_SAVE, apng_d
 boolean takescreenshot = false; // Take a screenshot this tic
 
 moviemode_t moviemode = MM_OFF;
+static INT32 movieframesrecorded = 0;
 
 /** Returns the map number for a map identified by the last two characters in
   * its name.
@@ -199,7 +196,7 @@ INT32 M_MapNumber(char first, char second)
 // ==========================================================================
 
 // some libcs has no access function, make our own
-#if defined (_WIN32_WCE) || defined (_XBOX) || defined (_WII) || defined (_PS3)
+#if 0
 int access(const char *path, int amode)
 {
 	int accesshandle = -1;
@@ -249,6 +246,8 @@ boolean FIL_WriteFile(char const *name, const void *source, size_t length)
 
 	count = fwrite(source, 1, length, handle);
 	fclose(handle);
+
+	I_SyncIDBFS();
 
 	if (count < length)
 		return false;
@@ -590,6 +589,8 @@ void M_SaveConfig(const char *filename)
 	if (!dedicated) G_SaveKeySetting(f);
 
 	fclose(f);
+
+	I_SyncIDBFS();
 }
 
 // ==========================================================================
@@ -1146,6 +1147,8 @@ void M_StartMovie(void)
 	else if (moviemode == MM_SCREENSHOT)
 		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "screenshots");
 
+	 movieframesrecorded = 0;
+
 	//singletics = (moviemode != MM_OFF);
 #endif
 }
@@ -1167,7 +1170,31 @@ void M_SaveFrame(void)
 			takescreenshot = true;
 			return;
 		case MM_GIF:
+			movieframesrecorded++;
+
+			float old_size = GIF_GetSizeMB();
 			GIF_frame();
+
+			// size cap
+			if (cv_gif_maxsize.value)
+			{
+				float cur_size = GIF_GetSizeMB();
+				float diff = (cur_size - old_size) * 8;
+
+				if (cur_size >= (cv_gif_maxsize.value) - diff)
+				{
+					M_StopMovie();
+
+					// re-record
+					if (cv_gif_rolling.value)
+					{
+						M_StartMovie();
+						return;
+					}
+
+					CONS_Alert(CONS_NOTICE, M_GetText("Max movie size reached\n"));
+				}
+			}
 			return;
 		case MM_APNG:
 #ifdef USE_APNG
@@ -1178,6 +1205,8 @@ void M_SaveFrame(void)
 					moviemode = MM_OFF;
 					return;
 				}
+
+				movieframesrecorded++;
 
 				if (rendermode == render_soft)
 				{
@@ -1247,8 +1276,36 @@ void M_StopMovie(void)
 			return;
 	}
 	moviemode = MM_OFF;
+	I_SyncIDBFS();
 	CONS_Printf(M_GetText("Movie mode disabled.\n"));
 #endif
+}
+
+INT32 M_RecordedFrames(void)
+{
+	return movieframesrecorded;
+}
+
+float M_SavedSize(void)
+{
+	if (!moviemode)
+		return 0;
+	
+	switch (moviemode)
+	{	
+		case MM_GIF:
+			return GIF_GetSizeMB();
+		case MM_APNG:
+#ifdef USE_APNG
+		return ftell(apng_FILE);
+#else
+		return 0;
+#endif
+		default:
+			return 0;
+	}
+	// bruh
+	return 0;
 }
 
 // ==========================================================================
@@ -1505,6 +1562,8 @@ void M_DoScreenShot(void)
 		ret = WritePCXfile(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
 #endif
 	}
+
+	I_SyncIDBFS();
 
 failure:
 	if (ret)
@@ -2065,3 +2124,16 @@ void M_MkdirEach(const char *path, int start, int mode)
 	M_MkdirEachUntil(path, start, -1, mode);
 }
 
+// Rounds off floating numbers and checks for 0 - 255 bounds
+int M_RoundUp(double number)
+{
+	if (number > 255.0l)
+		return 255;
+	if (number < 0.0l)
+		return 0;
+
+	if ((int)number <= (int)(number - 0.5f))
+		return (int)number + 1;
+
+	return (int)number;
+}

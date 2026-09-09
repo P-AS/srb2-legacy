@@ -33,6 +33,8 @@
 #include "y_inter.h"
 #include "m_cond.h"
 
+#include "lua_hud.h"
+
 // Stage of animation:
 // 0 = text, 1 = art screen
 static INT32 finalecount;
@@ -223,7 +225,9 @@ static void F_SkyScroll(INT32 scrollspeed)
 
 	pat = W_CachePatchName("TITLESKY", PU_PATCH);
 
-	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width) + (FixedInt((R_GetHudUncap(true)) * scrollspeed)/16);
+	animtimer = ((finalecount*scrollspeed)/16) % SHORT(pat->width) + FixedInt((rendertimefrac_unpaused-FRACUNIT) * scrollspeed) / 16;
+
+
 
  if (rendermode != render_none)
 	{ // if only software rendering could be this simple and retarded
@@ -797,10 +801,18 @@ void F_IntroDrawer(void)
 
 			// Stay on black for a bit. =)
 			{
-				tic_t quittime;
-				quittime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds
-				while (quittime > I_GetTime())
+				tic_t nowtime, quittime, lasttime;
+				nowtime = lasttime = I_GetTime();
+				quittime = nowtime + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds
+				while (quittime > nowtime)
 				{
+					while (!((nowtime = I_GetTime()) - lasttime))
+					{
+						I_Sleep(cv_sleep.value);
+						I_UpdateTime(cv_timescale.value);
+					}
+					lasttime = nowtime;
+
 					I_OsPolling();
 					I_UpdateNoBlit();
 					M_Drawer(); // menu is drawn even on top of wipes
@@ -809,6 +821,7 @@ void F_IntroDrawer(void)
 			}
 
 			D_StartTitle();
+			wipegamestate = GS_INTRO;
 			return;
 		}
 		F_NewCutscene(introtext[++intro_scenenum]);
@@ -820,6 +833,84 @@ void F_IntroDrawer(void)
 	}
 
 	intro_curtime = introscenetime[intro_scenenum] - timetonext;
+
+	/*if (rendermode != render_none)
+	{
+		if (intro_scenenum == 5 && intro_curtime == 5*TICRATE)
+		{
+			patch_t *radar = W_CachePatchName("RADAR", PU_PATCH);
+
+			F_WipeStartScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			V_DrawScaledPatch(0, 0, 0, radar);
+			W_UnlockCachedPatch(radar);
+			V_DrawString(8, 128, 0, cutscene_disptext);
+
+			F_WipeEndScreen();
+			F_RunWipe(99,true);
+		}
+		else if (intro_scenenum == 7 && intro_curtime == 6*TICRATE) // Force a wipe here
+		{
+			patch_t *grass = W_CachePatchName("SGRASS5", PU_PATCH);
+
+			F_WipeStartScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			V_DrawScaledPatch(0, 0, 0, grass);
+			W_UnlockCachedPatch(grass);
+			V_DrawString(8, 128, 0, cutscene_disptext);
+
+			F_WipeEndScreen();
+			F_RunWipe(99,true);
+		}
+		else if (intro_scenenum == 12 && intro_curtime == 7*TICRATE)
+		{
+			patch_t *confront = W_CachePatchName("CONFRONT", PU_PATCH);
+
+			F_WipeStartScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			V_DrawSmallScaledPatch(0, 0, 0, confront);
+			W_UnlockCachedPatch(confront);
+			V_DrawString(8, 128, 0, cutscene_disptext);
+
+			F_WipeEndScreen();
+			F_RunWipe(99,true);
+		}
+		if (intro_scenenum == 14 && intro_curtime == 7*TICRATE)
+		{
+			patch_t *sdo = W_CachePatchName("SONICDO2", PU_PATCH);
+
+			F_WipeStartScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			V_DrawSmallScaledPatch(0, 0, 0, sdo);
+			W_UnlockCachedPatch(sdo);
+			V_DrawString(224, 8, 0, cutscene_disptext);
+
+			F_WipeEndScreen();
+			F_RunWipe(99,true);
+		}
+	}*/
+
+	F_IntroDrawScene();
+}
+
+//
+// F_IntroTicker
+//
+void F_IntroTicker(void)
+{
+	// advance animation
+	finalecount++;
+
+	if (finalecount % 3 == 0)
+		roidtics--;
+
+	timetonext--;
+
+	F_WriteText();
+
+	// check for skipping
+	if (keypressed)
+		keypressed = false;
 
 	if (rendermode != render_none)
 	{
@@ -876,28 +967,6 @@ void F_IntroDrawer(void)
 			F_RunWipe(99,true);
 		}
 	}
-
-	F_IntroDrawScene();
-}
-
-//
-// F_IntroTicker
-//
-void F_IntroTicker(void)
-{
-	// advance animation
-	finalecount++;
-
-	if (finalecount % 3 == 0)
-		roidtics--;
-
-	timetonext--;
-
-	F_WriteText();
-
-	// check for skipping
-	if (keypressed)
-		keypressed = false;
 }
 
 //
@@ -1126,7 +1195,7 @@ void F_StartCredits(void)
 	M_ClearMenus(true);
 
 	// Save the second we enter the credits
-	if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && cursaveslot >= 0)
+	if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && !marathonmode && cursaveslot >= 0)
 		G_SaveGame((UINT32)cursaveslot);
 
 	if (creditscutscene)
@@ -1297,7 +1366,7 @@ void F_StartGameEvaluation(void)
 	// Save the second we enter the evaluation
 	// We need to do this again!  Remember, it's possible a mod designed skipped
 	// the credits sequence!
-	if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && cursaveslot >= 0)
+	if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && !marathonmode && cursaveslot >= 0)
 		G_SaveGame((UINT32)cursaveslot);
 
 	gameaction = ga_nothing;
@@ -1319,6 +1388,8 @@ void F_GameEvaluationDrawer(void)
 	// Draw all the good crap here.
 	if (ALL7EMERALDS(emeralds))
 		V_DrawString(114, 16, 0, "GOT THEM ALL!");
+	else if (marathonmode)
+		V_DrawString(114, 16, 0, "THANKS FOR THE RUN!");
 	else
 		V_DrawString(124, 16, 0, "TRY AGAIN!");
 
@@ -1382,6 +1453,14 @@ void F_GameEvaluationDrawer(void)
 			V_DrawString(8, 96, V_YELLOWMAP, "Prizes only\nawarded in\nsingle player!");
 		else
 			V_DrawString(8, 96, V_YELLOWMAP, "Prizes not\nawarded in\nmodified games!");
+	}
+	if (marathonmode)
+	{
+		const char *rtatext, *cuttext, *endingtext;
+		rtatext = (marathonmode & Playing()) ? "In-game timer" : "RTA timer";
+		cuttext = (marathonmode & MA_NOCUTSCENES) ? "" : " w/ cutscenes";
+		endingtext = va("%s, %s%s", skins[players[consoleplayer].skin].realname, rtatext, cuttext);
+		V_DrawCenteredString(BASEVIDWIDTH/2, 182, V_SNAPTOBOTTOM|(ultimatemode ? V_REDMAP : V_YELLOWMAP), endingtext);
 	}
 }
 
@@ -1490,6 +1569,10 @@ void F_TitleScreenDrawer(void)
 	if (!ttwing || (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS))
 		return;
 
+	// rei|miru: use title pics?
+	if (hidetitlepics)
+		goto luahook;
+
 	V_DrawScaledPatch(30, 14, 0, ttwing);
 
 	if (finalecount < 57)
@@ -1526,6 +1609,9 @@ void F_TitleScreenDrawer(void)
 	}
 
 	V_DrawScaledPatch(48, 142, 0,ttbanner);
+
+luahook:
+	LUAh_TitleHUD();
 }
 
 // (no longer) De-Demo'd Title Screen

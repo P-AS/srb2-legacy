@@ -883,7 +883,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 #else
 		if (!pl->extra_colormap || !(pl->extra_colormap->fog & 2))
 #endif
-			light = (pl->lightlevel >> LIGHTSEGSHIFT);
+			light = (max(pl->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT);
 		else
 			light = LIGHTLEVELS-1;
 
@@ -940,7 +940,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 #else
 			if (!pl->extra_colormap || !(pl->extra_colormap->fog & 2))
 #endif
-				light = (pl->lightlevel >> LIGHTSEGSHIFT);
+				light = (max(pl->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT);
 			else
 				light = LIGHTLEVELS-1;
 		}
@@ -949,7 +949,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 			spanfunc = R_DrawFogSpan_8;
 			light = (pl->lightlevel >> LIGHTSEGSHIFT);
 		}
-		else light = (pl->lightlevel >> LIGHTSEGSHIFT);
+		else light = (max(pl->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT);
 
 #ifndef NOWATER
 	if (pl->ffloor->flags & FF_RIPPLE)
@@ -978,7 +978,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 		}
 #endif
 	}
-	else light = (pl->lightlevel >> LIGHTSEGSHIFT);
+	else light = (max(pl->lightlevel, cv_secbright.value) >> LIGHTSEGSHIFT);
 
 
 	if (!pl->slope) // Don't mess with angle on slopes! We'll handle this ourselves later
