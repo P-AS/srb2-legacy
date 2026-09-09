@@ -1,3 +1,91 @@
+# 2.1.30
+### Major new additions
+
+- We now have an Android port!
+     - This port is fully functional, but there are some limitations. There are no touch controls, so a gamepad (or KB/M) must be used instead. The OpenGL renderer is also not supported, so Software must be used instead. See [android/README.md](https://github.com/srb2-preservation/srb2-legacy/blob/next/android/README.md) for more info on the status of the port.
+     - Assets are not yet packaged in the APK, they must be placed in `/storage/emulated/0/SRB2 Legacy`.
+- We now have a [Web port](https://srb2-preservation.github.io/srb2-legacy/)! (#147)
+     - The OpenGL renderer doesn't work here either, and neither do netgames.
+- Marathon Run (#158) 
+     - Live Event Backups have not been included. 
+- 2.2 Level Select Platter (#178)
+     - Both this and Marathon Run benefit from new assets backported from 2.2. The new `legacy.pk3` can be downloaded from our [assets repo](https://codeberg.org/srb2-preservation/assets/src/branch/legacy/legacy.pk3). This is optional, and the game is playable without it loaded.
+- Various camera features from SRB2-Banpyura (#172)
+     - `cam_exact`: Exact camera aiming.
+     - `cam_clipping`: `Off` to disable clipping, `Vanilla` for default behavior, and `Exact` for clipping based on a raycast from the player's position.
+- Native SRB2 home and WAD directory paths on \*nix and macOS (#177)
+     - `~/.local/share/srb2-legacy` (on \*nix) and `~/Library/Application Support/srb2-legacy` (on macOS) are the new default paths for SRB2 Legacy's home folder. Previously made `~/.srb2_21` folders will still work.
+     - The WAD directory is now found by searching `$XDG_DATA_DIRS/games/srb2-legacy` and `$XDG_DATA_DIRS/srb2-legacy`. By default this includes `/usr/local/share/games/srb2-legacy`, `/usr/share/games/srb2-legacy`, `/usr/local/share/srb2-legacy`, `/usr/share/srb2-legacy`.
+- GIF recording improvements (9bf32e371489732dfe2ac744e31ceb142708d029)
+     - `gif_maxsize`: Sets a filesize limit on GIF movies.
+     - `gif_rolling`: Splits GIFs into multiple files after filesize limit is set.
+     - There is now a HuD showing the length and filesize of a movie.
+- Jingles and Invincibility/Speed shoes music no longer force the stage's music to restart, and fade in and out. (78da8e06dd737dd93260bd7103813a57915a84fa)
+
+### Minor new additions
+ 
+- The `find` console command, to search for variables, commands, and aliases. (#159)
+- Lua Polyobjects (#175)
+- Lua titlescreen and titlecard HUD Hooks (#176)
+- Borderless window toggle (92b7ef661b4a42264799d5e7842287b715666bc2)
+- Add option to enable/disable title screen music (2aed23ba2258281e494cc222cd9747a1363c28b2)
+- Add `-workdir` to manually change SRB2's home folder (f789fc43206269e45f0283e71afdbc2d8b2cc2bc)
+- Analog stick deadzones (7d4f5b4612eb73c7784f11296f319cc4bcadbc02)
+     - Fixes a bug where voting for a map in the SUGOI trilogy was impossible if the player moved the camera on a gamepad. 
+- Makefile: rudimentary macOS support (8d67c327ce26d703b7a95a4757b1455306731eae)
+- Add configurable minimum sector brightness (b7dca22b14f0a87fc08c3f5bf5e426da10e449b2)
+- Expose `I_Error` to Lua (876eda061b351f0be93a4e1817aafca53bb8e5eb)
+- Legacyslop. (ae0f4a2385dfece185a83f83bcc1a3cb997e3c55)
+- Add support for using custom SDL2 mappings (63cb77a889cf755db2c4e51a7b4a73d32a5e0229)
+- Add control options menu (373a06fc5e1325f63b498290eb8e25c13c1c9cd0)
+
+### Improvements
+
+- New `M_Random` implementation (3e16d8fb48a14b702923e0c165e7a4fe59dfe12e)
+- Target `x86-64-v2` instead of `nocona` for 64-bit Windows (08bd25e44713a0e35e400d3618823e50490212a4)
+- Skip base archives from displaying on the addon list (#167)
+- Signal handler minor refactor (c6f92ee8cb2c9225b36db57e4c163790f1aa0f47)
+- Build Android port on all supported ABIs (4cfb2093c671534300becebe6c58ba5d67587ded)
+- Don't force DirectSound for SDL versions from 2.26.5 on Windows (10a74172f7d4ab87cdf22088c1e36a08c34be206)
+- Update SDL2 mixer on Windows to 2.8.1 (fe87225e59d6219cc178ee86fa65a061e5e8e554)
+- Update SDL2 on Windows to 2.32.10 (6744bb2b55943305af510b1175c404a1e43a8cf8)
+- Make black console back blacker (darker) (dc2cde9f6204cd672158b342a1ca1f807763c763)
+- GCC 15/16 warning fixes (73280e012f6b510cffc94b14d786ebf3c6c470b6)
+- Use Command instead of Control for ctrldown on macOS (dac8f40a299b57bd219927e0776eb17b1d471c4b)
+- Support 16 KB page size on Android (9edb80be5408e9c346596c66a6d6dde37681807e, a8f330618a27cd5974674bfc158dc76e8029019e, 74e6c5ea048cbd607259a802d5966e6b798ae634)
+
+### Bug/Regression fixes
+
+- Allow `mobjinfo_t` to use custom variables again (#165)
+- Fix using accelerometer as arrow keys on Android (#146)
+- Fix sky culling in the OpenGL renderer (996a6daa3c07603c515ea136909fa5679363db4a)
+- Only use aligned_alloc on macOS >= 10.15 (b96025dba3e69fd47b69a29d9ee8d739ca4068e4)
+- Fix crash on Intel macOS on resolutions that are not multiples of 32 (9f58e8a6c88479c2b9414451ec5c9612cb025dd6)
+- Fix OS-specific behavior caused by integer overflow on Lua numbers (c935c51370d1c9823eed572396d481a92884cf1d)
+- Fix menucompnote buffer overflow (f88adf7ab9335c4933f23df802a9535f5efa334c)
+- replace `vsprintf` with `vsnprintf` in `CONS_Printf` (bcb4bfb1ae98b65d5a3e62f3b7aaf0e2eaea9e8f)
+- fix: multiple additional buffer overruns (e5f4b4f4a51dac008a069e60842600c8c85f8198)
+- Fix double byte-swap in `SV_MakeTic` (16780f6629f7b9d5a3354d6d24811ae1380618a6)
+     - Fixes a regression which made the game unplayable on big endian platforms. 
+- Fix objectplace next/prev scrolling too fast (62a7aeb12276de61259e2dfb5ef5c69c262ee21a)
+- Fix AppImages with filename spaces not opening (b3fcbcc86ceed623767b097b8a5abeff566e81bf)
+- Don't let the user switch to OpenGL if NOHW (8d8c2754e007323610b156506d459cfa9321a174)
+- Fix OpenMPT versions strings leaking (2c6f450c04ff19d9e1611aa5df6c04a8ce3ec572)
+- Fix bug where SRB2 would check size of current directory instead of srb2home (78223f746d9576a637e86b2a6a7b8472339c27d5)
+- Fix freeze after intro sequence that no one watches (a3e56eefa5b4d9327b1954b359bac56f6ce3af77)
+- Make curve shader (slightly) less disorienting (f18c344914fc5128c7fbe052ccba0179329c76e9)
+- Don't do the special stage fade to white when resending gamestate 72302c3c82f6783594fc92a23ee65cd3dd81b4dc)
+- Fix using CTRL+V into connect IP textbox (e89513b59292d64fbc7af72659dc99d1d4e92953)
+- Fix ip address menu OOB string crashes (8d8bd23f4ff27d7c7ca11b59b380cba2723fa838)
+- Fix interpolation of the "IT" sign (348dc71eb9feecfe925258374b8cb24f4425def7)
+- Fix OpenGL precip not rendering (6ab9f640b58a3eff922a2ca4fad421fce6289ddb)
+- Make borderless window less shit (ff475fc24f71bd618111945fe7c5a90b9b2d3952)
+- GENUINELY fix the intro (eed74dfcdb5e47cffe57a4504a70b1d00ec1195b)
+- Fix level interpolators on midgame join (d8b0942a6fb559cd045f5cc40f5454c8940fbe7d)
+- Stop evil handkerchiefs from destroying our computer's performance (8e2cc50dc95f8f582fc30d16abf39e071eed7c69)
+     - Fixes a performance regression in Cutout Warehouse Zone in KIMOKAWAIII
+- Fix colormap textures not being updated for palette shaders (05b777bbf668c74fdaa94d5f006120a887ac355c)
+
 # 2.1.29 R1
 ### Bug/Regression fixes
 - Fix sky culling in the OpenGL renderer https://github.com/srb2-preservation/srb2-legacy/commit/996a6daa3c07603c515ea136909fa5679363db4a 
